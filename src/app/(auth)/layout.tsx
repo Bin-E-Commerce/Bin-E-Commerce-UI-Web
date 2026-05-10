@@ -35,7 +35,8 @@ export default function AuthLayout({
                             width={160}
                             height={48}
                             priority
-                            className="invert h-auto w-auto"
+                            style={{ width: 'auto', height: 'auto' }}
+                            className="invert"
                         />
                     </Link>
 
@@ -102,7 +103,7 @@ export default function AuthLayout({
                         width={140}
                         height={42}
                         priority
-                        className="h-auto w-auto"
+                        style={{ width: 'auto', height: 'auto' }}
                     />
                 </Link>
 

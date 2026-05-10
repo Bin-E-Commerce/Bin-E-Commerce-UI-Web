@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { StoreProvider } from '@/components/providers/StoreProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,10 +19,11 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="vi" className="font-sans">
+        <html lang="vi" className="font-sans" data-scroll-behavior="smooth">
             <body className="min-h-screen bg-background text-foreground antialiased">
                 <StoreProvider>
                     <QueryProvider>{children}</QueryProvider>
+                    <Toaster position="top-right" richColors closeButton />
                 </StoreProvider>
             </body>
         </html>
