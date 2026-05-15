@@ -27,6 +27,10 @@ const authorizedAxios = axios.create({
     baseURL: API_BASE_URL,
     timeout: 1000 * 60 * 10,
     withCredentials: true, // Để gửi httpOnly refresh_token cookie tự động
+    headers: {
+        // Gửi header này để api-gateway's CsrfGuard chấp nhận state-changing request.
+        'X-Requested-With': 'XMLHttpRequest',
+    },
 });
 
 let refreshTokenPromise: Promise<boolean> | null = null;

@@ -62,6 +62,23 @@ export const authService = {
             .post<ApiResponse<null>>(`${BASE}/logout`, {})
             .then((r) => r.data),
 
+    // ─── Social OAuth ─────────────────────────────────────────────────────
+    // Lấy URL xác thực từ Keycloak. State được sinh server-side để chống CSRF.
+    getSocialAuthUrl: (provider: string) =>
+        publicAxios
+            .get<
+                ApiResponse<{ authUrl: string; state: string }>
+            >(`${BASE}/social/start/${provider}`)
+            .then((r) => r.data),
+
+    // Đổi authorization code lấy access/refresh token sau khi Keycloak redirect về FE.
+    socialCallback: (provider: string, dto: { code: string; state: string }) =>
+        publicAxios
+            .post<
+                ApiResponse<AuthData>
+            >(`${BASE}/social/callback/${provider}`, dto)
+            .then((r) => r.data),
+
     getMe: () =>
         authorizedAxios
             .get<ApiResponse<AuthUser>>(`${USERS}/me`)

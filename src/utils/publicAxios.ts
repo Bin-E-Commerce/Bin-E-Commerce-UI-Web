@@ -8,6 +8,9 @@ const publicAxios = axios.create({
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
+        // Gửi header này để api-gateway's CsrfGuard chấp nhận state-changing request.
+        // Trình duyệt không cho phép trang web khác domain tự gắn header này vào cross-site request.
+        'X-Requested-With': 'XMLHttpRequest',
     },
 });
 

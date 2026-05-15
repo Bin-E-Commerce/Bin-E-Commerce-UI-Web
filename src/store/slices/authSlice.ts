@@ -80,15 +80,21 @@ const authSlice = createSlice({
             .addCase(initAuth.rejected, (state) => {
                 state.initialized = true;
             })
-            // Dù logout thành công (fulfilled) hay thất bại do lỗi mạng (rejected),
-            // vẫn xóa sạch thông tin user ở Client để đảm bảo an toàn.
-            .addMatcher(
-                (action) => action.type.startsWith('auth/logoutUser'),
-                (state) => {
-                    state.accessToken = null;
-                    state.user = null;
-                },
-            );
+            // Khi logout bắt đầu: set initialized = false → hiện skeleton, tránh flicker
+            .addCase(logoutUser.pending, (state) => {
+                state.initialized = false;
+            })
+            // Dù logout thành công hay thất bại, vẫn xóa sạch auth state ở client
+            .addCase(logoutUser.fulfilled, (state) => {
+                state.accessToken = null;
+                state.user = null;
+                state.initialized = true;
+            })
+            .addCase(logoutUser.rejected, (state) => {
+                state.accessToken = null;
+                state.user = null;
+                state.initialized = true;
+            });
     },
 });
 

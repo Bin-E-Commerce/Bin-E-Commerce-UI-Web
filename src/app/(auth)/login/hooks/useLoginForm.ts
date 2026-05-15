@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
@@ -15,6 +16,7 @@ import { getErrorMessage } from '@/utils/getErrorMessage';
 export function useLoginForm() {
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -38,5 +40,23 @@ export function useLoginForm() {
         }
     }
 
-    return { form, onSubmit };
+    async function handleGoogleLogin(): Promise<void> {
+        setIsGoogleLoading(true);
+        try {
+            const res = await authService.getSocialAuthUrl('google');
+            // Lưu state + provider vào sessionStorage để callback page xác thực chống CSRF
+            sessionStorage.setItem(
+                'oauth_state',
+                JSON.stringify({ state: res.data.state, provider: 'google' }),
+            );
+            // Redirect toàn trang đến Keycloak Google login
+            window.location.href = res.data.authUrl;
+        } catch (err: unknown) {
+            const msg = getErrorMessage(err);
+            form.setError('root', { message: msg });
+            setIsGoogleLoading(false);
+        }
+    }
+
+    return { form, onSubmit, handleGoogleLogin, isGoogleLoading };
 }

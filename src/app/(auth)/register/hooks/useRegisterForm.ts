@@ -121,6 +121,23 @@ export function useRegisterForm() {
         }
     }
 
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+    async function handleGoogleLogin(): Promise<void> {
+        setIsGoogleLoading(true);
+        try {
+            const res = await authService.getSocialAuthUrl('google');
+            sessionStorage.setItem(
+                'oauth_state',
+                JSON.stringify({ state: res.data.state, provider: 'google' }),
+            );
+            window.location.href = res.data.authUrl;
+        } catch (err: unknown) {
+            toast.error(getErrorMessage(err));
+            setIsGoogleLoading(false);
+        }
+    }
+
     return {
         step,
         setStep,
@@ -131,5 +148,7 @@ export function useRegisterForm() {
         onSubmitRegister,
         onSubmitOtp,
         onResend,
+        handleGoogleLogin,
+        isGoogleLoading,
     };
 }

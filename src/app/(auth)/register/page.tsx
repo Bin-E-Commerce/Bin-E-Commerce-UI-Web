@@ -16,6 +16,8 @@ export default function RegisterPage() {
         onSubmitRegister,
         onSubmitOtp,
         onResend,
+        handleGoogleLogin,
+        isGoogleLoading,
     } = useRegisterForm();
 
     return (
@@ -24,6 +26,8 @@ export default function RegisterPage() {
                 <RegisterStep1
                     form={registerForm}
                     onSubmit={onSubmitRegister}
+                    handleGoogleLogin={handleGoogleLogin}
+                    isGoogleLoading={isGoogleLoading}
                 />
             ) : (
                 <RegisterStep2
