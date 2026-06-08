@@ -19,6 +19,7 @@ export interface AuthUser {
 export interface AuthData {
     accessToken: string;
     expiresIn: number;
+    sessionId: string;
     user: AuthUser;
 }
 
@@ -83,4 +84,36 @@ export const authService = {
         authorizedAxios
             .get<ApiResponse<AuthUser>>(`${USERS}/me`)
             .then((r) => r.data),
+
+    // ─── Session Management ───────────────────────────────────────────────────
+    getSessions: (sessionId?: string | null) =>
+        authorizedAxios
+            .get<ApiResponse<SessionDto[]>>(`${USERS}/me/sessions`, {
+                headers: sessionId ? { 'X-Session-Id': sessionId } : {},
+            })
+            .then((r) => r.data),
+
+    revokeSession: (sessionId: string, currentSessionId?: string | null) =>
+        authorizedAxios
+            .delete<ApiResponse<null>>(`${USERS}/me/sessions/${sessionId}`, {
+                headers: currentSessionId ? { 'X-Session-Id': currentSessionId } : {},
+            })
+            .then((r) => r.data),
+
+    revokeOtherSessions: (currentSessionId: string) =>
+        authorizedAxios
+            .delete<ApiResponse<{ revokedCount: number }>>(`${USERS}/me/sessions`, {
+                headers: { 'X-Session-Id': currentSessionId },
+            })
+            .then((r) => r.data),
 };
+
+export interface SessionDto {
+    id: string;
+    issuedAt: string;
+    expiresAt: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+    clientId: string | null;
+    isCurrent: boolean;
+}

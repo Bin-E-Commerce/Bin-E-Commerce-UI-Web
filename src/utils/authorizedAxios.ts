@@ -75,6 +75,13 @@ authorizedAxios.interceptors.response.use(
                 return Promise.reject(error);
             }
 
+            // Nếu request thất bại là chính request logout → không retry, chỉ clear state.
+            // Tránh vòng lặp: logout 401 → refresh → dispatch(logoutUser()) → logout 401 → ...
+            if (originalRequest.url?.includes(`${API_VERSION}/auth/logout`)) {
+                appStore?.dispatch(logoutUser());
+                return Promise.reject(error);
+            }
+
             // Nếu request đã được thử lại trước đó mà vẫn nhận được 401 → logout để tránh vòng lặp vô hạn
             if (originalRequest._retry) {
                 appStore?.dispatch(logoutUser());
@@ -96,6 +103,7 @@ authorizedAxios.interceptors.response.use(
                             appStore?.dispatch(
                                 setAuth({
                                     accessToken: res.data.accessToken,
+                                    sessionId: res.data.sessionId,
                                     user: res.data.user,
                                 }),
                             );

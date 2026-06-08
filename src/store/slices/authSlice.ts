@@ -5,6 +5,7 @@ import { authService, type AuthUser } from '@/services/auth.service';
 interface AuthState {
     accessToken: string | null;
     user: AuthUser | null;
+    sessionId: string | null;
     // initialized: true sau khi initAuth chạy xong (dù đăng nhập hay không), để app biết đã check xong session restore và có thể render giao diện phù hợp
     // Ví dụ nếu chưa init xong thì có thể chỉ render loading spinner, tránh việc render giao diện cho guest rồi sau đó lại chuyển sang giao diện cho user đã đăng nhập (hoặc ngược lại) sau khi init
     initialized: boolean; // true sau khi initAuth chạy xong (dù đăng nhập hay không),
@@ -13,18 +14,20 @@ interface AuthState {
 const initialState: AuthState = {
     accessToken: null,
     user: null,
+    sessionId: null,
     initialized: false,
 };
 
 // Gọi 1 lần khi app mount — dùng httpOnly cookie để restore session (1 API call duy nhất)
 export const initAuth = createAsyncThunk(
     'auth/initAuth',
-    async (): Promise<{ accessToken: string; user: AuthUser } | null> => {
+    async (): Promise<{ accessToken: string; sessionId: string; user: AuthUser } | null> => {
         try {
             const res = await authService.refresh();
             if (res?.data?.accessToken) {
                 return {
                     accessToken: res.data.accessToken,
+                    sessionId: res.data.sessionId,
                     user: res.data.user,
                 };
             }
@@ -57,15 +60,17 @@ const authSlice = createSlice({
     reducers: {
         setAuth(
             state,
-            action: PayloadAction<{ accessToken: string; user?: AuthUser }>,
+            action: PayloadAction<{ accessToken: string; sessionId?: string; user?: AuthUser }>,
         ) {
             state.accessToken = action.payload.accessToken;
             if (action.payload.user) state.user = action.payload.user;
+            if (action.payload.sessionId !== undefined) state.sessionId = action.payload.sessionId;
             state.initialized = true;
         },
         clearAuth(state) {
             state.accessToken = null;
             state.user = null;
+            state.sessionId = null;
         },
     },
     extraReducers: (builder) => {
@@ -73,6 +78,7 @@ const authSlice = createSlice({
             .addCase(initAuth.fulfilled, (state, action) => {
                 if (action.payload) {
                     state.accessToken = action.payload.accessToken;
+                    state.sessionId = action.payload.sessionId;
                     state.user = action.payload.user;
                 }
                 state.initialized = true;
@@ -88,11 +94,13 @@ const authSlice = createSlice({
             .addCase(logoutUser.fulfilled, (state) => {
                 state.accessToken = null;
                 state.user = null;
+                state.sessionId = null;
                 state.initialized = true;
             })
             .addCase(logoutUser.rejected, (state) => {
                 state.accessToken = null;
                 state.user = null;
+                state.sessionId = null;
                 state.initialized = true;
             });
     },

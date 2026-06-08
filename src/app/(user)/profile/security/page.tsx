@@ -85,9 +85,6 @@ export default function SecurityPage() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-            <h1 className="mb-8 text-2xl font-bold text-zinc-900">
-                Tài khoản của tôi
-            </h1>
             <div className="flex flex-col gap-8 md:flex-row">
                 <ProfileSidebar />
 
