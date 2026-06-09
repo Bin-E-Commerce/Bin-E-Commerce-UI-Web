@@ -29,7 +29,7 @@ export default function ProfileOrdersPage() {
                             ))}
                         </div>
 
-                        <div className="mt-8 flex flex-col items-center gap-3 text-center text-zinc-400">
+                        <div className="mt-8 flex flex-col items-center justify-center gap-3 text-center text-zinc-400">
                             <ShoppingBag className="h-12 w-12 opacity-30" />
                             <p className="text-sm">
                                 Dữ liệu đơn hàng sẽ hiển thị tại đây.

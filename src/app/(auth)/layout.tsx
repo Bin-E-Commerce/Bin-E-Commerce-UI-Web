@@ -47,7 +47,7 @@ export default function AuthLayout({
                                 Nền tảng mua sắm #1 Việt Nam
                             </p>
                             <h2 className="text-4xl font-bold leading-tight tracking-tight text-white">
-                                Mua sắm thông minh —{' '}
+                                Mua sắm thông minh,{' '}
                                 <span className="text-zinc-400">
                                     giá tốt mỗi ngày.
                                 </span>

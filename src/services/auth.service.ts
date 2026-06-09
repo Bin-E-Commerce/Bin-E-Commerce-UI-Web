@@ -1,6 +1,6 @@
-import publicAxios from '@/utils/publicAxios';
-import authorizedAxios from '@/utils/authorizedAxios';
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
+import authorizedAxios from '@/utils/authorizedAxios';
+import publicAxios from '@/utils/publicAxios';
 
 const BASE = `${API_BASE_URL}${API_VERSION}/auth`;
 const USERS = `${API_BASE_URL}${API_VERSION}/users`;
@@ -19,6 +19,7 @@ export interface AuthUser {
 export interface AuthData {
     accessToken: string;
     expiresIn: number;
+    refreshExpiresIn?: number;
     sessionId: string;
     user: AuthUser;
 }
@@ -27,6 +28,23 @@ export interface ApiResponse<T> {
     data: T;
     message: string;
     statusCode: number;
+}
+
+export interface SessionDto {
+    id: string;
+    deviceName: string;
+    deviceType: string;
+    browser: string;
+    os: string;
+    loginMethod: string;
+    ipAddress: string | null;
+    location: string | null;
+    userAgent: string | null;
+    issuedAt: string;
+    lastActiveAt: string | null;
+    expiresAt: string;
+    clientId: string | null;
+    isCurrent: boolean;
 }
 
 export const authService = {
@@ -52,7 +70,7 @@ export const authService = {
             .post<ApiResponse<AuthData>>(`${BASE}/register/verify`, dto)
             .then((r) => r.data),
 
-    // Không gửi body — httpOnly cookie tự động đính kèm
+    // Khôi phục phiên bằng httpOnly refresh_token cookie.
     refresh: () =>
         publicAxios
             .post<ApiResponse<AuthData>>(`${BASE}/refresh`, {})
@@ -63,8 +81,19 @@ export const authService = {
             .post<ApiResponse<null>>(`${BASE}/logout`, {})
             .then((r) => r.data),
 
-    // ─── Social OAuth ─────────────────────────────────────────────────────
-    // Lấy URL xác thực từ Keycloak. State được sinh server-side để chống CSRF.
+    // Đổi mật khẩu và nhận lại token/session mới để tránh refresh trang bị logout.
+    changePassword: (
+        dto: { currentPassword: string; newPassword: string },
+        currentSessionId?: string | null,
+    ) =>
+        authorizedAxios
+            .post<ApiResponse<AuthData>>(`${BASE}/change-password`, dto, {
+                headers: currentSessionId
+                    ? { 'X-Session-Id': currentSessionId }
+                    : {},
+            })
+            .then((r) => r.data),
+
     getSocialAuthUrl: (provider: string) =>
         publicAxios
             .get<
@@ -72,7 +101,6 @@ export const authService = {
             >(`${BASE}/social/start/${provider}`)
             .then((r) => r.data),
 
-    // Đổi authorization code lấy access/refresh token sau khi Keycloak redirect về FE.
     socialCallback: (provider: string, dto: { code: string; state: string }) =>
         publicAxios
             .post<
@@ -85,35 +113,45 @@ export const authService = {
             .get<ApiResponse<AuthUser>>(`${USERS}/me`)
             .then((r) => r.data),
 
-    // ─── Session Management ───────────────────────────────────────────────────
+    // Lấy danh sách phiên qua auth-service để đúng nhóm nghiệp vụ authentication.
     getSessions: (sessionId?: string | null) =>
         authorizedAxios
-            .get<ApiResponse<SessionDto[]>>(`${USERS}/me/sessions`, {
+            .get<ApiResponse<SessionDto[]>>(`${BASE}/sessions`, {
                 headers: sessionId ? { 'X-Session-Id': sessionId } : {},
             })
             .then((r) => r.data),
 
     revokeSession: (sessionId: string, currentSessionId?: string | null) =>
         authorizedAxios
-            .delete<ApiResponse<null>>(`${USERS}/me/sessions/${sessionId}`, {
-                headers: currentSessionId ? { 'X-Session-Id': currentSessionId } : {},
-            })
+            .post<ApiResponse<null>>(
+                `${BASE}/sessions/${sessionId}/revoke`,
+                {},
+                {
+                    headers: currentSessionId
+                        ? { 'X-Session-Id': currentSessionId }
+                        : {},
+                },
+            )
             .then((r) => r.data),
 
-    revokeOtherSessions: (currentSessionId: string) =>
+    revokeOtherSessions: (currentSessionId?: string | null) =>
         authorizedAxios
-            .delete<ApiResponse<{ revokedCount: number }>>(`${USERS}/me/sessions`, {
-                headers: { 'X-Session-Id': currentSessionId },
-            })
+            .post<ApiResponse<{ revokedCount: number }>>(
+                `${BASE}/sessions/logout-others`,
+                {},
+                {
+                    headers: currentSessionId
+                        ? { 'X-Session-Id': currentSessionId }
+                        : {},
+                },
+            )
+            .then((r) => r.data),
+
+    logoutAllSessions: () =>
+        authorizedAxios
+            .post<ApiResponse<{ revokedCount: number }>>(
+                `${BASE}/sessions/logout-all`,
+                {},
+            )
             .then((r) => r.data),
 };
-
-export interface SessionDto {
-    id: string;
-    issuedAt: string;
-    expiresAt: string;
-    ipAddress: string | null;
-    userAgent: string | null;
-    clientId: string | null;
-    isCurrent: boolean;
-}

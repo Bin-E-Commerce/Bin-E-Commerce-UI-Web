@@ -52,6 +52,12 @@ authorizedAxios.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Gửi sessionId hiện tại để backend/gateway nhận diện request thuộc phiên nào.
+        const sessionId = appStore?.getState().auth.sessionId;
+        if (sessionId) {
+            config.headers['X-Session-Id'] = sessionId;
+        }
         return config;
     },
     (error) => Promise.reject(error),

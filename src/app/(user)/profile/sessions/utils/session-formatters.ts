@@ -1,5 +1,5 @@
 import type { SessionDto } from '@/services/auth.service';
-import { formatAbsoluteTime, parseUserAgent } from '@/utils/parseUserAgent';
+import { formatAbsoluteTime } from '@/utils/parseUserAgent';
 
 // Kiểm tra IP có hữu ích để nhận diện thiết bị thật hay chỉ là địa chỉ local.
 export function isUsefulIp(ip: string | null): ip is string {
@@ -8,23 +8,27 @@ export function isUsefulIp(ip: string | null): ip is string {
     );
 }
 
-// Tạo tiêu đề dễ hiểu cho phiên, ưu tiên trình duyệt/hệ điều hành và rơi về phương thức đăng nhập.
-export function getSessionTitle(session: SessionDto): string {
-    const parsed = parseUserAgent(session.userAgent);
-    const browserKnown = isKnown(parsed.browser);
-    const osKnown = isKnown(parsed.os);
-
-    if (browserKnown && osKnown) {
-        return `${parsed.browser} trên ${parsed.os}`;
-    }
-    if (browserKnown) return parsed.browser;
-    if (osKnown) return parsed.os;
-    return session.clientId ? 'Đăng nhập bằng Google' : 'Đăng nhập bằng mật khẩu';
+// Kiểm tra browser/os có đủ ý nghĩa để hiển thị hay không.
+export function hasUsefulDeviceInfo(session: SessionDto): boolean {
+    return session.os !== 'Không rõ' || session.browser !== 'Không rõ';
 }
 
-// Lấy loại thiết bị từ user-agent để chọn icon phù hợp cho thẻ phiên.
+// Tạo tiêu đề dễ hiểu cho phiên, tránh hiển thị các chuỗi vô nghĩa như "Không rõ - Không rõ".
+export function getSessionTitle(session: SessionDto): string {
+    if (session.deviceName && session.deviceName !== 'Không rõ - Không rõ') {
+        return session.deviceName;
+    }
+    if (hasUsefulDeviceInfo(session)) {
+        return `${session.os} - ${session.browser}`;
+    }
+    return session.loginMethod === 'google'
+        ? 'Đăng nhập bằng Google'
+        : 'Đăng nhập bằng mật khẩu';
+}
+
+// Lấy loại thiết bị để chọn icon phù hợp cho thẻ phiên.
 export function getSessionDeviceType(session: SessionDto): string {
-    return parseUserAgent(session.userAgent).deviceType;
+    return session.deviceType || 'desktop';
 }
 
 // Định dạng thời điểm đăng nhập theo dạng tương đối, ngắn gọn cho giao diện.
@@ -59,9 +63,4 @@ export function formatExpiryTime(dateStr: string): string {
     if (hours < 24) return `Còn ${hours} giờ`;
     if (days < 30) return `Còn ${days} ngày`;
     return formatAbsoluteTime(dateStr);
-}
-
-// parseUserAgent trả "Không rõ" khi không đọc được trình duyệt/hệ điều hành.
-function isKnown(value: string): boolean {
-    return value !== 'Không rõ';
 }

@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 import {
     AlertDialog,
@@ -10,33 +10,40 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import type { SessionDto } from '@/services/auth.service';
 
-// Hộp thoại xác nhận đăng xuất các thiết bị khác bằng AlertDialog chuẩn để xử lý focus, overlay và đóng modal ổn định.
-export function ConfirmRevokeModal({
-    open,
+// Xác nhận trước khi đăng xuất một phiên cụ thể để tránh thao tác nhầm trên thiết bị đang dùng hoặc thiết bị khác.
+export function ConfirmSessionModal({
+    session,
     loading,
     onOpenChange,
     onConfirm,
 }: {
-    open: boolean;
+    session: SessionDto | null;
     loading: boolean;
     onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
 }) {
+    const isCurrent = Boolean(session?.isCurrent);
+
     return (
-        <AlertDialog open={open} onOpenChange={onOpenChange}>
+        <AlertDialog open={Boolean(session)} onOpenChange={onOpenChange}>
             <AlertDialogContent className="max-w-sm">
                 <AlertDialogHeader>
                     <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100">
-                            <ShieldAlert className="h-5 w-5 text-zinc-900" />
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50">
+                            <LogOut className="h-5 w-5 text-red-600" />
                         </div>
                         <div className="space-y-1">
                             <AlertDialogTitle>
-                                Đăng xuất tất cả thiết bị khác?
+                                {isCurrent
+                                    ? 'Đăng xuất thiết bị này?'
+                                    : 'Kết thúc phiên này?'}
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                                Phiên bạn đang dùng sẽ được giữ lại.
+                                {isCurrent
+                                    ? 'Bạn sẽ được chuyển về trang đăng nhập.'
+                                    : 'Thiết bị này sẽ bị đăng xuất ở lần hoạt động tiếp theo.'}
                             </AlertDialogDescription>
                         </div>
                     </div>

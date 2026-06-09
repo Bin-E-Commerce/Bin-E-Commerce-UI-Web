@@ -19,7 +19,7 @@ export function Footer() {
                             priority
                         />
                         <p className="mt-2 text-sm text-zinc-500 leading-relaxed">
-                            Mua sắm thông minh — giá tốt mỗi ngày.
+                            Mua sắm thông minh, giá tốt mỗi ngày.
                         </p>
                     </div>
 

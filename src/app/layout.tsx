@@ -7,7 +7,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
     title: 'Bin E-Commerce',
-    description: 'Mua sắm thông minh — giá tốt mỗi ngày',
+    description: 'Mua sắm thông minh, giá tốt mỗi ngày',
     icons: {
         icon: '/images/logo/logo_icon.png',
     },
