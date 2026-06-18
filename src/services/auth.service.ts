@@ -113,6 +113,15 @@ export const authService = {
             .get<ApiResponse<AuthUser>>(`${USERS}/me`)
             .then((r) => r.data),
 
+    // Cập nhật tên và số điện thoại; avatar được xác nhận riêng qua Media Service.
+    updateProfile: (dto: {
+        name?: string;
+        phone?: string | null;
+    }) =>
+        authorizedAxios
+            .put<ApiResponse<AuthUser>>(`${USERS}/me`, dto)
+            .then((r) => r.data),
+
     // Lấy danh sách phiên qua auth-service để đúng nhóm nghiệp vụ authentication.
     getSessions: (sessionId?: string | null) =>
         authorizedAxios

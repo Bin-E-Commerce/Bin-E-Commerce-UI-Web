@@ -72,6 +72,12 @@ const authSlice = createSlice({
             state.user = null;
             state.sessionId = null;
         },
+        // Cập nhật một phần thông tin user sau các thao tác profile mà không cần refresh lại toàn bộ phiên.
+        updateAuthUser(state, action: PayloadAction<Partial<AuthUser>>) {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -106,5 +112,5 @@ const authSlice = createSlice({
     },
 });
 
-export const { setAuth, clearAuth } = authSlice.actions;
+export const { setAuth, clearAuth, updateAuthUser } = authSlice.actions;
 export default authSlice.reducer;

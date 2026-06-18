@@ -1,10 +1,14 @@
 'use client';
 
+import { Calendar, Mail, Phone, User } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import type { RootState } from '@/store';
-import { ProfileSidebar } from '@/components/layout/profile-sidebar';
-import { User, Mail, Phone, Calendar } from 'lucide-react';
 
+import { ProfileSidebar } from '@/components/layout/profile-sidebar';
+import type { RootState } from '@/store';
+
+import { getAvatarVariantUrls } from './avatar/utils/avatar-image';
+
+// Hiển thị thông tin tài khoản và dùng srcSet cho avatar để browser chọn đúng ảnh resize.
 export default function ProfilePage() {
     const { user } = useSelector((state: RootState) => state.auth);
 
@@ -18,22 +22,24 @@ export default function ProfilePage() {
 
     const initials = user.name
         .split(' ')
-        .map((w) => w[0])
+        .map((word) => word[0])
         .slice(-2)
         .join('')
         .toUpperCase();
+    const avatarVariants = getAvatarVariantUrls(user.avatarUrl);
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-8 md:flex-row">
                 <ProfileSidebar />
 
-                <div className="flex-1 space-y-6">
-                    {/* Avatar */}
-                    <div className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                        {user.avatarUrl ? (
+                <main className="min-w-0 flex-1 space-y-6">
+                    <section className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                        {avatarVariants ? (
                             <img
-                                src={user.avatarUrl}
+                                src={avatarVariants.medium}
+                                srcSet={`${avatarVariants.thumb} 128w, ${avatarVariants.medium} 512w, ${avatarVariants.large} 1080w`}
+                                sizes="64px"
                                 alt={user.name}
                                 className="h-16 w-16 rounded-full object-cover"
                             />
@@ -42,18 +48,17 @@ export default function ProfilePage() {
                                 {initials}
                             </span>
                         )}
-                        <div>
-                            <p className="text-lg font-semibold text-zinc-900">
+                        <div className="min-w-0">
+                            <p className="truncate text-lg font-semibold text-zinc-900">
                                 {user.name}
                             </p>
-                            <p className="text-sm text-zinc-500">
+                            <p className="truncate text-sm text-zinc-500">
                                 {user.email}
                             </p>
                         </div>
-                    </div>
+                    </section>
 
-                    {/* Info card */}
-                    <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                         <h2 className="mb-4 font-semibold text-zinc-900">
                             Thông tin cá nhân
                         </h2>
@@ -105,8 +110,8 @@ export default function ProfilePage() {
                                 </dd>
                             </div>
                         </dl>
-                    </div>
-                </div>
+                    </section>
+                </main>
             </div>
         </div>
     );
