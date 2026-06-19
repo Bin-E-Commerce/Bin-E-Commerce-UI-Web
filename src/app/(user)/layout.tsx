@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter, usePathname } from 'next/navigation';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
+import { Header } from '@/components/layout/shared/header';
+import { Footer } from '@/components/layout/shared/footer';
 import type { RootState } from '@/store';
 
 export default function UserLayout({

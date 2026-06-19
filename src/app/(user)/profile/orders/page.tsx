@@ -1,4 +1,4 @@
-import { ProfileSidebar } from '@/components/layout/profile-sidebar';
+import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import { ShoppingBag } from 'lucide-react';
 
 export default function ProfileOrdersPage() {

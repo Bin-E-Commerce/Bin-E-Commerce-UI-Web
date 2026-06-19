@@ -1,4 +1,4 @@
-import { ProfileSidebar } from '@/components/layout/profile-sidebar';
+import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import { MapPin, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

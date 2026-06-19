@@ -1,6 +1,6 @@
 'use client';
 
-import { ProfileSidebar } from '@/components/layout/profile-sidebar';
+import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import { ChangePasswordForm } from './components/ChangePasswordForm';
 
 // Trang bảo mật chỉ giữ bố cục, phần form và logic đổi mật khẩu được tách thành feature components/hooks.

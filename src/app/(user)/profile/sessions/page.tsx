@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RefreshCw, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { ProfileSidebar } from '@/components/layout/profile-sidebar';
+import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import { Button } from '@/components/ui/button';
 import { authService, type SessionDto } from '@/services/auth.service';
 import { type AppDispatch, type RootState } from '@/store';

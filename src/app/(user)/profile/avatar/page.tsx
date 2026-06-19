@@ -1,6 +1,6 @@
 'use client';
 
-import { ProfileSidebar } from '@/components/layout/profile-sidebar';
+import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 
 import { AvatarUploadPanel } from './components/AvatarUploadPanel';
 

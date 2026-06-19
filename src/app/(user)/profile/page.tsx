@@ -3,7 +3,7 @@
 import { Calendar, Mail, Phone, User } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
-import { ProfileSidebar } from '@/components/layout/profile-sidebar';
+import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import type { RootState } from '@/store';
 
 import { getAvatarVariantUrls } from './avatar/utils/avatar-image';
