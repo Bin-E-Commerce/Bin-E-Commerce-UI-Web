@@ -2,31 +2,47 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { X } from 'lucide-react';
+import { HelpCircle, X } from 'lucide-react';
 
+// Thanh thông báo chỉ giữ nội dung mua sắm để header chính không bị lẫn với luồng đăng ký seller.
 export function AnnouncementBar() {
     const [visible, setVisible] = useState(true);
 
     if (!visible) return null;
 
     return (
-        <div className="relative flex items-center justify-center bg-zinc-950 px-10 py-2 text-xs text-zinc-300">
-            <span>
-                Flash Sale — Giảm đến 50% hôm nay&nbsp;&nbsp;·&nbsp;&nbsp;
+        <div className="bg-zinc-950 text-xs text-zinc-300">
+            <div className="mx-auto flex h-8 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                 <Link
-                    href="/flash-sale"
-                    className="cursor-pointer font-semibold text-white underline underline-offset-2 hover:text-zinc-300 transition-colors"
+                    href="/support"
+                    className="hidden items-center gap-1.5 transition-colors hover:text-white md:inline-flex"
                 >
-                    Mua ngay
+                    <HelpCircle className="size-3.5" />
+                    Hỗ trợ
                 </Link>
-            </span>
-            <button
-                onClick={() => setVisible(false)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer rounded p-0.5 text-zinc-400 hover:text-white transition-colors"
-                aria-label="Đóng thông báo"
-            >
-                <X className="h-3.5 w-3.5" />
-            </button>
+
+                <div className="min-w-0 flex-1 text-center">
+                    <span className="truncate">
+                        Flash Sale - Giảm đến 50% hôm nay
+                        <span className="mx-2 text-zinc-600">|</span>
+                        <Link
+                            href="/flash-sale"
+                            className="font-semibold text-white underline underline-offset-2 transition-colors hover:text-zinc-300"
+                        >
+                            Mua ngay
+                        </Link>
+                    </span>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setVisible(false)}
+                    className="rounded p-0.5 text-zinc-400 transition-colors hover:text-white"
+                    aria-label="Đóng thông báo"
+                >
+                    <X className="size-3.5" />
+                </button>
+            </div>
         </div>
     );
 }
