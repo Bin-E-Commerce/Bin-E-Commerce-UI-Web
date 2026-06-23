@@ -1,4 +1,4 @@
-import type { SessionDto } from '@/services/auth.service';
+import type { SessionDto } from '@/services/auth';
 
 // Tóm tắt số lượng phiên để người dùng nhanh chóng biết còn thiết bị khác hay không.
 export function SessionStats({ sessions }: { sessions: SessionDto[] }) {

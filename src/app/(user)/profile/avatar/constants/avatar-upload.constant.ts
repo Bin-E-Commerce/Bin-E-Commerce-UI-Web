@@ -1,4 +1,4 @@
-import type { MediaUploadMimeType } from '@/services/media.service';
+import type { MediaUploadMimeType } from '@/services/media';
 
 export const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 

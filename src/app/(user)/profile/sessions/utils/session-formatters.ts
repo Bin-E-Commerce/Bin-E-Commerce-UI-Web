@@ -1,4 +1,4 @@
-import type { SessionDto } from '@/services/auth.service';
+import type { SessionDto } from '@/services/auth';
 import { formatAbsoluteTime } from '@/utils/parseUserAgent';
 
 // Kiểm tra IP có hữu ích để nhận diện thiết bị thật hay chỉ là địa chỉ local.

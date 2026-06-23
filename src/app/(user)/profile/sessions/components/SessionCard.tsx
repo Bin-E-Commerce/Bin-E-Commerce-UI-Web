@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import type { SessionDto } from '@/services/auth.service';
+import type { SessionDto } from '@/services/auth';
 import { formatAbsoluteTime } from '@/utils/parseUserAgent';
 import {
     formatExpiryTime,

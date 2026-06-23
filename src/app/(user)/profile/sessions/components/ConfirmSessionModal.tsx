@@ -10,7 +10,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import type { SessionDto } from '@/services/auth.service';
+import type { SessionDto } from '@/services/auth';
 
 // Xác nhận trước khi đăng xuất một phiên cụ thể để tránh thao tác nhầm trên thiết bị đang dùng hoặc thiết bị khác.
 export function ConfirmSessionModal({
