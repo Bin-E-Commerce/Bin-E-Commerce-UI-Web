@@ -1,13 +1,15 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { X } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Store, X } from 'lucide-react';
 
 import { SellerSidebar } from '@/components/layout/seller/sidebar';
 import { SellerTopbar } from '@/components/layout/seller/topbar';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { RootState } from '@/store';
 
 interface SellerLayoutShellProps {
@@ -33,6 +35,62 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
     }, [pathname]);
 
     if (!initialized || !user) return null;
+
+    // Route đăng ký seller dùng khung riêng vì người dùng lúc này chưa có shop để quản trị.
+    if (pathname.startsWith('/seller/register')) {
+        return (
+            <div className="min-h-screen bg-zinc-50 text-zinc-950">
+                <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
+                    <div className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+                        <Link href="/" className="flex min-w-0 items-center gap-3">
+                            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
+                                <Store className="size-5" />
+                            </span>
+                            <span className="min-w-0">
+                                <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+                                    Bin Seller
+                                    <span className="hidden rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-500 sm:inline-flex">
+                                        Onboarding
+                                    </span>
+                                </span>
+                                <span className="block truncate text-xs text-zinc-500">
+                                    Đăng ký trở thành người bán
+                                </span>
+                            </span>
+                        </Link>
+
+                        <div className="flex shrink-0 items-center gap-2">
+                            <Link
+                                href="/"
+                                className={cn(
+                                    buttonVariants({ variant: 'outline', size: 'sm' }),
+                                    'h-9 gap-2 rounded-full px-3 shadow-sm',
+                                )}
+                            >
+                                <ArrowLeft className="size-4" />
+                                <span className="hidden sm:inline">Về trang mua sắm</span>
+                                <span className="sm:hidden">Quay lại</span>
+                            </Link>
+                            <Link
+                                href="/seller"
+                                className={cn(
+                                    buttonVariants({ size: 'sm' }),
+                                    'hidden h-9 gap-2 rounded-full px-4 shadow-md sm:inline-flex',
+                                )}
+                            >
+                                <BadgeCheck className="size-4" />
+                                Seller Center
+                            </Link>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                    {children}
+                </main>
+            </div>
+        );
+    }
 
     const shopName = user.name ? `Shop ${user.name}` : 'Shop của tôi';
 

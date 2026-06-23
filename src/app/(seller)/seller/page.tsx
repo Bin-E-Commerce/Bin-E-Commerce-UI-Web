@@ -7,8 +7,10 @@ import {
     TrendingUp,
     Wallet,
 } from 'lucide-react';
+import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 
 // Trang tổng quan seller hiển thị các chỉ số vận hành cần nhìn ngay sau khi đăng nhập.
 export default function SellerDashboardPage() {
@@ -28,12 +30,13 @@ export default function SellerDashboardPage() {
                             mà không phải chuyển qua nhiều màn hình rời rạc.
                         </p>
                         <div className="mt-6 flex flex-wrap gap-2">
-                            <Button type="button">
+                            <Link href="/seller/register" className={buttonVariants()}>
+                                Đăng ký bán hàng
+                                <ArrowUpRight className="size-4" />
+                            </Link>
+                            <Button type="button" variant="outline">
                                 Xử lý đơn mới
                                 <ArrowUpRight className="size-4" />
-                            </Button>
-                            <Button type="button" variant="outline">
-                                Thêm sản phẩm
                             </Button>
                         </div>
                     </div>
