@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { authService } from '@/services/auth.service';
+import { authService } from '@/services/auth';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { AppDispatch } from '@/store';

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
-import { mediaService } from '@/services/media.service';
-import type { MediaUploadMimeType } from '@/services/media.service';
+import { mediaService } from '@/services/media';
+import type { MediaUploadMimeType } from '@/services/media';
 import type { AppDispatch, RootState } from '@/store';
 import { updateAuthUser } from '@/store/slices/authSlice';
 

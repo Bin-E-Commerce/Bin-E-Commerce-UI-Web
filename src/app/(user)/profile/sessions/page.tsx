@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import { Button } from '@/components/ui/button';
-import { authService, type SessionDto } from '@/services/auth.service';
+import { authService, type SessionDto } from '@/services/auth';
 import { type AppDispatch, type RootState } from '@/store';
 import { logoutUser } from '@/store/slices/authSlice';
 import { ConfirmRevokeModal } from './components/ConfirmRevokeModal';

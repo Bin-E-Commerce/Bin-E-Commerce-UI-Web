@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { loginSchema, type LoginFormValues } from '../schemas/loginSchema';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
-import { authService } from '@/services/auth.service';
+import { authService } from '@/services/auth';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 export function useLoginForm() {

@@ -100,7 +100,7 @@ authorizedAxios.interceptors.response.use(
             // Nếu đã có một request refresh token đang chờ xử lý,
             // không tạo thêm request mới mà chỉ thêm callback vào subscribers để chờ kết quả
             if (!refreshTokenPromise) {
-                refreshTokenPromise = import('@/services/auth.service')
+                refreshTokenPromise = import('@/services/auth')
                     .then(({ authService }) => authService.refresh())
                     .then((res) => {
                         // Nếu refresh token thành công và nhận được access token mới,

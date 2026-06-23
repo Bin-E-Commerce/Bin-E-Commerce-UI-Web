@@ -21,8 +21,14 @@ const VI_ERROR_MAP: Record<string, string> = {
 // Chuẩn hóa lỗi từ Axios hoặc Error thường thành thông báo tiếng Việt dễ hiểu cho giao diện.
 export function getErrorMessage(err: unknown): string {
     if (axios.isAxiosError(err)) {
-        const serverMsg: string =
-            err.response?.data?.message ?? err.message ?? 'Request failed';
+        // Backend có thể trả message là string, mảng validation hoặc object; toast chỉ nên nhận một câu ngắn.
+        const rawMessage = err.response?.data?.message ?? err.message;
+        const serverMsg =
+            typeof rawMessage === 'string'
+                ? rawMessage
+                : Array.isArray(rawMessage)
+                  ? rawMessage[0]
+                  : 'Request failed';
         return VI_ERROR_MAP[serverMsg] ?? serverMsg;
     }
     if (err instanceof Error) {

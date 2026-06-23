@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
-import { authService } from '@/services/auth.service';
+import { authService } from '@/services/auth';
 import { type AppDispatch, type RootState } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/utils/getErrorMessage';

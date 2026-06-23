@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
-import { authService } from '@/services/auth.service';
+import { authService } from '@/services/auth';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // ─── Inner component (cần useSearchParams nên phải wrap Suspense) ────────────
