@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import {
-    optionalAbsoluteUrlSchema,
+    requiredAbsoluteUrlSchema,
     SHOP_SLUG_PATTERN,
     trimmedStringSchema,
     uuidSelectionSchema,
@@ -38,7 +38,8 @@ const shopSchema = z.object({
             'Vui lòng chọn mô hình bán hàng hợp lệ.',
         ),
     description: z.string().trim().max(1000, 'Mô tả shop tối đa 1000 ký tự.'),
-    logoUrl: optionalAbsoluteUrlSchema(
+    logoUrl: requiredAbsoluteUrlSchema(
+        'Vui lòng tải logo shop.',
         'Logo shop phải là đường dẫn URL hợp lệ.',
     ),
 });

@@ -36,6 +36,18 @@ export function optionalAbsoluteUrlSchema(message: string) {
     });
 }
 
+// Dùng cho các field bắt buộc lưu URL tài nguyên đã upload, ví dụ logo shop sau khi lên media-service.
+export function requiredAbsoluteUrlSchema(
+    requiredMessage: string,
+    urlMessage: string,
+) {
+    return z
+        .string()
+        .trim()
+        .min(1, requiredMessage)
+        .refine(isAbsoluteUrl, { message: urlMessage });
+}
+
 // Kiểm tra URL tuyệt đối để khớp với @IsUrl({ require_protocol: true }) ở backend.
 function isAbsoluteUrl(value: string): boolean {
     try {

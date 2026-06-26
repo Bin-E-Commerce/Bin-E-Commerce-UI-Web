@@ -55,6 +55,7 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                             label="Loại tài khoản"
                             htmlFor="accountType"
                             error={errors['payout.accountType']}
+                            required
                         >
                             <div
                                 id="accountType"
@@ -84,6 +85,7 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                         label="Ngân hàng"
                         htmlFor="bankName"
                         error={errors['payout.bankCode'] ?? errors['payout.bankName']}
+                        required
                     >
                         <SellerCombobox
                             id="bankName"
@@ -97,6 +99,7 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                         label="Số tài khoản"
                         htmlFor="bankAccount"
                         error={errors['payout.accountNumber']}
+                        required
                     >
                         <Input
                             id="bankAccount"
@@ -114,6 +117,7 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                         label="Tên chủ tài khoản"
                         htmlFor="accountHolder"
                         error={errors['payout.accountHolderName']}
+                        required
                     >
                         <Input
                             id="accountHolder"

@@ -74,6 +74,7 @@ export function PickupAddressStep({
                     label="Người phụ trách lấy hàng"
                     htmlFor="pickupName"
                     error={errors['pickupAddress.contactName']}
+                    required
                 >
                     <Input
                         id="pickupName"
@@ -89,6 +90,7 @@ export function PickupAddressStep({
                     label="Số điện thoại lấy hàng"
                     htmlFor="pickupPhone"
                     error={errors['pickupAddress.phone']}
+                    required
                 >
                     <Input
                         id="pickupPhone"
@@ -108,6 +110,7 @@ export function PickupAddressStep({
                         provinceError ??
                         undefined
                     }
+                    required
                 >
                     <SellerCombobox
                         id="province"
@@ -128,6 +131,7 @@ export function PickupAddressStep({
                         wardError ??
                         undefined
                     }
+                    required
                 >
                     <SellerCombobox
                         id="ward"
@@ -149,6 +153,7 @@ export function PickupAddressStep({
                         label="Địa chỉ chi tiết"
                         htmlFor="pickupAddress"
                         error={errors['pickupAddress.addressLine']}
+                        required
                     >
                         <textarea
                             id="pickupAddress"

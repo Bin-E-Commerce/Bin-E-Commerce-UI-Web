@@ -64,6 +64,7 @@ export function SellerInfoStep({
                         label="Tên pháp lý doanh nghiệp"
                         htmlFor="legalName"
                         error={errors['seller.legalName']}
+                        required
                     >
                         <Input
                             id="legalName"
@@ -80,6 +81,7 @@ export function SellerInfoStep({
                         label="Họ và tên trên CCCD"
                         htmlFor="identityName"
                         error={errors['seller.legalName']}
+                        required
                     >
                         <Input
                             id="identityName"
@@ -98,6 +100,7 @@ export function SellerInfoStep({
                         label="Mã số thuế"
                         htmlFor="taxCode"
                         error={errors['seller.taxCode']}
+                        required
                     >
                         <Input
                             id="taxCode"
@@ -114,6 +117,7 @@ export function SellerInfoStep({
                         label="Số CCCD"
                         htmlFor="citizenId"
                         error={errors['seller.citizenId']}
+                        required
                     >
                         <Input
                             id="citizenId"
@@ -131,6 +135,7 @@ export function SellerInfoStep({
                     label="Người đại diện vận hành"
                     htmlFor="representativeName"
                     error={errors['seller.representativeName']}
+                    required
                 >
                     <Input
                         id="representativeName"
@@ -150,6 +155,7 @@ export function SellerInfoStep({
                     label="Số điện thoại"
                     htmlFor="sellerPhone"
                     error={errors['seller.phone']}
+                    required
                 >
                     <Input
                         id="sellerPhone"
@@ -165,6 +171,7 @@ export function SellerInfoStep({
                     label="Email liên hệ"
                     htmlFor="sellerEmail"
                     error={errors['seller.email']}
+                    required
                 >
                     <Input
                         id="sellerEmail"
