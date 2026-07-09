@@ -4,30 +4,73 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { ArrowLeft, BadgeCheck, Store, X } from 'lucide-react';
+import { ArrowLeft, Store, X } from 'lucide-react';
 
 import { SellerSidebar } from '@/components/layout/seller/sidebar';
 import { SellerTopbar } from '@/components/layout/seller/topbar';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RootState } from '@/store';
+import {
+    canAccessAdmin,
+    canAccessSellerCenter,
+    canViewSellerDashboard,
+} from '@/services/auth/access';
 
 interface SellerLayoutShellProps {
     children: React.ReactNode;
 }
 
-// Bao toàn bộ Seller Center để xử lý auth, topbar và sidebar responsive ở một nơi duy nhất.
+const SELLER_ACCESS_DENIED_PATH = '/seller/access-denied';
+
+// Bao toàn bộ Seller Center để xử lý auth, permission, topbar và sidebar responsive ở một nơi duy nhất.
+// Các trang đăng ký seller được đi qua layout này nhưng không yêu cầu quyền vào Seller Center.
 export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { user, initialized } = useSelector((state: RootState) => state.auth);
     const router = useRouter();
     const pathname = usePathname();
+    const isRegisterRoute = pathname.startsWith('/seller/register');
+    const isAccessDeniedRoute = pathname === SELLER_ACCESS_DENIED_PATH;
+    const canEnterSellerCenter = canAccessSellerCenter(user);
+    const isSellerDashboardRoute = pathname === '/seller';
 
     useEffect(() => {
         if (initialized && !user) {
+            // Chưa đăng nhập thì đưa về login vì chỉ tài khoản đã đăng ký mới được mở hồ sơ seller.
             router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
         }
     }, [initialized, pathname, router, user]);
+
+    useEffect(() => {
+        if (!initialized || !user || isRegisterRoute) return;
+
+        if (isAccessDeniedRoute) {
+            // Nếu user vừa được cấp quyền vào Seller Center, không để họ ở lại màn hình từ chối quyền.
+            if (canEnterSellerCenter) router.replace('/seller');
+            return;
+        }
+
+        if (!canEnterSellerCenter) {
+            // Nhân sự nội bộ đi nhầm Seller Center sẽ thấy màn deny để không hiểu nhầm là cần đăng ký shop.
+            // Customer thường được đưa sang đăng ký bán hàng vì họ là đối tượng hợp lệ để bắt đầu onboarding.
+            router.replace(canAccessAdmin(user) ? SELLER_ACCESS_DENIED_PATH : '/seller/register');
+        }
+
+        if (isSellerDashboardRoute && !canViewSellerDashboard(user)) {
+            // Quyền vào Seller Center chỉ mở khung chung; dashboard vẫn cần quyền xem riêng để sau này phân quyền theo module.
+            router.replace(SELLER_ACCESS_DENIED_PATH);
+        }
+    }, [
+        canEnterSellerCenter,
+        initialized,
+        isAccessDeniedRoute,
+        isSellerDashboardRoute,
+        isRegisterRoute,
+        pathname,
+        router,
+        user,
+    ]);
 
     // Khi đổi route trên mobile, tự đóng sidebar để người bán quay lại nội dung đang thao tác.
     useEffect(() => {
@@ -36,8 +79,11 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
 
     if (!initialized || !user) return null;
 
+    if (isAccessDeniedRoute) return canEnterSellerCenter ? null : children;
+
     // Route đăng ký seller dùng khung riêng vì người dùng lúc này chưa có shop để quản trị.
-    if (pathname.startsWith('/seller/register')) {
+    // Không render SellerSidebar ở đây để tránh tạo cảm giác đã vào được Seller Center.
+    if (isRegisterRoute) {
         return (
             <div className="min-h-screen bg-zinc-50 text-zinc-950">
                 <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
@@ -71,16 +117,6 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                                 <span className="hidden sm:inline">Về trang mua sắm</span>
                                 <span className="sm:hidden">Quay lại</span>
                             </Link>
-                            <Link
-                                href="/seller"
-                                className={cn(
-                                    buttonVariants({ size: 'sm' }),
-                                    'hidden h-9 gap-2 rounded-full px-4 shadow-md sm:inline-flex',
-                                )}
-                            >
-                                <BadgeCheck className="size-4" />
-                                Seller Center
-                            </Link>
                         </div>
                     </div>
                 </header>
@@ -91,6 +127,8 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
             </div>
         );
     }
+
+    if (!canEnterSellerCenter) return null;
 
     const shopName = user.name ? `Shop ${user.name}` : 'Shop của tôi';
 
