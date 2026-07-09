@@ -47,6 +47,8 @@ export interface SellerApplicationPayload {
 
 export interface SellerApplicationDto {
     id: string;
+    userId: string;
+    userEmail: string;
     status: SellerApplicationStatus;
     submittedAt: string | null;
     reviewedAt: string | null;
@@ -88,4 +90,3 @@ export interface SellerApplicationDto {
     createdAt: string;
     updatedAt: string;
 }
-
