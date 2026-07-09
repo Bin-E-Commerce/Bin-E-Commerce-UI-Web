@@ -1,0 +1,106 @@
+import type {
+    PermissionAwareUser,
+    SessionPermission,
+} from './types/session-access.types';
+
+export const ADMIN_ACCESS_DENIED_PATH = '/admin/access-denied';
+export const ADMIN_DASHBOARD_PATH = '/admin/dashboard';
+export const ADMIN_SELLER_APPLICATIONS_PATH = '/admin/sellers/applications';
+
+// Kiểm tra permission trong session user do backend trả về.
+// Hàm này là tiện ích generic cho nút/block nhỏ; route chính ưu tiên accessProfile thay vì hard-code permission ở FE.
+export function hasPermission(
+    user: PermissionAwareUser | null | undefined,
+    permission: SessionPermission,
+): boolean {
+    return Boolean(user?.permissions?.includes(permission));
+}
+
+// Kiểm tra nhiều permission cùng lúc cho các vùng UI lớn như Admin Center.
+// Hàm này chỉ là tiện ích đọc session, không tự định nghĩa quyền nghiệp vụ mới ở FE.
+export function hasAnyPermission(
+    user: PermissionAwareUser | null | undefined,
+    permissions: readonly SessionPermission[],
+): boolean {
+    return permissions.some((permission) => hasPermission(user, permission));
+}
+
+// Kiểm tra một area có route cụ thể trong navigation backend trả về hay không.
+// Backend đã lọc navigation theo permission, nên FE chỉ cần đọc route hợp lệ thay vì giữ mã quyền nghiệp vụ.
+function hasNavigationPath(
+    user: PermissionAwareUser | null | undefined,
+    area: 'admin' | 'seller',
+    pathname: string,
+): boolean {
+    const navigation = user?.accessProfile?.areas[area].navigation ?? [];
+    return navigation.some((item) => {
+        const href = item.href;
+        return pathname === href || pathname.startsWith(`${href}/`);
+    });
+}
+
+// Dashboard admin được quyết định bởi navigation backend, FE không giữ mã quyền của màn hình này.
+export function canAccessAdminDashboard(
+    user: PermissionAwareUser | null | undefined,
+): boolean {
+    return hasNavigationPath(user, 'admin', ADMIN_DASHBOARD_PATH);
+}
+
+// Hồ sơ seller được quyết định bởi navigation backend, FE không giữ mã quyền của màn hình này.
+export function canReadSellerApplications(
+    user: PermissionAwareUser | null | undefined,
+): boolean {
+    return hasNavigationPath(user, 'admin', ADMIN_SELLER_APPLICATIONS_PATH);
+}
+
+// Kiểm tra user có được vào vùng Admin Center hay không dựa trên accessProfile backend trả về.
+// Nếu backend chưa trả accessProfile thì FE không tự đoán quyền để tránh mở nhầm khu vực quản trị.
+export function canAccessAdmin(
+    user: PermissionAwareUser | null | undefined,
+): boolean {
+    return Boolean(user?.accessProfile?.areas.admin.canAccess);
+}
+
+// Chọn trang admin đầu tiên user được phép xem.
+// Backend ưu tiên trả defaultRoute; FE chỉ fallback bằng vài route đã triển khai thật.
+export function getDefaultAdminPath(
+    user: PermissionAwareUser | null | undefined,
+): string {
+    const backendRoute = user?.accessProfile?.areas.admin.defaultRoute;
+    if (backendRoute) return backendRoute;
+
+    return ADMIN_ACCESS_DENIED_PATH;
+}
+
+// Kiểm tra quyền theo path admin hiện tại bằng navigation backend trả trong accessProfile.
+// Route access-denied luôn mở; route còn lại phải xuất hiện trong navigation backend.
+export function canAccessAdminPath(
+    pathname: string,
+    user: PermissionAwareUser | null | undefined,
+): boolean {
+    if (pathname === ADMIN_ACCESS_DENIED_PATH) return true;
+
+    const adminNavigation = user?.accessProfile?.areas.admin.navigation ?? [];
+    if (adminNavigation.length > 0) {
+        return adminNavigation.some((item) => {
+            const href = item.href;
+            return pathname === href || pathname.startsWith(`${href}/`);
+        });
+    }
+
+    return false;
+}
+
+// Seller Center mở theo accessProfile backend trả về; FE không giữ mã quyền cửa vào khu vực này.
+export function canAccessSellerCenter(
+    user: PermissionAwareUser | null | undefined,
+): boolean {
+    return Boolean(user?.accessProfile?.areas.seller.canAccess);
+}
+
+// Dashboard seller được quyết định bởi navigation backend, FE không giữ mã quyền của màn hình này.
+export function canViewSellerDashboard(
+    user: PermissionAwareUser | null | undefined,
+): boolean {
+    return hasNavigationPath(user, 'seller', '/seller');
+}

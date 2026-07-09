@@ -9,7 +9,7 @@ import { UserMenuSkeleton } from './UserMenuSkeleton';
 import { UserMenuGuest } from './UserMenuGuest';
 import { UserMenuDropdown } from './UserMenuDropdown';
 
-// Menu tài khoản chọn đúng trạng thái guest/user và truyền role để dropdown điều hướng seller hợp lý.
+// Menu tài khoản chọn đúng trạng thái guest/user và truyền user đầy đủ để dropdown kiểm tra permission.
 export function UserMenu() {
     const { user, initialized } = useSelector((state: RootState) => state.auth);
 
@@ -56,9 +56,7 @@ export function UserMenu() {
             <UserMenuDropdown
                 name={user.name}
                 email={user.email}
-                initials={initials}
-                avatarUrl={user.avatarUrl ?? undefined}
-                role={user.role}
+                user={user}
             />
         </DropdownMenu.Root>
     );

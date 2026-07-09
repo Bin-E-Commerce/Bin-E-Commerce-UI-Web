@@ -1,9 +1,46 @@
+export interface PermissionGrant {
+    code: string;
+    scopes: string[];
+}
+
+export interface AccessNavigationItem {
+    code: string;
+    groupCode: string;
+    groupLabel: string;
+    groupOrder: number;
+    label: string;
+    description: string;
+    href: string;
+    icon: string;
+    sortOrder: number;
+    requiredPermissionCode: string;
+}
+
+export interface AccessArea {
+    canAccess: boolean;
+    defaultRoute: string | null;
+    navigation: AccessNavigationItem[];
+}
+
+export interface AccessProfile {
+    permissionVersion: string;
+    defaultRoute: string;
+    areas: {
+        admin: AccessArea;
+        seller: AccessArea;
+    };
+}
+
 export interface AuthUser {
     id: string;
     email: string;
     name: string;
     phone: string | null;
     role: string;
+    roles: string[];
+    permissions: string[];
+    permissionGrants?: PermissionGrant[];
+    accessProfile?: AccessProfile;
     status: string;
     avatarUrl: string | null;
     createdAt: string;
@@ -71,4 +108,3 @@ export interface SocialCallbackPayload {
     code: string;
     state: string;
 }
-

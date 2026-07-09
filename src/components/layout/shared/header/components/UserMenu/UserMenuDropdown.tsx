@@ -3,27 +3,47 @@
 import Link from 'next/link';
 import { useDispatch } from 'react-redux';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { ArrowRight, LogOut, MapPin, Settings, ShoppingBag, Store } from 'lucide-react';
+import {
+    ArrowRight,
+    LogOut,
+    MapPin,
+    Settings,
+    ShieldCheck,
+    ShoppingBag,
+    Store,
+} from 'lucide-react';
 
+import type { AuthUser } from '@/services/auth';
+import {
+    canAccessAdmin,
+    canAccessSellerCenter,
+    getDefaultAdminPath,
+} from '@/services/auth/access';
 import type { AppDispatch } from '@/store';
 import { logoutUser } from '@/store/slices/authSlice';
 
 interface UserMenuDropdownProps {
     name: string;
     email: string;
-    initials: string;
-    avatarUrl?: string;
-    role?: string;
+    user: AuthUser;
 }
 
-// Dropdown tài khoản đặt entry seller ở ngữ cảnh tài khoản, giống một hành động nâng cấp vai trò.
+// Dropdown tài khoản điều hướng theo accessProfile backend trả về.
+// Cách này tránh SUPPORT_AGENT hoặc ADMIN bị đưa nhầm vào Seller Center chỉ vì có role nội bộ.
 export function UserMenuDropdown({
     name,
     email,
-    role,
+    user,
 }: UserMenuDropdownProps) {
     const dispatch = useDispatch<AppDispatch>();
-    const isSeller = role?.toUpperCase().includes('SELLER');
+    const isSeller = canAccessSellerCenter(user);
+    const isAdmin = canAccessAdmin(user);
+    const primaryHref = isSeller
+        ? '/seller'
+        : isAdmin
+          ? getDefaultAdminPath(user)
+          : '/seller/register';
+    const PrimaryIcon = isAdmin && !isSeller ? ShieldCheck : Store;
 
     return (
         <DropdownMenu.Portal>
@@ -41,20 +61,26 @@ export function UserMenuDropdown({
 
                 <DropdownMenu.Item asChild>
                     <Link
-                        href={isSeller ? '/seller' : '/seller/register'}
+                        href={primaryHref}
                         className="mb-1 flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 outline-none transition-colors hover:border-zinc-300 hover:bg-white"
                     >
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
-                            <Store className="size-5" />
+                            <PrimaryIcon className="size-5" />
                         </span>
                         <span className="min-w-0 flex-1">
                             <span className="block text-sm font-semibold text-zinc-950">
-                                {isSeller ? 'Seller Center' : 'Đăng ký trở thành người bán'}
+                                {isSeller
+                                    ? 'Seller Center'
+                                    : isAdmin
+                                      ? 'Admin Center'
+                                      : 'Đăng ký trở thành người bán'}
                             </span>
                             <span className="mt-0.5 block text-xs leading-5 text-zinc-500">
                                 {isSeller
                                     ? 'Quản lý shop, đơn hàng và doanh thu.'
-                                    : 'Mở shop và bắt đầu bán hàng trên Bin.'}
+                                    : isAdmin
+                                      ? 'Kiểm tra hồ sơ và vận hành nền tảng.'
+                                      : 'Mở shop và bắt đầu bán hàng trên Bin.'}
                             </span>
                         </span>
                         <ArrowRight className="size-4 text-zinc-400" />
