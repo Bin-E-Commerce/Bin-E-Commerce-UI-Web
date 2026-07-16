@@ -31,5 +31,13 @@ export const sellerService = {
                 payload,
             )
             .then((response) => response.data),
-};
 
+    // Gửi lại hồ sơ pending sau khi người dùng hoàn tất chỉnh sửa tạm trên frontend.
+    resubmit: (payload: SellerApplicationPayload) =>
+        authorizedAxios
+            .post<SellerApplicationDto>(
+                `${API_VERSION}/seller/applications/resubmit`,
+                payload,
+            )
+            .then((response) => response.data),
+};

@@ -44,6 +44,8 @@ export function useSellerRegisterFlow() {
     );
     const [saving, setSaving] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [editingSubmittedApplication, setEditingSubmittedApplication] =
+        useState(false);
     const [loadingApplication, setLoadingApplication] = useState(true);
     const [applicationStatus, setApplicationStatus] =
         useState<SellerApplicationStatus | null>(null);
@@ -172,6 +174,19 @@ export function useSellerRegisterFlow() {
         }
     };
 
+    // Chỉ mở form chỉnh sửa trong bộ nhớ trình duyệt; refresh sẽ hủy bản sửa và backend vẫn giữ nguyên hồ sơ pending.
+    const handleEditSubmittedApplication = () => {
+        form.setValue('acceptedTerms', false, {
+            shouldDirty: false,
+            shouldTouch: false,
+            shouldValidate: true,
+        });
+        setEditingSubmittedApplication(true);
+        setSubmitted(false);
+        setCurrentStep(0);
+        setAttemptedSteps(new Set());
+    };
+
     // Nút chính chỉ cho qua bước tiếp theo khi step hiện tại hợp lệ; bước cuối mới submit thật lên backend.
     const handlePrimaryAction = async () => {
         const values = form.getValues();
@@ -193,12 +208,19 @@ export function useSellerRegisterFlow() {
         setSaving(true);
 
         try {
-            const application = await sellerService.submit(
-                toSellerApplicationPayload(values),
-            );
+            const payload = toSellerApplicationPayload(values);
+            // Hồ sơ pending dùng endpoint resubmit; hồ sơ mới/draft dùng submit để backend áp đúng transition trạng thái.
+            const application = editingSubmittedApplication
+                ? await sellerService.resubmit(payload)
+                : await sellerService.submit(payload);
             setApplicationStatus(application.status);
+            setEditingSubmittedApplication(false);
             setSubmitted(true);
-            toast.success('Đã gửi hồ sơ. Vui lòng chờ duyệt.');
+            toast.success(
+                editingSubmittedApplication
+                    ? 'Đã cập nhật và gửi lại hồ sơ.'
+                    : 'Đã gửi hồ sơ. Vui lòng chờ duyệt.',
+            );
         } catch (err) {
             toast.error(getErrorMessage(err));
         } finally {
@@ -220,6 +242,7 @@ export function useSellerRegisterFlow() {
         formValues,
         saving,
         submitted,
+        editingSubmittedApplication,
         loadingApplication,
         applicationStatus,
         totalSteps,
@@ -232,6 +255,7 @@ export function useSellerRegisterFlow() {
         updateFormSection,
         handleSaveDraft,
         handlePrimaryAction,
+        handleEditSubmittedApplication,
         handleAcceptedTermsChange,
     };
 }

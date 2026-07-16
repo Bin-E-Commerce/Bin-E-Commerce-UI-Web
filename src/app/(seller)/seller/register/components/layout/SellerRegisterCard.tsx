@@ -11,6 +11,7 @@ interface SellerRegisterCardProps {
     isLastStep: boolean;
     saving: boolean;
     submitted: boolean;
+    showSaveDraft: boolean;
     primaryDisabled: boolean;
     children: ReactNode;
     onBack: () => void;
@@ -26,6 +27,7 @@ export function SellerRegisterCard({
     isLastStep,
     saving,
     submitted,
+    showSaveDraft,
     primaryDisabled,
     children,
     onBack,
@@ -61,15 +63,17 @@ export function SellerRegisterCard({
                         Quay lại
                     </Button>
                     <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="h-10 rounded-full px-4"
-                            disabled={saving}
-                            onClick={onSaveDraft}
-                        >
-                            Lưu nháp
-                        </Button>
+                        {showSaveDraft ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-10 rounded-full px-4"
+                                disabled={saving}
+                                onClick={onSaveDraft}
+                            >
+                                Lưu nháp
+                            </Button>
+                        ) : null}
                         <Button
                             type="button"
                             className="h-10 rounded-full px-5 shadow-md"
@@ -79,7 +83,9 @@ export function SellerRegisterCard({
                             {isLastStep
                                 ? saving
                                     ? 'Đang gửi...'
-                                    : 'Gửi hồ sơ duyệt'
+                                    : showSaveDraft
+                                      ? 'Gửi hồ sơ duyệt'
+                                      : 'Gửi lại hồ sơ'
                                 : 'Tiếp tục'}
                             {isLastStep ? (
                                 <CheckCircle2 className="size-4" />

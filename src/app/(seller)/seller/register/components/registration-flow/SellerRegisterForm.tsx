@@ -16,6 +16,7 @@ export function SellerRegisterForm() {
         formValues,
         saving,
         submitted,
+        editingSubmittedApplication,
         loadingApplication,
         applicationStatus,
         totalSteps,
@@ -28,6 +29,7 @@ export function SellerRegisterForm() {
         updateFormSection,
         handleSaveDraft,
         handlePrimaryAction,
+        handleEditSubmittedApplication,
         handleAcceptedTermsChange,
     } = useSellerRegisterFlow();
     const activeStep =
@@ -63,13 +65,17 @@ export function SellerRegisterForm() {
                         isLastStep={isLastStep}
                         saving={saving}
                         submitted={submitted}
+                        showSaveDraft={!editingSubmittedApplication}
                         primaryDisabled={!isCurrentStepValid}
                         onBack={() => goToStep(currentStep - 1)}
                         onSaveDraft={handleSaveDraft}
                         onPrimaryAction={handlePrimaryAction}
                     >
                         {submitted ? (
-                            <SubmissionSuccess status={applicationStatus} />
+                            <SubmissionSuccess
+                                status={applicationStatus}
+                                onEdit={handleEditSubmittedApplication}
+                            />
                         ) : (
                             <SellerRegisterStepContent
                                 currentStep={currentStep}
