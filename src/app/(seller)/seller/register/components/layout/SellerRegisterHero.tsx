@@ -1,11 +1,13 @@
 import { CheckCircle2, FileText } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import type { SellerApplicationStatus } from '@/services/seller';
 
 interface SellerRegisterHeroProps {
     currentStep: number;
     isLastStep: boolean;
     totalSteps: number;
+    applicationStatus: SellerApplicationStatus | null;
 }
 
 // Banner mở đầu chỉ giữ thông tin định hướng, tránh chiếm chỗ của form đăng ký chính bên dưới.
@@ -13,7 +15,10 @@ export function SellerRegisterHero({
     currentStep,
     isLastStep,
     totalSteps,
+    applicationStatus,
 }: SellerRegisterHeroProps) {
+    const status = getSellerApplicationStatusView(applicationStatus, isLastStep);
+
     return (
         <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
             <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-center">
@@ -38,10 +43,10 @@ export function SellerRegisterHero({
                         </span>
                         <div>
                             <p className="text-sm font-semibold">
-                                Hồ sơ bản nháp
+                                {status.title}
                             </p>
                             <p className="text-xs text-zinc-300">
-                                Đang ở bước {currentStep + 1} / {totalSteps}
+                                Bước {currentStep + 1} / {totalSteps}
                             </p>
                         </div>
                     </div>
@@ -49,10 +54,14 @@ export function SellerRegisterHero({
                     <div className="space-y-2 p-3 text-sm">
                         <StatusRow
                             label="Thông tin hiện tại"
-                            value={isLastStep ? 'Sẵn sàng gửi' : 'Đang hoàn thiện'}
-                            highlight={isLastStep}
+                            value={status.progress}
+                            highlight={isLastStep || status.highlight}
                         />
-                        <StatusRow label="Trạng thái" value="Chưa gửi duyệt" />
+                        <StatusRow
+                            label="Trạng thái"
+                            value={status.label}
+                            highlight={status.highlight}
+                        />
                     </div>
                 </div>
             </div>
@@ -82,4 +91,44 @@ function StatusRow({ label, value, highlight = false }: StatusRowProps) {
             </span>
         </div>
     );
+}
+
+// Gom label trạng thái ở một nơi để hero không phải biết chi tiết enum backend đang được đặt tên thế nào.
+function getSellerApplicationStatusView(
+    status: SellerApplicationStatus | null,
+    isLastStep: boolean,
+) {
+    if (status === 'pending_review') {
+        return {
+            title: 'Hồ sơ đang chờ duyệt',
+            progress: 'Đã gửi đầy đủ',
+            label: 'Chờ duyệt',
+            highlight: true,
+        };
+    }
+
+    if (status === 'approved') {
+        return {
+            title: 'Hồ sơ đã được duyệt',
+            progress: 'Sẵn sàng bán hàng',
+            label: 'Đã duyệt',
+            highlight: true,
+        };
+    }
+
+    if (status === 'rejected') {
+        return {
+            title: 'Hồ sơ cần bổ sung',
+            progress: 'Đang chỉnh sửa',
+            label: 'Cần cập nhật',
+            highlight: false,
+        };
+    }
+
+    return {
+        title: 'Hồ sơ bản nháp',
+        progress: isLastStep ? 'Sẵn sàng gửi' : 'Đang hoàn thiện',
+        label: 'Chưa gửi duyệt',
+        highlight: false,
+    };
 }

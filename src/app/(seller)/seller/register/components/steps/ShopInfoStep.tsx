@@ -50,6 +50,8 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
             })),
         [categories],
     );
+    const logoImageUrl = logoPreviewUrl ?? values.logoUrl;
+    const hasLogo = Boolean(logoImageUrl);
 
     useEffect(() => {
         return () => {
@@ -217,9 +219,9 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
 
             <div className="self-start rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-4">
                 <div className="relative flex h-32 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white">
-                    {logoPreviewUrl ? (
+                    {logoImageUrl ? (
                         <img
-                            src={logoPreviewUrl}
+                            src={logoImageUrl}
                             alt="Logo shop đã chọn"
                             className="h-full w-full object-cover"
                         />
@@ -232,7 +234,7 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
                             {logoUploadProgress}%
                         </div>
                     ) : null}
-                    {logoPreviewUrl && !logoUploading ? (
+                    {hasLogo && !logoUploading ? (
                         <button
                             type="button"
                             aria-label="Xóa logo đã chọn"
@@ -280,7 +282,7 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
                 >
                     {logoUploading
                         ? 'Đang tải...'
-                        : logoPreviewUrl
+                        : hasLogo
                           ? 'Đổi ảnh'
                           : 'Chọn ảnh'}
                 </label>

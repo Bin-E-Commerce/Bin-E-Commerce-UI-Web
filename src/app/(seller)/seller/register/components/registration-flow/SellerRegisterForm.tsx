@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import { SELLER_REGISTER_STEPS } from '../../constants/seller-register-steps.constant';
 import { useSellerRegisterFlow } from '../../hooks/useSellerRegisterFlow';
 import { SellerRegisterCard } from '../layout/SellerRegisterCard';
@@ -15,6 +16,8 @@ export function SellerRegisterForm() {
         formValues,
         saving,
         submitted,
+        loadingApplication,
+        applicationStatus,
         totalSteps,
         isLastStep,
         progressValue,
@@ -38,42 +41,77 @@ export function SellerRegisterForm() {
                 currentStep={currentStep}
                 isLastStep={isLastStep}
                 totalSteps={totalSteps}
+                applicationStatus={applicationStatus}
             />
 
-            <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-                <SellerRegisterStepper
-                    steps={SELLER_REGISTER_STEPS}
-                    currentStep={currentStep}
-                    progressValue={progressValue}
-                    maxReachableStep={maxReachableStep}
-                    onStepChange={goToStep}
-                />
+            {loadingApplication ? (
+                <SellerRegisterLoadingState />
+            ) : (
+                <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+                    <SellerRegisterStepper
+                        steps={SELLER_REGISTER_STEPS}
+                        currentStep={currentStep}
+                        progressValue={progressValue}
+                        maxReachableStep={maxReachableStep}
+                        onStepChange={goToStep}
+                    />
 
-                <SellerRegisterCard
-                    step={activeStep}
-                    currentStep={currentStep}
-                    totalSteps={totalSteps}
-                    isLastStep={isLastStep}
-                    saving={saving}
-                    submitted={submitted}
-                    primaryDisabled={!isCurrentStepValid}
-                    onBack={() => goToStep(currentStep - 1)}
-                    onSaveDraft={handleSaveDraft}
-                    onPrimaryAction={handlePrimaryAction}
-                >
-                    {submitted ? (
-                        <SubmissionSuccess />
-                    ) : (
-                        <SellerRegisterStepContent
-                            currentStep={currentStep}
-                            formValues={formValues}
-                            fieldErrors={currentStepErrors}
-                            updateFormSection={updateFormSection}
-                            onAcceptedTermsChange={handleAcceptedTermsChange}
-                        />
-                    )}
-                </SellerRegisterCard>
-            </div>
+                    <SellerRegisterCard
+                        step={activeStep}
+                        currentStep={currentStep}
+                        totalSteps={totalSteps}
+                        isLastStep={isLastStep}
+                        saving={saving}
+                        submitted={submitted}
+                        primaryDisabled={!isCurrentStepValid}
+                        onBack={() => goToStep(currentStep - 1)}
+                        onSaveDraft={handleSaveDraft}
+                        onPrimaryAction={handlePrimaryAction}
+                    >
+                        {submitted ? (
+                            <SubmissionSuccess status={applicationStatus} />
+                        ) : (
+                            <SellerRegisterStepContent
+                                currentStep={currentStep}
+                                formValues={formValues}
+                                fieldErrors={currentStepErrors}
+                                updateFormSection={updateFormSection}
+                                onAcceptedTermsChange={handleAcceptedTermsChange}
+                            />
+                        )}
+                    </SellerRegisterCard>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// Skeleton giữ bố cục ổn định trong lúc FE hỏi backend xem user đã có hồ sơ seller hay chưa.
+function SellerRegisterLoadingState() {
+    return (
+        <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <aside className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-2 w-full" />
+                <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                        <Skeleton key={index} className="h-16 w-full rounded-lg" />
+                    ))}
+                </div>
+            </aside>
+
+            <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="mt-3 h-8 w-56" />
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                    <Skeleton className="h-14 rounded-lg" />
+                    <Skeleton className="h-14 rounded-lg" />
+                    <Skeleton className="h-14 rounded-lg" />
+                    <Skeleton className="h-14 rounded-lg" />
+                </div>
+                <Skeleton className="mt-5 h-28 rounded-lg" />
+            </section>
         </div>
     );
 }

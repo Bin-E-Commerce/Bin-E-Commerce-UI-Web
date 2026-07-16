@@ -21,7 +21,7 @@ export function ReviewStep({
                     items={[
                         'Tên shop và slug đã sẵn sàng',
                         'Đã chọn ngành hàng chính',
-                        'Logo có thể bổ sung sau',
+                        'Logo shop đã được tải lên',
                     ]}
                 />
                 <ReviewBlock

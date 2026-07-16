@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     useForm,
     useWatch,
@@ -10,7 +10,7 @@ import {
 } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { sellerService } from '@/services/seller';
+import { sellerService, type SellerApplicationStatus } from '@/services/seller';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { SELLER_REGISTER_STEPS } from '../constants/seller-register-steps.constant';
 import {
@@ -24,9 +24,13 @@ import type {
     SellerRegisterFormValues,
     SellerRegisterObjectSection,
 } from '../types/seller-register-form.type';
+import {
+    isSubmittedSellerApplication,
+    toSellerRegisterFormValues,
+} from '../utils/seller-application-to-form';
 import { toSellerApplicationPayload } from '../utils/seller-register-payload';
 
-// Hook điều phối toàn bộ luồng đăng ký seller, dùng React Hook Form giữ state và Zod giữ rule validate.
+// Hook điều phối toàn bộ luồng đăng ký seller: form state, hydrate hồ sơ cũ, validate từng bước và gọi API.
 export function useSellerRegisterFlow() {
     const form = useForm<SellerRegisterFormValues>({
         resolver: zodResolver(sellerRegisterSchema),
@@ -40,11 +44,17 @@ export function useSellerRegisterFlow() {
     );
     const [saving, setSaving] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [loadingApplication, setLoadingApplication] = useState(true);
+    const [applicationStatus, setApplicationStatus] =
+        useState<SellerApplicationStatus | null>(null);
+    const loadedApplicationRef = useRef(false);
+
     const totalSteps = SELLER_REGISTER_STEPS.length;
     const isLastStep = currentStep === totalSteps - 1;
     const watchedValues = useWatch({ control: form.control });
     const { touchedFields } = form.formState;
     const formValues = watchedValues as SellerRegisterFormValues;
+
     const progressValue = useMemo(
         () => ((currentStep + 1) / totalSteps) * 100,
         [currentStep, totalSteps],
@@ -67,6 +77,45 @@ export function useSellerRegisterFlow() {
         [attemptedSteps, currentStep, currentStepValidation.errors, touchedFields],
     );
 
+    useEffect(() => {
+        // Chỉ hydrate một lần khi vào trang để không ghi đè dữ liệu user đang sửa sau đó.
+        if (loadedApplicationRef.current) return;
+        loadedApplicationRef.current = true;
+
+        const loadExistingApplication = async () => {
+            setLoadingApplication(true);
+
+            try {
+                const application = await sellerService.getMyApplication();
+
+                if (!application) {
+                    setApplicationStatus(null);
+                    return;
+                }
+
+                form.reset(toSellerRegisterFormValues(application));
+                setApplicationStatus(application.status);
+
+                // Hồ sơ đã gửi hoặc đã duyệt phải hiện màn hình trạng thái sau refresh, không mở lại form nhập từ đầu.
+                if (isSubmittedSellerApplication(application)) {
+                    setSubmitted(true);
+                    setCurrentStep(totalSteps - 1);
+                    return;
+                }
+
+                // Hồ sơ nháp hoặc bị từ chối được nạp lại để người dùng tiếp tục chỉnh sửa.
+                setSubmitted(false);
+                setCurrentStep(0);
+            } catch {
+                toast.error('Không tải được hồ sơ người bán. Vui lòng thử lại.');
+            } finally {
+                setLoadingApplication(false);
+            }
+        };
+
+        void loadExistingApplication();
+    }, [form, totalSteps]);
+
     // Cập nhật một nhóm dữ liệu form bằng setValue để React Hook Form tự đánh dấu dirty/touched và chạy resolver.
     const updateFormSection = <T extends SellerRegisterObjectSection>(
         section: T,
@@ -88,6 +137,7 @@ export function useSellerRegisterFlow() {
     const goToStep = (step: number) => {
         const values = form.getValues();
         const targetStep = clampStep(step, totalSteps);
+
         if (targetStep <= currentStep) {
             setCurrentStep(targetStep);
             return;
@@ -105,13 +155,15 @@ export function useSellerRegisterFlow() {
         setCurrentStep(targetStep);
     };
 
-    // Lưu nháp qua seller-service để user quay lại vẫn còn dữ liệu đã nhập.
+    // Lưu nháp qua seller-service để user quay lại hoặc refresh vẫn còn dữ liệu đã nhập.
     const handleSaveDraft = async () => {
         setSaving(true);
+
         try {
-            await sellerService.saveDraft(
+            const application = await sellerService.saveDraft(
                 toSellerApplicationPayload(form.getValues()),
             );
+            setApplicationStatus(application.status);
             toast.success('Đã lưu nháp hồ sơ người bán.');
         } catch (err) {
             toast.error(getErrorMessage(err));
@@ -124,6 +176,7 @@ export function useSellerRegisterFlow() {
     const handlePrimaryAction = async () => {
         const values = form.getValues();
         const validation = validateSellerRegisterStep(values, currentStep);
+
         setAttemptedSteps((current) => new Set(current).add(currentStep));
         await triggerStepFields(form, currentStep);
 
@@ -138,8 +191,12 @@ export function useSellerRegisterFlow() {
         }
 
         setSaving(true);
+
         try {
-            await sellerService.submit(toSellerApplicationPayload(values));
+            const application = await sellerService.submit(
+                toSellerApplicationPayload(values),
+            );
+            setApplicationStatus(application.status);
             setSubmitted(true);
             toast.success('Đã gửi hồ sơ. Vui lòng chờ duyệt.');
         } catch (err) {
@@ -163,6 +220,8 @@ export function useSellerRegisterFlow() {
         formValues,
         saving,
         submitted,
+        loadingApplication,
+        applicationStatus,
         totalSteps,
         isLastStep,
         progressValue,
