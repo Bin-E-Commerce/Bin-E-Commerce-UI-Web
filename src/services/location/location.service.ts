@@ -15,5 +15,10 @@ export const locationService = {
                 { params },
             )
             .then((response) => response.data),
-};
 
+    // Lấy một địa điểm theo id để các màn hình chi tiết có thể hiển thị tên thay vì UUID kỹ thuật.
+    getLocationById: (id: string) =>
+        publicAxios
+            .get<LocationDto>(`${API_VERSION}/locations/${id}`)
+            .then((response) => response.data),
+};

@@ -5,6 +5,7 @@ import type {
     ListSellerApplicationsParams,
     ListSellerApplicationsResponse,
 } from './types/admin-seller-applications.types';
+import type { SellerApplicationDto } from '@/services/seller';
 
 // Chuẩn hóa query trước khi gọi API để không gửi các giá trị rỗng làm backend hiểu sai filter.
 function buildListSellerApplicationsParams(
@@ -33,6 +34,14 @@ export const adminSellerApplicationsService = {
             .get<ListSellerApplicationsResponse>(
                 `${API_VERSION}/seller/applications/admin`,
                 { params: buildListSellerApplicationsParams(params) },
+            )
+            .then((response) => response.data),
+
+    // Lấy một hồ sơ theo id để trang chi tiết hiển thị đủ dữ liệu thay vì phụ thuộc vào dòng trong bảng.
+    getById: (applicationId: string) =>
+        authorizedAxios
+            .get<SellerApplicationDto>(
+                `${API_VERSION}/seller/applications/admin/${applicationId}`,
             )
             .then((response) => response.data),
 };
