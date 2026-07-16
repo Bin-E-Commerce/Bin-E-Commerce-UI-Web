@@ -1,6 +1,7 @@
 import { FileCheck2 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
+import type { SellerVerificationDocumentDto } from '@/services/seller';
 import type {
     SellerRegisterFieldErrors,
     SellerRegisterFormValues,
@@ -23,6 +24,32 @@ export function SellerInfoStep({
     onChange,
 }: SellerInfoStepProps) {
     const isBusiness = values.profileType === 'business';
+    const documents = values.documents as Record<
+        string,
+        SellerVerificationDocumentDto | undefined
+    >;
+
+    // Cập nhật một tài liệu trong object documents mà vẫn giữ các tài liệu khác đã upload.
+    const handleDocumentChange = (
+        key: string,
+        document: SellerVerificationDocumentDto | undefined,
+    ) => {
+        const nextDocuments: Record<string, SellerVerificationDocumentDto> = {};
+
+        Object.entries(documents).forEach(([documentKey, currentDocument]) => {
+            if (currentDocument) {
+                nextDocuments[documentKey] = currentDocument;
+            }
+        });
+
+        if (document) {
+            nextDocuments[key] = document;
+        } else {
+            delete nextDocuments[key];
+        }
+
+        onChange({ documents: nextDocuments });
+    };
 
     return (
         <div className="space-y-5">
@@ -54,7 +81,7 @@ export function SellerInfoStep({
                 <p className="mt-1 text-sm leading-6 text-zinc-600">
                     {isBusiness
                         ? 'Vui lòng nhập đúng tên pháp lý, mã số thuế và người đại diện để hồ sơ được xử lý thuận lợi.'
-                        : 'Vui lòng nhập đúng họ tên, số CCCD và thông tin liên hệ để hồ sơ được xử lý thuận lợi.'}
+                        : 'Vui lòng nhập đúng họ tên, số CCCD và tải đủ hai mặt CCCD để admin đối chiếu hồ sơ.'}
                 </p>
             </div>
 
@@ -216,8 +243,7 @@ export function SellerInfoStep({
                         </p>
                         <p className="mt-1 text-sm leading-6 text-zinc-600">
                             Tải lên giấy tờ rõ nét, còn hiệu lực và trùng với
-                            thông tin bạn đã nhập để rút ngắn thời gian duyệt
-                            hồ sơ.
+                            thông tin đã nhập để rút ngắn thời gian duyệt hồ sơ.
                         </p>
                     </div>
                 </div>
@@ -229,11 +255,21 @@ export function SellerInfoStep({
                                 id="businessLicense"
                                 title="Giấy đăng ký kinh doanh"
                                 description="Đối chiếu tên pháp lý và mã số thuế."
+                                value={documents.businessLicense}
+                                error={errors['seller.documents.businessLicense']}
+                                onChange={(document) =>
+                                    handleDocumentChange('businessLicense', document)
+                                }
                             />
                             <VerificationUploadCard
                                 id="representativeDocument"
                                 title="Giấy tờ người đại diện"
                                 description="CCCD hoặc giấy ủy quyền của người vận hành."
+                                value={documents.representativeDocument}
+                                error={errors['seller.documents.representativeDocument']}
+                                onChange={(document) =>
+                                    handleDocumentChange('representativeDocument', document)
+                                }
                             />
                         </>
                     ) : (
@@ -242,11 +278,21 @@ export function SellerInfoStep({
                                 id="citizenIdFront"
                                 title="CCCD mặt trước"
                                 description="Đối chiếu họ tên và số CCCD."
+                                value={documents.citizenIdFront}
+                                error={errors['seller.documents.citizenIdFront']}
+                                onChange={(document) =>
+                                    handleDocumentChange('citizenIdFront', document)
+                                }
                             />
                             <VerificationUploadCard
                                 id="citizenIdBack"
                                 title="CCCD mặt sau"
                                 description="Bổ sung thông tin kiểm tra hồ sơ cá nhân."
+                                value={documents.citizenIdBack}
+                                error={errors['seller.documents.citizenIdBack']}
+                                onChange={(document) =>
+                                    handleDocumentChange('citizenIdBack', document)
+                                }
                             />
                         </>
                     )}

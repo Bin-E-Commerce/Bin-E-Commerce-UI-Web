@@ -3,6 +3,7 @@ export type MediaUploadPurpose =
     | 'product_image'
     | 'shop_avatar'
     | 'shop_cover'
+    | 'seller_document'
     | 'review_image'
     | 'chat_image';
 
@@ -51,4 +52,3 @@ export interface ConfirmAvatarResponse {
         deletedCount: number;
     };
 }
-

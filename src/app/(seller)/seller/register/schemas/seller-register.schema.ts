@@ -14,6 +14,14 @@ const BUSINESS_MODELS = new Set(['retail', 'brand', 'distributor']);
 const ACCOUNT_TYPES = ['personal', 'business'] as const;
 const PROFILE_TYPES = ['individual', 'business'] as const;
 
+const sellerDocumentSchema = z.object({
+    assetId: z.string().min(1),
+    url: z.string().url(),
+    fileName: z.string().min(1),
+    contentType: z.string().min(1),
+    uploadedAt: z.string().min(1),
+});
+
 const shopSchema = z.object({
     name: trimmedStringSchema({
         min: 3,
@@ -67,10 +75,10 @@ const sellerInfoSchema = z
             .max(120, 'Chức vụ / vai trò tối đa 120 ký tự.'),
         phone: vietnamPhoneSchema('Số điện thoại người bán không hợp lệ.'),
         email: z.string().trim().email('Email liên hệ không hợp lệ.'),
-        documents: z.record(z.string(), z.unknown()),
+        documents: z.record(z.string(), sellerDocumentSchema),
     })
     .superRefine((value, ctx) => {
-        // Backend yêu cầu cá nhân dùng CCCD, doanh nghiệp dùng mã số thuế; schema xử lý điều kiện này ở cùng một nơi.
+        // Cá nhân dùng CCCD, doanh nghiệp dùng mã số thuế; kiểm tra ở FE để người dùng sửa ngay tại bước nhập.
         if (
             value.profileType === 'business' &&
             !/^(\d{10}|\d{13})$/.test(value.taxCode)
@@ -91,6 +99,38 @@ const sellerInfoSchema = z
                 path: ['citizenId'],
                 message: 'Số CCCD cần gồm 9 hoặc 12 số.',
             });
+        }
+
+        // Hồ sơ cá nhân phải có đủ hai mặt CCCD để admin đối chiếu trực tiếp trên trang chi tiết.
+        if (value.profileType === 'individual') {
+            requireDocument(
+                value.documents,
+                'citizenIdFront',
+                'Vui lòng tải ảnh CCCD mặt trước.',
+                ctx,
+            );
+            requireDocument(
+                value.documents,
+                'citizenIdBack',
+                'Vui lòng tải ảnh CCCD mặt sau.',
+                ctx,
+            );
+        }
+
+        // Hồ sơ doanh nghiệp cần giấy phép và giấy tờ người đại diện để kiểm tra pháp nhân.
+        if (value.profileType === 'business') {
+            requireDocument(
+                value.documents,
+                'businessLicense',
+                'Vui lòng tải giấy đăng ký kinh doanh.',
+                ctx,
+            );
+            requireDocument(
+                value.documents,
+                'representativeDocument',
+                'Vui lòng tải giấy tờ người đại diện.',
+                ctx,
+            );
         }
     });
 
@@ -263,6 +303,22 @@ export function validateSellerRegisterStep(
         message: firstMessage,
         errors,
     };
+}
+
+// Thêm lỗi đúng vào từng document key để card upload hiển thị lỗi ngay bên dưới ô thiếu ảnh.
+function requireDocument(
+    documents: Record<string, z.infer<typeof sellerDocumentSchema>>,
+    key: string,
+    message: string,
+    ctx: z.RefinementCtx,
+) {
+    if (!documents[key]?.url) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['documents', key],
+            message,
+        });
+    }
 }
 
 // Chuyển issue path của Zod thành dạng dot-path đang được các Field component sử dụng.

@@ -7,6 +7,14 @@ export type SellerApplicationStatus =
 export type SellerProfileType = 'individual' | 'business';
 export type PayoutAccountType = 'personal' | 'business';
 
+export interface SellerVerificationDocumentDto {
+    assetId: string;
+    url: string;
+    fileName: string;
+    contentType: string;
+    uploadedAt: string;
+}
+
 export interface SellerApplicationPayload {
     shop?: {
         name?: string;
@@ -25,7 +33,7 @@ export interface SellerApplicationPayload {
         representativeRole?: string;
         phone?: string;
         email?: string;
-        documents?: Record<string, unknown>;
+        documents?: Record<string, SellerVerificationDocumentDto>;
     };
     pickupAddress?: {
         contactName?: string;
@@ -70,7 +78,7 @@ export interface SellerApplicationDto {
         representativeRole: string | null;
         phone: string | null;
         email: string | null;
-        documents: Record<string, unknown>;
+        documents: Record<string, SellerVerificationDocumentDto>;
     };
     pickupAddress: {
         contactName: string | null;
