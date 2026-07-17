@@ -6,10 +6,46 @@ import * as React from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-function AlertDialog(
-    props: React.ComponentProps<typeof AlertDialogPrimitive.Root>,
-) {
-    return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+const AlertDialogDismissContext = React.createContext<(() => void) | null>(null);
+
+function AlertDialog({
+    open,
+    defaultOpen,
+    onOpenChange,
+    ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
+    const [internalOpen, setInternalOpen] = React.useState(defaultOpen ?? false);
+    const isControlled = open !== undefined;
+    const resolvedOpen = isControlled ? open : internalOpen;
+
+    // Đồng bộ một luồng đóng/mở cho cả dialog có state bên ngoài và dialog tự quản lý state.
+    const handleOpenChange = React.useCallback(
+        (nextOpen: boolean) => {
+            if (!isControlled) {
+                setInternalOpen(nextOpen);
+            }
+
+            onOpenChange?.(nextOpen);
+        },
+        [isControlled, onOpenChange],
+    );
+
+    // Overlay dùng callback này để yêu cầu Root đóng mà không phụ thuộc vào vị trí của Content.
+    const dismiss = React.useCallback(
+        () => handleOpenChange(false),
+        [handleOpenChange],
+    );
+
+    return (
+        <AlertDialogDismissContext.Provider value={dismiss}>
+            <AlertDialogPrimitive.Root
+                data-slot="alert-dialog"
+                open={resolvedOpen}
+                onOpenChange={handleOpenChange}
+                {...props}
+            />
+        </AlertDialogDismissContext.Provider>
+    );
 }
 
 function AlertDialogTrigger(
@@ -36,8 +72,20 @@ function AlertDialogPortal(
 
 function AlertDialogOverlay({
     className,
+    onClick,
     ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+    const dismiss = React.useContext(AlertDialogDismissContext);
+
+    // AlertDialog của Radix mặc định chặn outside-click; overlay chủ động phát yêu cầu đóng về Root dùng chung.
+    const handleClick: React.MouseEventHandler<HTMLDivElement> = (event) => {
+        onClick?.(event);
+
+        if (!event.defaultPrevented) {
+            dismiss?.();
+        }
+    };
+
     return (
         <AlertDialogPrimitive.Overlay
             data-slot="alert-dialog-overlay"
@@ -45,6 +93,7 @@ function AlertDialogOverlay({
                 'fixed inset-0 z-50 bg-black/45 backdrop-blur-sm data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
                 className,
             )}
+            onClick={handleClick}
             {...props}
         />
     );

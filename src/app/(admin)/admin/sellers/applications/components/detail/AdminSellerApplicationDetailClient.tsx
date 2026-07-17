@@ -16,6 +16,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useSessionPermission } from '@/services/auth/access';
 import type {
     SellerApplicationDto,
     SellerVerificationDocumentDto,
@@ -35,6 +36,7 @@ import {
     AdminSellerApplicationDetailField,
     AdminSellerApplicationDetailSection,
 } from './AdminSellerApplicationDetailSection';
+import { RejectSellerApplicationDialog } from './RejectSellerApplicationDialog';
 
 interface AdminSellerApplicationDetailClientProps {
     applicationId: string;
@@ -101,6 +103,11 @@ function AdminSellerApplicationDetailContent({
     refreshing,
     onRefresh,
 }: AdminSellerApplicationDetailContentProps) {
+    // Permission lấy từ session do backend resolve; việc ẩn nút chỉ phục vụ UX, endpoint vẫn được gateway và seller-service bảo vệ độc lập.
+    const canRejectApplication = useSessionPermission(
+        'seller.application.reject',
+    );
+
     return (
         <div className="space-y-5">
             <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -126,6 +133,13 @@ function AdminSellerApplicationDetailContent({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                        {application.status === 'pending_review' &&
+                        canRejectApplication ? (
+                            <RejectSellerApplicationDialog
+                                applicationId={application.id}
+                                shopName={getApplicationShopDisplayName(application)}
+                            />
+                        ) : null}
                         <Link
                             href="/admin/sellers/applications"
                             className={cn(buttonVariants({ variant: 'outline' }), 'rounded-full')}
@@ -506,6 +520,10 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
                     value={<AdminSellerApplicationStatusBadge status={application.status} />}
                 />
                 <AdminSellerApplicationDetailField
+                    label="Lần gửi hồ sơ"
+                    value={`Lần ${Math.max(application.submissionRevision, 1)}`}
+                />
+                <AdminSellerApplicationDetailField
                     label="Tạo hồ sơ"
                     value={formatAdminDateTime(application.createdAt)}
                 />
@@ -526,6 +544,45 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
                     value={formatNullableText(application.reviewNote)}
                     muted={!application.reviewNote}
                 />
+                {application.correctionTargets.length > 0 ? (
+                    <AdminSellerApplicationDetailField
+                        label="Nội dung cần chỉnh sửa"
+                        value={
+                            <div className="flex flex-wrap gap-2">
+                                {application.correctionTargets.includes('shop_information') ? (
+                                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800">
+                                        Thông tin shop
+                                    </span>
+                                ) : null}
+                                {application.correctionTargets.includes('shop_logo') ? (
+                                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800">
+                                        Logo shop
+                                    </span>
+                                ) : null}
+                                {application.correctionTargets.includes('seller_identity') ? (
+                                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800">
+                                        Thông tin định danh
+                                    </span>
+                                ) : null}
+                                {application.correctionTargets.includes('verification_documents') ? (
+                                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800">
+                                        Giấy tờ xác minh
+                                    </span>
+                                ) : null}
+                                {application.correctionTargets.includes('pickup_address') ? (
+                                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800">
+                                        Địa chỉ lấy hàng
+                                    </span>
+                                ) : null}
+                                {application.correctionTargets.includes('payout_information') ? (
+                                    <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-800">
+                                        Thông tin thanh toán
+                                    </span>
+                                ) : null}
+                            </div>
+                        }
+                    />
+                ) : null}
             </div>
         </AdminSellerApplicationDetailSection>
     );

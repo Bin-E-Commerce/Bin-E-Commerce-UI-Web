@@ -1,10 +1,12 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { Check, CircleAlert } from 'lucide-react';
 
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { SellerRegisterStep } from '../../types/seller-register-step.type';
+import type { SellerApplicationCorrectionTarget } from '@/services/seller';
+import { getCorrectionTargetsForStep } from '../../utils/seller-correction-progress';
 
 interface SellerRegisterStepperProps {
     steps: SellerRegisterStep[];
@@ -12,6 +14,8 @@ interface SellerRegisterStepperProps {
     progressValue: number;
     maxReachableStep: number;
     onStepChange: (step: number) => void;
+    correctionTargets: SellerApplicationCorrectionTarget[];
+    changedCorrectionTargets: SellerApplicationCorrectionTarget[];
 }
 
 // Stepper hiển thị tiến độ và khóa bước sau cho tới khi các bước trước đó hợp lệ.
@@ -21,6 +25,8 @@ export function SellerRegisterStepper({
     progressValue,
     maxReachableStep,
     onStepChange,
+    correctionTargets,
+    changedCorrectionTargets,
 }: SellerRegisterStepperProps) {
     return (
         <aside className="space-y-5 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm lg:sticky lg:top-24">
@@ -51,7 +57,17 @@ export function SellerRegisterStepper({
                 {steps.map((step, index) => {
                     const Icon = step.icon;
                     const active = currentStep === index;
-                    const completed = currentStep > index;
+                    const stepCorrectionTargets = getCorrectionTargetsForStep(
+                        correctionTargets,
+                        index,
+                    );
+                    const requiresCorrection = stepCorrectionTargets.length > 0;
+                    const correctionCompleted = stepCorrectionTargets.every((target) =>
+                        changedCorrectionTargets.includes(target),
+                    );
+                    const completed =
+                        currentStep > index &&
+                        (!requiresCorrection || correctionCompleted);
                     const disabled = index > maxReachableStep;
 
                     return (
@@ -65,6 +81,8 @@ export function SellerRegisterStepper({
                                 'flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors',
                                 active
                                     ? 'border-zinc-950 bg-zinc-950 text-white'
+                                    : requiresCorrection && !correctionCompleted
+                                      ? 'border-red-200 bg-red-50 text-red-950 hover:border-red-300 hover:bg-red-50'
                                     : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50',
                                 disabled
                                     ? 'cursor-not-allowed opacity-50 hover:border-zinc-200 hover:bg-white'
@@ -78,15 +96,31 @@ export function SellerRegisterStepper({
                                     completed ? 'bg-zinc-950 text-white' : '',
                                 )}
                             >
-                                {completed ? (
+                                {requiresCorrection && !correctionCompleted ? (
+                                    <CircleAlert className="size-4 text-red-600" />
+                                ) : completed ? (
                                     <Check className="size-4" />
                                 ) : (
                                     <Icon className="size-4" />
                                 )}
                             </span>
-                            <span className="min-w-0">
-                                <span className="block text-sm font-semibold">
-                                    {step.title}
+                            <span className="min-w-0 flex-1">
+                                <span className="flex flex-wrap items-center justify-between gap-2 text-sm font-semibold">
+                                    <span>{step.title}</span>
+                                    {requiresCorrection ? (
+                                        <span
+                                            className={cn(
+                                                'text-[11px] font-medium',
+                                                active
+                                                    ? 'text-zinc-300'
+                                                    : correctionCompleted
+                                                      ? 'text-zinc-600'
+                                                      : 'text-red-600',
+                                            )}
+                                        >
+                                            {correctionCompleted ? 'Đã sửa' : 'Cần sửa'}
+                                        </span>
+                                    ) : null}
                                 </span>
                                 <span
                                     className={cn(

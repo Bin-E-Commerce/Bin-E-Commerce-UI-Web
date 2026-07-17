@@ -3,6 +3,9 @@ import type {
     SellerRegisterFormValues,
     SellerRegisterObjectSection,
 } from '../../types/seller-register-form.type';
+import type { SellerApplicationCorrectionTarget } from '@/services/seller';
+import type { VerificationDocumentReplacementProgress } from '../../utils/seller-correction-progress';
+import { SellerStepCorrectionGuidance } from '../status/SellerStepCorrectionGuidance';
 import { PaymentStep } from './PaymentStep';
 import { PickupAddressStep } from './PickupAddressStep';
 import { ReviewStep } from './ReviewStep';
@@ -18,6 +21,10 @@ interface SellerRegisterStepContentProps {
         patch: Partial<SellerRegisterFormValues[T]>,
     ) => void;
     onAcceptedTermsChange: (acceptedTerms: boolean) => void;
+    correctionTargets: SellerApplicationCorrectionTarget[];
+    changedCorrectionTargets: SellerApplicationCorrectionTarget[];
+    verificationDocumentProgress: VerificationDocumentReplacementProgress;
+    reviewNote: string | null;
 }
 
 // Điều phối nội dung từng bước để SellerRegisterForm không phải chứa toàn bộ UI chi tiết.
@@ -27,44 +34,70 @@ export function SellerRegisterStepContent({
     fieldErrors,
     updateFormSection,
     onAcceptedTermsChange,
+    correctionTargets,
+    changedCorrectionTargets,
+    verificationDocumentProgress,
+    reviewNote,
 }: SellerRegisterStepContentProps) {
+    const correctionGuidance = (
+        <SellerStepCorrectionGuidance
+            currentStep={currentStep}
+            correctionTargets={correctionTargets}
+            changedCorrectionTargets={changedCorrectionTargets}
+            verificationDocumentProgress={verificationDocumentProgress}
+            reviewNote={reviewNote}
+        />
+    );
+
     if (currentStep === 0) {
         return (
-            <ShopInfoStep
-                values={formValues.shop}
-                errors={fieldErrors}
-                onChange={(patch) => updateFormSection('shop', patch)}
-            />
+            <div className="space-y-5">
+                {correctionGuidance}
+                <ShopInfoStep
+                    values={formValues.shop}
+                    errors={fieldErrors}
+                    onChange={(patch) => updateFormSection('shop', patch)}
+                />
+            </div>
         );
     }
 
     if (currentStep === 1) {
         return (
-            <SellerInfoStep
-                values={formValues.seller}
-                errors={fieldErrors}
-                onChange={(patch) => updateFormSection('seller', patch)}
-            />
+            <div className="space-y-5">
+                {correctionGuidance}
+                <SellerInfoStep
+                    values={formValues.seller}
+                    errors={fieldErrors}
+                    onChange={(patch) => updateFormSection('seller', patch)}
+                />
+            </div>
         );
     }
 
     if (currentStep === 2) {
         return (
-            <PickupAddressStep
-                values={formValues.pickupAddress}
-                errors={fieldErrors}
-                onChange={(patch) => updateFormSection('pickupAddress', patch)}
-            />
+            <div className="space-y-5">
+                {correctionGuidance}
+                <PickupAddressStep
+                    values={formValues.pickupAddress}
+                    errors={fieldErrors}
+                    onChange={(patch) => updateFormSection('pickupAddress', patch)}
+                />
+            </div>
         );
     }
 
     if (currentStep === 3) {
         return (
-            <PaymentStep
-                values={formValues.payout}
-                errors={fieldErrors}
-                onChange={(patch) => updateFormSection('payout', patch)}
-            />
+            <div className="space-y-5">
+                {correctionGuidance}
+                <PaymentStep
+                    values={formValues.payout}
+                    errors={fieldErrors}
+                    onChange={(patch) => updateFormSection('payout', patch)}
+                />
+            </div>
         );
     }
 

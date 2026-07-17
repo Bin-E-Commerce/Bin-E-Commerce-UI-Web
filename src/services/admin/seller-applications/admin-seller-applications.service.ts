@@ -4,6 +4,7 @@ import authorizedAxios from '@/utils/authorizedAxios';
 import type {
     ListSellerApplicationsParams,
     ListSellerApplicationsResponse,
+    RejectSellerApplicationPayload,
 } from './types/admin-seller-applications.types';
 import type { SellerApplicationDto } from '@/services/seller';
 
@@ -42,6 +43,18 @@ export const adminSellerApplicationsService = {
         authorizedAxios
             .get<SellerApplicationDto>(
                 `${API_VERSION}/seller/applications/admin/${applicationId}`,
+            )
+            .then((response) => response.data),
+
+    // Gửi lệnh từ chối kèm lý do bắt buộc; backend mới là nơi quyết định permission và trạng thái có còn hợp lệ hay không.
+    reject: (
+        applicationId: string,
+        payload: RejectSellerApplicationPayload,
+    ) =>
+        authorizedAxios
+            .post<SellerApplicationDto>(
+                `${API_VERSION}/seller/applications/admin/${applicationId}/reject`,
+                payload,
             )
             .then((response) => response.data),
 };

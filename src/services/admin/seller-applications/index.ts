@@ -2,4 +2,5 @@ export { adminSellerApplicationsService } from './admin-seller-applications.serv
 export type {
     ListSellerApplicationsParams,
     ListSellerApplicationsResponse,
+    RejectSellerApplicationPayload,
 } from './types/admin-seller-applications.types';

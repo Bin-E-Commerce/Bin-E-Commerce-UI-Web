@@ -1,4 +1,5 @@
 import type {
+    SellerApplicationCorrectionTarget,
     SellerApplicationDto,
     SellerApplicationStatus,
 } from '@/services/seller';
@@ -18,4 +19,9 @@ export interface ListSellerApplicationsResponse {
         totalItems: number;
         totalPages: number;
     };
+}
+
+export interface RejectSellerApplicationPayload {
+    reason: string;
+    correctionTargets: SellerApplicationCorrectionTarget[];
 }

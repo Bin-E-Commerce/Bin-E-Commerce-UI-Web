@@ -6,6 +6,13 @@ export type SellerApplicationStatus =
 
 export type SellerProfileType = 'individual' | 'business';
 export type PayoutAccountType = 'personal' | 'business';
+export type SellerApplicationCorrectionTarget =
+    | 'shop_information'
+    | 'shop_logo'
+    | 'seller_identity'
+    | 'verification_documents'
+    | 'pickup_address'
+    | 'payout_information';
 
 export interface SellerVerificationDocumentDto {
     assetId: string;
@@ -61,6 +68,8 @@ export interface SellerApplicationDto {
     submittedAt: string | null;
     reviewedAt: string | null;
     reviewNote: string | null;
+    correctionTargets: SellerApplicationCorrectionTarget[];
+    submissionRevision: number;
     shop: {
         name: string | null;
         slug: string | null;

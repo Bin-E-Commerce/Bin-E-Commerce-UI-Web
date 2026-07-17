@@ -10,7 +10,11 @@ import {
 } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { sellerService, type SellerApplicationStatus } from '@/services/seller';
+import {
+    sellerService,
+    type SellerApplicationCorrectionTarget,
+    type SellerApplicationStatus,
+} from '@/services/seller';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { SELLER_REGISTER_STEPS } from '../constants/seller-register-steps.constant';
 import {
@@ -29,6 +33,12 @@ import {
     toSellerRegisterFormValues,
 } from '../utils/seller-application-to-form';
 import { toSellerApplicationPayload } from '../utils/seller-register-payload';
+import {
+    getChangedCorrectionTargets,
+    getFirstCorrectionStep,
+    getVerificationDocumentReplacementProgress,
+    hasCompletedRequiredCorrections,
+} from '../utils/seller-correction-progress';
 
 // Hook điều phối toàn bộ luồng đăng ký seller: form state, hydrate hồ sơ cũ, validate từng bước và gọi API.
 export function useSellerRegisterFlow() {
@@ -49,6 +59,14 @@ export function useSellerRegisterFlow() {
     const [loadingApplication, setLoadingApplication] = useState(true);
     const [applicationStatus, setApplicationStatus] =
         useState<SellerApplicationStatus | null>(null);
+    const [applicationReviewNote, setApplicationReviewNote] = useState<
+        string | null
+    >(null);
+    const [applicationCorrectionTargets, setApplicationCorrectionTargets] =
+        useState<SellerApplicationCorrectionTarget[]>([]);
+    const correctionBaselineRef = useRef<SellerRegisterFormValues>(
+        initialSellerRegisterValues,
+    );
     const loadedApplicationRef = useRef(false);
 
     const totalSteps = SELLER_REGISTER_STEPS.length;
@@ -78,6 +96,22 @@ export function useSellerRegisterFlow() {
             ),
         [attemptedSteps, currentStep, currentStepValidation.errors, touchedFields],
     );
+    // So sánh với đúng bản hồ sơ vừa hydrate để trạng thái sửa không phụ thuộc object proxy của React Hook Form.
+    const changedCorrectionTargets = getChangedCorrectionTargets(
+        formValues,
+        correctionBaselineRef.current,
+    );
+    const verificationDocumentProgress =
+        getVerificationDocumentReplacementProgress(
+            formValues,
+            correctionBaselineRef.current,
+        );
+    const correctionRequirementsSatisfied =
+        applicationStatus !== 'rejected' ||
+        hasCompletedRequiredCorrections(
+            applicationCorrectionTargets,
+            changedCorrectionTargets,
+        );
 
     useEffect(() => {
         // Chỉ hydrate một lần khi vào trang để không ghi đè dữ liệu user đang sửa sau đó.
@@ -95,8 +129,13 @@ export function useSellerRegisterFlow() {
                     return;
                 }
 
-                form.reset(toSellerRegisterFormValues(application));
+                const hydratedValues = toSellerRegisterFormValues(application);
+                form.reset(hydratedValues);
+                // Giữ nguyên bản bị từ chối trong ref; các lần setValue sau đó chỉ thay đổi form hiện tại.
+                correctionBaselineRef.current = hydratedValues;
                 setApplicationStatus(application.status);
+                setApplicationReviewNote(application.reviewNote);
+                setApplicationCorrectionTargets(application.correctionTargets ?? []);
 
                 // Hồ sơ đã gửi hoặc đã duyệt phải hiện màn hình trạng thái sau refresh, không mở lại form nhập từ đầu.
                 if (isSubmittedSellerApplication(application)) {
@@ -107,7 +146,11 @@ export function useSellerRegisterFlow() {
 
                 // Hồ sơ nháp hoặc bị từ chối được nạp lại để người dùng tiếp tục chỉnh sửa.
                 setSubmitted(false);
-                setCurrentStep(0);
+                setCurrentStep(
+                    application.status === 'rejected'
+                        ? getFirstCorrectionStep(application.correctionTargets ?? [])
+                        : 0,
+                );
             } catch {
                 toast.error('Không tải được hồ sơ người bán. Vui lòng thử lại.');
             } finally {
@@ -166,6 +209,8 @@ export function useSellerRegisterFlow() {
                 toSellerApplicationPayload(form.getValues()),
             );
             setApplicationStatus(application.status);
+            setApplicationReviewNote(application.reviewNote);
+            setApplicationCorrectionTargets(application.correctionTargets ?? []);
             toast.success('Đã lưu nháp hồ sơ người bán.');
         } catch (err) {
             toast.error(getErrorMessage(err));
@@ -214,6 +259,8 @@ export function useSellerRegisterFlow() {
                 ? await sellerService.resubmit(payload)
                 : await sellerService.submit(payload);
             setApplicationStatus(application.status);
+            setApplicationReviewNote(application.reviewNote);
+            setApplicationCorrectionTargets(application.correctionTargets ?? []);
             setEditingSubmittedApplication(false);
             setSubmitted(true);
             toast.success(
@@ -245,6 +292,11 @@ export function useSellerRegisterFlow() {
         editingSubmittedApplication,
         loadingApplication,
         applicationStatus,
+        applicationReviewNote,
+        applicationCorrectionTargets,
+        changedCorrectionTargets,
+        verificationDocumentProgress,
+        correctionRequirementsSatisfied,
         totalSteps,
         isLastStep,
         progressValue,
