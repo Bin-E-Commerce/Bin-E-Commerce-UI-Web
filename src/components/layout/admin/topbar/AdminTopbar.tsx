@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
-    Bell,
     ChevronDown,
     LayoutDashboard,
     LogOut,
@@ -20,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AppDispatch } from '@/store';
 import { logoutUser } from '@/store/slices/authSlice';
+import { NotificationBell } from '@/features/notifications';
 
 interface AdminTopbarProps {
     userName: string;
@@ -80,14 +80,7 @@ export function AdminTopbar({
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Thông báo quản trị"
-                    >
-                        <Bell className="size-5" />
-                    </Button>
+                    <NotificationBell />
 
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>

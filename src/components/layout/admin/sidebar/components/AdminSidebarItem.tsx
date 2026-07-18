@@ -45,7 +45,7 @@ export function AdminSidebarItem({
             >
                 <Icon className="size-4" />
             </span>
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{item.label}</span>
                 <span
                     className={cn(
@@ -56,6 +56,19 @@ export function AdminSidebarItem({
                     {item.description}
                 </span>
             </span>
+            {(item.badgeCount ?? 0) > 0 && (
+                <span
+                    className={cn(
+                        'ml-auto flex min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-5',
+                        active
+                            ? 'bg-white text-zinc-950'
+                            : 'bg-red-500 text-white',
+                    )}
+                    aria-label={`${item.badgeCount} thông báo chưa đọc`}
+                >
+                    {(item.badgeCount ?? 0) > 99 ? '99+' : item.badgeCount}
+                </span>
+            )}
         </Link>
     );
 }

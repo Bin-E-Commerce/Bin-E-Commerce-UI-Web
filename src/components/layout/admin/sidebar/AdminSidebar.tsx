@@ -10,6 +10,7 @@ import type { RootState } from '@/store';
 import { getDefaultAdminPath } from '@/services/auth/access';
 import { AdminSidebarGroup } from './components/AdminSidebarGroup';
 import type { AdminNavGroup, AdminNavItem } from './types/admin-nav-item.type';
+import { useNotificationCounts } from '@/features/notifications';
 
 interface AdminSidebarProps {
     onNavigate?: () => void;
@@ -39,6 +40,7 @@ function mapBackendAdminNavigation(user: RootState['auth']['user']): AdminNavGro
         };
 
         group.items.push({
+            code: item.code,
             href: item.href,
             label: item.label,
             description: item.description,
@@ -63,9 +65,17 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
     const pathname = usePathname();
     const { user } = useSelector((state: RootState) => state.auth);
     const defaultAdminPath = getDefaultAdminPath(user);
+    const notificationCounts = useNotificationCounts();
 
     // Sidebar chỉ render navigation backend đã lọc theo permission, FE không giữ fallback permission cứng nữa.
-    const visibleGroups = mapBackendAdminNavigation(user);
+    const visibleGroups = mapBackendAdminNavigation(user).map((group) => ({
+        ...group,
+        items: group.items.map((item) => ({
+            ...item,
+            badgeCount:
+                notificationCounts.data?.byBadgeKey[item.code] ?? 0,
+        })),
+    }));
 
     return (
         <aside className="flex h-full w-80 shrink-0 flex-col border-r border-zinc-200 bg-white">
