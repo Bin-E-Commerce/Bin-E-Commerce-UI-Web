@@ -162,14 +162,14 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                 </div>
             ) : null}
 
-            <div className="lg:pl-72">
+            <div className="min-w-0 lg:pl-72">
                 <SellerTopbar
                     shopName={shopName}
                     userName={user.name}
                     avatarUrl={user.avatarUrl}
                     onOpenSidebar={() => setSidebarOpen(true)}
                 />
-                <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+                <main className="mx-auto w-full min-w-0 max-w-[1500px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                     {children}
                 </main>
             </div>

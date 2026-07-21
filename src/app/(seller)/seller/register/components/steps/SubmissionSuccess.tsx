@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { CheckCircle2, Clock3, FilePenLine, PencilLine, Store } from 'lucide-react';
 
 import {
@@ -17,12 +16,16 @@ import type { SellerApplicationStatus } from '@/services/seller';
 
 interface SubmissionSuccessProps {
     status: SellerApplicationStatus | null;
+    syncingSellerAccess: boolean;
+    onEnterSellerCenter: () => void;
     onEdit: () => void;
 }
 
-// Màn hình trạng thái dùng cả sau submit và sau refresh khi backend đã có hồ sơ đang chờ duyệt.
+// Màn hình trạng thái dùng cả sau submit và sau refresh, đồng thời chờ quyền Seller Center sẵn sàng trước khi chuyển trang.
 export function SubmissionSuccess({
     status,
+    syncingSellerAccess,
+    onEnterSellerCenter,
     onEdit,
 }: SubmissionSuccessProps) {
     const approved = status === 'approved';
@@ -45,11 +48,15 @@ export function SubmissionSuccess({
             <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
                 {approved ? (
                     <Button
-                        render={<Link href="/seller" />}
+                        type="button"
                         className="h-10 rounded-full px-5"
+                        disabled={syncingSellerAccess}
+                        onClick={onEnterSellerCenter}
                     >
                         <Store className="size-4" />
-                        Vào Seller Center
+                        {syncingSellerAccess
+                            ? 'Đang mở Seller Center...'
+                            : 'Vào Seller Center'}
                     </Button>
                 ) : (
                     <AlertDialog>

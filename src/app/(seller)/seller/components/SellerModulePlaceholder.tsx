@@ -10,7 +10,7 @@ interface SellerModulePlaceholderProps {
     secondaryAction: string;
 }
 
-// Dùng cho các module seller chưa gắn nghiệp vụ thật nhưng vẫn giữ giao diện nhất quán và dễ mở rộng.
+// Dùng cho module seller chưa có nghiệp vụ thật, đồng thời giữ bố cục ổn định trên mobile, tablet và desktop.
 export function SellerModulePlaceholder({
     eyebrow,
     title,
@@ -19,23 +19,23 @@ export function SellerModulePlaceholder({
     secondaryAction,
 }: SellerModulePlaceholderProps) {
     return (
-        <div className="space-y-6">
-            <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="max-w-3xl">
+        <div className="min-w-0 space-y-4 sm:space-y-6">
+            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="min-w-0 max-w-3xl">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                             {eyebrow}
                         </p>
-                        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">
+                        <h1 className="mt-2 text-xl font-semibold text-zinc-950 sm:text-2xl">
                             {title}
                         </h1>
                         <p className="mt-2 text-sm leading-6 text-zinc-600">{description}</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                        <Button type="button" variant="outline">
+                    <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+                        <Button type="button" variant="outline" className="w-full sm:w-auto">
                             {secondaryAction}
                         </Button>
-                        <Button type="button">
+                        <Button type="button" className="w-full sm:w-auto">
                             {primaryAction}
                             <ArrowRight className="size-4" />
                         </Button>
@@ -43,26 +43,26 @@ export function SellerModulePlaceholder({
                 </div>
             </section>
 
-            <section className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-                    <CheckCircle2 className="size-5 text-zinc-900" />
+            <section className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="min-w-0 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                    <CheckCircle2 className="size-5 text-zinc-900" aria-hidden="true" />
                     <h2 className="mt-4 font-semibold text-zinc-950">Luồng xử lý rõ ràng</h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-600">
-                        Module sẽ được nối API theo từng trạng thái để seller biết việc nào cần xử lý trước.
+                        Trạng thái công việc sẽ được sắp xếp theo mức độ ưu tiên để bạn biết việc nào cần xử lý trước.
                     </p>
                 </div>
-                <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-                    <CheckCircle2 className="size-5 text-zinc-900" />
-                    <h2 className="mt-4 font-semibold text-zinc-950">Tối ưu thao tác lặp lại</h2>
+                <div className="min-w-0 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                    <CheckCircle2 className="size-5 text-zinc-900" aria-hidden="true" />
+                    <h2 className="mt-4 font-semibold text-zinc-950">Thao tác thuận tiện</h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-600">
-                        Bảng dữ liệu, bộ lọc và hành động hàng loạt sẽ được đặt ngay trong màn hình này.
+                        Bộ lọc, bảng dữ liệu và hành động thường dùng sẽ được bố trí ngay trong màn hình này.
                     </p>
                 </div>
-                <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-                    <CheckCircle2 className="size-5 text-zinc-900" />
-                    <h2 className="mt-4 font-semibold text-zinc-950">Sẵn sàng mở rộng</h2>
+                <div className="min-w-0 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:col-span-2 sm:p-5 xl:col-span-1">
+                    <CheckCircle2 className="size-5 text-zinc-900" aria-hidden="true" />
+                    <h2 className="mt-4 font-semibold text-zinc-950">Hiển thị trên mọi thiết bị</h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-600">
-                        Bố cục đã tách theo module để sau này thêm form, bảng và biểu đồ không làm rối page.
+                        Bố cục tự thích ứng để bạn có thể theo dõi và xử lý công việc trên máy tính bảng hoặc điện thoại.
                     </p>
                 </div>
             </section>

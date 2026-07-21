@@ -41,6 +41,15 @@ export const initAuth = createAsyncThunk(
     },
 );
 
+// Đồng bộ lại viewer hiện tại mà không rotate refresh token, dùng sau khi backend vừa cấp role hoặc permission mới.
+export const syncAuthViewer = createAsyncThunk(
+    'auth/syncAuthViewer',
+    async (): Promise<AuthUser> => {
+        const response = await authService.getViewer();
+        return response.data;
+    },
+);
+
 export const logoutUser = createAsyncThunk(
     'auth/logoutUser',
     async (_, { rejectWithValue }) => {
@@ -91,6 +100,10 @@ const authSlice = createSlice({
             })
             .addCase(initAuth.rejected, (state) => {
                 state.initialized = true;
+            })
+            .addCase(syncAuthViewer.fulfilled, (state, action) => {
+                // Chỉ thay viewer; access token và session hiện tại vẫn hợp lệ nên không cần refresh/rotate token.
+                state.user = action.payload;
             })
             // Khi logout bắt đầu: set initialized = false → hiện skeleton, tránh flicker
             .addCase(logoutUser.pending, (state) => {

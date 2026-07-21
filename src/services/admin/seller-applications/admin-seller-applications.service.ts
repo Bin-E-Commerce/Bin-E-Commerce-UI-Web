@@ -46,11 +46,16 @@ export const adminSellerApplicationsService = {
             )
             .then((response) => response.data),
 
+    // Gửi command chấp thuận; gateway và seller-service vẫn kiểm tra quyền cùng trạng thái hồ sơ trước khi cập nhật.
+    approve: (applicationId: string) =>
+        authorizedAxios
+            .post<SellerApplicationDto>(
+                `${API_VERSION}/seller/applications/admin/${applicationId}/approve`,
+            )
+            .then((response) => response.data),
+
     // Gửi lệnh từ chối kèm lý do bắt buộc; backend mới là nơi quyết định permission và trạng thái có còn hợp lệ hay không.
-    reject: (
-        applicationId: string,
-        payload: RejectSellerApplicationPayload,
-    ) =>
+    reject: (applicationId: string, payload: RejectSellerApplicationPayload) =>
         authorizedAxios
             .post<SellerApplicationDto>(
                 `${API_VERSION}/seller/applications/admin/${applicationId}/reject`,

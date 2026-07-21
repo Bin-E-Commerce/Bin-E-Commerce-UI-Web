@@ -2,6 +2,7 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { SELLER_REGISTER_STEPS } from '../../constants/seller-register-steps.constant';
+import { useApprovedSellerAccess } from '../../hooks/useApprovedSellerAccess';
 import { useSellerRegisterFlow } from '../../hooks/useSellerRegisterFlow';
 import { SellerRegisterCard } from '../layout/SellerRegisterCard';
 import { SellerRegisterHero } from '../layout/SellerRegisterHero';
@@ -38,6 +39,8 @@ export function SellerRegisterForm() {
         handleEditSubmittedApplication,
         handleAcceptedTermsChange,
     } = useSellerRegisterFlow();
+    const { syncingSellerAccess, enterSellerCenter } =
+        useApprovedSellerAccess(applicationStatus);
     const activeStep =
         SELLER_REGISTER_STEPS[currentStep] ?? SELLER_REGISTER_STEPS[0];
 
@@ -97,6 +100,8 @@ export function SellerRegisterForm() {
                             {submitted ? (
                                 <SubmissionSuccess
                                     status={applicationStatus}
+                                    syncingSellerAccess={syncingSellerAccess}
+                                    onEnterSellerCenter={enterSellerCenter}
                                     onEdit={handleEditSubmittedApplication}
                                 />
                             ) : (
