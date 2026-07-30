@@ -10,6 +10,7 @@ import { WishlistIcon } from './components/WishlistIcon';
 import { CartIcon } from './components/CartIcon';
 import { UserMenu } from './components/UserMenu';
 
+// Ghép thanh thông báo và điều hướng chính, đồng thời giữ vùng thao tác co được trên màn hình nhỏ.
 export function Header() {
     const scrolled = useHeaderScroll();
 
@@ -22,10 +23,10 @@ export function Header() {
                     scrolled ? 'shadow-sm' : '',
                 )}
             >
-                <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto flex h-16 w-full min-w-0 max-w-7xl items-center gap-1 px-3 sm:gap-4 sm:px-6 lg:px-8">
                     <HeaderLogo />
                     <NavLinks />
-                    <div className="flex flex-1 items-center justify-end gap-1">
+                    <div className="flex min-w-0 flex-1 items-center justify-end gap-0 sm:gap-1">
                         <SearchBar />
                         <WishlistIcon />
                         <CartIcon />
