@@ -11,6 +11,11 @@ export interface ProductExternalShop {
     slug: string;
     avatarUrl?: string | null;
     sourcePlatform: string;
+    description?: string | null;
+    sourceUrl?: string | null;
+    ratingAvg?: string | null;
+    reviewCount?: number;
+    followerCount?: number;
 }
 
 export interface ProductImage {
@@ -21,8 +26,69 @@ export interface ProductImage {
     isThumbnail: boolean;
 }
 
+export interface ProductInventory {
+    id: string;
+    quantityAvailable: number;
+    quantityReserved: number;
+    quantitySold: number;
+    lowStockThreshold: number;
+}
+
+export interface ProductOptionValue {
+    id: string;
+    value: string;
+    position: number;
+}
+
+export interface ProductOption {
+    id: string;
+    name: string;
+    position: number;
+    values: ProductOptionValue[];
+}
+
+export interface ProductVariantOptionChoice {
+    optionValueId: string;
+    optionValue: ProductOptionValue & {
+        option: Pick<ProductOption, 'id' | 'name' | 'position'>;
+    };
+}
+
+export interface ProductVariant {
+    id: string;
+    sku: string;
+    name: string;
+    price: string;
+    originalPrice?: string | null;
+    stockQuantity: number;
+    imageUrl?: string | null;
+    status: 'ACTIVE' | 'INACTIVE';
+    inventory?: ProductInventory | null;
+    optionChoices: ProductVariantOptionChoice[];
+}
+
+export interface ProductAttributeValue {
+    id: string;
+    categoryAttributeId: string;
+    valueText?: string | null;
+    valueNumber?: string | null;
+    valueBoolean?: boolean | null;
+    metadata?: Record<string, unknown>;
+}
+
+export interface ProductReview {
+    id: string;
+    userId?: string | null;
+    rating: number;
+    content?: string | null;
+    images: string[];
+    status: string;
+    createdAt: string;
+}
+
 export interface PublicProduct {
     id: string;
+    originType?: 'INTERNAL' | 'EXTERNAL';
     name: string;
     slug: string;
     shortDescription?: string | null;
@@ -36,6 +102,19 @@ export interface PublicProduct {
     brand?: ProductBrand | null;
     externalShop?: ProductExternalShop | null;
     images?: ProductImage[];
+}
+
+export interface ProductDetail extends PublicProduct {
+    description?: string | null;
+    categoryId: string;
+    viewCount: number;
+    metadata?: Record<string, unknown>;
+    variants: ProductVariant[];
+    options: ProductOption[];
+    attributeValues: ProductAttributeValue[];
+    reviews: ProductReview[];
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface ListProductsParams {
