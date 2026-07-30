@@ -14,7 +14,7 @@ import type { RootState } from '@/store';
 import {
     canAccessAdmin,
     canAccessSellerCenter,
-    canViewSellerDashboard,
+    canAccessSellerPath,
 } from '@/services/auth/access';
 
 interface SellerLayoutShellProps {
@@ -33,7 +33,7 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
     const isRegisterRoute = pathname.startsWith('/seller/register');
     const isAccessDeniedRoute = pathname === SELLER_ACCESS_DENIED_PATH;
     const canEnterSellerCenter = canAccessSellerCenter(user);
-    const isSellerDashboardRoute = pathname === '/seller';
+    const canOpenCurrentRoute = canAccessSellerPath(pathname, user);
 
     useEffect(() => {
         if (initialized && !user) {
@@ -55,17 +55,18 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
             // Nhân sự nội bộ đi nhầm Seller Center sẽ thấy màn deny để không hiểu nhầm là cần đăng ký shop.
             // Customer thường được đưa sang đăng ký bán hàng vì họ là đối tượng hợp lệ để bắt đầu onboarding.
             router.replace(canAccessAdmin(user) ? SELLER_ACCESS_DENIED_PATH : '/seller/register');
+            return;
         }
 
-        if (isSellerDashboardRoute && !canViewSellerDashboard(user)) {
-            // Quyền vào Seller Center chỉ mở khung chung; dashboard vẫn cần quyền xem riêng để sau này phân quyền theo module.
+        if (!canOpenCurrentRoute) {
+            // Quyền vào Seller Center chỉ mở shell chung; từng màn hình phải xuất hiện trong navigation backend của user.
             router.replace(SELLER_ACCESS_DENIED_PATH);
         }
     }, [
+        canOpenCurrentRoute,
         canEnterSellerCenter,
         initialized,
         isAccessDeniedRoute,
-        isSellerDashboardRoute,
         isRegisterRoute,
         pathname,
         router,

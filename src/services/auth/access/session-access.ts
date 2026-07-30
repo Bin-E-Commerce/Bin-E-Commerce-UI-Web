@@ -98,6 +98,18 @@ export function canAccessSellerCenter(
     return Boolean(user?.accessProfile?.areas.seller.canAccess);
 }
 
+// Kiểm tra route Seller Center bằng navigation backend đã lọc permission.
+// Dùng so khớp chính xác để các trang con chưa có permission riêng như tạo sản phẩm không được mở nhờ route cha.
+export function canAccessSellerPath(
+    pathname: string,
+    user: PermissionAwareUser | null | undefined,
+): boolean {
+    if (pathname === '/seller/access-denied') return true;
+
+    const navigation = user?.accessProfile?.areas.seller.navigation ?? [];
+    return navigation.some((item) => pathname === item.href);
+}
+
 // Dashboard seller được quyết định bởi navigation backend, FE không giữ mã quyền của màn hình này.
 export function canViewSellerDashboard(
     user: PermissionAwareUser | null | undefined,
