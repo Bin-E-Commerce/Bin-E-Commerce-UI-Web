@@ -8,9 +8,8 @@ import type {
     AdminRolePermission,
 } from '@/services/admin';
 import {
-    findActiveRolePermission,
-    getDefaultScopeForPermission,
     isCriticalAdminPermission,
+    resolveRolePermissionState,
 } from '../utils/access-control-permission.utils';
 import { PermissionStatusIcon } from './PermissionStatusIcon';
 
@@ -36,9 +35,10 @@ export function PermissionActionCard({
     canUpdate,
     onToggle,
 }: PermissionActionCardProps) {
-    const scope = getDefaultScopeForPermission(role.code, permission);
-    const active = Boolean(
-        findActiveRolePermission(rolePermissions, permission.code, scope),
+    const { active, scope } = resolveRolePermissionState(
+        role.code,
+        permission,
+        rolePermissions,
     );
     const currentActionKey = `${role.code}:${permission.code}:${scope}`;
     const pending = actionKey === currentActionKey;

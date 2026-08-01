@@ -2,6 +2,7 @@ import {
     LayoutDashboard,
     PackageSearch,
     ShieldCheck,
+    Store,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -9,6 +10,7 @@ import type { LucideIcon } from 'lucide-react';
 export const SELLER_NAVIGATION_ICON_MAP: Record<string, LucideIcon> = {
     LayoutDashboard,
     PackageSearch,
+    Store,
 };
 
 export const SELLER_NAVIGATION_FALLBACK_ICON = ShieldCheck;

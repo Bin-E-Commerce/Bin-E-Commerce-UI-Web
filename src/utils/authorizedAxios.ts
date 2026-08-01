@@ -7,7 +7,7 @@ import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import type { AppStore } from '@/store';
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
-import { setAuth, logoutUser } from '@/store/slices/authSlice';
+import { setAuth, logoutUser, syncAuthViewer } from '@/store/slices/authSlice';
 
 // Mở rộng interface InternalAxiosRequestConfig để thêm thuộc tính _retry,
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -35,6 +35,22 @@ const authorizedAxios = axios.create({
 
 let refreshTokenPromise: Promise<boolean> | null = null;
 let subscribers: ((ok: boolean) => void)[] = []; // Danh sách các callback function đang chờ kết quả của việc refresh token
+let accessProfileSyncPromise: Promise<void> | null = null;
+
+// Đồng bộ accessProfile tối đa một lần khi nhiều request cùng nhận 403.
+// Request bị từ chối vẫn giữ nguyên 403; dữ liệu mới chỉ giúp layout chuyển user sang màn hình deny ngay sau đó.
+function synchronizeAccessProfileAfterForbidden(): void {
+    if (!appStore || accessProfileSyncPromise) return;
+
+    accessProfileSyncPromise = appStore
+        .dispatch(syncAuthViewer())
+        .unwrap()
+        .then(() => undefined)
+        .catch(() => undefined)
+        .finally(() => {
+            accessProfileSyncPromise = null;
+        });
+}
 
 // Hàm này sẽ được gọi sau khi quá trình refresh token hoàn tất,
 // để thông báo cho tất cả các request đang chờ biết kết quả của việc refresh token (thành công hay thất bại)
@@ -148,6 +164,15 @@ authorizedAxios.interceptors.response.use(
                     }
                 });
             });
+        }
+
+        if (
+            error.response?.status === 403 &&
+            originalRequest &&
+            !originalRequest.url?.includes(`${API_VERSION}/auth/me`)
+        ) {
+            // Permission có thể vừa bị admin thu hồi ở phiên khác; lấy lại viewer để menu và route guard phản ánh ngay.
+            synchronizeAccessProfileAfterForbidden();
         }
 
         return Promise.reject(error);

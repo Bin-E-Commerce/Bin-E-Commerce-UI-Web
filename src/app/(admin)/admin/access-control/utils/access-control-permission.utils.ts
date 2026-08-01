@@ -45,7 +45,23 @@ const RESOURCE_GROUP_META: Record<
         description: 'Quyền kiểm tra, duyệt hoặc từ chối hồ sơ người bán.',
         order: 60,
     },
+    'seller.product': {
+        label: 'Sản phẩm của shop',
+        description: 'Quyền quản lý dữ liệu sản phẩm thuộc shop.',
+        order: 70,
+    },
+    'seller.shop_profile': {
+        label: 'Hồ sơ shop',
+        description: 'Quyền xem và cập nhật thông tin vận hành của shop.',
+        order: 80,
+    },
 };
+
+export interface ResolvedRolePermissionState {
+    scope: string;
+    active: boolean;
+    activeScopes: string[];
+}
 
 // Nhóm role-permission theo role để màn hình không phải filter lại trên từng dòng permission.
 export function groupRolePermissions(rolePermissions: AdminRolePermission[]) {
@@ -59,34 +75,50 @@ export function groupRolePermissions(rolePermissions: AdminRolePermission[]) {
     );
 }
 
-// Chọn scope mặc định dựa trên metadata backend trả về, tránh hard-code mã permission ở frontend.
-export function getDefaultScopeForPermission(
+// Chọn scope ưu tiên khi DB chưa có record cho cặp role-permission.
+// Seller vận hành dữ liệu trong shop của mình nên dùng own_shop; role nội bộ mặc định dùng global.
+function getFallbackScopeForPermission(
     roleCode: string,
     permission: AdminAccessPermission,
-) {
-    if (
-        roleCode === 'SELLER' &&
-        (permission.resource === 'seller' ||
-            permission.resource === 'seller.dashboard')
-    ) {
+): string {
+    if (roleCode === 'SELLER' && permission.resource.startsWith('seller')) {
         return OWN_SHOP_SCOPE;
     }
 
     return GLOBAL_SCOPE;
 }
 
-// Tìm role-permission đang bật theo đúng scope hiện tại; record tắt vẫn tồn tại trong DB để giữ lịch sử/audit.
-export function findActiveRolePermission(
+// Resolve trạng thái từ chính role-permission backend trả về để UI và runtime cùng đọc một bản ghi.
+// Logic ưu tiên scope chuẩn của role, nhưng vẫn nhận diện scope cũ đang bật để admin có thể gỡ sạch dữ liệu lệch trước đây.
+export function resolveRolePermissionState(
+    roleCode: string,
+    permission: AdminAccessPermission,
     rolePermissions: AdminRolePermission[],
-    permissionCode: string,
-    scope: string,
-) {
-    return rolePermissions.find(
-        (item) =>
-            item.permission.code === permissionCode &&
-            item.scope === scope &&
-            item.isActive,
+): ResolvedRolePermissionState {
+    const fallbackScope = getFallbackScopeForPermission(roleCode, permission);
+    const matchingRecords = rolePermissions.filter(
+        (item) => item.permission.code === permission.code,
     );
+    const activeRecords = matchingRecords.filter((item) => item.isActive);
+    const preferredActiveRecord = activeRecords.find(
+        (item) => item.scope === fallbackScope,
+    );
+    const preferredExistingRecord = matchingRecords.find(
+        (item) => item.scope === fallbackScope,
+    );
+    const selectedRecord =
+        preferredActiveRecord ??
+        activeRecords[0] ??
+        preferredExistingRecord ??
+        matchingRecords[0];
+
+    return {
+        scope: selectedRecord?.scope ?? fallbackScope,
+        active: activeRecords.length > 0,
+        activeScopes: Array.from(
+            new Set(activeRecords.map((item) => item.scope)),
+        ),
+    };
 }
 
 // Khóa các quyền cốt lõi của ADMIN ở UI; backend vẫn là lớp bảo vệ cuối cùng khi request gửi lên.
@@ -171,14 +203,12 @@ export function filterRolePermissionGroups({
         .map((role) => {
             const rolePermissions = rolePermissionGroups[role.code] ?? [];
             const permissions = overview.permissions.filter((permission) => {
-                const scope = getDefaultScopeForPermission(role.code, permission);
-                const active = Boolean(
-                    findActiveRolePermission(
-                        rolePermissions,
-                        permission.code,
-                        scope,
-                    ),
+                const permissionState = resolveRolePermissionState(
+                    role.code,
+                    permission,
+                    rolePermissions,
                 );
+                const { active, scope } = permissionState;
                 const locked = isCriticalAdminPermission(role, permission, scope);
 
                 if (

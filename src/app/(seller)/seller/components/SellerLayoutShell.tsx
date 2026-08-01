@@ -46,8 +46,8 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
         if (!initialized || !user || isRegisterRoute) return;
 
         if (isAccessDeniedRoute) {
-            // Nếu user vừa được cấp quyền vào Seller Center, không để họ ở lại màn hình từ chối quyền.
-            if (canEnterSellerCenter) router.replace('/seller');
+            // Màn hình deny phục vụ cả hai trường hợp: thiếu quyền vào Seller Center hoặc chỉ thiếu quyền của một trang con.
+            // Không tự chuyển về dashboard ở đây vì user có seller.access vẫn có thể vừa bị thu hồi seller.product.read.
             return;
         }
 
@@ -80,7 +80,8 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
 
     if (!initialized || !user) return null;
 
-    if (isAccessDeniedRoute) return canEnterSellerCenter ? null : children;
+    // Render màn hình deny độc lập, không kèm sidebar/topbar của khu vực mà user vừa bị từ chối truy cập.
+    if (isAccessDeniedRoute) return children;
 
     // Route đăng ký seller dùng khung riêng vì người dùng lúc này chưa có shop để quản trị.
     // Không render SellerSidebar ở đây để tránh tạo cảm giác đã vào được Seller Center.

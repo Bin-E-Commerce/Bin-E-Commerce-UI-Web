@@ -11,9 +11,9 @@ import { ACCESS_CONTROL_OVERVIEW_QUERY_KEY } from '../constants/access-control.c
 import type { AccessControlFilters } from '../types/access-control-filter.type';
 import {
     filterRolePermissionGroups,
-    getDefaultScopeForPermission,
     getPermissionResourceOptions,
     groupRolePermissions,
+    resolveRolePermissionState,
 } from '../utils/access-control-permission.utils';
 
 const DEFAULT_FILTERS: AccessControlFilters = {
@@ -78,21 +78,27 @@ export function useAdminAccessControl() {
             role,
             permission,
             enabled,
+            scopes,
         }: {
             role: AdminAccessRole;
             permission: AdminAccessPermission;
             enabled: boolean;
+            scopes: string[];
         }) => {
-            const scope = getDefaultScopeForPermission(role.code, permission);
-
-            return adminAccessControlService.updateRolePermission(role.code, {
-                permissionCode: permission.code,
-                scope,
-                enabled,
-                reason: enabled
-                    ? 'Admin cấp quyền từ màn hình phân quyền.'
-                    : 'Admin gỡ quyền từ màn hình phân quyền.',
-            });
+            // Khi gỡ quyền, cập nhật mọi scope đang bật để xóa cả record global sai do phiên bản UI cũ tạo ra.
+            // Khi cấp quyền, mảng chỉ có scope chuẩn đã resolve từ dữ liệu backend hoặc policy fallback của role.
+            return Promise.all(
+                scopes.map((scope) =>
+                    adminAccessControlService.updateRolePermission(role.code, {
+                        permissionCode: permission.code,
+                        scope,
+                        enabled,
+                        reason: enabled
+                            ? 'Admin cấp quyền từ màn hình phân quyền.'
+                            : 'Admin gỡ quyền từ màn hình phân quyền.',
+                    }),
+                ),
+            );
         },
         onSuccess: async (_response, variables) => {
             toast.success(
@@ -120,9 +126,26 @@ export function useAdminAccessControl() {
         permission: AdminAccessPermission,
         enabled: boolean,
     ) {
-        const scope = getDefaultScopeForPermission(role.code, permission);
+        const rolePermissions = rolePermissionGroups[role.code] ?? [];
+        const permissionState = resolveRolePermissionState(
+            role.code,
+            permission,
+            rolePermissions,
+        );
+        const scopes =
+            !enabled && permissionState.activeScopes.length > 0
+                ? permissionState.activeScopes
+                : [permissionState.scope];
+
+        // actionKey dùng scope đang hiển thị để chỉ card được thao tác chuyển sang trạng thái loading.
+        const scope = permissionState.scope;
         setActionKey(`${role.code}:${permission.code}:${scope}`);
-        updatePermissionMutation.mutate({ role, permission, enabled });
+        updatePermissionMutation.mutate({
+            role,
+            permission,
+            enabled,
+            scopes,
+        });
     }
 
     // Cho admin chủ động refetch khi vừa seed hoặc thay đổi quyền từ nơi khác.
