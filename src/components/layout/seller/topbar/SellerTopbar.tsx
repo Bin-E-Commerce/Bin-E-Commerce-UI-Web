@@ -1,8 +1,9 @@
 'use client';
 
-import { Bell, Menu, Search, Store, UserRound } from 'lucide-react';
+import { Menu, Search, Store, UserRound } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { NotificationBell } from '@/features/notifications';
 import { cn } from '@/lib/utils';
 
 interface SellerTopbarProps {
@@ -52,14 +53,7 @@ export function SellerTopbar({
                     <Button type="button" variant="outline" size="sm" className="hidden sm:inline-flex">
                         Xem shop
                     </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Thông báo người bán"
-                    >
-                        <Bell className="size-5" />
-                    </Button>
+                    <NotificationBell />
                     <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1.5">
                         <div
                             className={cn(

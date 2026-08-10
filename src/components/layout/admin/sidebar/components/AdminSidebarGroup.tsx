@@ -6,7 +6,7 @@ import type { AdminNavGroup } from '../types/admin-nav-item.type';
 interface AdminSidebarGroupProps {
     group: AdminNavGroup;
     pathname: string;
-    onNavigate?: () => void;
+    onNavigate?: (item: AdminNavGroup['items'][number]) => void;
 }
 
 // Render một nhóm nghiệp vụ trong sidebar để menu admin không bị thành danh sách phẳng khó quét.

@@ -3,6 +3,7 @@ import authorizedAxios from '@/utils/authorizedAxios';
 import type {
     ApiResponse,
     ListNotificationsParams,
+    MarkNotificationsReadFilter,
     NotificationListResponse,
     NotificationUnreadCounts,
 } from './types/notification.types';
@@ -34,12 +35,12 @@ export const notificationService = {
             .then(() => undefined);
     },
 
-    // Dùng endpoint bulk ở backend thay vì gửi nhiều request mark-read nối tiếp từ trình duyệt.
-    markAllRead(): Promise<number> {
+    // Filter theo badgeKey giúp thao tác mở một menu chỉ dọn notification của đúng menu đó.
+    markAllRead(filter: MarkNotificationsReadFilter = {}): Promise<number> {
         return authorizedAxios
             .post<ApiResponse<{ updated: number }>>(
                 `${API_VERSION}/notifications/read-all`,
-                {},
+                filter,
             )
             .then((response) => response.data.data.updated);
     },

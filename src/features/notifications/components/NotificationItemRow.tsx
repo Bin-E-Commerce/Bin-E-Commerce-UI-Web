@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { ClipboardCheck, Info, ShieldAlert } from 'lucide-react';
+import { ClipboardCheck, FilePenLine, Info, ShieldAlert } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/services/notifications';
@@ -15,6 +15,7 @@ interface NotificationItemRowProps {
 // Chọn icon theo category; fallback Info giúp domain mới vẫn render an toàn trước khi có icon riêng.
 function getNotificationIcon(category: string) {
     if (category === 'seller_application') return ClipboardCheck;
+    if (category === 'shop_profile') return FilePenLine;
     if (category === 'security') return ShieldAlert;
     return Info;
 }

@@ -8,7 +8,7 @@ import type { AdminNavItem } from '../types/admin-nav-item.type';
 interface AdminSidebarItemProps {
     item: AdminNavItem;
     pathname: string;
-    onNavigate?: () => void;
+    onNavigate?: (item: AdminNavItem) => void;
 }
 
 // Xác định trạng thái active theo route, ưu tiên exact để menu cha không sáng cùng route con.
@@ -29,7 +29,7 @@ export function AdminSidebarItem({
     return (
         <Link
             href={item.href}
-            onClick={onNavigate}
+            onClick={() => onNavigate?.(item)}
             className={cn(
                 'group flex min-h-12 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
                 active

@@ -3,14 +3,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
-import { ClipboardCheck, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import {
+    ClipboardCheck,
+    FilePenLine,
+    LayoutDashboard,
+    ShieldCheck,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import type { RootState } from '@/store';
 import { getDefaultAdminPath } from '@/services/auth/access';
 import { AdminSidebarGroup } from './components/AdminSidebarGroup';
 import type { AdminNavGroup, AdminNavItem } from './types/admin-nav-item.type';
-import { useNotificationCounts } from '@/features/notifications';
+import {
+    useMarkNotificationsReadByBadgeKey,
+    useNotificationCounts,
+} from '@/features/notifications';
 
 interface AdminSidebarProps {
     onNavigate?: () => void;
@@ -18,12 +26,15 @@ interface AdminSidebarProps {
 
 const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
     ClipboardCheck,
+    FilePenLine,
     LayoutDashboard,
 };
 
 // Chuyển navigation backend trả về thành các group sidebar đúng theo groupCode/groupLabel backend seed.
 // Nếu backend thêm icon chưa có trong map, fallback ShieldCheck để menu không bị crash.
-function mapBackendAdminNavigation(user: RootState['auth']['user']): AdminNavGroup[] {
+function mapBackendAdminNavigation(
+    user: RootState['auth']['user'],
+): AdminNavGroup[] {
     const navigation = user?.accessProfile?.areas.admin.navigation ?? [];
     if (navigation.length === 0) return [];
 
@@ -66,16 +77,24 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
     const { user } = useSelector((state: RootState) => state.auth);
     const defaultAdminPath = getDefaultAdminPath(user);
     const notificationCounts = useNotificationCounts();
+    const markBadgeRead = useMarkNotificationsReadByBadgeKey();
 
     // Sidebar chỉ render navigation backend đã lọc theo permission, FE không giữ fallback permission cứng nữa.
     const visibleGroups = mapBackendAdminNavigation(user).map((group) => ({
         ...group,
         items: group.items.map((item) => ({
             ...item,
-            badgeCount:
-                notificationCounts.data?.byBadgeKey[item.code] ?? 0,
+            badgeCount: notificationCounts.data?.byBadgeKey[item.code] ?? 0,
         })),
     }));
+
+    // Navigation code cũng là badgeKey do backend cấp; chỉ gọi bulk mark-read khi menu thực sự còn notification chưa đọc.
+    function handleItemNavigate(item: AdminNavItem) {
+        onNavigate?.();
+        if ((item.badgeCount ?? 0) > 0) {
+            markBadgeRead.mutate(item.code);
+        }
+    }
 
     return (
         <aside className="flex h-full w-80 shrink-0 flex-col border-r border-zinc-200 bg-white">
@@ -103,7 +122,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                         key={group.title}
                         group={group}
                         pathname={pathname}
-                        onNavigate={onNavigate}
+                        onNavigate={handleItemNavigate}
                     />
                 ))}
             </nav>

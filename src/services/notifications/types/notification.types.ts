@@ -32,6 +32,11 @@ export interface ListNotificationsParams {
     limit?: number;
 }
 
+export interface MarkNotificationsReadFilter {
+    category?: string;
+    badgeKey?: string;
+}
+
 export interface ApiResponse<T> {
     data: T;
     message: string;
