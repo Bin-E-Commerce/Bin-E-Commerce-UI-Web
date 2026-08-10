@@ -1,4 +1,5 @@
 import type { SellerComboboxOption } from '../components/shared/SellerCombobox';
+export { BANK_OPTIONS } from '@/features/seller/constants/bank-options.constant';
 
 export const BUSINESS_MODEL_OPTIONS: SellerComboboxOption[] = [
     {
@@ -18,19 +19,3 @@ export const BUSINESS_MODEL_OPTIONS: SellerComboboxOption[] = [
             'Phân phối hàng từ nhiều thương hiệu hoặc nhà sản xuất.',
     },
 ];
-
-export const BANK_OPTIONS: SellerComboboxOption[] = [
-    { value: 'vietcombank', label: 'Vietcombank' },
-    { value: 'techcombank', label: 'Techcombank' },
-    { value: 'mb-bank', label: 'MB Bank' },
-    { value: 'bidv', label: 'BIDV' },
-    { value: 'vietinbank', label: 'VietinBank' },
-    { value: 'agribank', label: 'Agribank' },
-    { value: 'acb', label: 'ACB' },
-    { value: 'vpbank', label: 'VPBank' },
-    { value: 'tpbank', label: 'TPBank' },
-    { value: 'sacombank', label: 'Sacombank' },
-    { value: 'hdbank', label: 'HDBank' },
-    { value: 'vib', label: 'VIB' },
-];
-

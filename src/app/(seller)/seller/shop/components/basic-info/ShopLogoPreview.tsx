@@ -12,11 +12,7 @@ interface ShopLogoPreviewProps {
 }
 
 // Hiển thị logo có fallback ổn định khi CDN đang xử lý ảnh hoặc URL cũ không còn khả dụng.
-export function ShopLogoPreview({
-    src,
-    alt,
-    className,
-}: ShopLogoPreviewProps) {
+export function ShopLogoPreview({ src, alt, className }: ShopLogoPreviewProps) {
     const [failed, setFailed] = useState(false);
 
     useEffect(() => {

@@ -1,6 +1,8 @@
 import { API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 import type {
+    CreateShopProfileChangeRequestPayload,
+    ShopProfileChangeRequestDto,
     ShopProfileDto,
     UpdateShopProfilePayload,
 } from './types/shop-profile.types';
@@ -18,5 +20,14 @@ export const shopProfileService = {
     updateMine: (payload: UpdateShopProfilePayload) =>
         authorizedAxios
             .patch<ShopProfileDto>(SHOP_PROFILE_ENDPOINT, payload)
+            .then((response) => response.data),
+
+    // Gửi thay đổi nhạy cảm để admin đối chiếu; dữ liệu hiện hành chưa bị ghi đè ở bước này.
+    createChangeRequest: (payload: CreateShopProfileChangeRequestPayload) =>
+        authorizedAxios
+            .post<ShopProfileChangeRequestDto>(
+                `${SHOP_PROFILE_ENDPOINT}/change-requests`,
+                payload,
+            )
             .then((response) => response.data),
 };

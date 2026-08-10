@@ -34,9 +34,7 @@ export function ShopProfileSkeleton() {
 }
 
 // Cung cấp lỗi có hành động thử lại ngay trong ngữ cảnh trang thay vì để lại màn hình trắng.
-export function ShopProfileErrorState({
-    onRetry,
-}: ShopProfileErrorStateProps) {
+export function ShopProfileErrorState({ onRetry }: ShopProfileErrorStateProps) {
     return (
         <div className="flex min-h-80 flex-col items-center justify-center rounded-md border border-zinc-200 bg-white px-5 py-12 text-center shadow-sm">
             <span className="flex size-12 items-center justify-center rounded-md bg-red-50 text-red-600">

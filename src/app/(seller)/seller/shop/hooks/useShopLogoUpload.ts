@@ -1,17 +1,9 @@
 'use client';
 
-import {
-    useEffect,
-    useRef,
-    useState,
-    type ChangeEvent,
-} from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
 
-import {
-    mediaService,
-    type MediaUploadMimeType,
-} from '@/services/media';
+import { mediaService, type MediaUploadMimeType } from '@/services/media';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { buildProcessedShopLogoUrl } from '../utils/shop-profile-formatters';
 
@@ -27,9 +19,7 @@ interface UseShopLogoUploadOptions {
 }
 
 // Upload logo trực tiếp lên S3 bằng presigned POST, đồng thời giữ preview local để người dùng không phải chờ CDN.
-export function useShopLogoUpload({
-    onUploaded,
-}: UseShopLogoUploadOptions) {
+export function useShopLogoUpload({ onUploaded }: UseShopLogoUploadOptions) {
     const inputRef = useRef<HTMLInputElement | null>(null);
     const requestIdRef = useRef(0);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);

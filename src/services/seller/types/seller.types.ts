@@ -1,8 +1,5 @@
 export type SellerApplicationStatus =
-    | 'draft'
-    | 'pending_review'
-    | 'approved'
-    | 'rejected';
+    'draft' | 'pending_review' | 'approved' | 'rejected';
 
 export type SellerProfileType = 'individual' | 'business';
 export type PayoutAccountType = 'personal' | 'business';

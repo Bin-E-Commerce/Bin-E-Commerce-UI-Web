@@ -1,8 +1,8 @@
 import { Building2, CircleDollarSign, Info, ReceiptText } from 'lucide-react';
 
 import type { ShopProfileDto } from '@/services/seller';
-import { formatProfileType } from '../utils/shop-profile-formatters';
-import { ShopProfileDataRow } from './ShopProfileDataRow';
+import { formatProfileType } from '../../utils/shop-profile-formatters';
+import { ShopProfileDataRow } from '../shared/ShopProfileDataRow';
 
 interface ShopTaxInfoPanelProps {
     profile: ShopProfileDto;

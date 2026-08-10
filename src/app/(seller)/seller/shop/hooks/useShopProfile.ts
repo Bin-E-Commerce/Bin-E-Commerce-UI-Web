@@ -7,17 +7,13 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { catalogService } from '@/services/catalog';
-import {
-    shopProfileService,
-    type ShopProfileDto,
-} from '@/services/seller';
+import { shopProfileService, type ShopProfileDto } from '@/services/seller';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
     shopProfileSchema,
     type ShopProfileFormValues,
 } from '../schemas/shop-profile.schema';
-
-const SHOP_PROFILE_QUERY_KEY = ['seller', 'shop-profile'] as const;
+import { SHOP_PROFILE_QUERY_KEY } from './useShopProfileChangeRequest';
 
 // Quản lý cache hồ sơ, danh mục tham chiếu và trạng thái form trong một nơi để component chỉ tập trung trình bày.
 export function useShopProfile() {

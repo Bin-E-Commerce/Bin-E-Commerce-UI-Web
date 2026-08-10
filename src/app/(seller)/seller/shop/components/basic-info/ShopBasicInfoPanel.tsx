@@ -13,9 +13,9 @@ import { toast } from 'sonner';
 import {
     formatBusinessModel,
     formatShopProfileDate,
-} from '../utils/shop-profile-formatters';
+} from '../../utils/shop-profile-formatters';
 import { ShopLogoPreview } from './ShopLogoPreview';
-import { ShopProfileDataRow } from './ShopProfileDataRow';
+import { ShopProfileDataRow } from '../shared/ShopProfileDataRow';
 
 interface ShopBasicInfoPanelProps {
     profile: ShopProfileDto;

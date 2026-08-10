@@ -4,11 +4,13 @@ import { CheckCircle2, Loader2, Pencil, RefreshCw, Store } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import type { ShopProfileDto } from '@/services/seller';
-import { formatShopProfileDate } from '../utils/shop-profile-formatters';
+import { formatShopProfileDate } from '../../utils/shop-profile-formatters';
 
 interface ShopProfileHeaderProps {
     profile: ShopProfileDto;
     editing: boolean;
+    canEdit: boolean;
+    editLabel: string;
     refreshing: boolean;
     onEdit: () => void;
     onRefresh: () => void;
@@ -18,6 +20,8 @@ interface ShopProfileHeaderProps {
 export function ShopProfileHeader({
     profile,
     editing,
+    canEdit,
+    editLabel,
     refreshing,
     onEdit,
     onRefresh,
@@ -46,7 +50,8 @@ export function ShopProfileHeader({
                         pháp lý đã được duyệt.
                     </p>
                     <p className="mt-1 text-xs text-zinc-400">
-                        Xác minh ngày {formatShopProfileDate(profile.shop.verifiedAt)}
+                        Xác minh ngày{' '}
+                        {formatShopProfileDate(profile.shop.verifiedAt)}
                     </p>
                 </div>
             </div>
@@ -67,7 +72,7 @@ export function ShopProfileHeader({
                     )}
                     Làm mới
                 </Button>
-                {profile.capabilities.canUpdatePublicProfile && !editing ? (
+                {canEdit && !editing ? (
                     <Button
                         type="button"
                         size="lg"
@@ -75,7 +80,7 @@ export function ShopProfileHeader({
                         onClick={onEdit}
                     >
                         <Pencil className="size-4" />
-                        Chỉnh sửa
+                        {editLabel}
                     </Button>
                 ) : null}
             </div>

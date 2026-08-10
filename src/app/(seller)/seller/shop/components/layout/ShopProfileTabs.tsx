@@ -37,9 +37,7 @@ function ShopProfileTabButton({
             onClick={onClick}
             className={cn(
                 'relative flex h-14 shrink-0 items-center gap-2 px-1 text-sm font-medium transition-colors',
-                active
-                    ? 'text-zinc-950'
-                    : 'text-zinc-500 hover:text-zinc-900',
+                active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900',
                 disabled && 'cursor-not-allowed opacity-45',
             )}
         >

@@ -11,8 +11,8 @@ import {
     formatDocumentType,
     formatProfileType,
     formatShopProfileDate,
-} from '../utils/shop-profile-formatters';
-import { ShopProfileDataRow } from './ShopProfileDataRow';
+} from '../../utils/shop-profile-formatters';
+import { ShopProfileDataRow } from '../shared/ShopProfileDataRow';
 
 interface ShopIdentityPanelProps {
     profile: ShopProfileDto;

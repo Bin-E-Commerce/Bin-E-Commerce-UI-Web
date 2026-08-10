@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { ShopProfileDto } from '@/services/seller';
-import type { ShopProfileFormValues } from '../schemas/shop-profile.schema';
-import { formatBusinessModel } from '../utils/shop-profile-formatters';
+import type { ShopProfileFormValues } from '../../schemas/shop-profile.schema';
+import { formatBusinessModel } from '../../utils/shop-profile-formatters';
 import { ShopLogoUploader } from './ShopLogoUploader';
 
 interface ShopProfileEditFormProps {
@@ -201,9 +201,7 @@ export function ShopProfileEditForm({
                     type="submit"
                     size="lg"
                     className="bg-zinc-950 px-5 text-white hover:bg-zinc-800 sm:min-w-36"
-                    disabled={
-                        saving || logoUploading || !isDirty || !isValid
-                    }
+                    disabled={saving || logoUploading || !isDirty || !isValid}
                 >
                     {saving ? (
                         <Loader2 className="size-4 animate-spin" />
