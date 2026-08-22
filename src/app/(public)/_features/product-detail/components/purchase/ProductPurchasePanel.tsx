@@ -178,12 +178,6 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     </Button>
                 )}
             </div>
-
-            {purchase.selectedVariant ? (
-                <p className="mt-3 text-xs text-zinc-400">
-                    SKU: {purchase.selectedVariant.sku}
-                </p>
-            ) : null}
         </section>
     );
 }

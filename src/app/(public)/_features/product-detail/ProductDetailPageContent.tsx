@@ -46,6 +46,8 @@ export function ProductDetailPageContent({
                     <ProductGallery
                         productName={product.name}
                         images={product.images ?? []}
+                        videoUrl={product.videoUrl}
+                        videoDurationSeconds={product.videoDurationSeconds}
                     />
                     <ProductPurchasePanel product={product} />
                 </div>

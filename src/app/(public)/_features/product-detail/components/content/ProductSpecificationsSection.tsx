@@ -7,7 +7,7 @@ interface ProductSpecificationsSectionProps {
     product: ProductDetail;
 }
 
-// Trình bày thông số crawler đã map và bổ sung các trường nhận diện có ích khi danh sách thuộc tính còn ít.
+// Trình bày thông số sản phẩm đã map từ nguồn dữ liệu, chỉ giữ các trường người mua cần xem.
 export function ProductSpecificationsSection({
     product,
 }: ProductSpecificationsSectionProps) {
@@ -16,7 +16,6 @@ export function ProductSpecificationsSection({
         ...(product.brand?.name
             ? [{ id: 'brand', label: 'Thương hiệu', value: product.brand.name }]
             : []),
-        { id: 'sku-source', label: 'Mã sản phẩm', value: product.id },
         { id: 'origin', label: 'Nguồn dữ liệu', value: product.sourcePlatform?.toUpperCase() ?? 'Bin E-Commerce' },
         ...specifications,
     ];

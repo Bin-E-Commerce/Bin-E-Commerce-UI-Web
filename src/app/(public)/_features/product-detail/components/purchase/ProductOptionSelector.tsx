@@ -18,7 +18,7 @@ export function ProductOptionSelector({
     if (options.length === 0) return null;
 
     return (
-        <div className="space-y-4 border-t border-zinc-200 pt-5">
+        <div className="space-y-4">
             {options.map((option) => (
                 <fieldset key={option.id}>
                     <legend className="mb-2 text-sm font-semibold text-zinc-900">
