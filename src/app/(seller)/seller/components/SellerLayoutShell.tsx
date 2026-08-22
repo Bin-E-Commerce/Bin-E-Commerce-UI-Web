@@ -32,7 +32,10 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
     const pathname = usePathname();
     const isRegisterRoute = pathname.startsWith('/seller/register');
     const isAccessDeniedRoute = pathname === SELLER_ACCESS_DENIED_PATH;
-    const isProductCreateRoute = pathname === '/seller/products/new';
+    // Luồng thêm và chỉnh sửa dùng workspace toàn màn hình; route edit động vẫn giữ chung shell rỗng với route new.
+    const isProductEditorRoute =
+        pathname === '/seller/products/new' ||
+        /^\/seller\/products\/[^/]+\/edit$/.test(pathname);
     const canEnterSellerCenter = canAccessSellerCenter(user);
     const canOpenCurrentRoute = canAccessSellerPath(pathname, user);
 
@@ -133,9 +136,9 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
 
     if (!canEnterSellerCenter) return null;
 
-    // Trang tạo sản phẩm là workspace nhập liệu dài nên cần toàn bộ chiều rộng màn hình.
+    // Workspace tạo/chỉnh sửa nhập liệu dài nên cần toàn bộ chiều rộng màn hình.
     // Auth và permission vẫn được kiểm tra phía trên; chỉ sidebar/topbar Seller Center được loại bỏ.
-    if (isProductCreateRoute) {
+    if (isProductEditorRoute) {
         return (
             <div className="min-h-screen bg-zinc-50 text-zinc-950">
                 <main className="min-h-screen w-full">{children}</main>

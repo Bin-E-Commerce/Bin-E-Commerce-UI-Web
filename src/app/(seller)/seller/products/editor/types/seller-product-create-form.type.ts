@@ -35,6 +35,7 @@ export interface ProductCreateOption {
 }
 
 export interface ProductCreateVariant {
+    id?: string;
     key: string;
     label: string;
     optionValueClientIds: string[];

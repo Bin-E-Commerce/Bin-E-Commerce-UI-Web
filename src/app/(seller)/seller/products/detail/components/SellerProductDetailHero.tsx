@@ -1,4 +1,5 @@
-import { Boxes, CalendarClock, Eye, Hash, PackageCheck, Star } from 'lucide-react';
+import { Boxes, CalendarClock, Eye, Hash, PackageCheck, Pencil, Star } from 'lucide-react';
+import Link from 'next/link';
 
 import { ProductGallery } from '@/app/(public)/_features/product-detail/components/gallery/ProductGallery';
 import type { SellerProductDetail } from '@/services/product';
@@ -6,8 +7,9 @@ import {
     formatSellerProductMetric,
     formatSellerProductPriceRange,
     formatSellerProductUpdatedAt,
-} from '../../utils/seller-product-formatters';
-import { SellerProductStatusBadge } from '../SellerProductStatusBadge';
+} from '../../shared/utils/seller-product-formatters';
+import { SellerProductStatusBadge } from '../../shared/components/SellerProductStatusBadge';
+import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
 
 interface SellerProductDetailHeroProps {
     product: SellerProductDetail;
@@ -19,6 +21,8 @@ export function SellerProductDetailHero({
     product,
     totalStock,
 }: SellerProductDetailHeroProps) {
+    const canUpdate = useSessionPermission('seller.product.update');
+
     return (
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="grid lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
@@ -34,6 +38,15 @@ export function SellerProductDetailHero({
                 <div className="flex min-w-0 flex-col p-5 sm:p-7">
                     <div className="flex flex-wrap items-center gap-2">
                         <SellerProductStatusBadge status={product.status} />
+                        {canUpdate ? (
+                            <Link
+                                href={`/seller/products/${product.id}/edit`}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-zinc-700"
+                            >
+                                <Pencil className="size-3.5" aria-hidden="true" />
+                                Chỉnh sửa
+                            </Link>
+                        ) : null}
                         <span className="rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-500">
                             ID {product.id}
                         </span>

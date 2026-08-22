@@ -2,17 +2,19 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, EyeOff, LoaderCircle, Send } from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import type { CreateSellerProductStatus } from '@/services/product';
+import type { ProductSubmitAction } from '../../hooks/useSellerProductEditor';
 import type { ProductCreateStepId } from '../../types/product-create-step.type';
 
 interface ProductCreateActionsProps {
     activeStep: ProductCreateStepId;
     canContinue: boolean;
     canSubmit: boolean;
-    submittingStatus: CreateSellerProductStatus | null;
+    submittingStatus: ProductSubmitAction | null;
+    mode?: 'create' | 'edit';
+    cancelHref?: string;
     onBack: () => void;
     onNext: () => void;
-    onSubmit: (status: CreateSellerProductStatus) => void;
+    onSubmit: (status: ProductSubmitAction) => void;
 }
 
 // Chỉ hiển thị hành động phù hợp với bước hiện tại, tránh cho seller gửi sản phẩm khi còn thiếu dữ liệu ở bước sau.
@@ -21,6 +23,8 @@ export function ProductCreateActions({
     canContinue,
     canSubmit,
     submittingStatus,
+    mode = 'create',
+    cancelHref = '/seller/products',
     onBack,
     onNext,
     onSubmit,
@@ -34,7 +38,9 @@ export function ProductCreateActions({
             <p className="text-xs leading-5 text-zinc-500">
                 {isLastStep
                     ? canSubmit
-                        ? 'Thông tin đã sẵn sàng để lưu hoặc đăng bán.'
+                        ? mode === 'edit'
+                            ? 'Thông tin đã sẵn sàng để lưu thay đổi.'
+                            : 'Thông tin đã sẵn sàng để lưu hoặc đăng bán.'
                         : 'Hoàn thiện các bước bắt buộc trước khi đăng bán.'
                     : canContinue
                       ? 'Bước này đã hợp lệ, bạn có thể tiếp tục.'
@@ -42,9 +48,24 @@ export function ProductCreateActions({
             </p>
             <div className="flex flex-wrap items-center justify-end gap-2">
                 {isFirstStep ? (
-                    <Link href="/seller/products" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+                    <Link href={cancelHref} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
                         Hủy
                     </Link>
+                ) : mode === 'edit' ? (
+                    <Button
+                        type="button"
+                        size="lg"
+                        disabled={!canSubmit || submitting}
+                        className="min-w-36"
+                        onClick={() => onSubmit('UPDATE')}
+                    >
+                        {submittingStatus === 'UPDATE' ? (
+                            <LoaderCircle className="size-4 animate-spin" />
+                        ) : (
+                            <Send className="size-4" />
+                        )}
+                        Lưu thay đổi
+                    </Button>
                 ) : (
                     <Button type="button" size="lg" variant="outline" disabled={submitting} onClick={onBack}>
                         <ArrowLeft className="size-4" />

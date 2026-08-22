@@ -1,4 +1,4 @@
-import { SellerProductsPageContent } from './components/SellerProductsPageContent';
+import { SellerProductsPageContent } from './list/components/SellerProductsPageContent';
 
 // Route chỉ compose feature danh sách sản phẩm để phần data fetching và UI không dồn vào page.
 export default function SellerProductsPage() {

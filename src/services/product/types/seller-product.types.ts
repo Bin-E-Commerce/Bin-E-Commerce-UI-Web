@@ -140,6 +140,35 @@ export interface CreateSellerProductPayload {
     };
 }
 
+export interface UpdateSellerProductPayload extends Omit<CreateSellerProductPayload, 'variants' | 'status' | 'images'> {
+    status: SellerProductStatus;
+    images: Array<{
+        id?: string;
+        imageUrl: string;
+        altText?: string;
+        sortOrder: number;
+        isThumbnail: boolean;
+    }>;
+    variants: Array<{
+        id?: string;
+        optionValueClientIds: string[];
+        sku?: string;
+        gtin?: string;
+        withoutGtin: boolean;
+        price: number;
+        originalPrice?: number;
+        stockQuantity: number;
+        imageUrl?: string;
+    }>;
+}
+
+export interface UpdateSellerProductResponse {
+    id: string;
+    slug: string;
+    status: SellerProductStatus;
+    updatedAt: string;
+}
+
 export interface CreateSellerProductResponse {
     id: string;
     slug: string;

@@ -1,6 +1,6 @@
-import { SellerProductCreatePage } from './components/SellerProductCreatePage';
+import { SellerProductEditorPage } from '../../editor/components/SellerProductEditorPage';
 
 // Giữ route component mỏng để toàn bộ UI và nghiệp vụ form nằm trong feature chuyên trách.
 export default function SellerNewProductPage() {
-    return <SellerProductCreatePage />;
+    return <SellerProductEditorPage />;
 }

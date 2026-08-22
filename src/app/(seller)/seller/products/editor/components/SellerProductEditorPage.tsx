@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { ArrowLeft, PackagePlus } from 'lucide-react';
 
 import { buttonVariants } from '@/components/ui/button';
-import { useSellerProductCreate } from '../hooks/useSellerProductCreate';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useSellerProductEditor } from '../hooks/useSellerProductEditor';
 import { ProductCreateActions } from './layout/ProductCreateActions';
 import { ProductCreateChecklist } from './layout/ProductCreateChecklist';
 import { ProductCreatePreview } from './layout/ProductCreatePreview';
@@ -14,7 +15,13 @@ import { ProductCreateStepContent } from './ProductCreateStepContent';
 // Ghép wizard tạo sản phẩm thành ba vùng: tiến độ, một bước đang nhập và preview cố định.
 // Chỉ một section được mount tại mỗi thời điểm nên seller không phải cuộn qua một biểu mẫu quá dài.
 // Hai sidebar có vùng cuộn riêng để chúng vẫn đọc được khi form trung tâm dài hơn viewport.
-export function SellerProductCreatePage() {
+interface SellerProductEditorPageProps {
+    productId?: string;
+}
+
+// Hiển thị chung wizard tạo/chỉnh sửa, chỉ thay đổi nguồn dữ liệu và hành động submit theo productId.
+// Dùng chung cho route tạo mới và chỉnh sửa; productId có mặt thì hook hydrate dữ liệu hiện tại.
+export function SellerProductEditorPage({ productId }: SellerProductEditorPageProps) {
     const {
         form,
         references,
@@ -30,7 +37,22 @@ export function SellerProductCreatePage() {
         goNext,
         goBack,
         submitProduct,
-    } = useSellerProductCreate();
+        isEditMode,
+        loadingProduct,
+    } = useSellerProductEditor(productId);
+
+    if (loadingProduct) {
+        return (
+            <div className="mx-auto w-full max-w-[1760px] space-y-5 px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
+                <Skeleton className="h-12 w-80" />
+                <div className="grid gap-5 lg:grid-cols-[250px_minmax(0,1fr)_280px]">
+                    <Skeleton className="h-96" />
+                    <Skeleton className="h-[42rem]" />
+                    <Skeleton className="h-96" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mx-auto w-full max-w-[1760px] px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
@@ -44,16 +66,17 @@ export function SellerProductCreatePage() {
                             Quản lý sản phẩm
                         </p>
                         <h1 className="mt-1 text-2xl font-bold text-zinc-950">
-                            Thêm sản phẩm mới
+                            {isEditMode ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
                         </h1>
                         <p className="mt-1 text-sm text-zinc-500">
-                            Khai báo thông tin bán hàng, phân loại và đóng gói
-                            trong một luồng thống nhất.
+                            {isEditMode
+                                ? 'Cập nhật thông tin, phân loại và tồn kho trong một luồng thống nhất.'
+                                : 'Khai báo thông tin bán hàng, phân loại và đóng gói trong một luồng thống nhất.'}
                         </p>
                     </div>
                 </div>
                 <Link
-                    href="/seller/products"
+                    href={productId ? `/seller/products/${productId}` : '/seller/products'}
                     className={buttonVariants({
                         variant: 'outline',
                         size: 'lg',
@@ -97,6 +120,8 @@ export function SellerProductCreatePage() {
                         canContinue={canContinue}
                         canSubmit={canSubmit}
                         submittingStatus={submittingStatus}
+                        mode={isEditMode ? 'edit' : 'create'}
+                        cancelHref={productId ? `/seller/products/${productId}` : '/seller/products'}
                         onBack={goBack}
                         onNext={goNext}
                         onSubmit={submitProduct}

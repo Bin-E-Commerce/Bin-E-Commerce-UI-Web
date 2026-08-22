@@ -58,8 +58,10 @@ export interface ProductVariantOptionChoice {
 
 export interface ProductVariant {
     id: string;
+    sellerSku?: string | null;
     sku: string;
     gtin?: string | null;
+    withoutGtin?: boolean;
     name: string;
     price: string;
     originalPrice?: string | null;

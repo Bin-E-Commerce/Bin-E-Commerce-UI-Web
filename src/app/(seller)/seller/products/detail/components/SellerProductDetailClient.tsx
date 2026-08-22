@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSellerProductDetail } from '../../hooks/useSellerProductDetail';
+import { useSellerProductDetail } from '../hooks/useSellerProductDetail';
 import { SellerProductDetailHero } from './SellerProductDetailHero';
 import { SellerProductDetailSections } from './SellerProductDetailSections';
 
@@ -30,7 +30,8 @@ export function SellerProductDetailClient() {
                         Không tải được chi tiết sản phẩm
                     </h1>
                     <p className="mt-1 max-w-md text-sm leading-6 text-zinc-600">
-                        Sản phẩm không tồn tại, không thuộc shop của bạn hoặc dịch vụ đang tạm gián đoạn.
+                        Sản phẩm không tồn tại, không thuộc shop của bạn hoặc
+                        dịch vụ đang tạm gián đoạn.
                     </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
@@ -53,7 +54,7 @@ export function SellerProductDetailClient() {
     );
 
     return (
-        <div className="min-h-full bg-zinc-100 pb-10 text-zinc-950">
+        <div className="min-h-fullpb-10 text-zinc-950">
             <div className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
                 <Link
                     href="/seller/products"

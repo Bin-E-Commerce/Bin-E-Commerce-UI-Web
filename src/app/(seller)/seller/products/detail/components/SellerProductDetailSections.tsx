@@ -18,7 +18,7 @@ import type { ProductVariant, SellerProductDetail } from '@/services/product';
 import {
     formatSellerProductPrice,
     formatSellerProductUpdatedAt,
-} from '../../utils/seller-product-formatters';
+} from '../../shared/utils/seller-product-formatters';
 
 interface SellerProductDetailSectionsProps {
     product: SellerProductDetail;

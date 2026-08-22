@@ -2,9 +2,10 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 import type { CatalogCategory } from '@/services/catalog';
 import { catalogService } from '@/services/catalog';
@@ -27,7 +28,14 @@ import {
     getProductCreateStepValidations,
     validateDynamicAttributes,
 } from '../utils/product-create-validation';
-import { toCreateSellerProductPayload } from '../utils/seller-product-payload.mapper';
+import {
+    toCreateSellerProductPayload,
+    toUpdateSellerProductPayload,
+} from '../utils/seller-product-payload.mapper';
+import { toSellerProductEditFormValues } from '../utils/seller-product-edit.mapper';
+import { useSellerProductDetail } from '../../detail/hooks/useSellerProductDetail';
+
+export type ProductSubmitAction = CreateSellerProductStatus | 'UPDATE';
 
 // Tạo object mới cho từng thuộc tính để các mảng selectedOptionIds không dùng chung một reference.
 // Nếu tái sử dụng một object cố định, thao tác chọn option ở một field có thể làm thay đổi field khác.
@@ -57,8 +65,11 @@ const STEP_FIELDS: Record<ProductCreateStepId, FieldPath<SellerProductCreateForm
 
 // Điều phối dữ liệu tham chiếu, trạng thái wizard và thao tác tạo product graph.
 // Hook này không tự quyết định rule riêng lẻ; checklist, điều hướng và submit đều dùng validator dùng chung.
-export function useSellerProductCreate() {
+export function useSellerProductEditor(productId?: string) {
     const router = useRouter();
+    const queryClient = useQueryClient();
+    const isEditMode = Boolean(productId);
+    const detailQuery = useSellerProductDetail(productId);
     const form = useForm<SellerProductCreateFormValues>({
         resolver: zodResolver(sellerProductCreateSchema),
         defaultValues: initialSellerProductCreateValues,
@@ -74,11 +85,49 @@ export function useSellerProductCreate() {
         attributes: [],
     });
     const [loadingAttributes, setLoadingAttributes] = useState(false);
-    const [submittingStatus, setSubmittingStatus] = useState<CreateSellerProductStatus | null>(null);
+    const [submittingStatus, setSubmittingStatus] = useState<ProductSubmitAction | null>(null);
+    const [loadingProduct, setLoadingProduct] = useState(isEditMode);
+    const hydratedProductId = useRef<string | null>(null);
     const [activeStep, setActiveStep] = useState<ProductCreateStepId>('basic');
     const watchedValues = useWatch({ control: form.control }) as SellerProductCreateFormValues;
     const options = useWatch({ control: form.control, name: 'options' });
     const variants = useWatch({ control: form.control, name: 'variants' });
+
+    // Hydrate một lần từ detail và schema category để wizard edit giữ đúng giá trị động seller đã lưu.
+    useEffect(() => {
+        if (!productId || !detailQuery.data || hydratedProductId.current === productId) return;
+        hydratedProductId.current = productId;
+        setLoadingProduct(true);
+        void (async () => {
+            try {
+                const [category, attributes] = await Promise.all([
+                    catalogService.getCategory(detailQuery.data.categoryId),
+                    catalogService.listCategoryAttributes(detailQuery.data.categoryId, {
+                        includeOptions: true,
+                        includeConditional: true,
+                    }),
+                ]);
+                const editValues = toSellerProductEditFormValues(detailQuery.data);
+                // Bổ sung field rỗng cho attribute mới của category để schema động vẫn render đủ và bắt buộc nhập đúng.
+                editValues.attributes = Object.fromEntries(
+                    attributes.map((attribute) => [
+                        attribute.id,
+                        editValues.attributes[attribute.id] ?? createEmptyAttributeValue(),
+                    ]),
+                );
+                form.reset(editValues);
+                setReferences({
+                    category: { id: category.id, name: category.name, path: category.path },
+                    brand: detailQuery.data.brand ?? null,
+                    attributes,
+                });
+            } catch (error) {
+                toast.error(getErrorMessage(error));
+            } finally {
+                setLoadingProduct(false);
+            }
+        })();
+    }, [detailQuery.data, form, productId]);
 
     const validations = useMemo<ProductCreateStepValidations>(
         () => getProductCreateStepValidations(watchedValues, references.attributes),
@@ -233,7 +282,7 @@ export function useSellerProductCreate() {
     };
 
     // Xác thực tuần tự toàn bộ wizard trước khi tạo product, nhờ đó lỗi luôn đưa seller về đúng section.
-    const submitProduct = (status: CreateSellerProductStatus) => {
+    const submitProduct = (status: ProductSubmitAction) => {
         void (async () => {
             for (const step of PRODUCT_CREATE_STEPS) {
                 if (!(await validateStep(step.id))) {
@@ -252,8 +301,33 @@ export function useSellerProductCreate() {
 
             setSubmittingStatus(status);
             try {
+                if (isEditMode && productId && detailQuery.data) {
+                    await sellerProductService.updateProduct(
+                        productId,
+                        toUpdateSellerProductPayload(
+                            form.getValues(),
+                            references.attributes,
+                            detailQuery.data.status,
+                        ),
+                    );
+                    // Xóa cache detail/list trước redirect để seller thấy dữ liệu mới ngay cả khi query còn trong staleTime.
+                    await Promise.all([
+                        queryClient.invalidateQueries({
+                            queryKey: ['seller', 'product-detail', productId],
+                        }),
+                        queryClient.invalidateQueries({ queryKey: ['seller-products'] }),
+                    ]);
+                    toast.success('Sản phẩm đã được cập nhật.');
+                    router.push(`/seller/products/${productId}`);
+                    return;
+                }
+
                 const created = await sellerProductService.createProduct(
-                    toCreateSellerProductPayload(form.getValues(), references.attributes, status),
+                    toCreateSellerProductPayload(
+                        form.getValues(),
+                        references.attributes,
+                        status as CreateSellerProductStatus,
+                    ),
                 );
                 toast.success(
                     status === 'ACTIVE'
@@ -271,6 +345,8 @@ export function useSellerProductCreate() {
 
     return {
         form,
+        isEditMode,
+        loadingProduct: loadingProduct || detailQuery.isLoading,
         references,
         loadingAttributes,
         submittingStatus,

@@ -1,6 +1,8 @@
 import type {
     CreateSellerProductPayload,
     CreateSellerProductStatus,
+    SellerProductStatus,
+    UpdateSellerProductPayload,
 } from '@/services/product';
 import type { CatalogCategoryAttribute } from '@/services/catalog';
 import type { SellerProductCreateFormValues } from '../types/seller-product-create-form.type';
@@ -117,6 +119,32 @@ export function toCreateSellerProductPayload(
             widthCm: Number(values.package.widthCm),
             heightCm: Number(values.package.heightCm),
         },
+    };
+}
+
+// Chuyển form edit sang payload full replacement và chỉ gửi ID của variant đã tồn tại để backend giữ lịch sử SKU.
+export function toUpdateSellerProductPayload(
+    values: SellerProductCreateFormValues,
+    attributes: CatalogCategoryAttribute[],
+    status: SellerProductStatus,
+): UpdateSellerProductPayload {
+    const payload = toCreateSellerProductPayload(
+        values,
+        attributes,
+        status === 'INACTIVE' ? 'DRAFT' : status,
+    );
+
+    return {
+        ...payload,
+        status,
+        images: payload.images.map((image, index) => ({
+            ...image,
+            id: values.images[index]?.assetId,
+        })),
+        variants: payload.variants.map((variant, index) => ({
+            ...variant,
+            id: values.variants[index]?.id,
+        })),
     };
 }
 

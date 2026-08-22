@@ -3,6 +3,8 @@ import authorizedAxios from '@/utils/authorizedAxios';
 import type {
     CreateSellerProductPayload,
     CreateSellerProductResponse,
+    UpdateSellerProductPayload,
+    UpdateSellerProductResponse,
     ProductBrandListParams,
     ProductBrandListResponse,
     SellerProductListParams,
@@ -41,6 +43,15 @@ export const sellerProductService = {
         authorizedAxios
             .post<CreateSellerProductResponse>(
                 `${API_VERSION}/products/seller`,
+                payload,
+            )
+            .then((response) => response.data),
+
+    // Gửi toàn bộ product graph để backend reconcile option, variant, inventory trong một transaction.
+    updateProduct: (productId: string, payload: UpdateSellerProductPayload) =>
+        authorizedAxios
+            .put<UpdateSellerProductResponse>(
+                `${API_VERSION}/products/seller/${productId}`,
                 payload,
             )
             .then((response) => response.data),

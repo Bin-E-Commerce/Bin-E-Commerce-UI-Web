@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Eye, ImageOff, Star } from 'lucide-react';
+import { Eye, ImageOff, Pencil, Star } from 'lucide-react';
 
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,8 +9,9 @@ import {
     formatSellerProductMetric,
     formatSellerProductPriceRange,
     formatSellerProductUpdatedAt,
-} from '../utils/seller-product-formatters';
-import { SellerProductStatusBadge } from './SellerProductStatusBadge';
+} from '../../shared/utils/seller-product-formatters';
+import { SellerProductStatusBadge } from '../../shared/components/SellerProductStatusBadge';
+import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
 
 interface SellerProductsTableProps {
     products: SellerProductListItem[];
@@ -56,6 +57,8 @@ function ProductThumbnail({
 function DesktopProductsTable({
     products,
 }: SellerProductsTableProps) {
+    const canUpdate = useSessionPermission('seller.product.update');
+
     return (
         <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[980px] border-collapse text-left">
@@ -67,7 +70,7 @@ function DesktopProductsTable({
                         <th className="px-4 py-3">Hiệu suất</th>
                         <th className="px-4 py-3">Trạng thái</th>
                         <th className="px-4 py-3">Cập nhật</th>
-                        <th className="w-16 px-4 py-3 text-right">
+                        <th className="w-28 min-w-[112px] whitespace-nowrap px-4 py-3 text-right">
                             Thao tác
                         </th>
                     </tr>
@@ -141,20 +144,37 @@ function DesktopProductsTable({
                                     product.updatedAt,
                                 )}
                             </td>
-                            <td className="px-4 py-4 text-right align-top">
-                                <Link
-                                    title="Xem sản phẩm"
-                                    aria-label={`Xem ${product.name}`}
-                                    href={`/seller/products/${product.id}`}
-                                    className={cn(
-                                        buttonVariants({
-                                            variant: 'ghost',
-                                            size: 'icon',
-                                        }),
-                                    )}
-                                >
-                                    <Eye className="size-4" />
-                                </Link>
+                            <td className="px-4 py-4 align-top text-right">
+                                <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                                    <Link
+                                        title="Xem sản phẩm"
+                                        aria-label={`Xem ${product.name}`}
+                                        href={`/seller/products/${product.id}`}
+                                        className={cn(
+                                            buttonVariants({
+                                                variant: 'ghost',
+                                                size: 'icon',
+                                            }),
+                                        )}
+                                    >
+                                        <Eye className="size-4" />
+                                    </Link>
+                                    {canUpdate ? (
+                                        <Link
+                                            title="Chỉnh sửa sản phẩm"
+                                            aria-label={`Chỉnh sửa ${product.name}`}
+                                            href={`/seller/products/${product.id}/edit`}
+                                            className={cn(
+                                                buttonVariants({
+                                                    variant: 'ghost',
+                                                    size: 'icon',
+                                                }),
+                                            )}
+                                        >
+                                            <Pencil className="size-4" />
+                                        </Link>
+                                    ) : null}
+                                </div>
                             </td>
                         </tr>
                     ))}
@@ -166,6 +186,8 @@ function DesktopProductsTable({
 
 // Chuyển mỗi dòng bảng thành khối thông tin dọc trên mobile để không bắt người dùng cuộn ngang.
 function MobileProductsList({ products }: SellerProductsTableProps) {
+    const canUpdate = useSessionPermission('seller.product.update');
+
     return (
         <div className="divide-y divide-zinc-100 lg:hidden">
             {products.map((product) => (
@@ -194,6 +216,19 @@ function MobileProductsList({ products }: SellerProductsTableProps) {
                                 >
                                     <Eye className="size-4" />
                                 </Link>
+                                {canUpdate ? (
+                                    <Link
+                                        href={`/seller/products/${product.id}/edit`}
+                                        className={cn(
+                                            buttonVariants({ variant: 'ghost', size: 'icon' }),
+                                            '-mr-2 -mt-2 shrink-0',
+                                        )}
+                                        title="Chỉnh sửa sản phẩm"
+                                        aria-label={`Chỉnh sửa ${product.name}`}
+                                    >
+                                        <Pencil className="size-4" />
+                                    </Link>
+                                ) : null}
                             </div>
                             <p className="mt-1 text-xs text-zinc-500">
                                 SKU: {product.primarySku ?? 'Chưa có SKU'}

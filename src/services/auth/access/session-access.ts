@@ -6,6 +6,7 @@ import type {
 export const ADMIN_ACCESS_DENIED_PATH = '/admin/access-denied';
 export const ADMIN_DASHBOARD_PATH = '/admin/dashboard';
 export const ADMIN_SELLER_APPLICATIONS_PATH = '/admin/sellers/applications';
+export const SELLER_PRODUCT_UPDATE_PERMISSION = 'seller.product.update';
 
 // Kiểm tra permission trong session user do backend trả về.
 // Hàm này là tiện ích generic cho nút/block nhỏ; route chính ưu tiên accessProfile thay vì hard-code permission ở FE.
@@ -114,6 +115,14 @@ export function canAccessSellerPath(
         /^\/seller\/products\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
             pathname,
         );
+    const isSellerProductEdit =
+        /^\/seller\/products\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/edit$/i.test(
+            pathname,
+        );
+    if (isSellerProductEdit) {
+        // Edit dùng permission riêng; không suy ra từ quyền đọc để tránh mở nhầm thao tác ghi.
+        return hasPermission(user, SELLER_PRODUCT_UPDATE_PERMISSION);
+    }
     return (
         isSellerProductDetail &&
         navigation.some((item) => item.href === '/seller/products')
