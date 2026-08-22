@@ -30,3 +30,44 @@ export interface ListCategoriesParams {
     pageSize?: number;
 }
 
+export type CatalogAttributeInputType =
+    | 'TEXT'
+    | 'TEXTAREA'
+    | 'INTEGER'
+    | 'DECIMAL'
+    | 'BOOLEAN'
+    | 'DATE'
+    | 'DATETIME'
+    | 'SINGLE_SELECT'
+    | 'MULTI_SELECT';
+
+export interface CatalogCategoryAttributeOption {
+    id: string;
+    attributeId: string;
+    value: string;
+    displayValue: string;
+    sortOrder: number;
+    isActive: boolean;
+}
+
+export interface CatalogCategoryAttribute {
+    id: string;
+    categoryId: string;
+    parentAttributeId: string | null;
+    triggerOptionId: string | null;
+    name: string;
+    displayName: string;
+    slug: string;
+    inputType: CatalogAttributeInputType;
+    isRequired: boolean;
+    isFilterable: boolean;
+    maxSelections: number | null;
+    sortOrder: number;
+    isActive: boolean;
+    options: CatalogCategoryAttributeOption[];
+}
+
+export interface ListCategoryAttributesParams {
+    includeOptions?: boolean;
+    includeConditional?: boolean;
+}

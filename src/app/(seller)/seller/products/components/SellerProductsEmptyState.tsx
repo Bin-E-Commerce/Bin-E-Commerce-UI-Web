@@ -1,13 +1,18 @@
+import Link from 'next/link';
 import { PackageSearch } from 'lucide-react';
+
+import { buttonVariants } from '@/components/ui/button';
 
 interface SellerProductsEmptyStateProps {
     filtered: boolean;
+    canCreateProduct: boolean;
     onClearFilters: () => void;
 }
 
 // Phân biệt shop chưa có sản phẩm với bộ lọc không có kết quả để người bán biết bước tiếp theo.
 export function SellerProductsEmptyState({
     filtered,
+    canCreateProduct,
     onClearFilters,
 }: SellerProductsEmptyStateProps) {
     return (
@@ -33,6 +38,13 @@ export function SellerProductsEmptyState({
                 >
                     Xóa bộ lọc
                 </button>
+            ) : canCreateProduct ? (
+                <Link
+                    href="/seller/products/new"
+                    className={`mt-5 ${buttonVariants({ size: 'lg' })}`}
+                >
+                    Thêm sản phẩm đầu tiên
+                </Link>
             ) : null}
         </div>
     );

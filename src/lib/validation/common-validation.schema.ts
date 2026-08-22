@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const PHONE_PATTERN = /^(0|\+84)\d{9,10}$/;
 export const SHOP_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const UUID_PATTERN =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // Tạo schema chuỗi đã trim để các form dùng chung cùng một cách kiểm tra min/max.
 export function trimmedStringSchema(options: {
@@ -27,6 +27,14 @@ export function vietnamPhoneSchema(message: string) {
 // Dùng chung cho các combobox lưu id UUID lấy từ database.
 export function uuidSelectionSchema(message: string) {
     return z.string().trim().regex(UUID_PATTERN, message);
+}
+
+// Dùng cho các combobox không bắt buộc: chuỗi rỗng hợp lệ khi người dùng chưa chọn,
+// nhưng giá trị khác rỗng vẫn phải là UUID thật trước khi mapper đưa vào request.
+export function optionalUuidSelectionSchema(message: string) {
+    return z.string().trim().refine((value) => !value || UUID_PATTERN.test(value), {
+        message,
+    });
 }
 
 // Cho phép bỏ trống URL tùy chọn, nhưng nếu đã nhập thì phải là URL tuyệt đối có protocol.

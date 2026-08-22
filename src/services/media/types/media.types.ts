@@ -1,13 +1,19 @@
 export type MediaUploadPurpose =
     | 'avatar'
     | 'product_image'
+    | 'product_video'
     | 'shop_avatar'
     | 'shop_cover'
     | 'seller_document'
     | 'review_image'
     | 'chat_image';
 
-export type MediaUploadMimeType = 'image/jpeg' | 'image/png' | 'image/webp';
+export type MediaUploadMimeType =
+    | 'image/jpeg'
+    | 'image/png'
+    | 'image/webp'
+    | 'video/mp4'
+    | 'video/webm';
 
 export interface CreatePresignedUploadPayload {
     fileName: string;

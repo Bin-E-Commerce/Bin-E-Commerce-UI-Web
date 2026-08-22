@@ -1,7 +1,11 @@
 'use client';
 
-import { AlertCircle, PackageSearch } from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, PackagePlus, PackageSearch } from 'lucide-react';
 
+import { buttonVariants } from '@/components/ui/button';
+import { canAccessSellerPath } from '@/services/auth/access/session-access';
+import { useAppSelector } from '@/store/hooks';
 import { useSellerProducts } from '../hooks/useSellerProducts';
 import { SellerProductFilters } from './SellerProductFilters';
 import { SellerProductsEmptyState } from './SellerProductsEmptyState';
@@ -12,6 +16,12 @@ import { SellerProductsTable } from './SellerProductsTable';
 
 // Điều phối toàn bộ trạng thái trang sản phẩm seller nhưng giao từng vùng hiển thị cho component chuyên trách.
 export function SellerProductsPageContent() {
+    const user = useAppSelector((state) => state.auth.user);
+    const canCreateProduct = canAccessSellerPath(
+        '/seller/products/new',
+        user,
+    );
+
     const {
         search,
         status,
@@ -55,14 +65,27 @@ export function SellerProductsPageContent() {
                         thị của sản phẩm trong shop.
                     </p>
                 </div>
-                <div className="flex items-center gap-3 rounded-md bg-zinc-50 px-4 py-3">
-                    <PackageSearch className="size-5 text-zinc-500" />
-                    <div>
-                        <p className="text-xs text-zinc-500">Đang hiển thị</p>
-                        <p className="text-sm font-semibold tabular-nums text-zinc-950">
-                            {data?.totalItems ?? 0} sản phẩm
-                        </p>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-3 rounded-md bg-zinc-50 px-4 py-3">
+                        <PackageSearch className="size-5 text-zinc-500" />
+                        <div>
+                            <p className="text-xs text-zinc-500">
+                                Đang hiển thị
+                            </p>
+                            <p className="text-sm font-semibold tabular-nums text-zinc-950">
+                                {data?.totalItems ?? 0} sản phẩm
+                            </p>
+                        </div>
                     </div>
+                    {canCreateProduct ? (
+                        <Link
+                            href="/seller/products/new"
+                            className={buttonVariants({ size: 'lg' })}
+                        >
+                            <PackagePlus className="size-4" />
+                            Thêm sản phẩm
+                        </Link>
+                    ) : null}
                 </div>
             </header>
 
@@ -100,6 +123,7 @@ export function SellerProductsPageContent() {
             ) : (
                 <SellerProductsEmptyState
                     filtered={hasFilters}
+                    canCreateProduct={canCreateProduct}
                     onClearFilters={clearFilters}
                 />
             )}

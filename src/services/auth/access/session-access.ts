@@ -107,7 +107,17 @@ export function canAccessSellerPath(
     if (pathname === '/seller/access-denied') return true;
 
     const navigation = user?.accessProfile?.areas.seller.navigation ?? [];
-    return navigation.some((item) => pathname === item.href);
+    if (navigation.some((item) => pathname === item.href)) return true;
+
+    // Route UUID là màn chi tiết của danh sách sản phẩm nên kế thừa quyền đọc route cha; `/new` không khớp UUID và vẫn cần quyền tạo riêng.
+    const isSellerProductDetail =
+        /^\/seller\/products\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            pathname,
+        );
+    return (
+        isSellerProductDetail &&
+        navigation.some((item) => item.href === '/seller/products')
+    );
 }
 
 // Dashboard seller được quyết định bởi navigation backend, FE không giữ mã quyền của màn hình này.

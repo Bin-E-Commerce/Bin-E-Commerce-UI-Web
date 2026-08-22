@@ -3,6 +3,8 @@ export interface ProductBrand {
     name: string;
     slug: string;
     logoUrl?: string | null;
+    countryCode?: string | null;
+    countryName?: string | null;
 }
 
 export interface ProductExternalShop {
@@ -57,6 +59,7 @@ export interface ProductVariantOptionChoice {
 export interface ProductVariant {
     id: string;
     sku: string;
+    gtin?: string | null;
     name: string;
     price: string;
     originalPrice?: string | null;
@@ -108,6 +111,9 @@ export interface ProductDetail extends PublicProduct {
     description?: string | null;
     categoryId: string;
     viewCount: number;
+    videoAssetId?: string | null;
+    videoUrl?: string | null;
+    videoDurationSeconds?: number | null;
     metadata?: Record<string, unknown>;
     variants: ProductVariant[];
     options: ProductOption[];

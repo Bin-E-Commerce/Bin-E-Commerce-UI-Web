@@ -2,7 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Eye, ImageOff, Star } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { SellerProductListItem } from '@/services/product';
 import {
     formatSellerProductMetric,
@@ -141,19 +142,19 @@ function DesktopProductsTable({
                                 )}
                             </td>
                             <td className="px-4 py-4 text-right align-top">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
+                                <Link
                                     title="Xem sản phẩm"
                                     aria-label={`Xem ${product.name}`}
-                                    render={
-                                        <Link
-                                            href={`/products/${product.id}`}
-                                        />
-                                    }
+                                    href={`/seller/products/${product.id}`}
+                                    className={cn(
+                                        buttonVariants({
+                                            variant: 'ghost',
+                                            size: 'icon',
+                                        }),
+                                    )}
                                 >
                                     <Eye className="size-4" />
-                                </Button>
+                                </Link>
                             </td>
                         </tr>
                     ))}
@@ -179,20 +180,20 @@ function MobileProductsList({ products }: SellerProductsTableProps) {
                                 <p className="line-clamp-2 text-sm font-semibold leading-5 text-zinc-950">
                                     {product.name}
                                 </p>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="-mr-2 -mt-2 shrink-0"
+                                <Link
+                                    href={`/seller/products/${product.id}`}
+                                    className={cn(
+                                        buttonVariants({
+                                            variant: 'ghost',
+                                            size: 'icon',
+                                        }),
+                                        '-mr-2 -mt-2 shrink-0',
+                                    )}
                                     title="Xem sản phẩm"
                                     aria-label={`Xem ${product.name}`}
-                                    render={
-                                        <Link
-                                            href={`/products/${product.id}`}
-                                        />
-                                    }
                                 >
                                     <Eye className="size-4" />
-                                </Button>
+                                </Link>
                             </div>
                             <p className="mt-1 text-xs text-zinc-500">
                                 SKU: {product.primarySku ?? 'Chưa có SKU'}
