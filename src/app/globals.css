@@ -1,1 +1,8 @@
-@import "tailwindcss";
+/* ─── Entry point — imports only ────────────────────────────────────── */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/* Project-level CSS (split by concern) */
+@import '../styles/theme.css';
+@import '../styles/base.css';

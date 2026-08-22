@@ -1,15 +1,16 @@
 import axios from 'axios';
-import { API_VERSION } from '@/config/api.config';
+import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-// Create public axios instance for login/register
+// Create public axios instance for login/register (no auth header required)
 const publicAxios = axios.create({
     baseURL: API_BASE_URL,
-    withCredentials: true, // Để nhận cookies sau khi đăng ký/đăng nhập
+    withCredentials: true, // Để nhận httpOnly cookies (refresh_token) sau khi đăng ký/đăng nhập
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
+        // Gửi header này để api-gateway's CsrfGuard chấp nhận state-changing request.
+        // Trình duyệt không cho phép trang web khác domain tự gắn header này vào cross-site request.
+        'X-Requested-With': 'XMLHttpRequest',
     },
 });
 
@@ -17,12 +18,12 @@ const publicAxios = axios.create({
 publicAxios.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Không log error 401 từ validate session (hành vi bình thường khi chưa đăng nhập)
-        const isValidateSessionUnauthorized =
-            error.config?.url?.includes(`${API_VERSION}/auth/validate`) &&
-            error.response?.status === 401;
+        // Không log error khi /auth/refresh fail (hành vi bình thường khi chưa đăng nhập hoặc service chưa chạy)
+        const isRefreshError = error.config?.url?.includes(
+            `${API_VERSION}/auth/refresh`,
+        );
 
-        if (!isValidateSessionUnauthorized) {
+        if (!isRefreshError) {
             console.error(
                 'Public API Error:',
                 error.response?.data?.message || error.message,

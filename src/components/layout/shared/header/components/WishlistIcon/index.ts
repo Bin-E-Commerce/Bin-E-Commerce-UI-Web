@@ -1,0 +1,1 @@
+export { WishlistIcon } from './WishlistIcon';
