@@ -73,6 +73,35 @@ export function getDefaultAdminPath(
     return ADMIN_ACCESS_DENIED_PATH;
 }
 
+// Chọn trang mặc định theo role chính trước rồi mới xét accessProfile, tránh ADMIN có thêm permission seller bị điều hướng nhầm.
+export function getDefaultAuthenticatedPath(
+    user: PermissionAwareUser | null | undefined,
+): string {
+    const roles = [user?.role, ...(user?.roles ?? [])]
+        .filter((role): role is string => Boolean(role))
+        .map((role) => role.toUpperCase());
+    const isBackOfficeRole = roles.includes('ADMIN') || roles.includes('SUPPORT_AGENT');
+    const isSellerRole = roles.includes('SELLER');
+
+    if (isBackOfficeRole) {
+        return canAccessAdmin(user) ? getDefaultAdminPath(user) : '/';
+    }
+
+    if (isSellerRole && canAccessSellerCenter(user)) {
+        const sellerRoute = user?.accessProfile?.areas.seller.defaultRoute;
+        return sellerRoute?.startsWith('/seller') ? sellerRoute : '/seller';
+    }
+
+    // Fallback cho session cũ chưa trả role đầy đủ; vẫn ưu tiên admin nếu accessProfile xác nhận khu vực này.
+    if (canAccessAdmin(user)) return getDefaultAdminPath(user);
+    if (canAccessSellerCenter(user)) {
+        const sellerRoute = user?.accessProfile?.areas.seller.defaultRoute;
+        return sellerRoute?.startsWith('/seller') ? sellerRoute : '/seller';
+    }
+
+    return '/';
+}
+
 // Kiểm tra quyền theo path admin hiện tại bằng navigation backend trả trong accessProfile.
 // Route access-denied luôn mở; route còn lại phải xuất hiện trong navigation backend.
 export function canAccessAdminPath(

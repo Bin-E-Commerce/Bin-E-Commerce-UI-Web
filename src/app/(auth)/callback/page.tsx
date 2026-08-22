@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
 import { authService } from '@/services/auth';
+import { getDefaultAuthenticatedPath } from '@/services/auth/access';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
-// ─── Inner component (cần useSearchParams nên phải wrap Suspense) ────────────
+// Hoàn tất OAuth callback, khôi phục session và điều hướng seller vào đúng khu vực sau khi đăng nhập.
 function CallbackHandler() {
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
@@ -76,7 +77,7 @@ function CallbackHandler() {
                         user: res.data.user,
                     }),
                 );
-                router.replace('/');
+                router.replace(getDefaultAuthenticatedPath(res.data.user));
             })
             .catch((err: unknown) => {
                 setErrorMsg(getErrorMessage(err));

@@ -11,7 +11,7 @@ import { authService } from '@/services/auth';
 import type { AuthUser } from '@/services/auth';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
-import { canAccessAdmin, getDefaultAdminPath } from '@/services/auth/access';
+import { getDefaultAuthenticatedPath } from '@/services/auth/access';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { loginSchema, type LoginFormValues } from '../schemas/loginSchema';
 
@@ -27,11 +27,11 @@ export function useLoginForm() {
         defaultValues: { email: '', password: '' },
     });
 
-    // Ưu tiên redirect hợp lệ trên URL; nếu không có thì đưa admin/support tới trang đầu tiên họ được phép.
+    // Ưu tiên redirect hợp lệ trên URL; nếu không có thì seller vào Seller Center và role khác dùng trang mặc định.
     function resolveLoginRedirect(user?: AuthUser): string {
         const redirect = searchParams.get('redirect');
         if (redirect?.startsWith('/')) return redirect;
-        return canAccessAdmin(user) ? getDefaultAdminPath(user) : '/';
+        return getDefaultAuthenticatedPath(user);
     }
 
     // Gửi thông tin đăng nhập, lưu token vào Redux và chuyển trang theo quyền tài khoản.

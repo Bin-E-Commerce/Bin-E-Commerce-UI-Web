@@ -7,10 +7,12 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { authService } from '@/services/auth';
+import { getDefaultAuthenticatedPath } from '@/services/auth/access';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { AppDispatch } from '@/store';
 
+// Hoàn tất OAuth callback, khôi phục session và điều hướng seller vào đúng khu vực sau khi đăng nhập.
 function CallbackHandler() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -79,7 +81,7 @@ function CallbackHandler() {
                     }),
                 );
                 toast.success(`Đăng nhập bằng ${provider} thành công!`);
-                router.replace('/');
+                router.replace(getDefaultAuthenticatedPath(res.data.user));
             })
             .catch((err: unknown) => {
                 toast.error(getErrorMessage(err));
