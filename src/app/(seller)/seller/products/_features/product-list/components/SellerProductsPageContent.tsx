@@ -19,8 +19,8 @@ import { SellerProductRestoreDialog } from './SellerProductRestoreDialog';
 import { useDeleteSellerProduct } from '../hooks/useDeleteSellerProduct';
 import type { SellerProductListItem } from '@/services/product';
 import type { SellerProductPublicationStatus } from '@/services/product';
-import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../shared/components/SellerProductStatusDialog';
-import { useChangeSellerProductStatus } from '../../shared/hooks/useChangeSellerProductStatus';
+import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../product-shared/components/SellerProductStatusDialog';
+import { useChangeSellerProductStatus } from '../../product-shared/hooks/useChangeSellerProductStatus';
 import { useRestoreSellerProduct } from '../hooks/useRestoreSellerProduct';
 
 // Điều phối toàn bộ trạng thái trang sản phẩm seller nhưng giao từng vùng hiển thị cho component chuyên trách.

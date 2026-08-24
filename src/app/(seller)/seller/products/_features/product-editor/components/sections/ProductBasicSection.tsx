@@ -1,5 +1,8 @@
 'use client';
 
+// File này quản lý các field nền tảng của sản phẩm, gồm media, tên và ngành hàng.
+// Trợ lý AI chỉ được gắn vào label tên sản phẩm; dữ liệu form và submit vẫn do editor hook sở hữu.
+
 import type { UseFormReturn } from 'react-hook-form';
 
 import { Input } from '@/components/ui/input';

@@ -33,7 +33,7 @@ import {
     toUpdateSellerProductPayload,
 } from '../utils/seller-product-payload.mapper';
 import { toSellerProductEditFormValues } from '../utils/seller-product-edit.mapper';
-import { useSellerProductDetail } from '../../detail/hooks/useSellerProductDetail';
+import { useSellerProductDetail } from '../../product-detail/hooks/useSellerProductDetail';
 
 export type ProductSubmitAction = CreateSellerProductStatus | 'UPDATE';
 

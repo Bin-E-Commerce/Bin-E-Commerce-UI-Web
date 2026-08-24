@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 
-import { SellerProductEditorPage } from '../../../editor/components/SellerProductEditorPage';
+import { SellerProductEditorPage } from '../../../_features/product-editor/components/SellerProductEditorPage';
 
 // Đọc productId từ route động và giao phần tải dữ liệu/form cho wizard dùng chung.
 export default function SellerProductEditPage() {

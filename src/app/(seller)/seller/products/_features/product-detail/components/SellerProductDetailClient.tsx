@@ -10,8 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerProductDetail } from '../hooks/useSellerProductDetail';
 import { SellerProductDetailHero } from './SellerProductDetailHero';
 import { SellerProductDetailSections } from './SellerProductDetailSections';
-import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../shared/components/SellerProductStatusDialog';
-import { useChangeSellerProductStatus } from '../../shared/hooks/useChangeSellerProductStatus';
+import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../product-shared/components/SellerProductStatusDialog';
+import { useChangeSellerProductStatus } from '../../product-shared/hooks/useChangeSellerProductStatus';
 import type { SellerProductPublicationStatus } from '@/services/product';
 
 // Điều phối request và các trạng thái của màn chi tiết, giữ route mỏng để giao diện được chia thành các vùng dễ bảo trì.

@@ -6,10 +6,10 @@ import {
     formatSellerProductMetric,
     formatSellerProductPriceRange,
     formatSellerProductUpdatedAt,
-} from '../../shared/utils/seller-product-formatters';
-import { SellerProductStatusBadge } from '../../shared/components/SellerProductStatusBadge';
+} from '../../product-shared/utils/seller-product-formatters';
+import { SellerProductStatusBadge } from '../../product-shared/components/SellerProductStatusBadge';
 import type { SellerProductPublicationStatus } from '@/services/product';
-import { SellerProductActionsMenu } from '../../shared/components/SellerProductActionsMenu';
+import { SellerProductActionsMenu } from '../../product-shared/components/SellerProductActionsMenu';
 
 interface SellerProductsTableProps {
     products: SellerProductListItem[];

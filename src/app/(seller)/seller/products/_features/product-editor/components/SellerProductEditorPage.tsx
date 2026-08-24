@@ -1,5 +1,8 @@
 'use client';
 
+// File này là composition page của wizard tạo/chỉnh sửa sản phẩm Seller Center.
+// Page chỉ ghép layout và truyền form context; request AI, mapping payload và giao diện assistant nằm ở feature riêng.
+
 import Link from 'next/link';
 import { ArrowLeft, PackagePlus } from 'lucide-react';
 

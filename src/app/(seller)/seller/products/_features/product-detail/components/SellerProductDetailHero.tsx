@@ -7,8 +7,8 @@ import {
     formatSellerProductMetric,
     formatSellerProductPriceRange,
     formatSellerProductUpdatedAt,
-} from '../../shared/utils/seller-product-formatters';
-import { SellerProductStatusBadge } from '../../shared/components/SellerProductStatusBadge';
+} from '../../product-shared/utils/seller-product-formatters';
+import { SellerProductStatusBadge } from '../../product-shared/components/SellerProductStatusBadge';
 import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
 import type { SellerProductPublicationStatus } from '@/services/product';
 
