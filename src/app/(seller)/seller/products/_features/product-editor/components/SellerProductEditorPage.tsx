@@ -15,9 +15,9 @@ import { ProductCreatePreview } from './layout/ProductCreatePreview';
 import { ProductCreateStepGuide } from './layout/ProductCreateStepGuide';
 import { ProductCreateStepContent } from './ProductCreateStepContent';
 
-// Ghép wizard tạo sản phẩm thành ba vùng: tiến độ, một bước đang nhập và preview cố định.
+// Ghép wizard thành thanh tiến độ ngang, khu vực form trung tâm và preview cố định bên phải.
 // Chỉ một section được mount tại mỗi thời điểm nên seller không phải cuộn qua một biểu mẫu quá dài.
-// Hai sidebar có vùng cuộn riêng để chúng vẫn đọc được khi form trung tâm dài hơn viewport.
+// Hướng dẫn và cảnh báo của bước hiện tại nằm ngay trên form để không bị giới hạn bởi sidebar hẹp.
 interface SellerProductEditorPageProps {
     productId?: string;
 }
@@ -48,8 +48,8 @@ export function SellerProductEditorPage({ productId }: SellerProductEditorPagePr
         return (
             <div className="mx-auto w-full max-w-[1760px] space-y-5 px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
                 <Skeleton className="h-12 w-80" />
-                <div className="grid gap-5 lg:grid-cols-[250px_minmax(0,1fr)_280px]">
-                    <Skeleton className="h-96" />
+                <Skeleton className="h-32" />
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
                     <Skeleton className="h-[42rem]" />
                     <Skeleton className="h-96" />
                 </div>
@@ -90,48 +90,48 @@ export function SellerProductEditorPage({ productId }: SellerProductEditorPagePr
                 </Link>
             </header>
 
+            <ProductCreateChecklist
+                activeStep={activeStep}
+                validations={validations}
+                onStepChange={goToStep}
+            />
+
             <div
                 id="product-create-workspace"
-                className="scroll-mt-24 grid items-start gap-5 lg:grid-cols-[250px_minmax(0,1fr)_280px] lg:gap-6"
+                className="mt-5 grid items-start gap-5 scroll-mt-24 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_420px]"
             >
-                <aside className="space-y-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
-                    <ProductCreateChecklist
-                        activeStep={activeStep}
-                        validations={validations}
-                        onStepChange={goToStep}
-                    />
+                <main className="min-w-0 space-y-5">
                     <ProductCreateStepGuide
                         activeStep={activeStep}
                         validation={validations[activeStep]}
                     />
-                </aside>
+                    <form
+                        className="min-h-[34rem] min-w-0 rounded-xl border border-zinc-200 bg-white shadow-sm"
+                        onSubmit={(event) => event.preventDefault()}
+                    >
+                        <ProductCreateStepContent
+                            activeStep={activeStep}
+                            form={form}
+                            references={references}
+                            loadingAttributes={loadingAttributes}
+                            onCategorySelect={selectCategory}
+                            onBrandSelect={selectBrand}
+                        />
+                        <ProductCreateActions
+                            activeStep={activeStep}
+                            canContinue={canContinue}
+                            canSubmit={canSubmit}
+                            submittingStatus={submittingStatus}
+                            mode={isEditMode ? 'edit' : 'create'}
+                            cancelHref={productId ? `/seller/products/${productId}` : '/seller/products'}
+                            onBack={goBack}
+                            onNext={goNext}
+                            onSubmit={submitProduct}
+                        />
+                    </form>
+                </main>
 
-                <form
-                    className="min-h-[34rem] min-w-0 rounded-md border border-zinc-200 bg-white shadow-sm"
-                    onSubmit={(event) => event.preventDefault()}
-                >
-                    <ProductCreateStepContent
-                        activeStep={activeStep}
-                        form={form}
-                        references={references}
-                        loadingAttributes={loadingAttributes}
-                        onCategorySelect={selectCategory}
-                        onBrandSelect={selectBrand}
-                    />
-                    <ProductCreateActions
-                        activeStep={activeStep}
-                        canContinue={canContinue}
-                        canSubmit={canSubmit}
-                        submittingStatus={submittingStatus}
-                        mode={isEditMode ? 'edit' : 'create'}
-                        cancelHref={productId ? `/seller/products/${productId}` : '/seller/products'}
-                        onBack={goBack}
-                        onNext={goNext}
-                        onSubmit={submitProduct}
-                    />
-                </form>
-
-                <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+                <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
                     <ProductCreatePreview form={form} />
                 </aside>
             </div>
