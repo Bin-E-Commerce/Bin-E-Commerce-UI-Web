@@ -52,7 +52,7 @@ export function SellerProductDeleteDialog({
                                         Sản phẩm sẽ <strong className="font-semibold text-zinc-900">không còn hiển thị</strong> trong shop.
                                     </li>
                                     <li>
-                                        Ảnh/video media sẽ được <strong className="font-semibold text-zinc-900">dọn sau khi cập nhật thành công</strong>.
+                                        Ảnh/video media sẽ được <strong className="font-semibold text-zinc-900">giữ nguyên</strong> để có thể khôi phục sản phẩm.
                                     </li>
                                 </ul>
                             </div>

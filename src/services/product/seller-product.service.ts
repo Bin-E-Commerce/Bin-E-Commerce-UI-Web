@@ -5,6 +5,7 @@ import type {
     CreateSellerProductResponse,
     DeleteSellerProductResponse,
     ChangeSellerProductStatusResponse,
+    RestoreSellerProductResponse,
     SellerProductPublicationStatus,
     UpdateSellerProductPayload,
     UpdateSellerProductResponse,
@@ -73,6 +74,14 @@ export const sellerProductService = {
             .patch<ChangeSellerProductStatusResponse>(
                 `${API_VERSION}/products/seller/${productId}/status`,
                 { status },
+            )
+            .then((response) => response.data),
+
+    // Khôi phục sản phẩm đã xóa mềm về trạng thái đang ẩn để seller chủ động bật bán lại.
+    restoreProduct: (productId: string) =>
+        authorizedAxios
+            .post<RestoreSellerProductResponse>(
+                `${API_VERSION}/products/seller/${productId}/restore`,
             )
             .then((response) => response.data),
 };

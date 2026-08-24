@@ -98,6 +98,12 @@ export function SellerProductFilters({
                         count={summary.inactive}
                         onClick={() => onStatusChange('INACTIVE')}
                     />
+                    <StatusTab
+                        active={status === 'DELETED'}
+                        label="Đã xóa"
+                        count={summary.deleted}
+                        onClick={() => onStatusChange('DELETED')}
+                    />
                 </div>
             </div>
 

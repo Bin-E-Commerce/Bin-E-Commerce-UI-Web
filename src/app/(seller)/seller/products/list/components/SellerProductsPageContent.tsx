@@ -15,11 +15,13 @@ import { SellerProductsSkeleton } from './SellerProductsSkeleton';
 import { SellerProductsSummary } from './SellerProductsSummary';
 import { SellerProductsTable } from './SellerProductsTable';
 import { SellerProductDeleteDialog } from './SellerProductDeleteDialog';
+import { SellerProductRestoreDialog } from './SellerProductRestoreDialog';
 import { useDeleteSellerProduct } from '../hooks/useDeleteSellerProduct';
 import type { SellerProductListItem } from '@/services/product';
 import type { SellerProductPublicationStatus } from '@/services/product';
 import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../shared/components/SellerProductStatusDialog';
 import { useChangeSellerProductStatus } from '../../shared/hooks/useChangeSellerProductStatus';
+import { useRestoreSellerProduct } from '../hooks/useRestoreSellerProduct';
 
 // Điều phối toàn bộ trạng thái trang sản phẩm seller nhưng giao từng vùng hiển thị cho component chuyên trách.
 export function SellerProductsPageContent() {
@@ -28,6 +30,8 @@ export function SellerProductsPageContent() {
     const [targetStatus, setTargetStatus] = useState<SellerProductPublicationStatus | null>(null);
     const deleteMutation = useDeleteSellerProduct();
     const statusMutation = useChangeSellerProductStatus();
+    const restoreMutation = useRestoreSellerProduct();
+    const [restoreTarget, setRestoreTarget] = useState<SellerProductListItem | null>(null);
     const user = useAppSelector((state) => state.auth.user);
     const canCreateProduct = canAccessSellerPath(
         '/seller/products/new',
@@ -52,6 +56,7 @@ export function SellerProductsPageContent() {
         active: 0,
         draft: 0,
         inactive: 0,
+        deleted: 0,
         outOfStock: 0,
     };
     const hasFilters = Boolean(search.trim() || status);
@@ -98,6 +103,18 @@ export function SellerProductsPageContent() {
             // Đóng modal sau lỗi để toast vẫn báo nguyên nhân nhưng lớp khóa không thể giữ toàn bộ trang.
             setStatusTarget(null);
             setTargetStatus(null);
+        }
+    };
+
+    // Chỉ đóng dialog sau khi restore thành công để lỗi API vẫn giữ nguyên ngữ cảnh cho seller.
+    const handleConfirmRestore = async () => {
+        if (!restoreTarget) return;
+
+        try {
+            await restoreMutation.mutateAsync(restoreTarget.id);
+            setRestoreTarget(null);
+        } catch {
+            // Mutation đã hiển thị lỗi qua toast; giữ dialog mở để seller có thể thử lại.
         }
     };
 
@@ -174,6 +191,7 @@ export function SellerProductsPageContent() {
                     products={data.items}
                     onDelete={setDeleteTarget}
                     onChangeStatus={openStatusDialog}
+                    onRestore={setRestoreTarget}
                 />
             ) : (
                 <SellerProductsEmptyState
@@ -208,6 +226,14 @@ export function SellerProductsPageContent() {
                     }
                 }}
                 onConfirm={handleConfirmStatusChange}
+            />
+            <SellerProductRestoreDialog
+                product={restoreTarget}
+                loading={restoreMutation.isPending}
+                onOpenChange={(open) => {
+                    if (!open && !restoreMutation.isPending) setRestoreTarget(null);
+                }}
+                onConfirm={handleConfirmRestore}
             />
         </div>
     );

@@ -27,6 +27,7 @@ export interface SellerProductListItem {
     ratingAvg: string | null;
     reviewCount: number;
     updatedAt: string;
+    deletedAt: string | null;
 }
 
 export interface SellerProductSummary {
@@ -35,6 +36,7 @@ export interface SellerProductSummary {
     draft: number;
     inactive: number;
     outOfStock: number;
+    deleted: number;
 }
 
 export interface SellerProductListParams {
@@ -179,6 +181,12 @@ export interface DeleteSellerProductResponse {
 export interface ChangeSellerProductStatusResponse {
     id: string;
     status: SellerProductPublicationStatus;
+    updatedAt: string;
+}
+
+export interface RestoreSellerProductResponse {
+    id: string;
+    status: 'INACTIVE';
     updatedAt: string;
 }
 

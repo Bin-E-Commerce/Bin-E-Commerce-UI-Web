@@ -14,6 +14,7 @@ import { SellerProductActionsMenu } from '../../shared/components/SellerProductA
 interface SellerProductsTableProps {
     products: SellerProductListItem[];
     onDelete: (product: SellerProductListItem) => void;
+    onRestore: (product: SellerProductListItem) => void;
     onChangeStatus: (product: SellerProductListItem, status: SellerProductPublicationStatus) => void;
 }
 
@@ -57,6 +58,7 @@ function ProductThumbnail({
 function DesktopProductsTable({
     products,
     onDelete,
+    onRestore,
     onChangeStatus,
 }: SellerProductsTableProps) {
     return (
@@ -140,8 +142,13 @@ function DesktopProductsTable({
                                 />
                             </td>
                             <td className="px-4 py-4 align-top text-xs leading-5 text-zinc-500">
+                                <span className="block text-[11px] uppercase tracking-wide text-zinc-400">
+                                    {product.status === 'DELETED'
+                                        ? 'Đã xóa'
+                                        : 'Cập nhật'}
+                                </span>
                                 {formatSellerProductUpdatedAt(
-                                    product.updatedAt,
+                                    product.deletedAt ?? product.updatedAt,
                                 )}
                             </td>
                             <td className="px-4 py-4 align-top text-right">
@@ -149,6 +156,7 @@ function DesktopProductsTable({
                                     <SellerProductActionsMenu
                                         product={product}
                                         onDelete={onDelete}
+                                        onRestore={onRestore}
                                         onChangeStatus={onChangeStatus}
                                     />
                                 </div>
@@ -162,7 +170,7 @@ function DesktopProductsTable({
 }
 
 // Chuyển mỗi dòng bảng thành khối thông tin dọc trên mobile để không bắt người dùng cuộn ngang.
-function MobileProductsList({ products, onDelete, onChangeStatus }: SellerProductsTableProps) {
+function MobileProductsList({ products, onDelete, onRestore, onChangeStatus }: SellerProductsTableProps) {
     return (
         <div className="divide-y divide-zinc-100 lg:hidden">
             {products.map((product) => (
@@ -180,6 +188,7 @@ function MobileProductsList({ products, onDelete, onChangeStatus }: SellerProduc
                                 <SellerProductActionsMenu
                                     product={product}
                                     onDelete={onDelete}
+                                    onRestore={onRestore}
                                     onChangeStatus={onChangeStatus}
                                 />
                             </div>
@@ -229,7 +238,14 @@ function MobileProductsList({ products, onDelete, onChangeStatus }: SellerProduc
                     <div className="flex items-center justify-between gap-3">
                         <SellerProductStatusBadge status={product.status} />
                         <p className="text-right text-xs text-zinc-500">
-                            {formatSellerProductUpdatedAt(product.updatedAt)}
+                            <span className="block text-[11px] uppercase tracking-wide text-zinc-400">
+                                {product.status === 'DELETED'
+                                    ? 'Đã xóa'
+                                    : 'Cập nhật'}
+                            </span>
+                            {formatSellerProductUpdatedAt(
+                                product.deletedAt ?? product.updatedAt,
+                            )}
                         </p>
                     </div>
                 </article>
@@ -242,6 +258,7 @@ function MobileProductsList({ products, onDelete, onChangeStatus }: SellerProduc
 export function SellerProductsTable({
     products,
     onDelete,
+    onRestore,
     onChangeStatus,
 }: SellerProductsTableProps) {
     return (
@@ -249,11 +266,13 @@ export function SellerProductsTable({
             <DesktopProductsTable
                 products={products}
                 onDelete={onDelete}
+                onRestore={onRestore}
                 onChangeStatus={onChangeStatus}
             />
             <MobileProductsList
                 products={products}
                 onDelete={onDelete}
+                onRestore={onRestore}
                 onChangeStatus={onChangeStatus}
             />
         </>
