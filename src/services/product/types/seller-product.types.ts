@@ -1,6 +1,7 @@
 import type { ProductBrand, ProductDetail } from './product.types';
 
-export type SellerProductStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE';
+export type SellerProductStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'DELETED';
+export type SellerProductPublicationStatus = 'ACTIVE' | 'INACTIVE';
 
 export type SellerProductSortBy =
     | 'updatedAt'
@@ -166,6 +167,18 @@ export interface UpdateSellerProductResponse {
     id: string;
     slug: string;
     status: SellerProductStatus;
+    updatedAt: string;
+}
+
+export interface DeleteSellerProductResponse {
+    id: string;
+    status: 'DELETED';
+    updatedAt: string;
+}
+
+export interface ChangeSellerProductStatusResponse {
+    id: string;
+    status: SellerProductPublicationStatus;
     updatedAt: string;
 }
 

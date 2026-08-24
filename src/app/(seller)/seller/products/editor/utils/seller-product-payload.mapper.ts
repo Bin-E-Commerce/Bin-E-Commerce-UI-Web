@@ -131,7 +131,7 @@ export function toUpdateSellerProductPayload(
     const payload = toCreateSellerProductPayload(
         values,
         attributes,
-        status === 'INACTIVE' ? 'DRAFT' : status,
+        status === 'ACTIVE' ? 'ACTIVE' : 'DRAFT',
     );
 
     return {

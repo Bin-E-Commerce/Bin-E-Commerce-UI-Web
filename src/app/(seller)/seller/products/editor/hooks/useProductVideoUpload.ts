@@ -1,11 +1,6 @@
 'use client';
 
-import {
-    useEffect,
-    useRef,
-    useState,
-    type ChangeEvent,
-} from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import type { UseFormSetValue } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -37,17 +32,8 @@ export function useProductVideoUpload({
     setValue,
 }: UseProductVideoUploadOptions) {
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const ownedPreviewUrlsRef = useRef(new Set<string>());
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
-
-    // Thu hồi Object URL do trình duyệt tạo khi rời trang để không giữ bộ nhớ của video.
-    useEffect(() => {
-        const ownedPreviewUrls = ownedPreviewUrlsRef.current;
-        return () => {
-            ownedPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-        };
-    }, []);
 
     // Mở input ẩn để giao diện chỉ hiển thị một nút tải video thống nhất với design system.
     const openFilePicker = () => {
@@ -70,6 +56,7 @@ export function useProductVideoUpload({
         }
 
         let previewUrl: string | undefined;
+        let uploadedAssetId: string | undefined;
         try {
             previewUrl = URL.createObjectURL(file);
             const durationSeconds = await getVideoDuration(previewUrl);
@@ -88,17 +75,14 @@ export function useProductVideoUpload({
                 fileSize: file.size,
                 purpose: 'product_video',
             });
+            uploadedAssetId = presigned.assetId;
             await mediaService.uploadToPresignedPost(
                 presigned.upload,
                 file,
                 setProgress,
             );
 
-            if (video && ownedPreviewUrlsRef.current.has(video.previewUrl)) {
-                URL.revokeObjectURL(video.previewUrl);
-                ownedPreviewUrlsRef.current.delete(video.previewUrl);
-            }
-            ownedPreviewUrlsRef.current.add(previewUrl);
+            const previousVideo = video;
             setValue(
                 'video',
                 {
@@ -111,9 +95,14 @@ export function useProductVideoUpload({
                 { shouldDirty: true, shouldValidate: true },
             );
             previewUrl = undefined;
+            if (previousVideo && isTemporaryPreviewUrl(previousVideo.previewUrl)) {
+                URL.revokeObjectURL(previousVideo.previewUrl);
+                void cleanupTemporaryVideo(previousVideo.assetId);
+            }
             toast.success('Video sản phẩm đã được tải lên.');
         } catch (error) {
             if (previewUrl) URL.revokeObjectURL(previewUrl);
+            if (uploadedAssetId) void cleanupTemporaryVideo(uploadedAssetId);
             toast.error(getErrorMessage(error));
         } finally {
             setUploading(false);
@@ -121,13 +110,19 @@ export function useProductVideoUpload({
         }
     };
 
-    // Xóa video khỏi form; việc dọn object trên S3 có thể do chính sách lifecycle của Media Service xử lý.
-    const removeVideo = () => {
-        if (video && ownedPreviewUrlsRef.current.has(video.previewUrl)) {
-            URL.revokeObjectURL(video.previewUrl);
-            ownedPreviewUrlsRef.current.delete(video.previewUrl);
-        }
+    // Xóa video khỏi form ngay lập tức; chỉ asset mới của phiên này được dọn trực tiếp để không ảnh hưởng bản đang bán.
+    const removeVideo = async () => {
         setValue('video', null, { shouldDirty: true, shouldValidate: true });
+        if (video && isTemporaryPreviewUrl(video.previewUrl)) {
+            URL.revokeObjectURL(video.previewUrl);
+            try {
+                await mediaService.cleanupProductAssets([
+                    { assetId: video.assetId, purpose: 'product_video' },
+                ]);
+            } catch {
+                toast.warning('Đã xóa video khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.');
+            }
+        }
     };
 
     // Reset input để người dùng vẫn có thể chọn lại chính file vừa chọn sau khi xóa hoặc sửa.
@@ -170,4 +165,20 @@ function isSupportedVideoMimeType(
     contentType: string,
 ): contentType is MediaUploadMimeType {
     return PRODUCT_VIDEO_MIME_TYPES.has(contentType as MediaUploadMimeType);
+}
+
+// Nhận diện preview blob do phiên chỉnh sửa hiện tại tạo; URL CDN của video cũ chỉ được dọn sau update thành công.
+function isTemporaryPreviewUrl(previewUrl: string): boolean {
+    return previewUrl.startsWith('blob:');
+}
+
+// Dọn asset video mới bị thay thế nhưng không làm hỏng thao tác thay video nếu API cleanup tạm thời lỗi.
+async function cleanupTemporaryVideo(assetId: string): Promise<void> {
+    try {
+        await mediaService.cleanupProductAssets([
+            { assetId, purpose: 'product_video' },
+        ]);
+    } catch {
+        toast.warning('Video cũ đã được thay khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.');
+    }
 }

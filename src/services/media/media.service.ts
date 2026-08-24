@@ -3,7 +3,9 @@ import authorizedAxios from '@/utils/authorizedAxios';
 import type {
     ConfirmAvatarResponse,
     CreatePresignedUploadPayload,
+    CleanupProductAssetsResponse,
     DeleteMediaAssetResponse,
+    ProductMediaCleanupAsset,
     PresignedUploadResponse,
 } from './types/media.types';
 
@@ -76,6 +78,12 @@ export const mediaService = {
             .delete<DeleteMediaAssetResponse>(`${MEDIA_ASSETS}/avatar`, {
                 params: { keepAssetId },
             })
+            .then((response) => response.data),
+
+    // Dọn cả file gốc và các biến thể của ảnh/video sản phẩm vừa bị bỏ khỏi bản nháp.
+    cleanupProductAssets: (assets: ProductMediaCleanupAsset[]) =>
+        authorizedAxios
+            .post<CleanupProductAssetsResponse>(`${MEDIA_ASSETS}/product/cleanup`, { assets })
             .then((response) => response.data),
 };
 

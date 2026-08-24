@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import type { UseFormSetValue } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -32,17 +32,8 @@ export function useProductImageUpload({
     setValue,
 }: UseProductImageUploadOptions) {
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const ownedPreviewUrlsRef = useRef(new Set<string>());
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
-
-    // Thu hồi Object URL khi rời màn hình để preview ảnh không giữ bộ nhớ trình duyệt.
-    useEffect(() => {
-        const ownedPreviewUrls = ownedPreviewUrlsRef.current;
-        return () => {
-            ownedPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
-        };
-    }, []);
 
     // Mở input ẩn để bề mặt thao tác vẫn dùng button nhất quán với giao diện Seller Center.
     const openFilePicker = () => {
@@ -79,31 +70,38 @@ export function useProductImageUpload({
             for (let index = 0; index < selectedFiles.length; index += 1) {
                 const file = selectedFiles[index];
                 const previewUrl = URL.createObjectURL(file);
-                ownedPreviewUrlsRef.current.add(previewUrl);
-                const presigned = await mediaService.createPresignedUpload({
-                    fileName: file.name,
-                    contentType: file.type as MediaUploadMimeType,
-                    fileSize: file.size,
-                    purpose: 'product_image',
-                });
+                let uploadedAssetId: string | undefined;
+                try {
+                    const presigned = await mediaService.createPresignedUpload({
+                        fileName: file.name,
+                        contentType: file.type as MediaUploadMimeType,
+                        fileSize: file.size,
+                        purpose: 'product_image',
+                    });
+                    uploadedAssetId = presigned.assetId;
 
-                await mediaService.uploadToPresignedPost(
-                    presigned.upload,
-                    file,
-                    (fileProgress) => {
-                        const completed = index * 100 + fileProgress;
-                        setProgress(
-                            Math.round(completed / selectedFiles.length),
-                        );
-                    },
-                );
+                    await mediaService.uploadToPresignedPost(
+                        presigned.upload,
+                        file,
+                        (fileProgress) => {
+                            const completed = index * 100 + fileProgress;
+                            setProgress(
+                                Math.round(completed / selectedFiles.length),
+                            );
+                        },
+                    );
 
-                uploadedImages.push({
-                    assetId: presigned.assetId,
-                    publicUrl: buildProcessedProductImageUrl(presigned),
-                    previewUrl,
-                    fileName: file.name,
-                });
+                    uploadedImages.push({
+                        assetId: presigned.assetId,
+                        publicUrl: buildProcessedProductImageUrl(presigned),
+                        previewUrl,
+                        fileName: file.name,
+                    });
+                } catch (error) {
+                    URL.revokeObjectURL(previewUrl);
+                    if (uploadedAssetId) void cleanupTemporaryImage(uploadedAssetId);
+                    throw error;
+                }
             }
 
             setValue('images', [...images, ...uploadedImages], {
@@ -126,18 +124,25 @@ export function useProductImageUpload({
         }
     };
 
-    // Xóa ảnh khỏi form và thu hồi preview do ứng dụng tạo; ảnh đã upload được Media Service dọn theo lifecycle sau này.
-    const removeImage = (assetId: string) => {
+    // Xóa khỏi form ngay lập tức, sau đó dọn asset mới trên S3; asset cũ của sản phẩm để Product Service xử lý sau khi update commit.
+    const removeImage = async (assetId: string) => {
         const removed = images.find((image) => image.assetId === assetId);
-        if (removed && ownedPreviewUrlsRef.current.has(removed.previewUrl)) {
-            URL.revokeObjectURL(removed.previewUrl);
-            ownedPreviewUrlsRef.current.delete(removed.previewUrl);
-        }
         setValue(
             'images',
             images.filter((image) => image.assetId !== assetId),
             { shouldDirty: true, shouldValidate: true },
         );
+
+        if (removed && isTemporaryPreviewUrl(removed.previewUrl)) {
+            URL.revokeObjectURL(removed.previewUrl);
+            try {
+                await mediaService.cleanupProductAssets([
+                    { assetId: removed.assetId, purpose: 'product_image' },
+                ]);
+            } catch {
+                toast.warning('Đã xóa ảnh khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.');
+            }
+        }
     };
 
     // Đặt ảnh đã chọn lên đầu mảng vì mapper coi phần tử đầu tiên là ảnh bìa của sản phẩm.
@@ -172,4 +177,20 @@ function isSupportedMimeType(
     contentType: string,
 ): contentType is MediaUploadMimeType {
     return PRODUCT_IMAGE_MIME_TYPES.has(contentType as MediaUploadMimeType);
+}
+
+// Nhận diện preview blob do phiên chỉnh sửa hiện tại tạo; URL CDN của sản phẩm cũ không được xóa trực tiếp từ FE.
+function isTemporaryPreviewUrl(previewUrl: string): boolean {
+    return previewUrl.startsWith('blob:');
+}
+
+// Dọn asset đã presign nhưng không thể hoàn tất bước chuẩn hóa URL hoặc ghi vào form.
+async function cleanupTemporaryImage(assetId: string): Promise<void> {
+    try {
+        await mediaService.cleanupProductAssets([
+            { assetId, purpose: 'product_image' },
+        ]);
+    } catch {
+        toast.warning('Không thể dọn ảnh tải lỗi khỏi bộ nhớ lưu trữ.');
+    }
 }

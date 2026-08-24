@@ -1,4 +1,4 @@
-import { Boxes, CalendarClock, Eye, Hash, PackageCheck, Pencil, Star } from 'lucide-react';
+import { Boxes, CalendarClock, Eye, EyeOff, Hash, PackageCheck, Pencil, Power, Star } from 'lucide-react';
 import Link from 'next/link';
 
 import { ProductGallery } from '@/app/(public)/_features/product-detail/components/gallery/ProductGallery';
@@ -10,18 +10,22 @@ import {
 } from '../../shared/utils/seller-product-formatters';
 import { SellerProductStatusBadge } from '../../shared/components/SellerProductStatusBadge';
 import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
+import type { SellerProductPublicationStatus } from '@/services/product';
 
 interface SellerProductDetailHeroProps {
     product: SellerProductDetail;
     totalStock: number;
+    onChangeStatus: (status: SellerProductPublicationStatus) => void;
 }
 
 // Trình bày phần quan trọng nhất của sản phẩm: media, trạng thái, giá và các chỉ số seller cần quét nhanh.
 export function SellerProductDetailHero({
     product,
     totalStock,
+    onChangeStatus,
 }: SellerProductDetailHeroProps) {
     const canUpdate = useSessionPermission('seller.product.update');
+    const canChangeStatus = useSessionPermission('seller.product.status.update');
 
     return (
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -46,6 +50,22 @@ export function SellerProductDetailHero({
                                 <Pencil className="size-3.5" aria-hidden="true" />
                                 Chỉnh sửa
                             </Link>
+                        ) : null}
+                        {canChangeStatus ? (
+                            <button
+                                type="button"
+                                onClick={() => onChangeStatus(product.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')}
+                                className={product.status === 'ACTIVE'
+                                    ? 'inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100'
+                                    : 'inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100'}
+                            >
+                                {product.status === 'ACTIVE' ? (
+                                    <EyeOff className="size-3.5" aria-hidden="true" />
+                                ) : (
+                                    <Power className="size-3.5" aria-hidden="true" />
+                                )}
+                                {product.status === 'ACTIVE' ? 'Tắt bán' : 'Đăng bán'}
+                            </button>
                         ) : null}
                         <span className="rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-500">
                             ID {product.id}

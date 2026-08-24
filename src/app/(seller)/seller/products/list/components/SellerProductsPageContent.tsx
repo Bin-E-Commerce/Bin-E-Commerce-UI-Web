@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { AlertCircle, PackagePlus, PackageSearch } from 'lucide-react';
 
 import { buttonVariants } from '@/components/ui/button';
@@ -13,9 +14,20 @@ import { SellerProductsPagination } from './SellerProductsPagination';
 import { SellerProductsSkeleton } from './SellerProductsSkeleton';
 import { SellerProductsSummary } from './SellerProductsSummary';
 import { SellerProductsTable } from './SellerProductsTable';
+import { SellerProductDeleteDialog } from './SellerProductDeleteDialog';
+import { useDeleteSellerProduct } from '../hooks/useDeleteSellerProduct';
+import type { SellerProductListItem } from '@/services/product';
+import type { SellerProductPublicationStatus } from '@/services/product';
+import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../shared/components/SellerProductStatusDialog';
+import { useChangeSellerProductStatus } from '../../shared/hooks/useChangeSellerProductStatus';
 
 // Điều phối toàn bộ trạng thái trang sản phẩm seller nhưng giao từng vùng hiển thị cho component chuyên trách.
 export function SellerProductsPageContent() {
+    const [deleteTarget, setDeleteTarget] = useState<SellerProductListItem | null>(null);
+    const [statusTarget, setStatusTarget] = useState<SellerProductStatusTarget | null>(null);
+    const [targetStatus, setTargetStatus] = useState<SellerProductPublicationStatus | null>(null);
+    const deleteMutation = useDeleteSellerProduct();
+    const statusMutation = useChangeSellerProductStatus();
     const user = useAppSelector((state) => state.auth.user);
     const canCreateProduct = canAccessSellerPath(
         '/seller/products/new',
@@ -48,6 +60,45 @@ export function SellerProductsPageContent() {
     const clearFilters = () => {
         changeSearch('');
         changeStatus(undefined);
+    };
+
+    // Chỉ đóng dialog sau khi backend xác nhận xóa thành công; lỗi conflict vẫn giữ context để người dùng đọc lại.
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+
+        try {
+            await deleteMutation.mutateAsync(deleteTarget.id);
+            setDeleteTarget(null);
+        } catch {
+            // Mutation đã hiển thị lỗi qua toast; giữ dialog mở để tránh thao tác mất ngữ cảnh.
+        }
+    };
+
+    // Mở dialog trước khi bật/tắt để thao tác nhanh không thể vô tình làm sản phẩm biến mất khỏi storefront.
+    const openStatusDialog = (
+        product: SellerProductListItem,
+        nextStatus: SellerProductPublicationStatus,
+    ) => {
+        setStatusTarget({ id: product.id, name: product.name, status: product.status });
+        setTargetStatus(nextStatus);
+    };
+
+    // Chỉ đóng dialog sau khi PATCH thành công; lỗi conflict vẫn giữ lại ngữ cảnh sản phẩm cho seller.
+    const handleConfirmStatusChange = async () => {
+        if (!statusTarget || !targetStatus) return;
+
+        try {
+            await statusMutation.mutateAsync({
+                productId: statusTarget.id,
+                status: targetStatus,
+            });
+            setStatusTarget(null);
+            setTargetStatus(null);
+        } catch {
+            // Đóng modal sau lỗi để toast vẫn báo nguyên nhân nhưng lớp khóa không thể giữ toàn bộ trang.
+            setStatusTarget(null);
+            setTargetStatus(null);
+        }
     };
 
     return (
@@ -119,7 +170,11 @@ export function SellerProductsPageContent() {
             ) : productsQuery.isLoading ? (
                 <SellerProductsSkeleton />
             ) : data && data.items.length > 0 ? (
-                <SellerProductsTable products={data.items} />
+                <SellerProductsTable
+                    products={data.items}
+                    onDelete={setDeleteTarget}
+                    onChangeStatus={openStatusDialog}
+                />
             ) : (
                 <SellerProductsEmptyState
                     filtered={hasFilters}
@@ -133,6 +188,26 @@ export function SellerProductsPageContent() {
                 totalPages={data?.totalPages ?? 0}
                 totalItems={data?.totalItems ?? 0}
                 onPageChange={setPage}
+            />
+            <SellerProductDeleteDialog
+                product={deleteTarget}
+                loading={deleteMutation.isPending}
+                onOpenChange={(open) => {
+                    if (!open && !deleteMutation.isPending) setDeleteTarget(null);
+                }}
+                onConfirm={handleConfirmDelete}
+            />
+            <SellerProductStatusDialog
+                product={statusTarget}
+                targetStatus={targetStatus}
+                loading={statusMutation.isPending}
+                onOpenChange={(open) => {
+                    if (!open && !statusMutation.isPending) {
+                        setStatusTarget(null);
+                        setTargetStatus(null);
+                    }
+                }}
+                onConfirm={handleConfirmStatusChange}
             />
         </div>
     );

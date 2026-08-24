@@ -39,6 +39,18 @@ export interface DeleteMediaAssetResponse {
     deletedCount: number;
 }
 
+export type ProductMediaCleanupPurpose = 'product_image' | 'product_video';
+
+export interface ProductMediaCleanupAsset {
+    assetId: string;
+    purpose: ProductMediaCleanupPurpose;
+}
+
+export interface CleanupProductAssetsResponse {
+    requestedAssetCount: number;
+    deletedCount: number;
+}
+
 export interface ConfirmAvatarResponse {
     assetId: string;
     avatarUrl: string;

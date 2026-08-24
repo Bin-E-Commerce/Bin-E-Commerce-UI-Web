@@ -1,9 +1,6 @@
 import Image from 'next/image';
-import Link from 'next/link';
-import { Eye, ImageOff, Pencil, Star } from 'lucide-react';
+import { ImageOff, Star } from 'lucide-react';
 
-import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import type { SellerProductListItem } from '@/services/product';
 import {
     formatSellerProductMetric,
@@ -11,10 +8,13 @@ import {
     formatSellerProductUpdatedAt,
 } from '../../shared/utils/seller-product-formatters';
 import { SellerProductStatusBadge } from '../../shared/components/SellerProductStatusBadge';
-import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
+import type { SellerProductPublicationStatus } from '@/services/product';
+import { SellerProductActionsMenu } from '../../shared/components/SellerProductActionsMenu';
 
 interface SellerProductsTableProps {
     products: SellerProductListItem[];
+    onDelete: (product: SellerProductListItem) => void;
+    onChangeStatus: (product: SellerProductListItem, status: SellerProductPublicationStatus) => void;
 }
 
 interface ProductThumbnailProps {
@@ -56,9 +56,9 @@ function ProductThumbnail({
 // Hiển thị bảng desktop với các dữ liệu seller cần quét nhanh: giá, kho, hiệu suất và trạng thái.
 function DesktopProductsTable({
     products,
+    onDelete,
+    onChangeStatus,
 }: SellerProductsTableProps) {
-    const canUpdate = useSessionPermission('seller.product.update');
-
     return (
         <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[980px] border-collapse text-left">
@@ -145,35 +145,12 @@ function DesktopProductsTable({
                                 )}
                             </td>
                             <td className="px-4 py-4 align-top text-right">
-                                <div className="flex items-center justify-end gap-1 whitespace-nowrap">
-                                    <Link
-                                        title="Xem sản phẩm"
-                                        aria-label={`Xem ${product.name}`}
-                                        href={`/seller/products/${product.id}`}
-                                        className={cn(
-                                            buttonVariants({
-                                                variant: 'ghost',
-                                                size: 'icon',
-                                            }),
-                                        )}
-                                    >
-                                        <Eye className="size-4" />
-                                    </Link>
-                                    {canUpdate ? (
-                                        <Link
-                                            title="Chỉnh sửa sản phẩm"
-                                            aria-label={`Chỉnh sửa ${product.name}`}
-                                            href={`/seller/products/${product.id}/edit`}
-                                            className={cn(
-                                                buttonVariants({
-                                                    variant: 'ghost',
-                                                    size: 'icon',
-                                                }),
-                                            )}
-                                        >
-                                            <Pencil className="size-4" />
-                                        </Link>
-                                    ) : null}
+                                <div className="flex justify-end">
+                                    <SellerProductActionsMenu
+                                        product={product}
+                                        onDelete={onDelete}
+                                        onChangeStatus={onChangeStatus}
+                                    />
                                 </div>
                             </td>
                         </tr>
@@ -185,9 +162,7 @@ function DesktopProductsTable({
 }
 
 // Chuyển mỗi dòng bảng thành khối thông tin dọc trên mobile để không bắt người dùng cuộn ngang.
-function MobileProductsList({ products }: SellerProductsTableProps) {
-    const canUpdate = useSessionPermission('seller.product.update');
-
+function MobileProductsList({ products, onDelete, onChangeStatus }: SellerProductsTableProps) {
     return (
         <div className="divide-y divide-zinc-100 lg:hidden">
             {products.map((product) => (
@@ -202,33 +177,11 @@ function MobileProductsList({ products }: SellerProductsTableProps) {
                                 <p className="line-clamp-2 text-sm font-semibold leading-5 text-zinc-950">
                                     {product.name}
                                 </p>
-                                <Link
-                                    href={`/seller/products/${product.id}`}
-                                    className={cn(
-                                        buttonVariants({
-                                            variant: 'ghost',
-                                            size: 'icon',
-                                        }),
-                                        '-mr-2 -mt-2 shrink-0',
-                                    )}
-                                    title="Xem sản phẩm"
-                                    aria-label={`Xem ${product.name}`}
-                                >
-                                    <Eye className="size-4" />
-                                </Link>
-                                {canUpdate ? (
-                                    <Link
-                                        href={`/seller/products/${product.id}/edit`}
-                                        className={cn(
-                                            buttonVariants({ variant: 'ghost', size: 'icon' }),
-                                            '-mr-2 -mt-2 shrink-0',
-                                        )}
-                                        title="Chỉnh sửa sản phẩm"
-                                        aria-label={`Chỉnh sửa ${product.name}`}
-                                    >
-                                        <Pencil className="size-4" />
-                                    </Link>
-                                ) : null}
+                                <SellerProductActionsMenu
+                                    product={product}
+                                    onDelete={onDelete}
+                                    onChangeStatus={onChangeStatus}
+                                />
                             </div>
                             <p className="mt-1 text-xs text-zinc-500">
                                 SKU: {product.primarySku ?? 'Chưa có SKU'}
@@ -288,11 +241,21 @@ function MobileProductsList({ products }: SellerProductsTableProps) {
 // Chọn bảng desktop hoặc danh sách mobile bằng CSS để không nhân đôi request và state.
 export function SellerProductsTable({
     products,
+    onDelete,
+    onChangeStatus,
 }: SellerProductsTableProps) {
     return (
         <>
-            <DesktopProductsTable products={products} />
-            <MobileProductsList products={products} />
+            <DesktopProductsTable
+                products={products}
+                onDelete={onDelete}
+                onChangeStatus={onChangeStatus}
+            />
+            <MobileProductsList
+                products={products}
+                onDelete={onDelete}
+                onChangeStatus={onChangeStatus}
+            />
         </>
     );
 }

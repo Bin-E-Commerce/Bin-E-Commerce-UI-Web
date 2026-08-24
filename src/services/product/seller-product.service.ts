@@ -3,6 +3,9 @@ import authorizedAxios from '@/utils/authorizedAxios';
 import type {
     CreateSellerProductPayload,
     CreateSellerProductResponse,
+    DeleteSellerProductResponse,
+    ChangeSellerProductStatusResponse,
+    SellerProductPublicationStatus,
     UpdateSellerProductPayload,
     UpdateSellerProductResponse,
     ProductBrandListParams,
@@ -53,6 +56,23 @@ export const sellerProductService = {
             .put<UpdateSellerProductResponse>(
                 `${API_VERSION}/products/seller/${productId}`,
                 payload,
+            )
+            .then((response) => response.data),
+
+    // Gửi yêu cầu xóa mềm; backend kiểm tra ownership, trạng thái bán và permission trước khi cập nhật.
+    deleteProduct: (productId: string) =>
+        authorizedAxios
+            .delete<DeleteSellerProductResponse>(
+                `${API_VERSION}/products/seller/${productId}`,
+            )
+            .then((response) => response.data),
+
+    // Chỉ gửi trạng thái đích để bật/tắt sản phẩm mà không gửi lại toàn bộ form và media.
+    changeStatus: (productId: string, status: SellerProductPublicationStatus) =>
+        authorizedAxios
+            .patch<ChangeSellerProductStatusResponse>(
+                `${API_VERSION}/products/seller/${productId}/status`,
+                { status },
             )
             .then((response) => response.data),
 };

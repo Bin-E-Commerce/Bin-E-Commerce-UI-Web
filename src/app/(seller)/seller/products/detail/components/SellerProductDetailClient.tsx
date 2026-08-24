@@ -3,12 +3,16 @@
 import Link from 'next/link';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerProductDetail } from '../hooks/useSellerProductDetail';
 import { SellerProductDetailHero } from './SellerProductDetailHero';
 import { SellerProductDetailSections } from './SellerProductDetailSections';
+import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../shared/components/SellerProductStatusDialog';
+import { useChangeSellerProductStatus } from '../../shared/hooks/useChangeSellerProductStatus';
+import type { SellerProductPublicationStatus } from '@/services/product';
 
 // Điều phối request và các trạng thái của màn chi tiết, giữ route mỏng để giao diện được chia thành các vùng dễ bảo trì.
 export function SellerProductDetailClient() {
@@ -16,6 +20,9 @@ export function SellerProductDetailClient() {
     const productId =
         typeof params.productId === 'string' ? params.productId : undefined;
     const query = useSellerProductDetail(productId);
+    const [statusTarget, setStatusTarget] = useState<SellerProductStatusTarget | null>(null);
+    const [targetStatus, setTargetStatus] = useState<SellerProductPublicationStatus | null>(null);
+    const statusMutation = useChangeSellerProductStatus();
 
     if (query.isLoading) return <SellerProductDetailSkeleton />;
 
@@ -53,6 +60,30 @@ export function SellerProductDetailClient() {
         0,
     );
 
+    // Mở cùng dialog xác nhận với danh sách để hai điểm thao tác có hành vi và thông điệp nhất quán.
+    const openStatusDialog = (nextStatus: SellerProductPublicationStatus) => {
+        setStatusTarget({ id: product.id, name: product.name, status: product.status });
+        setTargetStatus(nextStatus);
+    };
+
+    // Cập nhật trạng thái rồi để query detail/list tự làm mới thông qua mutation dùng chung.
+    const handleConfirmStatusChange = async () => {
+        if (!statusTarget || !targetStatus) return;
+
+        try {
+            await statusMutation.mutateAsync({
+                productId: statusTarget.id,
+                status: targetStatus,
+            });
+            setStatusTarget(null);
+            setTargetStatus(null);
+        } catch {
+            // Đóng modal sau lỗi để toast vẫn báo nguyên nhân nhưng seller không bị khóa khỏi các thao tác khác.
+            setStatusTarget(null);
+            setTargetStatus(null);
+        }
+    };
+
     return (
         <div className="min-h-fullpb-10 text-zinc-950">
             <div className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
@@ -66,8 +97,21 @@ export function SellerProductDetailClient() {
                 <SellerProductDetailHero
                     product={product}
                     totalStock={totalStock}
+                    onChangeStatus={openStatusDialog}
                 />
                 <SellerProductDetailSections product={product} />
+                <SellerProductStatusDialog
+                    product={statusTarget}
+                    targetStatus={targetStatus}
+                    loading={statusMutation.isPending}
+                    onOpenChange={(open) => {
+                        if (!open && !statusMutation.isPending) {
+                            setStatusTarget(null);
+                            setTargetStatus(null);
+                        }
+                    }}
+                    onConfirm={handleConfirmStatusChange}
+                />
             </div>
         </div>
     );
