@@ -16,6 +16,7 @@ import { ProductCategoryPicker } from '../shared/ProductCategoryPicker';
 import { ProductFormField } from '../shared/ProductFormField';
 import { ProductImageUploader } from '../shared/ProductImageUploader';
 import { ProductVideoUploader } from '../shared/ProductVideoUploader';
+import { ProductContentAssistant } from '../../features/product-content-assistant/components/ProductContentAssistant';
 
 interface ProductBasicSectionProps {
     form: UseFormReturn<SellerProductCreateFormValues>;
@@ -66,6 +67,7 @@ export function ProductBasicSection({
                         htmlFor="product-name"
                         required
                         error={errors.name?.message}
+                        labelExtra={<ProductContentAssistant form={form} references={references} />}
                         hint={`${name.length}/200 ký tự; tối thiểu 20 ký tự.`}
                     >
                         <Input

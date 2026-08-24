@@ -1,3 +1,6 @@
+// File này chuyển lỗi kỹ thuật từ Axios/backend thành thông báo an toàn, dễ hiểu cho UI.
+// Không đưa stack trace, API key, prompt hoặc chi tiết provider vào thông báo hiển thị cho người dùng.
+
 import axios from 'axios';
 
 const VI_ERROR_MAP: Record<string, string> = {
@@ -14,8 +17,22 @@ const VI_ERROR_MAP: Record<string, string> = {
     'Missing session context': 'Không xác định được phiên đăng nhập hiện tại',
     'Too many requests': 'Quá nhiều yêu cầu, vui lòng thử lại sau',
     'Internal server error': 'Lỗi hệ thống, vui lòng thử lại sau',
+    'Upstream service unavailable':
+        'Dịch vụ AI chưa sẵn sàng. Hãy kiểm tra AI Service và thử lại.',
     'OTP not found. Please request a new one.':
         'Mã OTP không tồn tại. Vui lòng yêu cầu mã mới.',
+    'The required AI permission is missing.':
+        'Tài khoản chưa được cấp quyền sử dụng trợ lý AI.',
+    'The AI request contains invalid or unsupported data.':
+        'Dữ liệu gửi tới trợ lý AI chưa hợp lệ hoặc chưa được hỗ trợ.',
+    'The AI provider is temporarily unavailable.':
+        'Dịch vụ AI đang tạm thời không khả dụng. Vui lòng thử lại sau.',
+    'The AI provider is not configured.':
+        'Dịch vụ AI chưa được cấu hình đầy đủ.',
+    'The AI provider returned an unusable response.':
+        'AI trả về kết quả không hợp lệ. Vui lòng thử lại.',
+    'Too many AI requests. Please try again later.':
+        'Bạn đã sử dụng hết lượt AI tạm thời. Vui lòng thử lại sau.',
 };
 
 // Chuẩn hóa lỗi từ Axios hoặc Error thường thành thông báo tiếng Việt dễ hiểu cho giao diện.
