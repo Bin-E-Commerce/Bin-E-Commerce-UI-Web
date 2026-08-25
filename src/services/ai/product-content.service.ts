@@ -5,6 +5,8 @@
 import { API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 import type {
+    ProductDescriptionSuggestionsRequest,
+    ProductDescriptionSuggestionsResponse,
     ProductNameSuggestionsRequest,
     ProductNameSuggestionsResponse,
 } from './types/product-content.types';
@@ -20,6 +22,18 @@ async function generateProductNameSuggestions(
     return response.data;
 }
 
+// Gửi context tới Gateway để AI service tạo một bản mô tả; frontend không biết OpenAI key/provider.
+async function generateProductDescriptionSuggestions(
+    payload: ProductDescriptionSuggestionsRequest,
+): Promise<ProductDescriptionSuggestionsResponse> {
+    const response = await authorizedAxios.post<ProductDescriptionSuggestionsResponse>(
+        `${API_VERSION}/seller/ai/product-content/description-suggestions`,
+        payload,
+    );
+    return response.data;
+}
+
 export const productContentAiService = {
     generateProductNameSuggestions,
+    generateProductDescriptionSuggestions,
 };

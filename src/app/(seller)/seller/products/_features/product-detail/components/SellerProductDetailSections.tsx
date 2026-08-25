@@ -1,7 +1,11 @@
 'use client';
 
-import DOMPurify from 'dompurify';
-import { useMemo, type ReactNode } from 'react';
+/**
+ * Các section của trang xem chi tiết sản phẩm trong Seller Center.
+ * File này điều phối layout và dữ liệu vận hành; phần hiển thị mô tả dùng
+ * component dùng chung với storefront để hai vai trò luôn có cùng cấp nội dung.
+ */
+import { type ReactNode } from 'react';
 import {
     Box,
     ClipboardList,
@@ -13,6 +17,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 
+import { ProductDescriptionBlocks } from '@/app/(public)/_features/product-detail/components/content/ProductDescriptionBlocks';
 import { getProductSpecifications } from '@/app/(public)/_features/product-detail/utils/product-detail-presentation';
 import type { ProductVariant, SellerProductDetail } from '@/services/product';
 import {
@@ -46,57 +51,12 @@ export function SellerProductDetailSections({
 
 // Render mô tả đã được lọc HTML trong vùng giới hạn để seller xem đúng nội dung catalog.
 function ProductContentSection({ product }: { product: SellerProductDetail }) {
-    const sanitizedDescription = useMemo(
-        () =>
-            DOMPurify.sanitize(product.description ?? '', {
-                ALLOWED_TAGS: [
-                    'p',
-                    'h2',
-                    'h3',
-                    'ul',
-                    'ol',
-                    'li',
-                    'strong',
-                    'em',
-                    'br',
-                    'img',
-                    'a',
-                ],
-                ALLOWED_ATTR: [
-                    'src',
-                    'alt',
-                    'width',
-                    'height',
-                    'href',
-                    'title',
-                    'target',
-                    'rel',
-                ],
-            }),
-        [product.description],
-    );
-
     return (
         <DetailCard icon={FileText} eyebrow="Nội dung" title="Mô tả sản phẩm">
-            <div className="rounded-xl bg-zinc-50 p-4">
-                <p className="text-sm font-semibold text-zinc-950">Mô tả ngắn</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">
-                    {product.shortDescription || 'Chưa có mô tả ngắn.'}
-                </p>
-            </div>
-            <div className="mt-5">
-                <p className="text-sm font-semibold text-zinc-950">Mô tả chi tiết</p>
-                {sanitizedDescription ? (
-                    <div
-                        className="product-description mt-2 break-words text-sm leading-7 text-zinc-700 [&_a]:text-blue-700 [&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-semibold [&_img]:mx-auto [&_img]:my-4 [&_img]:h-auto [&_img]:max-w-full [&_li]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-3 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5"
-                        dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
-                    />
-                ) : (
-                    <p className="mt-2 text-sm leading-6 text-zinc-500">
-                        Chưa có mô tả chi tiết.
-                    </p>
-                )}
-            </div>
+            <ProductDescriptionBlocks
+                description={product.description}
+                shortDescription={product.shortDescription}
+            />
         </DetailCard>
     );
 }

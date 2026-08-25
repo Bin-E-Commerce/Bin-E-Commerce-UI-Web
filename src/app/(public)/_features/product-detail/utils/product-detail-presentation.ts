@@ -9,6 +9,75 @@ import type {
     ProductSpecificationItem,
 } from '../types/product-detail.types';
 
+const DESCRIPTION_SECTION_HEADING = /^(Điểm nổi bật|Thông tin sản phẩm|Thông số kỹ thuật|Mô tả chi tiết|Hướng dẫn sử dụng và bảo quản|Nguồn gốc và bảo hành|Bộ sản phẩm gồm|Lưu ý khi sử dụng)\s*:/i;
+
+// Escape text trước khi chuyển mô tả plain text thành HTML để DOMPurify có thể tiếp tục làm lớp bảo vệ cuối.
+function escapeDescriptionText(value: string): string {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+// Chuẩn hóa các mô tả cũ bị lưu thành một dòng, nhận diện bullet inline và heading marketplace quen thuộc.
+function normalizeDescriptionLines(description: string): string[] {
+    return description
+        .replace(/\r\n?/g, '\n')
+        .replace(/\s+(?=(?:Điểm nổi bật|Thông tin sản phẩm|Thông số kỹ thuật|Mô tả chi tiết|Hướng dẫn sử dụng và bảo quản|Nguồn gốc và bảo hành|Bộ sản phẩm gồm|Lưu ý khi sử dụng)\s*:)/gi, '\n')
+        .replace(/\s+-\s+(?=[A-ZÀ-ỸĐ0-9])/g, '\n- ')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+}
+
+// Chuyển plain text thành HTML có heading/list/paragraph, còn HTML có sẵn thì giữ nguyên để không phá nội dung cũ.
+export function formatProductDescriptionHtml(description: string | null | undefined): string {
+    const source = description?.trim() ?? '';
+    if (!source || /<\/?[a-z][\s\S]*>/i.test(source)) return source;
+
+    const lines = normalizeDescriptionLines(source);
+    const output: string[] = [];
+    let paragraph: string[] = [];
+    let list: string[] = [];
+
+    // Đóng block hiện tại trước khi chuyển sang heading/list để HTML không dính các section vào cùng một dòng.
+    const flushBlocks = () => {
+        if (paragraph.length > 0) {
+            output.push(`<p>${paragraph.map(escapeDescriptionText).join(' ')}</p>`);
+            paragraph = [];
+        }
+        if (list.length > 0) {
+            output.push(`<ul>${list.map((item) => `<li>${escapeDescriptionText(item)}</li>`).join('')}</ul>`);
+            list = [];
+        }
+    };
+
+    lines.forEach((line) => {
+        const headingMatch = line.match(DESCRIPTION_SECTION_HEADING);
+        if (headingMatch) {
+            flushBlocks();
+            output.push(`<h3>${escapeDescriptionText(headingMatch[1])}</h3>`);
+            const remainder = line.slice(headingMatch[0].length).trim();
+            if (remainder) paragraph.push(remainder);
+            return;
+        }
+
+        const bullet = line.match(/^[-•*]\s*(.+)$/);
+        if (bullet) {
+            if (paragraph.length > 0) flushBlocks();
+            list.push(bullet[1].trim());
+            return;
+        }
+
+        if (list.length > 0) flushBlocks();
+        paragraph.push(line);
+    });
+    flushBlocks();
+    return output.join('');
+}
+
 // Chuẩn hóa pathname ảnh Tiki để các URL cache nhiều kích thước vẫn được nhận diện là cùng một ảnh gốc.
 function getImageSourceKey(imageUrl: string): string {
     try {

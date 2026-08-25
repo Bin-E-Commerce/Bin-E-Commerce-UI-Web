@@ -12,6 +12,7 @@ import { ProductCreateSection } from '../layout/ProductCreateSection';
 import { ProductAttributeFields } from '../shared/ProductAttributeFields';
 import { ProductBrandCombobox } from '../shared/ProductBrandCombobox';
 import { ProductFormField } from '../shared/ProductFormField';
+import { ProductDescriptionEditor } from '../../features/product-description-assistant/components/ProductDescriptionEditor';
 
 interface ProductDetailsSectionProps {
     form: UseFormReturn<SellerProductCreateFormValues>;
@@ -27,7 +28,6 @@ export function ProductDetailsSection({
     loadingAttributes,
     onBrandSelect,
 }: ProductDetailsSectionProps) {
-    const description = form.watch('description');
     const shortDescription = form.watch('shortDescription');
     const errors = form.formState.errors;
 
@@ -76,22 +76,7 @@ export function ProductDetailsSection({
                     />
                 </div>
 
-                <ProductFormField
-                    label="Mô tả sản phẩm"
-                    htmlFor="product-description"
-                    required
-                    error={errors.description?.message}
-                    hint={`${description.length}/30.000 ký tự; nên có ít nhất 100 ký tự`}
-                >
-                    <Textarea
-                        id="product-description"
-                        maxLength={30_000}
-                        rows={10}
-                        placeholder="Mô tả công dụng, thông số, hướng dẫn sử dụng và chính sách liên quan"
-                        aria-invalid={Boolean(errors.description)}
-                        {...form.register('description')}
-                    />
-                </ProductFormField>
+                <ProductDescriptionEditor form={form} references={references} />
             </div>
         </ProductCreateSection>
     );
