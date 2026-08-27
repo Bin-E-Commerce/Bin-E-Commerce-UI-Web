@@ -1,3 +1,8 @@
+/**
+ * Một mục điều hướng trong sidebar Seller Center.
+ * Component chỉ render link và trạng thái active; quyền và thứ tự menu đã được lọc từ access profile.
+ */
+
 'use client';
 
 import Link from 'next/link';
@@ -62,7 +67,13 @@ export function SellerSidebarItem({
                     active ? 'bg-white/10' : 'bg-zinc-100 group-hover:bg-white',
                 )}
             >
-                <Icon className="size-4" />
+                {/* Icon AI là SVG màu đen; khi mục active cần đảo màu để giữ tương phản trên nền đen. */}
+                <Icon
+                    className={cn(
+                        'size-4',
+                        active && item.code === 'seller.ai.image_optimization' && 'invert',
+                    )}
+                />
             </span>
             <span className="min-w-0">
                 <span className="block truncate font-medium">{item.label}</span>

@@ -1,11 +1,9 @@
 'use client';
 
-/**
- * File này cung cấp primitive UI cho biểu tượng và nút kích hoạt trợ lý AI dùng chung.
- * Component chỉ chịu trách nhiệm hiển thị asset, tooltip và trạng thái tương tác; nó không
- * biết nghiệp vụ AI hay tự gọi API. Tooltip tự nhắc lại theo chu kỳ nhưng không chặn pointer
- * event của trang, nên có thể tái sử dụng an toàn trong form, modal và bảng dữ liệu.
- */
+// File này cung cấp primitive UI cho biểu tượng và nút kích hoạt trợ lý AI dùng chung.
+// Component chỉ chịu trách nhiệm hiển thị asset, tooltip và trạng thái tương tác; nó không
+// biết nghiệp vụ AI hay tự gọi API. Tooltip tự nhắc lại theo chu kỳ nhưng không chặn pointer
+// event của trang, nên có thể tái sử dụng an toàn trong form, modal và bảng dữ liệu.
 
 import Image from 'next/image';
 import {
