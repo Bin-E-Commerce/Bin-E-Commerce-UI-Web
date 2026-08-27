@@ -59,4 +59,124 @@
     .input-focus:focus-within {
         box-shadow: 0 0 0 3px oklch(0.205 0 0 / 12%);
     }
+
+    /* Loader hình học dùng chung cho trạng thái xử lý ảnh AI. */
+    .ai-image-loader {
+        --ai-loader-size: 96px;
+        --ai-loader-color-one: #18181b;
+        --ai-loader-color-two: #71717a;
+        --ai-loader-color-three: rgb(24 24 27 / 22%);
+        --ai-loader-color-four: rgb(113 113 122 / 20%);
+        --ai-loader-color-five: rgb(161 161 170 / 16%);
+        position: relative;
+        width: var(--ai-loader-size);
+        height: var(--ai-loader-size);
+        border-radius: 9999px;
+        /* Cắt phần polygon vượt biên để hình loader luôn nằm gọn trong vòng tròn. */
+        overflow: hidden;
+        transform: scale(1);
+        box-shadow: 0 0 25px 0 var(--ai-loader-color-three), 0 20px 50px 0 var(--ai-loader-color-four);
+        animation: ai-loader-colorize 6s ease-in-out infinite;
+    }
+
+    /* Bảng màu sáng giúp loader vẫn có tương phản khi đặt trên panel AI màu đen. */
+    .ai-image-loader--light {
+        --ai-loader-color-one: #fafafa;
+        --ai-loader-color-two: #a1a1aa;
+        --ai-loader-color-three: rgb(255 255 255 / 30%);
+        --ai-loader-color-four: rgb(161 161 170 / 24%);
+        --ai-loader-color-five: rgb(255 255 255 / 12%);
+    }
+
+    .ai-image-loader::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        border-top: 1px solid var(--ai-loader-color-one);
+        border-bottom: 1px solid var(--ai-loader-color-two);
+        background: linear-gradient(180deg, var(--ai-loader-color-five), var(--ai-loader-color-four));
+        box-shadow: inset 0 10px 10px 0 var(--ai-loader-color-three), inset 0 -10px 10px 0 var(--ai-loader-color-four);
+    }
+
+    .ai-image-loader > svg {
+        position: absolute;
+        inset: 0;
+    }
+
+    .ai-image-loader__mask {
+        filter: contrast(15);
+        animation: ai-loader-roundness 1s linear infinite;
+    }
+
+    .ai-image-loader__mask polygon {
+        filter: blur(7px);
+    }
+
+    .ai-image-loader__mask g polygon:nth-child(1) {
+        /* Giữ polygon đầu tiên ở tâm để không tạo mảnh trắng rời phía trên. */
+        transform-origin: 50% 50%;
+        animation: ai-loader-rotation 2s linear infinite reverse;
+    }
+
+    .ai-image-loader__mask g polygon:nth-child(2) {
+        transform-origin: 50% 50%;
+        animation: ai-loader-rotation 2s linear infinite reverse;
+    }
+
+    .ai-image-loader__mask g polygon:nth-child(3) {
+        transform-origin: 50% 60%;
+        animation: ai-loader-rotation 2s linear infinite;
+        animation-delay: -0.66s;
+    }
+
+    .ai-image-loader__mask g polygon:nth-child(4),
+    .ai-image-loader__mask g polygon:nth-child(5) {
+        transform-origin: 40% 40%;
+        animation: ai-loader-rotation 2s linear infinite reverse;
+    }
+
+    .ai-image-loader__mask g polygon:nth-child(5) {
+        animation-delay: -1s;
+    }
+
+    .ai-image-loader__mask g polygon:nth-child(6) {
+        transform-origin: 60% 40%;
+        animation: ai-loader-rotation 2s linear infinite;
+        animation-delay: -0.66s;
+    }
+
+    .ai-image-loader__box {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(180deg, var(--ai-loader-color-one) 30%, var(--ai-loader-color-two) 70%);
+        mask: var(--ai-loader-mask);
+        -webkit-mask: var(--ai-loader-mask);
+    }
+
+    @keyframes ai-loader-rotation {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes ai-loader-roundness {
+        0%, 60%, 100% { filter: contrast(15); }
+        20%, 40% { filter: contrast(3); }
+    }
+
+    @keyframes ai-loader-colorize {
+        0%, 100% { filter: hue-rotate(0deg); }
+        20% { filter: hue-rotate(-15deg); }
+        40% { filter: hue-rotate(-35deg); }
+        60% { filter: hue-rotate(-55deg); }
+        80% { filter: hue-rotate(-20deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ai-image-loader,
+        .ai-image-loader__mask,
+        .ai-image-loader__mask polygon {
+            animation: none;
+        }
+    }
 }
