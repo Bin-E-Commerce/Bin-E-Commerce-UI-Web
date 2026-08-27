@@ -33,3 +33,8 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Cache
+.next-stale
+.swc
+.next
