@@ -52,8 +52,8 @@ export async function getImageOptimizationJob(jobId: string) {
 }
 
 // Apply preview theo action endpoint; output media chi duoc thay sau khi seller xac nhan.
-export async function applyImageOptimizationJob(jobId: string, expectedProductUpdatedAt: string) {
-    const response = await authorizedAxios.post(
+export async function applyImageOptimizationJob(jobId: string, expectedProductUpdatedAt: string): Promise<ImageOptimizationJob> {
+    const response = await authorizedAxios.post<ImageOptimizationJob>(
         `${API_VERSION}/seller/ai/image-optimization/jobs/${jobId}/apply`,
         { expectedProductUpdatedAt },
     );

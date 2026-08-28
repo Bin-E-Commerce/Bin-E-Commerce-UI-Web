@@ -35,7 +35,7 @@ export function useAiOptimizationJob(jobId: string | null) {
         refetchInterval: (query) => {
             const status = query.state.data?.status;
             if (status === 'PENDING') return 1_500;
-            if (status === 'PROCESSING') return 2_000;
+            if (status === 'PROCESSING' || status === 'FINALIZING') return 1_000;
             return false;
         },
     });
@@ -69,7 +69,9 @@ export function useApplyAiOptimizationJob() {
     return useMutation({
         mutationFn: ({ jobId, expectedProductUpdatedAt }: { jobId: string; expectedProductUpdatedAt: string }) =>
             applyImageOptimizationJob(jobId, expectedProductUpdatedAt),
-        onSuccess: (_data, variables) => {
+        onSuccess: (data, variables) => {
+            // Ghi ngay response 202 vao cache de UI biet job dang FINALIZING, khong doc lai snapshot preview cu.
+            client.setQueryData(['seller-ai-image-optimization-job', variables.jobId], data);
             void client.invalidateQueries({ queryKey: ['seller-ai-image-optimization-job', variables.jobId] });
             void client.invalidateQueries({ queryKey: ['seller-ai-image-optimization-overview'] });
             void client.invalidateQueries({ queryKey: ['seller-ai-image-optimization-products'] });

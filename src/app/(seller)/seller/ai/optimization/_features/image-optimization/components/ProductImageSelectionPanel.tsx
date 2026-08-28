@@ -11,7 +11,12 @@ interface ProductImageSelectionPanelProps {
     productId: string;
     selectedAssetIds: string[];
     disabled?: boolean;
-    onChange: (assetIds: string[]) => void;
+    onChange: (selection: ProductImageSelection) => void;
+}
+
+interface ProductImageSelection {
+    assetIds: string[];
+    primaryImageUrl: string | null;
 }
 
 // Trích media asset UUID từ URL đã được Product Service phát hành; URL không bao giờ được gửi lên API AI.
@@ -21,7 +26,7 @@ function getMediaAssetId(imageUrl: string): string | null {
     return candidate && /^[0-9a-f-]{36}$/i.test(candidate) ? candidate : null;
 }
 
-// Hiển thị gallery đã được Product Service xác thực để seller chọn một hoặc nhiều ảnh nguồn.
+// Hiển thị gallery đã được Product Service xác thực để seller chọn chính xác một ảnh nguồn cho mỗi job.
 export function ProductImageSelectionPanel({ productId, selectedAssetIds, disabled = false, onChange }: ProductImageSelectionPanelProps) {
     const productQuery = useQuery({
         queryKey: ['seller-ai-product-images', productId],
@@ -30,13 +35,15 @@ export function ProductImageSelectionPanel({ productId, selectedAssetIds, disabl
     });
     const images = productQuery.data?.images ?? [];
 
-    // Giữ selection bất biến và giới hạn tối đa 9 ảnh theo contract backend.
+    // Mỗi job chi nhan mot anh de ket qua preview va apply luon co cung mot source asset.
     const toggleImage = (assetId: string) => {
         if (disabled) return;
-        const next = selectedAssetIds.includes(assetId)
-            ? selectedAssetIds.filter((id) => id !== assetId)
-            : [...selectedAssetIds, assetId].slice(0, 9);
-        onChange(next);
+        const next = selectedAssetIds.includes(assetId) ? [] : [assetId];
+        // Giữ URL của ảnh được chọn đầu tiên để dialog xem đúng ảnh nguồn thay vì tự rơi về ảnh đại diện.
+        const primaryImageUrl = next
+            .map((selectedId) => images.find((image) => getMediaAssetId(image.imageUrl) === selectedId)?.imageUrl)
+            .find((imageUrl): imageUrl is string => Boolean(imageUrl)) ?? null;
+        onChange({ assetIds: next, primaryImageUrl });
     };
 
     return (
@@ -44,9 +51,9 @@ export function ProductImageSelectionPanel({ productId, selectedAssetIds, disabl
             <div className="flex items-center justify-between gap-3">
                 <div>
                     <p className="text-sm font-semibold text-zinc-950">Chọn ảnh nguồn</p>
-                    <p className="mt-1 text-xs text-zinc-500">Mặc định dùng ảnh đại diện. Bạn có thể chọn tối đa 9 ảnh.</p>
+                    <p className="mt-1 text-xs text-zinc-500">Chọn đúng một ảnh nguồn để tạo một phiên bản tối ưu cho sản phẩm.</p>
                 </div>
-                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">{selectedAssetIds.length || 1}/9 ảnh</span>
+                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">{selectedAssetIds.length}/1 ảnh</span>
             </div>
 
             {productQuery.isLoading ? (
