@@ -1,3 +1,5 @@
+//  Nhãn trạng thái sản phẩm dùng chung trong danh sách và chi tiết seller.
+
 import type { SellerProductStatus } from '@/services/product';
 
 interface SellerProductStatusBadgeProps {
@@ -10,7 +12,7 @@ export function SellerProductStatusBadge({
 }: SellerProductStatusBadgeProps) {
     if (status === 'ACTIVE') {
         return (
-            <span className="inline-flex items-center rounded-full bg-zinc-950 px-2.5 py-1 text-xs font-medium text-white">
+            <span className="inline-flex items-center whitespace-nowrap rounded-full bg-zinc-950 px-2.5 py-1 text-xs font-medium text-white">
                 Đang hoạt động
             </span>
         );
@@ -18,7 +20,7 @@ export function SellerProductStatusBadge({
 
     if (status === 'DRAFT') {
         return (
-            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
+            <span className="inline-flex items-center whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
                 Bản nháp
             </span>
         );
@@ -26,14 +28,14 @@ export function SellerProductStatusBadge({
 
     if (status === 'DELETED') {
         return (
-            <span className="inline-flex items-center rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
+            <span className="inline-flex items-center whitespace-nowrap rounded-full border border-zinc-300 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
                 Đã xóa
             </span>
         );
     }
 
     return (
-        <span className="inline-flex items-center rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+        <span className="inline-flex items-center whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
             Đang ẩn
         </span>
     );
