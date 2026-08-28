@@ -1,3 +1,6 @@
+// Component này hiển thị CTA mua hàng và yêu cầu đăng nhập trước thao tác thêm vào cart.
+// Component chưa ghi cart item; sau khi Customer đăng nhập, nghiệp vụ Add Item sẽ được nối ở phase riêng.
+
 'use client';
 
 import {
@@ -9,7 +12,9 @@ import {
     Star,
     Truck,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -20,6 +25,7 @@ import {
 } from '@/features/products/utils/product-formatters';
 import { cn } from '@/lib/utils';
 import type { ProductDetail } from '@/services/product';
+import { useCartAuthRedirect } from '@/features/cart/hooks/use-cart-auth-redirect';
 import { useProductPurchase } from '../../hooks/useProductPurchase';
 import { ProductOptionSelector } from './ProductOptionSelector';
 import { QuantitySelector } from './QuantitySelector';
@@ -31,6 +37,8 @@ interface ProductPurchasePanelProps {
 // Tổng hợp thông tin bán, lựa chọn SKU và CTA nguồn trong một panel cố định theo dữ liệu product hiện tại.
 export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const purchase = useProductPurchase(product);
+    const pathname = usePathname();
+    const { isAuthenticated, getProtectedHref } = useCartAuthRedirect();
     const [isFavorite, setIsFavorite] = useState(false);
     const rating = getProductRating(product);
     const currentPrice = purchase.selectedVariant?.price ?? product.minPrice;
@@ -41,6 +49,9 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     );
     const sourceName =
         product.sourcePlatform?.toUpperCase() ?? 'BIN E-COMMERCE';
+    const productPath = pathname ?? `/products/${product.id}`;
+    const canAddToCart =
+        product.originType === 'INTERNAL' && purchase.availableStock > 0;
 
     return (
         <section className="min-w-0 border-t border-zinc-200 bg-white p-5 lg:border-l lg:border-t-0 lg:p-7">
@@ -141,19 +152,31 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="lg"
-                    disabled={
-                        product.originType !== 'INTERNAL' ||
-                        purchase.availableStock === 0
-                    }
-                    className="h-12 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                >
-                    <ShoppingCart className="h-4 w-4" />
-                    Thêm vào giỏ
-                </Button>
+                {!isAuthenticated && canAddToCart ? (
+                    <Link
+                        href={getProtectedHref(productPath)}
+                        className={buttonVariants({
+                            variant: 'outline',
+                            size: 'lg',
+                            className:
+                                'h-12 !border-2 !border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700',
+                        })}
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                        Thêm vào giỏ
+                    </Link>
+                ) : (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="lg"
+                        disabled={!canAddToCart}
+                        className="h-12 !border-2 !border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                        Thêm vào giỏ
+                    </Button>
+                )}
 
                 {product.sourceUrl ? (
                     <a
