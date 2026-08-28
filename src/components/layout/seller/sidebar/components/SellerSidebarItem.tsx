@@ -1,7 +1,7 @@
-/**
- * Một mục điều hướng trong sidebar Seller Center.
- * Component chỉ render link và trạng thái active; quyền và thứ tự menu đã được lọc từ access profile.
- */
+//
+// Một mục điều hướng trong sidebar Seller Center.
+// Component chỉ render link và trạng thái active; quyền và thứ tự menu đã được lọc từ access profile.
+//
 
 'use client';
 

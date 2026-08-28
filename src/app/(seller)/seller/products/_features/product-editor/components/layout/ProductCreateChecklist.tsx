@@ -1,10 +1,10 @@
 'use client';
 
-/**
- * Thanh tiến độ ngang của wizard tạo/chỉnh sửa sản phẩm.
- * Component chỉ hiển thị trạng thái validation và phát sự kiện chuyển bước;
- * logic kiểm tra dữ liệu vẫn thuộc về editor hook để mọi giao diện dùng chung một nguồn sự thật.
- */
+//
+// Thanh tiến độ ngang của wizard tạo/chỉnh sửa sản phẩm.
+// Component chỉ hiển thị trạng thái validation và phát sự kiện chuyển bước;
+// logic kiểm tra dữ liệu vẫn thuộc về editor hook để mọi giao diện dùng chung một nguồn sự thật.
+//
 
 import { Check, Circle, CircleAlert } from 'lucide-react';
 

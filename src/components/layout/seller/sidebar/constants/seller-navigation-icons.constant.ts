@@ -1,7 +1,7 @@
-/**
- * Ánh xạ icon cho sidebar seller, bao gồm icon AI thương hiệu dùng thống nhất trong ứng dụng.
- * File này chỉ ánh xạ tên icon từ access profile sang component hiển thị, không chứa quyền truy cập.
- */
+//
+// Ánh xạ icon cho sidebar seller, bao gồm icon AI thương hiệu dùng thống nhất trong ứng dụng.
+// File này chỉ ánh xạ tên icon từ access profile sang component hiển thị, không chứa quyền truy cập.
+//
 
 import type { ComponentType } from 'react';
 import {

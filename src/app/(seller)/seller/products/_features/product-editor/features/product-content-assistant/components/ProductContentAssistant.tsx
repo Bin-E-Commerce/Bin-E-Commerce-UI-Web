@@ -1,8 +1,8 @@
-/**
- * File này cung cấp nút AI cạnh field tên và popup hiển thị toàn bộ luồng gợi ý sản phẩm.
- * Component chỉ quản lý trạng thái mở popup và ghi suggestion được seller chọn vào field name;
- * không tự submit form, không sở hữu asset AI và không chứa logic gọi provider trực tiếp.
- */
+//
+// File này cung cấp nút AI cạnh field tên và popup hiển thị toàn bộ luồng gợi ý sản phẩm.
+// Component chỉ quản lý trạng thái mở popup và ghi suggestion được seller chọn vào field name;
+// không tự submit form, không sở hữu asset AI và không chứa logic gọi provider trực tiếp.
+//
 
 'use client';
 

@@ -1,10 +1,10 @@
 'use client';
 
-/**
- * Section mô tả sản phẩm trên trang customer.
- * Component chỉ dựng khung section và giao việc trình bày hai loại mô tả cho
- * ProductDescriptionBlocks dùng chung với trang chi tiết của seller.
- */
+//
+// Section mô tả sản phẩm trên trang customer.
+// Component chỉ dựng khung section và giao việc trình bày hai loại mô tả cho
+// ProductDescriptionBlocks dùng chung với trang chi tiết của seller.
+//
 import { ProductDescriptionBlocks } from './ProductDescriptionBlocks';
 
 interface ProductDescriptionSectionProps {

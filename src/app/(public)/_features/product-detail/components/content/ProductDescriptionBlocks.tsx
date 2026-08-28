@@ -1,10 +1,10 @@
 'use client';
 
-/**
- * Thành phần dùng chung để trình bày phần tóm tắt và nội dung chi tiết của sản phẩm.
- * Component chỉ chịu trách nhiệm lọc HTML an toàn và dựng giao diện; dữ liệu vẫn do
- * trang chi tiết seller/customer cung cấp và việc lưu sản phẩm vẫn thuộc về form riêng.
- */
+//
+// Thành phần dùng chung để trình bày phần tóm tắt và nội dung chi tiết của sản phẩm.
+// Component chỉ chịu trách nhiệm lọc HTML an toàn và dựng giao diện; dữ liệu vẫn do
+// trang chi tiết seller/customer cung cấp và việc lưu sản phẩm vẫn thuộc về form riêng.
+//
 import DOMPurify from 'dompurify';
 import { useMemo } from 'react';
 import { ClipboardList, FileText } from 'lucide-react';

@@ -1,4 +1,4 @@
-/** Kiểu icon tối giản mà sidebar cần, cho phép dùng cả Lucide và asset thương hiệu AI. */
+//  Kiểu icon tối giản mà sidebar cần, cho phép dùng cả Lucide và asset thương hiệu AI.
 import type { ComponentType } from 'react';
 
 export type SellerNavigationIcon = ComponentType<{ className?: string }>;

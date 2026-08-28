@@ -1,7 +1,7 @@
-/**
- * Panel hướng dẫn và cảnh báo cho bước wizard đang được chọn.
- * Component không tự validate hoặc điều hướng; nó chỉ trình bày validation đã được editor hook tính toán.
- */
+//
+// Panel hướng dẫn và cảnh báo cho bước wizard đang được chọn.
+// Component không tự validate hoặc điều hướng; nó chỉ trình bày validation đã được editor hook tính toán.
+//
 
 import { CheckCircle2, CircleAlert, Lightbulb } from 'lucide-react';
 
@@ -14,11 +14,11 @@ interface ProductCreateStepGuideProps {
     validation: ProductCreateStepValidation;
 }
 
-/**
- * Panel tóm tắt bước hiện tại đặt cạnh form thay cho card sidebar cao.
- * Component ưu tiên hiển thị trạng thái và lỗi cần xử lý; phần mẹo được đưa vào details
- * để seller có thể mở khi cần mà không chiếm chiều cao của khu vực nhập liệu.
- */
+//
+// Panel tóm tắt bước hiện tại đặt cạnh form thay cho card sidebar cao.
+// Component ưu tiên hiển thị trạng thái và lỗi cần xử lý; phần mẹo được đưa vào details
+// để seller có thể mở khi cần mà không chiếm chiều cao của khu vực nhập liệu.
+//
 
 // Tìm metadata của bước đang chọn; route luôn truyền id hợp lệ nhưng vẫn trả null để UI an toàn khi cấu hình thay đổi.
 export function ProductCreateStepGuide({ activeStep, validation }: ProductCreateStepGuideProps) {

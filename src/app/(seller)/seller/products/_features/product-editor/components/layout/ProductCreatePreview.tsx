@@ -1,10 +1,10 @@
 'use client';
 
-/**
- * Preview card mô phỏng cách sản phẩm xuất hiện trên storefront.
- * Component chỉ đọc dữ liệu form để trình bày tức thời; nó không mutate form,
- * không gọi API và không quyết định trạng thái publish của sản phẩm.
- */
+//
+// Preview card mô phỏng cách sản phẩm xuất hiện trên storefront.
+// Component chỉ đọc dữ liệu form để trình bày tức thời; nó không mutate form,
+// không gọi API và không quyết định trạng thái publish của sản phẩm.
+//
 
 import { ImageOff, Package, PlayCircle, Store } from 'lucide-react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';

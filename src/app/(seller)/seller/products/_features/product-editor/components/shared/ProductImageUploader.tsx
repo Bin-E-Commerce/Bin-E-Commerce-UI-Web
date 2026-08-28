@@ -1,10 +1,10 @@
 'use client';
 
-/**
- * Khu vực tải, sắp xếp và xoá ảnh sản phẩm trong form seller.
- * Component chỉ điều khiển trải nghiệm chọn ảnh và gọi hook upload; việc validate file,
- * dọn asset và cập nhật form vẫn thuộc về useProductImageUpload.
- */
+//
+// Khu vực tải, sắp xếp và xoá ảnh sản phẩm trong form seller.
+// Component chỉ điều khiển trải nghiệm chọn ảnh và gọi hook upload; việc validate file,
+// dọn asset và cập nhật form vẫn thuộc về useProductImageUpload.
+//
 
 import { Check, ImagePlus, Loader2, Star, Trash2 } from 'lucide-react';
 import type { UseFormReturn } from 'react-hook-form';
