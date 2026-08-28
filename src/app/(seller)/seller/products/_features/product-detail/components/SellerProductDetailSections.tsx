@@ -1,10 +1,12 @@
+// Cac section chi tiet san pham seller; chi hien ma nghiep vu can thiet, an identifier noi bo khoi presentation.
+
 'use client';
 
-/**
- * Các section của trang xem chi tiết sản phẩm trong Seller Center.
- * File này điều phối layout và dữ liệu vận hành; phần hiển thị mô tả dùng
- * component dùng chung với storefront để hai vai trò luôn có cùng cấp nội dung.
- */
+//
+// Các section của trang xem chi tiết sản phẩm trong Seller Center.
+// File này điều phối layout và dữ liệu vận hành; phần hiển thị mô tả dùng
+// component dùng chung với storefront để hai vai trò luôn có cùng cấp nội dung.
+//
 import { type ReactNode } from 'react';
 import {
     Box,
@@ -152,7 +154,6 @@ function ProductInformationSection({ product }: { product: SellerProductDetail }
                     ['GTIN dùng chung', product.gtin || 'Chưa thiết lập'],
                     ['Tình trạng', getConditionLabel(product.condition)],
                     ['Xuất xứ', product.countryOfOrigin || 'Chưa cập nhật'],
-                    ['Category ID', product.categoryId],
                     ['Slug', `/${product.slug}`],
                     ['Tạo lúc', formatSellerProductUpdatedAt(product.createdAt)],
                     ['Cập nhật', formatSellerProductUpdatedAt(product.updatedAt)],

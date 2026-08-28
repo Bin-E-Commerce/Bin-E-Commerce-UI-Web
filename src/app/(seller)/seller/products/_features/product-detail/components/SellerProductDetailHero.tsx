@@ -1,3 +1,5 @@
+// Hero chi tiet san pham seller; hien thi thong tin van hanh can thiet ma khong lo ID noi bo.
+
 import { Boxes, CalendarClock, Eye, EyeOff, Hash, PackageCheck, Pencil, Power, Star } from 'lucide-react';
 import Link from 'next/link';
 
@@ -67,9 +69,6 @@ export function SellerProductDetailHero({
                                 {product.status === 'ACTIVE' ? 'Tắt bán' : 'Đăng bán'}
                             </button>
                         ) : null}
-                        <span className="rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-500">
-                            ID {product.id}
-                        </span>
                     </div>
 
                     <h1 className="mt-4 max-w-3xl text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
