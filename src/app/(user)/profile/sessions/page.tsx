@@ -105,7 +105,7 @@ export default function SessionsPage() {
     }
 
     return (
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-0 lg:px-0">
             <ConfirmRevokeModal
                 open={showConfirmAll}
                 loading={revokingAll}
@@ -224,8 +224,8 @@ export default function SessionsPage() {
                     {!loading && sessions.length > 0 && (
                         <p className="flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-700">
                             <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            Nếu bạn thấy thiết bị lạ, hãy kết thúc phiên đó
-                            ngay và đổi mật khẩu để bảo vệ tài khoản.
+                            Nếu bạn thấy thiết bị lạ, hãy kết thúc phiên đó ngay
+                            và đổi mật khẩu để bảo vệ tài khoản.
                         </p>
                     )}
                 </div>

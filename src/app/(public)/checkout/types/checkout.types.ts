@@ -19,9 +19,23 @@ export interface OrderResponse {
     shippingFee: string;
     totalAmount: string;
     note: string | null;
-    shippingAddress: Pick<UserAddress, 'fullName' | 'phone' | 'province' | 'district' | 'ward' | 'street'> & { label?: string };
+    shippingAddress: Pick<
+        UserAddress,
+        'fullName' | 'phone' | 'province' | 'district' | 'ward' | 'street'
+    > & { label?: string };
     items: OrderItemResponse[];
+    cancelReason: string | null;
+    cancelledAt: string | null;
+    statusHistory: OrderStatusHistoryResponse[];
     warnings: string[];
+    createdAt: string;
+}
+
+export interface OrderStatusHistoryResponse {
+    id: string;
+    fromStatus: OrderResponse['status'] | null;
+    toStatus: OrderResponse['status'];
+    reason: string;
     createdAt: string;
 }
 

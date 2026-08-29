@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 export default function AddressesPage() {
     return (
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-0 lg:px-0">
             <div className="flex flex-col gap-8 md:flex-row">
                 <ProfileSidebar />
 

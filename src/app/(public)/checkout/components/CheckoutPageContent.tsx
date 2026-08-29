@@ -159,7 +159,11 @@ export function CheckoutPageContent() {
                 <section className="relative mx-auto flex min-h-[320px] max-w-2xl items-center justify-center overflow-hidden rounded-[2rem] border border-zinc-200 bg-white px-6 py-10 text-center shadow-[0_20px_60px_-36px_rgba(24,24,27,0.45)] sm:min-h-[360px] sm:px-12">
                     <div className="relative flex max-w-md flex-col items-center">
                         <div className="flex size-16 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-xl shadow-zinc-950/15">
-                            <PackageCheck className="size-7" strokeWidth={1.7} aria-hidden="true" />
+                            <PackageCheck
+                                className="size-7"
+                                strokeWidth={1.7}
+                                aria-hidden="true"
+                            />
                         </div>
                         <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">
                             Sẵn sàng mua sắm
@@ -168,7 +172,8 @@ export function CheckoutPageContent() {
                             Giỏ hàng đang trống
                         </h1>
                         <p className="mt-2 text-sm leading-6 text-zinc-500">
-                            Thêm sản phẩm để bắt đầu thanh toán đơn hàng của bạn.
+                            Thêm sản phẩm để bắt đầu thanh toán đơn hàng của
+                            bạn.
                         </p>
                         <Link
                             href="/"
@@ -197,7 +202,10 @@ export function CheckoutPageContent() {
                                 className="group inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-950"
                             >
                                 <span className="flex size-7 items-center justify-center rounded-full border border-zinc-200 bg-white transition group-hover:border-zinc-950">
-                                    <ArrowLeft className="size-3.5" aria-hidden="true" />
+                                    <ArrowLeft
+                                        className="size-3.5"
+                                        aria-hidden="true"
+                                    />
                                 </span>
                                 Quay lại giỏ hàng
                             </Link>
@@ -614,7 +622,7 @@ function CheckoutSuccess({ order }: { order: OrderResponse }) {
                         Tiếp tục mua sắm
                     </Link>
                     <Link
-                        href="/profile/orders"
+                        href={`/profile/orders/${order.id}`}
                         className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 px-5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
                     >
                         Xem đơn hàng
