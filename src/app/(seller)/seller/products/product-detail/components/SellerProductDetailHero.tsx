@@ -3,7 +3,7 @@
 import { Boxes, CalendarClock, Eye, EyeOff, Hash, PackageCheck, Pencil, Power, Star } from 'lucide-react';
 import Link from 'next/link';
 
-import { ProductGallery } from '@/app/(public)/_features/product-detail/components/gallery/ProductGallery';
+import { ProductGallery } from '@/app/(public)/product-detail/components/gallery/ProductGallery';
 import type { SellerProductDetail } from '@/services/product';
 import {
     formatSellerProductMetric,

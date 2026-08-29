@@ -1,5 +1,5 @@
 import type { SellerComboboxOption } from '../components/shared/SellerCombobox';
-export { BANK_OPTIONS } from '@/features/seller/constants/bank-options.constant';
+export { BANK_OPTIONS } from '@/app/(seller)/seller/banking/constants/bank-options.constant';
 
 export const BUSINESS_MODEL_OPTIONS: SellerComboboxOption[] = [
     {

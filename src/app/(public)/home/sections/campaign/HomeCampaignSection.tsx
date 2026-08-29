@@ -12,7 +12,7 @@ import type { PublicProduct } from '@/services/product';
 import {
     formatProductPrice,
     getProductThumbnail,
-} from '@/features/products/utils/product-formatters';
+} from '@/app/(public)/products/utils/product-formatters';
 import { CampaignTile } from './CampaignTile';
 
 interface HomeCampaignSectionProps {

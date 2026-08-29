@@ -16,7 +16,7 @@ import { ProductCategoryPicker } from '../shared/ProductCategoryPicker';
 import { ProductFormField } from '../shared/ProductFormField';
 import { ProductImageUploader } from '../shared/ProductImageUploader';
 import { ProductVideoUploader } from '../shared/ProductVideoUploader';
-import { ProductContentAssistant } from '../../features/product-content-assistant/components/ProductContentAssistant';
+import { ProductContentAssistant } from '../../assistants/product-content-assistant/components/ProductContentAssistant';
 
 interface ProductBasicSectionProps {
     form: UseFormReturn<SellerProductCreateFormValues>;

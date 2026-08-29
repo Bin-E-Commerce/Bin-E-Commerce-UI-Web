@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
 import type { ProductDetail } from '@/services/product';
-import { getProductRating } from '@/features/products/utils/product-formatters';
+import { getProductRating } from '@/app/(public)/products/utils/product-formatters';
 import { ProductReviewCard } from './ProductReviewCard';
 
 interface ProductReviewsSectionProps {

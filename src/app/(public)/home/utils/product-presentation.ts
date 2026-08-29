@@ -2,7 +2,7 @@ import type { PublicProduct } from '@/services/product';
 import {
     getProductRating,
     getProductThumbnail,
-} from '@/features/products/utils/product-formatters';
+} from '@/app/(public)/products/utils/product-formatters';
 import type { HomeShopSummary } from '../types/home.types';
 
 // Chọn đủ sản phẩm có ảnh cho cụm banner và giữ nguyên thứ tự API để nội dung ổn định giữa các lần render.

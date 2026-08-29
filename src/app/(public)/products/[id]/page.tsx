@@ -1,4 +1,4 @@
-import { ProductDetailPageContent } from '../../_features/product-detail/ProductDetailPageContent';
+import { ProductDetailPageContent } from '../../product-detail/ProductDetailPageContent';
 
 interface ProductDetailPageProps {
     params: Promise<{ id: string }>;

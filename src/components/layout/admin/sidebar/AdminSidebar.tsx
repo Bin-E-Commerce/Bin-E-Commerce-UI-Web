@@ -18,7 +18,7 @@ import type { AdminNavGroup, AdminNavItem } from './types/admin-nav-item.type';
 import {
     useMarkNotificationsReadByBadgeKey,
     useNotificationCounts,
-} from '@/features/notifications';
+} from '@/common/notifications';
 
 interface AdminSidebarProps {
     onNavigate?: () => void;

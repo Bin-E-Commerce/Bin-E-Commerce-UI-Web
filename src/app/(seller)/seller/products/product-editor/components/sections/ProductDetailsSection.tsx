@@ -12,7 +12,7 @@ import { ProductCreateSection } from '../layout/ProductCreateSection';
 import { ProductAttributeFields } from '../shared/ProductAttributeFields';
 import { ProductBrandCombobox } from '../shared/ProductBrandCombobox';
 import { ProductFormField } from '../shared/ProductFormField';
-import { ProductDescriptionEditor } from '../../features/product-description-assistant/components/ProductDescriptionEditor';
+import { ProductDescriptionEditor } from '../../assistants/product-description-assistant/components/ProductDescriptionEditor';
 
 interface ProductDetailsSectionProps {
     form: UseFormReturn<SellerProductCreateFormValues>;

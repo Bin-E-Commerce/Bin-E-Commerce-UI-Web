@@ -1,4 +1,4 @@
-import { ProductCard } from '@/features/products/components/ProductCard';
+import { ProductCard } from '@/app/(public)/products/components/ProductCard';
 import type { PublicProduct } from '@/services/product';
 
 interface ProductRecommendationsSectionProps {

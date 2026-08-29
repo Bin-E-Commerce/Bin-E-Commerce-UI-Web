@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AppDispatch } from '@/store';
 import { logoutUser } from '@/store/slices/authSlice';
-import { NotificationBell } from '@/features/notifications';
+import { NotificationBell } from '@/common/notifications';
 
 interface AdminTopbarProps {
     userName: string;

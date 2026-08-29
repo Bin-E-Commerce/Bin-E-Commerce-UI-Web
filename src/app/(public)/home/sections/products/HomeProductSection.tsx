@@ -1,6 +1,6 @@
 import type { PublicProduct } from '@/services/product';
 import { cn } from '@/lib/utils';
-import { ProductCard } from '@/features/products/components/ProductCard';
+import { ProductCard } from '@/app/(public)/products/components/ProductCard';
 
 interface HomeProductSectionProps {
     id?: string;

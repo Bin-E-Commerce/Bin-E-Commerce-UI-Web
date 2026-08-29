@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import {
     formatProductPrice,
     getProductThumbnail,
-} from '@/features/products/utils/product-formatters';
+} from '@/app/(public)/products/utils/product-formatters';
 
 interface CampaignTileProps {
     product?: PublicProduct;

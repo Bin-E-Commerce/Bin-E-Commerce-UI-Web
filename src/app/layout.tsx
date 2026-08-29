@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { StoreProvider } from '@/components/providers/StoreProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { Toaster } from '@/components/ui/sonner';
-import { NotificationProvider } from '@/features/notifications';
+import { NotificationProvider } from '@/common/notifications';
 import './globals.css';
 
 export const metadata: Metadata = {

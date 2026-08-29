@@ -9,7 +9,7 @@ import { SellerCombobox } from '@/app/(seller)/seller/register/components/shared
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { BANK_OPTIONS } from '@/features/seller/constants/bank-options.constant';
+import { BANK_OPTIONS } from '@/app/(seller)/seller/banking/constants/bank-options.constant';
 import { cn } from '@/lib/utils';
 import type { ShopProfileDto } from '@/services/seller';
 import {

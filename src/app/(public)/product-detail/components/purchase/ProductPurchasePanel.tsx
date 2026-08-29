@@ -22,11 +22,11 @@ import {
     formatProductPrice,
     formatSoldCount,
     getProductRating,
-} from '@/features/products/utils/product-formatters';
+} from '@/app/(public)/products/utils/product-formatters';
 import { cn } from '@/lib/utils';
 import type { ProductDetail } from '@/services/product';
-import { useAddCartItem } from '@/features/cart/hooks/use-add-cart-item';
-import { useCartAuthRedirect } from '@/features/cart/hooks/use-cart-auth-redirect';
+import { useAddCartItem } from '@/app/(public)/cart/hooks/use-add-cart-item';
+import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
 import { useProductPurchase } from '../../hooks/useProductPurchase';
 import { ProductOptionSelector } from './ProductOptionSelector';
 import { QuantitySelector } from './QuantitySelector';

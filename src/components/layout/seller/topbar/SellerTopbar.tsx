@@ -3,7 +3,7 @@
 import { Menu, Search, Store, UserRound } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { NotificationBell } from '@/features/notifications';
+import { NotificationBell } from '@/common/notifications';
 import { cn } from '@/lib/utils';
 
 interface SellerTopbarProps {

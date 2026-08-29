@@ -19,8 +19,8 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 
-import { ProductDescriptionBlocks } from '@/app/(public)/_features/product-detail/components/content/ProductDescriptionBlocks';
-import { getProductSpecifications } from '@/app/(public)/_features/product-detail/utils/product-detail-presentation';
+import { ProductDescriptionBlocks } from '@/app/(public)/product-detail/components/content/ProductDescriptionBlocks';
+import { getProductSpecifications } from '@/app/(public)/product-detail/utils/product-detail-presentation';
 import type { ProductVariant, SellerProductDetail } from '@/services/product';
 import {
     formatSellerProductPrice,
