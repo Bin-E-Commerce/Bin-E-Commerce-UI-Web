@@ -25,6 +25,7 @@ import {
 } from '@/features/products/utils/product-formatters';
 import { cn } from '@/lib/utils';
 import type { ProductDetail } from '@/services/product';
+import { useAddCartItem } from '@/features/cart/hooks/use-add-cart-item';
 import { useCartAuthRedirect } from '@/features/cart/hooks/use-cart-auth-redirect';
 import { useProductPurchase } from '../../hooks/useProductPurchase';
 import { ProductOptionSelector } from './ProductOptionSelector';
@@ -37,6 +38,7 @@ interface ProductPurchasePanelProps {
 // Tổng hợp thông tin bán, lựa chọn SKU và CTA nguồn trong một panel cố định theo dữ liệu product hiện tại.
 export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const purchase = useProductPurchase(product);
+    const addCartItemMutation = useAddCartItem();
     const pathname = usePathname();
     const { isAuthenticated, getProtectedHref } = useCartAuthRedirect();
     const [isFavorite, setIsFavorite] = useState(false);
@@ -51,7 +53,20 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         product.sourcePlatform?.toUpperCase() ?? 'BIN E-COMMERCE';
     const productPath = pathname ?? `/products/${product.id}`;
     const canAddToCart =
-        product.originType === 'INTERNAL' && purchase.availableStock > 0;
+        product.originType === 'INTERNAL' &&
+        Boolean(purchase.selectedVariant) &&
+        purchase.availableStock > 0;
+
+    // Chỉ gửi product/variant/quantity; Cart Service sẽ kiểm tra lại toàn bộ snapshot và tồn kho trước khi lưu.
+    function handleAddToCart(): void {
+        if (!canAddToCart || !purchase.selectedVariant) return;
+
+        addCartItemMutation.mutate({
+            productId: product.id,
+            variantId: purchase.selectedVariant.id,
+            quantity: purchase.quantity,
+        });
+    }
 
     return (
         <section className="min-w-0 border-t border-zinc-200 bg-white p-5 lg:border-l lg:border-t-0 lg:p-7">
@@ -155,11 +170,11 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                 {!isAuthenticated && canAddToCart ? (
                     <Link
                         href={getProtectedHref(productPath)}
-                        className={buttonVariants({
+                            className={buttonVariants({
                             variant: 'outline',
                             size: 'lg',
                             className:
-                                'h-12 !border-2 !border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700',
+                                'h-12 !border-2 !border-zinc-950 text-zinc-950 hover:bg-zinc-950 hover:text-white',
                         })}
                     >
                         <ShoppingCart className="h-4 w-4" />
@@ -170,11 +185,14 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                         type="button"
                         variant="outline"
                         size="lg"
-                        disabled={!canAddToCart}
-                        className="h-12 !border-2 !border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        disabled={!canAddToCart || addCartItemMutation.isPending}
+                        onClick={handleAddToCart}
+                        className="h-12 !border-2 !border-zinc-950 text-zinc-950 hover:bg-zinc-950 hover:text-white"
                     >
                         <ShoppingCart className="h-4 w-4" />
-                        Thêm vào giỏ
+                        {addCartItemMutation.isPending
+                            ? 'Đang thêm...'
+                            : 'Thêm vào giỏ'}
                     </Button>
                 )}
 
@@ -185,7 +203,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                         rel="noreferrer"
                         className={buttonVariants({
                             size: 'lg',
-                            className: 'h-12 bg-red-600 hover:bg-red-700',
+                            className: 'h-12 bg-zinc-950 hover:bg-zinc-800',
                         })}
                     >
                         Xem nơi bán
@@ -195,7 +213,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                         type="button"
                         size="lg"
                         disabled={purchase.availableStock === 0}
-                        className="h-12 bg-red-600 hover:bg-red-700"
+                        className="h-12 bg-zinc-950 hover:bg-zinc-800"
                     >
                         Mua ngay
                     </Button>

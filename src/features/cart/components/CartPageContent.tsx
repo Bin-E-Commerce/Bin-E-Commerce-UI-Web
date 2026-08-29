@@ -17,6 +17,7 @@ import { useEffect } from 'react';
 
 import { useCart } from '../hooks/use-cart';
 import { useCartAuthRedirect } from '../hooks/use-cart-auth-redirect';
+import { CartItemsView } from './CartItemsView';
 
 // Điều phối trạng thái chuyển hướng, tải dữ liệu, lỗi và giỏ hàng rỗng thành một trải nghiệm liền mạch.
 // Redirect vẫn được giữ ở client để không làm thay đổi contract route hiện tại; khi API thành công,
@@ -85,15 +86,20 @@ export function CartPageContent() {
         );
     }
 
+    const cart = cartQuery.data;
+    if (!cart) return null;
+
     return (
         <main className="min-h-[520px] bg-zinc-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             <div className="mx-auto w-full max-w-7xl">
                 <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_12px_40px_-24px_rgba(24,24,27,0.35)]">
-                    <header className="relative overflow-hidden border-b border-zinc-100 bg-gradient-to-br from-white via-white to-zinc-50 px-6 py-6 sm:px-8 sm:py-8">
-                        <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-zinc-100/70 blur-3xl" />
-                        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex min-w-0 items-center gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-lg shadow-zinc-950/15">
+                    <header className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-50 via-white to-zinc-100 px-6 py-7 text-slate-900 sm:px-8 sm:py-8">
+                        <div className="pointer-events-none absolute -right-20 -top-36 h-72 w-72 rounded-full border border-slate-200/80" />
+                        <div className="pointer-events-none absolute -right-8 -top-24 h-48 w-48 rounded-full border border-zinc-200/80" />
+                        <div className="pointer-events-none absolute bottom-0 left-1/3 h-px w-1/3 bg-gradient-to-r from-transparent via-slate-400/50 to-transparent" />
+                        <div className="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex min-w-0 items-start gap-4 sm:items-center">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-zinc-950 shadow-lg shadow-slate-300/50">
                                     <ShoppingBag
                                         className="h-6 w-6"
                                         strokeWidth={1.7}
@@ -101,18 +107,26 @@ export function CartPageContent() {
                                     />
                                 </div>
                                 <div className="min-w-0">
-                                    <h1 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-950">
+                                            Khu vực mua sắm
+                                        </p>
+                                        <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-zinc-950 shadow-sm">
+                                            {cart.totalItems} sản phẩm
+                                        </span>
+                                    </div>
+                                    <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
                                         Giỏ hàng của bạn
                                     </h1>
-                                    <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-600">
-                                        Xem lại sản phẩm đã chọn và tiếp tục đặt
-                                        hàng bất cứ khi nào bạn sẵn sàng.
+                                    <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-700">
+                                        Kiểm tra lựa chọn của bạn và sẵn sàng cho
+                                        bước mua sắm tiếp theo.
                                     </p>
                                 </div>
                             </div>
                             <Link
                                 href="/"
-                                className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-md shadow-zinc-950/10 transition-all hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:w-fit"
+                                className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-lg shadow-zinc-400/50 transition-all hover:-translate-y-0.5 hover:bg-zinc-800 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:w-fit"
                             >
                                 <ArrowLeft
                                     className="h-4 w-4"
@@ -123,8 +137,11 @@ export function CartPageContent() {
                         </div>
                     </header>
 
-                    <div className="px-6 py-9 sm:px-8 sm:py-11">
-                        <div className="mx-auto flex max-w-xl flex-col items-center text-center">
+                    {cart.items.length > 0 ? (
+                        <CartItemsView cart={cart} />
+                    ) : (
+                        <div className="px-6 py-9 sm:px-8 sm:py-11">
+                            <div className="mx-auto flex max-w-xl flex-col items-center text-center">
                             <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 ring-4 ring-zinc-50">
                                 <div className="absolute inset-2 rounded-full border border-zinc-200 bg-white" />
                                 <ShoppingBag
@@ -149,9 +166,9 @@ export function CartPageContent() {
                             >
                                 Khám phá sản phẩm
                             </Link>
-                        </div>
+                            </div>
 
-                        <div className="mx-auto mt-10 grid max-w-5xl gap-3 border-t border-zinc-100 pt-7 sm:grid-cols-3 sm:gap-4">
+                            <div className="mx-auto mt-10 grid max-w-5xl gap-3 border-t border-zinc-100 pt-7 sm:grid-cols-3 sm:gap-4">
                             <div className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_12px_28px_-18px_rgba(24,24,27,0.55)] sm:p-5">
                                 <div className="absolute inset-x-0 top-0 h-0.5 bg-zinc-950 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                                 <div className="flex items-start justify-between gap-3">
@@ -212,8 +229,9 @@ export function CartPageContent() {
                                     Quay lại mua sắm bất cứ lúc nào.
                                 </p>
                             </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </section>
             </div>
         </main>
