@@ -18,7 +18,7 @@ const VI_ERROR_MAP: Record<string, string> = {
     'Too many requests': 'Quá nhiều yêu cầu, vui lòng thử lại sau',
     'Internal server error': 'Lỗi hệ thống, vui lòng thử lại sau',
     'Upstream service unavailable':
-        'Dịch vụ AI chưa sẵn sàng. Hãy kiểm tra AI Service và thử lại.',
+        'Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.',
     'OTP not found. Please request a new one.':
         'Mã OTP không tồn tại. Vui lòng yêu cầu mã mới.',
     'The required AI permission is missing.':
@@ -46,6 +46,18 @@ export function getErrorMessage(err: unknown): string {
                 : Array.isArray(rawMessage)
                   ? rawMessage[0]
                   : 'Request failed';
+        // Đây là lỗi proxy dùng chung cho nhiều service, không được suy diễn thành lỗi AI.
+        if (serverMsg === 'Upstream service unavailable') {
+            return err.response?.status
+                ? `Dịch vụ tạm thời không khả dụng (${err.response.status}). Vui lòng thử lại sau.`
+                : VI_ERROR_MAP[serverMsg];
+        }
+
+        // Khi backend không có message nghiệp vụ cụ thể, giữ status để người dùng biết đây là lỗi máy chủ.
+        if (err.response?.status && err.response.status >= 500 && !VI_ERROR_MAP[serverMsg]) {
+            return `Lỗi máy chủ (${err.response.status}). Vui lòng thử lại sau.`;
+        }
+
         return VI_ERROR_MAP[serverMsg] ?? serverMsg;
     }
     if (err instanceof Error) {

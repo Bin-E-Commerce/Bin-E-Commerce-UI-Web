@@ -1,3 +1,6 @@
+// File này định nghĩa transport types của Auth Service dùng trong web app.
+// Address type được checkout dùng để chọn; Order Service vẫn snapshot lại từ backend.
+
 export interface PermissionGrant {
     code: string;
     scopes: string[];
@@ -102,6 +105,32 @@ export interface ChangePasswordPayload {
 export interface UpdateProfilePayload {
     name?: string;
     phone?: string | null;
+}
+
+// Địa chỉ giao hàng dùng chung cho trang profile và checkout; Order Service sẽ snapshot lại khi tạo đơn.
+export interface UserAddress {
+    id: string;
+    label: string;
+    fullName: string;
+    phone: string;
+    province: string;
+    district: string;
+    ward: string;
+    street: string;
+    isDefault: boolean;
+    createdAt: string;
+}
+
+// Payload tạo địa chỉ inline trong checkout, bám đúng contract Auth Service.
+export interface CreateAddressPayload {
+    label: string;
+    fullName: string;
+    phone: string;
+    province: string;
+    district: string;
+    ward: string;
+    street: string;
+    isDefault?: boolean;
 }
 
 export interface SocialCallbackPayload {
