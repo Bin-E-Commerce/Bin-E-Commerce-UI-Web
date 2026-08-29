@@ -22,17 +22,18 @@ export function useCartAuthRedirect() {
         initialized && accessToken && user?.id,
     );
 
-    // Trả href bảo vệ route cart; Guest sẽ được đưa qua login thay vì mở cart trực tiếp.
+    // Chỉ quyết định đưa Guest sang login sau khi auth hydrate xong; trong lúc chờ, giữ route để tránh redirect sai khi refresh.
     function getProtectedHref(returnPath: string): string {
+        if (!initialized) return returnPath;
         return isAuthenticated ? returnPath : buildLoginHref(returnPath);
     }
 
-    // Chuyển Guest tới login và giữ lại trang hiện tại để không làm mất ngữ cảnh mua hàng.
+    // Chuyển Guest tới login sau khi đã xác nhận không có session, không can thiệp vào giai đoạn restore ban đầu.
     function redirectToLogin(returnPath: string): void {
-        if (!isAuthenticated) {
+        if (initialized && !isAuthenticated) {
             router.push(buildLoginHref(returnPath));
         }
     }
 
-    return { isAuthenticated, getProtectedHref, redirectToLogin };
+    return { initialized, isAuthenticated, getProtectedHref, redirectToLogin };
 }

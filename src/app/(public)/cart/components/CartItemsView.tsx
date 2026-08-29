@@ -1,3 +1,6 @@
+// File này hiển thị danh sách item, thao tác quantity và tổng tiền tạm tính của cart.
+// Component không tự tính giá hoặc gọi API; mutation và dữ liệu thuộc về Cart feature hooks.
+
 // Component này hiển thị danh sách item, thao tác quantity và tổng tiền tạm tính của cart.
 // Component không tự tính hay lưu dữ liệu; mọi mutation được ủy quyền cho Cart Service qua CartItemActions.
 
@@ -5,7 +8,6 @@
 
 import { ArrowRight, ImageOff, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
 
 import type { Cart } from '../types/cart.types';
 import { CartItemActions } from './CartItemActions';
@@ -28,10 +30,6 @@ function formatCartPrice(value: string): string {
 
 // Render danh sách item và subtotal từ response backend, giữ bố cục nhất quán với trang cart hiện tại.
 export function CartItemsView({ cart }: CartItemsViewProps) {
-    // Chỉ mở thông báo tại chỗ vì checkout chưa có route xử lý; không giả lập điều hướng
-    // hoặc tạo đơn hàng khi backend chưa cung cấp nghiệp vụ thanh toán chính thức.
-    const [showCheckoutNotice, setShowCheckoutNotice] = useState(false);
-
     return (
         <div className="grid gap-5 px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[minmax(0,1fr)_300px]">
             <section aria-labelledby="cart-items-title">
@@ -153,22 +151,13 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                     hàng.
                 </p>
 
-                <button
-                    type="button"
-                    onClick={() => setShowCheckoutNotice(true)}
+                <Link
+                    href="/checkout"
                     className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                 >
                     Thanh toán
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </button>
-                {showCheckoutNotice ? (
-                    <p
-                        className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-medium leading-5 text-amber-800"
-                        role="status"
-                    >
-                        Tính năng thanh toán đang được phát triển.
-                    </p>
-                ) : null}
+                </Link>
             </aside>
         </div>
     );

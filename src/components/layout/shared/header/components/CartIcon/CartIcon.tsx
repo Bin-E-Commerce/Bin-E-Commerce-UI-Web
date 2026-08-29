@@ -7,8 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
 
-import { useCart } from '@/features/cart/hooks/use-cart';
-import { useCartAuthRedirect } from '@/features/cart/hooks/use-cart-auth-redirect';
+import { useCart } from '@/app/(public)/cart/hooks/use-cart';
+import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
 import { CartPreview } from './CartPreview';
 
 interface CartIconProps {

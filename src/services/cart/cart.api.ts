@@ -7,7 +7,7 @@ import type {
     AddCartItemInput,
     Cart,
     UpdateCartItemInput,
-} from "@/features/cart/types/cart.types";
+} from "@/app/(public)/cart/types/cart.types";
 
 // Lấy hoặc khởi tạo active cart của Customer hoặc Guest hiện tại.
 export async function getActiveCart(guestSessionId?: string): Promise<Cart> {

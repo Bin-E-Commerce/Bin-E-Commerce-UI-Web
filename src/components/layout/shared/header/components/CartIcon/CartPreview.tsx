@@ -5,8 +5,8 @@
 
 import Link from 'next/link';
 
-import type { Cart } from '@/features/cart/types/cart.types';
-import { CartItemActions } from '@/features/cart/components/CartItemActions';
+import type { Cart } from '@/app/(public)/cart/types/cart.types';
+import { CartItemActions } from '@/app/(public)/cart/components/CartItemActions';
 
 interface CartPreviewProps {
     cart?: Cart;

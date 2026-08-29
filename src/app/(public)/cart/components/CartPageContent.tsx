@@ -24,27 +24,18 @@ import { CartItemsView } from './CartItemsView';
 // người mua chỉ thấy thông tin hữu ích và lời mời tiếp tục mua sắm.
 export function CartPageContent() {
     const router = useRouter();
-    const { isAuthenticated } = useCartAuthRedirect();
+    const { initialized, isAuthenticated } = useCartAuthRedirect();
     const cartQuery = useCart();
 
-    // Direct URL /cart vẫn yêu cầu đăng nhập để đồng nhất với hành vi khi người dùng bấm biểu tượng giỏ hàng.
+    // Chỉ redirect sau khi initAuth hoàn tất; nếu redirect trong lúc initialized=false thì refresh sẽ đá nhầm user đang đăng nhập sang login.
     useEffect(() => {
-        if (!isAuthenticated) {
+        if (initialized && !isAuthenticated) {
             router.replace('/login?redirect=%2Fcart');
         }
-    }, [isAuthenticated, router]);
+    }, [initialized, isAuthenticated, router]);
 
-    if (!isAuthenticated) {
-        return (
-            <main className="flex min-h-[520px] items-center justify-center bg-zinc-50 px-4 py-12">
-                <p className="text-sm text-zinc-500" aria-live="polite">
-                    Đang chuyển tới trang đăng nhập...
-                </p>
-            </main>
-        );
-    }
-
-    if (cartQuery.isLoading) {
+    // Giữ skeleton cho tới khi auth hydrate và cart tải xong, tránh hiển thị hoặc redirect nhầm trạng thái Guest tạm thời.
+    if (!initialized || cartQuery.isLoading) {
         return (
             <main className="min-h-[520px] bg-zinc-50 px-4 py-8 sm:px-6 lg:px-8">
                 <div
@@ -55,6 +46,16 @@ export function CartPageContent() {
                     <div className="h-10 w-64 rounded bg-zinc-200" />
                     <div className="h-[360px] rounded-2xl border border-zinc-200 bg-white" />
                 </div>
+            </main>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return (
+            <main className="flex min-h-[520px] items-center justify-center bg-zinc-50 px-4 py-12">
+                <p className="text-sm text-zinc-500" aria-live="polite">
+                    Đang chuyển tới trang đăng nhập...
+                </p>
             </main>
         );
     }
