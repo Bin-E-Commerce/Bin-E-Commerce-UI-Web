@@ -148,6 +148,10 @@ export function canAccessSellerPath(
         /^\/seller\/products\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/edit$/i.test(
             pathname,
         );
+    const isSellerOrderDetail =
+        /^\/seller\/orders\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            pathname,
+        );
     if (isSellerProductEdit) {
         // Edit dùng permission riêng; không suy ra từ quyền đọc để tránh mở nhầm thao tác ghi.
         return hasPermission(user, SELLER_PRODUCT_UPDATE_PERMISSION);
@@ -155,6 +159,9 @@ export function canAccessSellerPath(
     return (
         isSellerProductDetail &&
         navigation.some((item) => item.href === '/seller/products')
+    ) || (
+        isSellerOrderDetail &&
+        navigation.some((item) => item.href === '/seller/orders')
     );
 }
 

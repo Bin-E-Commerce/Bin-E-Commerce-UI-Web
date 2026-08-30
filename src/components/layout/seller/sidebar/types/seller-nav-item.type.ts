@@ -10,6 +10,7 @@ export interface SellerNavItem {
     description: string;
     icon: SellerNavigationIcon;
     exact?: boolean;
+    badgeCount?: number;
 }
 
 export interface SellerNavGroup {

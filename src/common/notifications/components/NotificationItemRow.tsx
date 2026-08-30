@@ -2,7 +2,13 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { ClipboardCheck, FilePenLine, Info, ShieldAlert } from 'lucide-react';
+import {
+    ClipboardCheck,
+    FilePenLine,
+    Info,
+    PackageCheck,
+    ShieldAlert,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { NotificationItem } from '@/services/notifications';
@@ -16,6 +22,7 @@ interface NotificationItemRowProps {
 function getNotificationIcon(category: string) {
     if (category === 'seller_application') return ClipboardCheck;
     if (category === 'shop_profile') return FilePenLine;
+    if (category === 'order') return PackageCheck;
     if (category === 'security') return ShieldAlert;
     return Info;
 }

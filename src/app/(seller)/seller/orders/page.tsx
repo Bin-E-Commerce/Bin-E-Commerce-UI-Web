@@ -1,14 +1,8 @@
-import { SellerModulePlaceholder } from '../components/SellerModulePlaceholder';
+// Page route mỏng cho Seller order list; feature state và UI nằm trong các component/hook cục bộ.
 
-// Trang quản lý đơn hàng là nơi gom bộ lọc trạng thái và thao tác xử lý đơn.
+import { SellerOrdersPageContent } from './components/seller-orders-page-content';
+
+// Compose màn hình danh sách order theo layout Seller Center đã xác thực ở parent route.
 export default function SellerOrdersPage() {
-    return (
-        <SellerModulePlaceholder
-            eyebrow="Quản lý đơn hàng"
-            title="Theo dõi toàn bộ vòng đời đơn hàng"
-            description="Màn hình này sẽ gom đơn mới, đơn chờ lấy hàng, đơn đang giao và yêu cầu trả hàng để seller xử lý nhanh theo mức độ ưu tiên."
-            primaryAction="Tải danh sách đơn"
-            secondaryAction="Xuất báo cáo"
-        />
-    );
+    return <SellerOrdersPageContent />;
 }

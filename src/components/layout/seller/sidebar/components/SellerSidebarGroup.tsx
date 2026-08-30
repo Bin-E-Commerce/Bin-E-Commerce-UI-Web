@@ -1,5 +1,8 @@
+// File này render một nhóm navigation Seller và truyền item hiện tại cho callback đọc notification theo menu.
+
 'use client';
 
+import type { SellerNavItem } from '../types/seller-nav-item.type';
 import type { SellerNavGroup } from '../types/seller-nav-item.type';
 import { SellerSidebarItem } from './SellerSidebarItem';
 
@@ -7,7 +10,7 @@ interface SellerSidebarGroupProps {
     group: SellerNavGroup;
     pathname: string;
     search: string;
-    onNavigate?: () => void;
+    onNavigate?: (item: SellerNavItem) => void;
 }
 
 // Gom các menu theo nhóm nghiệp vụ để sidebar không biến thành danh sách dài khó quét.

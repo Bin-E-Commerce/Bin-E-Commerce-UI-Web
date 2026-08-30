@@ -5,6 +5,7 @@
 
 import type { ComponentType } from 'react';
 import {
+    ClipboardList,
     LayoutDashboard,
     PackageSearch,
     ShieldCheck,
@@ -16,6 +17,7 @@ type SellerNavigationIcon = ComponentType<{ className?: string }>;
 
 // Ánh xạ tên icon do backend trả về sang component đã được bundle tĩnh ở frontend.
 export const SELLER_NAVIGATION_ICON_MAP: Record<string, SellerNavigationIcon> = {
+    ClipboardList,
     LayoutDashboard,
     PackageSearch,
     Store,

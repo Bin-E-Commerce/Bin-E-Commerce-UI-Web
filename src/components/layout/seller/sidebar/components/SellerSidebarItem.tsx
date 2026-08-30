@@ -14,7 +14,7 @@ interface SellerSidebarItemProps {
     item: SellerNavItem;
     pathname: string;
     search: string;
-    onNavigate?: () => void;
+    onNavigate?: (item: SellerNavItem) => void;
 }
 
 // Xác định active theo pathname để các link có query như trạng thái đơn vẫn bám đúng section chính.
@@ -53,7 +53,7 @@ export function SellerSidebarItem({
     return (
         <Link
             href={item.href}
-            onClick={onNavigate}
+            onClick={() => onNavigate?.(item)}
             className={cn(
                 'group flex min-h-12 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
                 active
@@ -75,7 +75,7 @@ export function SellerSidebarItem({
                     )}
                 />
             </span>
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{item.label}</span>
                 <span
                     className={cn(
@@ -86,6 +86,14 @@ export function SellerSidebarItem({
                     {item.description}
                 </span>
             </span>
+            {(item.badgeCount ?? 0) > 0 ? (
+                <span
+                    className="ml-auto flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-5 text-white"
+                    aria-label={`${item.badgeCount} thông báo chưa đọc`}
+                >
+                    {(item.badgeCount ?? 0) > 99 ? '99+' : item.badgeCount}
+                </span>
+            ) : null}
         </Link>
     );
 }

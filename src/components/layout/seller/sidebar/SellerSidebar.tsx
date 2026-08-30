@@ -1,3 +1,5 @@
+// File này kết nối navigation Seller với unread notification count để menu Đơn hàng có badge đồng bộ cùng chuông.
+
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -5,6 +7,11 @@ import { useSelector } from 'react-redux';
 import { Store } from 'lucide-react';
 
 import type { RootState } from '@/store';
+import type { SellerNavItem } from './types/seller-nav-item.type';
+import {
+    useMarkNotificationsReadByBadgeKey,
+    useNotificationCounts,
+} from '@/common/notifications';
 import { SellerSidebarGroup } from './components/SellerSidebarGroup';
 import { mapSellerNavigation } from './utils/map-seller-navigation';
 
@@ -18,7 +25,25 @@ export function SellerSidebar({ onNavigate }: SellerSidebarProps) {
     const searchParams = useSearchParams();
     const user = useSelector((state: RootState) => state.auth.user);
     const search = searchParams.toString();
-    const visibleGroups = mapSellerNavigation(user);
+    const notificationCounts = useNotificationCounts();
+    const markBadgeRead = useMarkNotificationsReadByBadgeKey();
+
+    // Navigation code trùng với badgeKey do backend cấp, giúp mỗi menu chỉ hiển thị unread count của chính nó.
+    const visibleGroups = mapSellerNavigation(user).map((group) => ({
+        ...group,
+        items: group.items.map((item) => ({
+            ...item,
+            badgeCount: notificationCounts.data?.byBadgeKey[item.code] ?? 0,
+        })),
+    }));
+
+    // Khi Seller mở menu Đơn hàng, dọn đúng nhóm notification liên quan mà không ảnh hưởng các thông báo khác.
+    function handleItemNavigate(item: SellerNavItem) {
+        onNavigate?.();
+        if ((item.badgeCount ?? 0) > 0) {
+            markBadgeRead.mutate(item.code);
+        }
+    }
 
     return (
         <aside className="flex h-full w-72 shrink-0 flex-col border-r border-zinc-200 bg-white">
@@ -39,7 +64,7 @@ export function SellerSidebar({ onNavigate }: SellerSidebarProps) {
                         group={group}
                         pathname={pathname}
                         search={search}
-                        onNavigate={onNavigate}
+                        onNavigate={handleItemNavigate}
                     />
                 ))}
             </nav>

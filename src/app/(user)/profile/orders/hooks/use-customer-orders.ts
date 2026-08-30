@@ -18,8 +18,7 @@ import {
     type CustomerOrderListItem,
     type CustomerOrderStatus,
 } from '@/services/order/order.api';
-import { productService } from '@/services/product/product.service';
-import { getProductThumbnail } from '@/app/(public)/products/utils/product-formatters';
+import { useOrderProductImages } from '@/hooks/use-order-product-images';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // Query danh sách giữ dữ liệu trang trước trong lúc chuyển trang để giao diện không bị nhấp nháy.
@@ -38,7 +37,7 @@ export function useCustomerOrders(
 // Lấy ảnh hiện tại của product chỉ cho preview item thiếu ảnh snapshot, giúp các đơn cũ vẫn có ảnh hiển thị.
 // Query này không ghi ngược vào order và không thay thế snapshot của đơn mới; mỗi product chỉ được gọi một lần.
 export function useLegacyOrderPreviewImages(orders: CustomerOrderListItem[]) {
-    return useMissingProductImages(
+    return useOrderProductImages(
         orders.flatMap((order) => order.previewItems ?? []),
     );
 }
@@ -48,30 +47,7 @@ export function useLegacyOrderPreviewImages(orders: CustomerOrderListItem[]) {
 export function useMissingProductImages(
     items: Array<{ productId: string; imageUrl: string | null }>,
 ) {
-    const productIds = Array.from(
-        new Set(
-            items
-                .filter((item) => !item.imageUrl)
-                .map((item) => item.productId)
-                .filter(Boolean),
-        ),
-    );
-    const productQueries = useQueries({
-        queries: productIds.map((productId) => ({
-            queryKey: ['order-product-preview', productId],
-            queryFn: () => productService.getProductById(productId),
-            select: getProductThumbnail,
-            staleTime: 5 * 60_000,
-            retry: 1,
-        })),
-    });
-
-    return new Map(
-        productIds.map((productId, index) => [
-            productId,
-            productQueries[index]?.data ?? null,
-        ]),
-    );
+    return useOrderProductImages(items);
 }
 
 // Query chi tiết luôn đọc theo orderId trên URL nên refresh trang vẫn khôi phục đúng dữ liệu.
