@@ -5,6 +5,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
     ArrowLeft,
@@ -53,9 +54,7 @@ export function CheckoutPageContent() {
     const [selectedAddressId, setSelectedAddressId] = useState('');
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [note, setNote] = useState('');
-    const [createdOrder, setCreatedOrder] = useState<OrderResponse | null>(
-        null,
-    );
+    const router = useRouter();
 
     const addresses = addressesQuery.data ?? [];
     const fallbackAddressId = useMemo(
@@ -106,7 +105,10 @@ export function CheckoutPageContent() {
                 shippingAddressId: activeAddressId,
                 note: note.trim() || undefined,
             },
-            { onSuccess: (order) => setCreatedOrder(order) },
+            {
+                // Chuyển thẳng đến detail order vừa tạo để khách hàng thấy ngay mã đơn, trạng thái và snapshot giao hàng.
+                onSuccess: (order) => router.replace(`/profile/orders/${order.id}`),
+            },
         );
     }
 
@@ -185,10 +187,6 @@ export function CheckoutPageContent() {
                 </section>
             </CheckoutShell>
         );
-    }
-
-    if (createdOrder) {
-        return <CheckoutSuccess order={createdOrder} />;
     }
 
     return (

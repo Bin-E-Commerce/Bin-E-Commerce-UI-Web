@@ -1,5 +1,5 @@
-// Component này hiển thị CTA mua hàng và yêu cầu đăng nhập trước thao tác thêm vào cart.
-// Component chưa ghi cart item; sau khi Customer đăng nhập, nghiệp vụ Add Item sẽ được nối ở phase riêng.
+// Component này hiển thị CTA mua hàng, thêm sản phẩm vào cart và điều hướng Customer tới checkout.
+// Cart Service vẫn là nguồn xác thực cuối cùng cho variant, giá và tồn kho; component không tự tính lại dữ liệu bán hàng.
 
 'use client';
 
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -40,6 +40,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const purchase = useProductPurchase(product);
     const addCartItemMutation = useAddCartItem();
     const pathname = usePathname();
+    const router = useRouter();
     const { isAuthenticated, getProtectedHref } = useCartAuthRedirect();
     const [isFavorite, setIsFavorite] = useState(false);
     const rating = getProductRating(product);
@@ -66,6 +67,28 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             variantId: purchase.selectedVariant.id,
             quantity: purchase.quantity,
         });
+    }
+
+    // Mua ngay dùng cùng mutation với thêm giỏ để server xác nhận variant/tồn kho trước khi chuyển sang checkout.
+    // Với Customer chưa đăng nhập, giữ lại đường dẫn sản phẩm để sau khi xác thực có thể tiếp tục chọn và mua.
+    function handleBuyNow(): void {
+        if (!canAddToCart || !purchase.selectedVariant) return;
+
+        if (!isAuthenticated) {
+            router.push(getProtectedHref(productPath));
+            return;
+        }
+
+        addCartItemMutation.mutate(
+            {
+                productId: product.id,
+                variantId: purchase.selectedVariant.id,
+                quantity: purchase.quantity,
+            },
+            {
+                onSuccess: () => router.push('/checkout'),
+            },
+        );
     }
 
     return (
@@ -209,14 +232,31 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                         Xem nơi bán
                     </a>
                 ) : (
-                    <Button
-                        type="button"
-                        size="lg"
-                        disabled={purchase.availableStock === 0}
-                        className="h-12 bg-zinc-950 hover:bg-zinc-800"
-                    >
-                        Mua ngay
-                    </Button>
+                    !isAuthenticated ? (
+                        <Link
+                            href={getProtectedHref(productPath)}
+                            className={buttonVariants({
+                                size: 'lg',
+                                className: 'h-12 bg-zinc-950 hover:bg-zinc-800',
+                            })}
+                        >
+                            Mua ngay
+                        </Link>
+                    ) : (
+                        <Button
+                            type="button"
+                            size="lg"
+                            disabled={
+                                !canAddToCart || addCartItemMutation.isPending
+                            }
+                            onClick={handleBuyNow}
+                            className="h-12 bg-zinc-950 hover:bg-zinc-800"
+                        >
+                            {addCartItemMutation.isPending
+                                ? 'Đang chuẩn bị...'
+                                : 'Mua ngay'}
+                        </Button>
+                    )
                 )}
             </div>
         </section>
