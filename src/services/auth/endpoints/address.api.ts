@@ -16,3 +16,13 @@ export function getAddresses() {
 export function createAddress(payload: CreateAddressPayload) {
     return authorizedAxios.post<ApiResponse<UserAddress>>(ADDRESSES, payload).then((response) => response.data);
 }
+
+// Cập nhật đầy đủ địa chỉ GHN thuộc tài khoản hiện tại.
+export function updateAddress(id: string, payload: CreateAddressPayload) {
+    return authorizedAxios.put<ApiResponse<UserAddress>>(`${ADDRESSES}/${id}`, payload).then((response) => response.data);
+}
+
+// Xóa địa chỉ thuộc tài khoản hiện tại.
+export function deleteAddress(id: string) {
+    return authorizedAxios.delete<ApiResponse<null>>(`${ADDRESSES}/${id}`).then((response) => response.data);
+}

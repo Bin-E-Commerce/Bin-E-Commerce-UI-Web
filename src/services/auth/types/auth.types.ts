@@ -114,8 +114,14 @@ export interface UserAddress {
     fullName: string;
     phone: string;
     province: string;
+    ghnProvinceId: number | null;
+    ghnProvinceName: string | null;
     district: string;
+    ghnDistrictId: number | null;
+    ghnDistrictName: string | null;
     ward: string;
+    ghnWardCode: string | null;
+    ghnWardName: string | null;
     street: string;
     isDefault: boolean;
     createdAt: string;
@@ -127,8 +133,14 @@ export interface CreateAddressPayload {
     fullName: string;
     phone: string;
     province: string;
+    ghnProvinceId: number;
+    ghnProvinceName: string;
     district: string;
+    ghnDistrictId: number;
+    ghnDistrictName: string;
     ward: string;
+    ghnWardCode: string;
+    ghnWardName: string;
     street: string;
     isDefault?: boolean;
 }

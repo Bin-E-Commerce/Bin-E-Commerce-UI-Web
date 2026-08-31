@@ -142,8 +142,12 @@ const pickupAddressSchema = z.object({
         maxMessage: 'Người phụ trách cần từ 2 đến 160 ký tự.',
     }),
     phone: vietnamPhoneSchema('Số điện thoại lấy hàng không hợp lệ.'),
-    provinceId: uuidSelectionSchema('Vui lòng chọn tỉnh/thành phố.'),
-    wardId: uuidSelectionSchema('Vui lòng chọn phường/xã.'),
+    provinceId: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố.'),
+    provinceName: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố.'),
+    districtId: z.string().min(1, 'Vui lòng chọn quận/huyện.'),
+    districtName: z.string().min(1, 'Vui lòng chọn quận/huyện.'),
+    wardCode: z.string().min(1, 'Vui lòng chọn phường/xã.'),
+    wardName: z.string().min(1, 'Vui lòng chọn phường/xã.'),
     addressLine: z
         .string()
         .trim()
@@ -216,7 +220,11 @@ export const initialSellerRegisterValues = {
         contactName: '',
         phone: '',
         provinceId: '',
-        wardId: '',
+        provinceName: '',
+        districtId: '',
+        districtName: '',
+        wardCode: '',
+        wardName: '',
         addressLine: '',
     },
     payout: {
@@ -263,7 +271,8 @@ export const SELLER_REGISTER_STEP_FIELD_PATHS = [
         'pickupAddress.contactName',
         'pickupAddress.phone',
         'pickupAddress.provinceId',
-        'pickupAddress.wardId',
+        'pickupAddress.districtId',
+        'pickupAddress.wardCode',
         'pickupAddress.addressLine',
     ],
     [

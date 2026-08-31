@@ -1,5 +1,5 @@
 // Schema này định nghĩa các quy tắc validate địa chỉ mới trên frontend checkout.
-// Schema chỉ kiểm tra dữ liệu người dùng nhập và lựa chọn; Location Service vẫn là nguồn xác thực tên địa danh.
+// Schema kiểm tra dữ liệu người dùng nhập và mã địa lý GHN đã chọn từ API Gateway.
 
 import { z } from 'zod';
 
@@ -25,12 +25,12 @@ export const checkoutAddressSchema = z.object({
         .min(1, 'Vui lòng nhập tên người nhận.')
         .max(100, 'Tên người nhận tối đa 100 ký tự.'),
     phone: vietnamPhoneSchema,
-    provinceId: z
-        .string()
-        .uuid('Vui lòng chọn tỉnh/thành phố từ danh sách.'),
-    wardId: z
-        .string()
-        .uuid('Vui lòng chọn phường/xã từ danh sách.'),
+    provinceId: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố từ danh sách.'),
+    provinceName: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố từ danh sách.'),
+    districtId: z.string().min(1, 'Vui lòng chọn quận/huyện từ danh sách.'),
+    districtName: z.string().min(1, 'Vui lòng chọn quận/huyện từ danh sách.'),
+    wardCode: z.string().min(1, 'Vui lòng chọn phường/xã từ danh sách.'),
+    wardName: z.string().min(1, 'Vui lòng chọn phường/xã từ danh sách.'),
     label: z.enum(ADDRESS_LABELS, {
         error: 'Vui lòng chọn nhãn địa chỉ.',
     }),

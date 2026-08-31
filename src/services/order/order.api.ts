@@ -28,6 +28,24 @@ export async function createCodOrder(
     return response.data;
 }
 
+// Gọi quote khi địa chỉ thay đổi để UI hiển thị phí thật từ Order/Shipping Service trước khi submit.
+export interface OrderQuoteResponse {
+    subtotal: string;
+    shippingFee: string;
+    totalAmount: string;
+    paymentMethod: 'COD';
+    shippingFeeBreakdown: Array<{ shopId: string; provider: string; fee: string; serviceName: string }>;
+}
+
+// Quote chỉ truyền addressId; item, shop và số tiền authoritative được đọc ở backend.
+export async function getOrderQuote(shippingAddressId: string): Promise<OrderQuoteResponse> {
+    const response = await authorizedAxios.post<OrderQuoteResponse>(`${ORDERS}/quote`, {
+        shippingAddressId,
+        paymentMethod: 'COD',
+    });
+    return response.data;
+}
+
 // Lấy chi tiết order thuộc user hiện tại cho màn hình kết quả hoặc refresh trang sau này.
 export async function getOrder(orderId: string): Promise<OrderResponse> {
     const response = await authorizedAxios.get<OrderResponse>(
@@ -37,11 +55,13 @@ export async function getOrder(orderId: string): Promise<OrderResponse> {
 }
 
 export type CustomerOrderStatus = OrderResponse['status'];
+export type CustomerOrderStage = NonNullable<OrderResponse['fulfillmentStatus']>;
 
 export interface CustomerOrderListItem {
     id: string;
     orderNumber: string;
     status: CustomerOrderStatus;
+    fulfillmentStatus?: CustomerOrderStage;
     paymentMethod: 'COD';
     totalAmount: string;
     itemCount: number;
@@ -70,6 +90,7 @@ export async function listOrders(
         page?: number;
         pageSize?: number;
         status?: CustomerOrderStatus;
+        stage?: CustomerOrderStage;
     } = {},
 ): Promise<CustomerOrderListResponse> {
     const response = await authorizedAxios.get<CustomerOrderListResponse>(
@@ -79,6 +100,7 @@ export async function listOrders(
                 page: input.page ?? 1,
                 pageSize: input.pageSize ?? 10,
                 ...(input.status ? { status: input.status } : {}),
+                ...(input.stage ? { stage: input.stage } : {}),
             },
         },
     );

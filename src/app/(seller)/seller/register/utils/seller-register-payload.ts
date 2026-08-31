@@ -72,8 +72,12 @@ export function toSellerApplicationPayload(values: SellerRegisterFormValues) {
         pickupAddress: {
             contactName: optionalTrim(values.pickupAddress.contactName),
             phone: optionalTrim(values.pickupAddress.phone),
-            provinceId: optionalTrim(values.pickupAddress.provinceId),
-            wardId: optionalTrim(values.pickupAddress.wardId),
+            provinceId: values.pickupAddress.provinceId ? Number(values.pickupAddress.provinceId) : undefined,
+            provinceName: optionalTrim(values.pickupAddress.provinceName),
+            districtId: values.pickupAddress.districtId ? Number(values.pickupAddress.districtId) : undefined,
+            districtName: optionalTrim(values.pickupAddress.districtName),
+            wardCode: optionalTrim(values.pickupAddress.wardCode),
+            wardName: optionalTrim(values.pickupAddress.wardName),
             addressLine: optionalTrim(values.pickupAddress.addressLine),
         },
         payout: {

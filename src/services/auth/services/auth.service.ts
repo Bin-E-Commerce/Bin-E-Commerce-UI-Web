@@ -12,7 +12,7 @@ import {
     revokeSession,
 } from '../endpoints/session.api';
 import { getSocialAuthUrl, socialCallback } from '../endpoints/social-auth.api';
-import { createAddress, getAddresses } from '../endpoints/address.api';
+import { createAddress, deleteAddress, getAddresses, updateAddress } from '../endpoints/address.api';
 
 // Facade auth gom các endpoint theo một contract ổn định để UI không phải biết cấu trúc API nội bộ.
 export const authService = {
@@ -33,4 +33,6 @@ export const authService = {
     logoutAllSessions,
     getAddresses,
     createAddress,
+    updateAddress,
+    deleteAddress,
 };

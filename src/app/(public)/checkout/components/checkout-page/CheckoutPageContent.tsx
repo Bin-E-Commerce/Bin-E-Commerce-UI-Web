@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
+    AlertTriangle,
     ArrowLeft,
     Check,
     CheckCircle2,
@@ -15,8 +16,10 @@ import {
     Loader2,
     MapPin,
     PackageCheck,
+    Pencil,
     Plus,
     ShieldCheck,
+    Trash2,
     Truck,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,10 +27,26 @@ import { toast } from 'sonner';
 import { useCart } from '@/app/(public)/cart/hooks/use-cart';
 import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { CreateAddressPayload, UserAddress } from '@/services/auth';
-import type { OrderResponse } from '../types/checkout.types';
-import { useCheckout } from '../hooks/use-checkout';
-import { AddressForm } from './AddressForm';
+import type { OrderResponse } from '../../types/checkout.types';
+import {
+    useCheckout,
+    useCheckoutQuote,
+} from '../../hooks/use-checkout';
+import { AddressForm } from '../address-form/AddressForm';
+import { CheckoutShippingQuoteNotice } from './CheckoutShippingQuoteNotice';
+
+const EMPTY_ADDRESSES: UserAddress[] = [];
 
 // Định dạng tiền VND tại lớp trình bày, còn subtotal/total authoritative vẫn lấy nguyên từ backend.
 function formatPrice(value: string): string {
@@ -49,14 +68,21 @@ function formatAddress(address: UserAddress): string {
 export function CheckoutPageContent() {
     const { initialized, isAuthenticated } = useCartAuthRedirect();
     const cartQuery = useCart();
-    const { addressesQuery, createAddressMutation, orderMutation } =
-        useCheckout();
+    const {
+        addressesQuery,
+        createAddressMutation,
+        updateAddressMutation,
+        deleteAddressMutation,
+        orderMutation,
+    } = useCheckout();
     const [selectedAddressId, setSelectedAddressId] = useState('');
     const [showAddressForm, setShowAddressForm] = useState(false);
+    const [editingAddress, setEditingAddress] = useState<UserAddress>();
+    const [deletingAddress, setDeletingAddress] = useState<UserAddress | null>(null);
     const [note, setNote] = useState('');
     const router = useRouter();
 
-    const addresses = addressesQuery.data ?? [];
+    const addresses = addressesQuery.data ?? EMPTY_ADDRESSES;
     const fallbackAddressId = useMemo(
         () =>
             addresses.find((address) => address.isDefault)?.id ??
@@ -65,12 +91,7 @@ export function CheckoutPageContent() {
         [addresses],
     );
     const activeAddressId = selectedAddressId || fallbackAddressId;
-
-    // Khi danh sách address hydrate, chọn default trước để người dùng có thể submit nhanh mà không click thừa.
-    useEffect(() => {
-        if (!selectedAddressId && fallbackAddressId)
-            setSelectedAddressId(fallbackAddressId);
-    }, [fallbackAddressId, selectedAddressId]);
+    const quoteQuery = useCheckoutQuote(activeAddressId);
 
     // Chỉ chặn guest sau khi initAuth hoàn tất; nếu chạy sớm hơn, refresh checkout sẽ redirect sai trước khi cookie được restore.
     useEffect(() => {
@@ -79,14 +100,20 @@ export function CheckoutPageContent() {
         }
     }, [initialized, isAuthenticated]);
 
-    // Tạo address mới rồi chọn ngay address vừa được Auth Service lưu thành công.
-    async function handleCreateAddress(
+    // Lưu mới hoặc cập nhật địa chỉ, sau đó chọn địa chỉ vừa được server xác nhận.
+    async function handleSaveAddress(
         payload: CreateAddressPayload,
     ): Promise<boolean> {
         try {
-            const address = await createAddressMutation.mutateAsync(payload);
+            const address = editingAddress
+                ? await updateAddressMutation.mutateAsync({
+                      id: editingAddress.id,
+                      payload,
+                  })
+                : await createAddressMutation.mutateAsync(payload);
             setSelectedAddressId(address.id);
             setShowAddressForm(false);
+            setEditingAddress(undefined);
             return true;
         } catch {
             // Mutation đã hiển thị lỗi qua onError; handler chỉ ngăn lỗi promise nổi lên thành unhandled rejection.
@@ -94,10 +121,45 @@ export function CheckoutPageContent() {
         }
     }
 
-    // Gửi đúng addressId và note; Order Service tự đọc cart, giá và tồn kho rồi trả order snapshot.
+    // Mở lại form với snapshot địa chỉ hiện tại để người dùng sửa mà không phải nhập lại từ đầu.
+    function handleEditAddress(address: UserAddress): void {
+        setEditingAddress(address);
+        setShowAddressForm(true);
+    }
+
+    // Đóng form và xóa trạng thái chỉnh sửa để lần thêm tiếp theo luôn bắt đầu từ dữ liệu rỗng.
+    function handleCancelAddressForm(): void {
+        setShowAddressForm(false);
+        setEditingAddress(undefined);
+    }
+
+    // Xác nhận xóa ở server rồi bỏ địa chỉ khỏi lựa chọn hiện tại nếu card đó đang được dùng.
+    async function handleDeleteAddress(): Promise<void> {
+        if (!deletingAddress) return;
+
+        try {
+            await deleteAddressMutation.mutateAsync(deletingAddress.id);
+            if (activeAddressId === deletingAddress.id) {
+                setSelectedAddressId('');
+            }
+            if (editingAddress?.id === deletingAddress.id) {
+                handleCancelAddressForm();
+            }
+            setDeletingAddress(null);
+        } catch {
+            // Mutation đã hiển thị lỗi; giữ dialog mở để người dùng biết thao tác chưa hoàn tất.
+        }
+    }
+
+    // Chỉ gửi đơn sau khi địa chỉ hợp lệ và quote đã thành công; nếu quote lỗi, backend có thể không biết phí cần thu.
+    // Chặn ở cả handler lẫn nút để bảo vệ luồng checkout khi trạng thái query thay đổi giữa hai lần render.
     function handleSubmitOrder(): void {
         if (!activeAddressId) {
             toast.error('Vui lòng chọn hoặc thêm địa chỉ giao hàng.');
+            return;
+        }
+        if (quoteQuery.isPending || quoteQuery.isError || !quoteQuery.data) {
+            toast.error('Chưa thể tính phí giao hàng. Vui lòng thử lại trước khi đặt hàng.');
             return;
         }
         orderMutation.mutate(
@@ -155,6 +217,7 @@ export function CheckoutPageContent() {
     }
 
     const cart = cartQuery.data;
+    const quote = quoteQuery.data;
     if (cart.items.length === 0) {
         return (
             <CheckoutShell compact>
@@ -259,6 +322,12 @@ export function CheckoutPageContent() {
                                             onSelect={() =>
                                                 setSelectedAddressId(address.id)
                                             }
+                                            onEdit={() => handleEditAddress(address)}
+                                            onDelete={() => setDeletingAddress(address)}
+                                            deleting={
+                                                deleteAddressMutation.isPending &&
+                                                deleteAddressMutation.variables === address.id
+                                            }
                                         />
                                     ))}
                                 </div>
@@ -271,9 +340,14 @@ export function CheckoutPageContent() {
 
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setShowAddressForm((value) => !value)
-                                }
+                                onClick={() => {
+                                    if (showAddressForm) {
+                                        handleCancelAddressForm();
+                                    } else {
+                                        setEditingAddress(undefined);
+                                        setShowAddressForm(true);
+                                    }
+                                }}
                                 className="mt-5 inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-zinc-950 transition hover:text-zinc-500"
                             >
                                 <span className="flex size-7 items-center justify-center rounded-lg border border-zinc-200">
@@ -289,11 +363,72 @@ export function CheckoutPageContent() {
 
                             {showAddressForm ? (
                                 <AddressForm
-                                    pending={createAddressMutation.isPending}
-                                    onSubmit={handleCreateAddress}
+                                    key={editingAddress?.id ?? 'new'}
+                                    pending={
+                                        createAddressMutation.isPending ||
+                                        updateAddressMutation.isPending
+                                    }
+                                    initialAddress={editingAddress}
+                                    onSubmit={handleSaveAddress}
+                                    onCancel={handleCancelAddressForm}
                                 />
                             ) : null}
                         </section>
+
+                        <AlertDialog
+                            open={Boolean(deletingAddress)}
+                            onOpenChange={(open) => {
+                                if (!deleteAddressMutation.isPending && !open) {
+                                    setDeletingAddress(null);
+                                }
+                            }}
+                        >
+                            <AlertDialogContent className="max-w-md">
+                                <AlertDialogHeader>
+                                    <div className="mb-1 flex size-11 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                                        <AlertTriangle className="size-5" aria-hidden="true" />
+                                    </div>
+                                    <AlertDialogTitle>Xóa địa chỉ giao hàng?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Địa chỉ này sẽ bị xóa khỏi danh sách sử dụng khi thanh toán.
+                                        Đơn hàng đã tạo trước đó vẫn giữ nguyên thông tin.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+
+                                {deletingAddress ? (
+                                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm">
+                                        <p className="font-semibold text-zinc-950">
+                                            {deletingAddress.fullName}
+                                        </p>
+                                        <p className="mt-1 text-zinc-500">
+                                            {deletingAddress.phone}
+                                        </p>
+                                        <p className="mt-2 leading-5 text-zinc-600">
+                                            {formatAddress(deletingAddress)}
+                                        </p>
+                                    </div>
+                                ) : null}
+
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel disabled={deleteAddressMutation.isPending}>
+                                        Hủy
+                                    </AlertDialogCancel>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        disabled={deleteAddressMutation.isPending}
+                                        onClick={handleDeleteAddress}
+                                    >
+                                        {deleteAddressMutation.isPending ? (
+                                            <Loader2 className="size-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="size-4" />
+                                        )}
+                                        Xóa địa chỉ
+                                    </Button>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
 
                         <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
                             <div className="flex items-start gap-4">
@@ -406,29 +541,74 @@ export function CheckoutPageContent() {
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-6 space-y-3 border-t border-zinc-100 pt-5 text-sm">
-                            <div className="flex justify-between text-zinc-500">
-                                <span>Tạm tính</span>
-                                <span>{formatPrice(cart.subtotal)}</span>
+                        <div className="mt-6 border-t border-zinc-100 pt-5">
+                            <div className="space-y-3 rounded-2xl bg-zinc-50/80 p-4 text-sm">
+                                <div className="flex items-center justify-between gap-4 text-zinc-500">
+                                    <span>Tạm tính</span>
+                                    <span className="font-medium text-zinc-800">
+                                        {formatPrice(quote?.subtotal ?? cart.subtotal)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 text-zinc-500">
+                                    <div className="flex items-center gap-2">
+                                        <span>Phí vận chuyển</span>
+                                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 ring-1 ring-zinc-200">
+                                            GHN
+                                        </span>
+                                    </div>
+                                    {quoteQuery.isFetching && !quote ? (
+                                        <span className="font-medium text-zinc-600">Đang tính...</span>
+                                    ) : quote ? (
+                                        <span className="font-semibold text-zinc-900">
+                                            {Number(quote.shippingFee) === 0
+                                                ? 'Miễn phí'
+                                                : formatPrice(quote.shippingFee)}
+                                        </span>
+                                    ) : quoteQuery.isError ? (
+                                        <span className="font-medium text-red-600">Chưa tính được</span>
+                                    ) : (
+                                        <span className="font-medium text-zinc-400">Chọn địa chỉ</span>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex justify-between text-zinc-500">
-                                <span>Phí vận chuyển</span>
-                                <span>Miễn phí</span>
-                            </div>
-                            <div className="flex justify-between border-t border-zinc-100 pt-4 text-base font-bold text-zinc-950">
-                                <span>Tổng thanh toán</span>
-                                <span>{formatPrice(cart.subtotal)}</span>
+                            <div className="mt-4 flex items-end justify-between gap-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-zinc-950">Tổng thanh toán</p>
+                                    <p className="mt-1 text-xs text-zinc-400">Đã bao gồm phí giao hàng</p>
+                                </div>
+                                <span className="text-xl font-bold tracking-tight text-zinc-950">
+                                    {quote ? formatPrice(quote.totalAmount) : '—'}
+                                </span>
                             </div>
                         </div>
                         <p className="mt-4 text-xs leading-5 text-zinc-400">
                             Giá và tồn kho sẽ được kiểm tra lại ở máy chủ trước
                             khi đơn được xác nhận.
                         </p>
+                        <CheckoutShippingQuoteNotice
+                            isPending={quoteQuery.isFetching}
+                            isError={quoteQuery.isError}
+                            isAddressResolving={false}
+                            mappingRequired={false}
+                            shippingFee={
+                                quote
+                                    ? formatPrice(quote.shippingFee)
+                                    : undefined
+                            }
+                            shippingFeeBreakdown={quote?.shippingFeeBreakdown}
+                            onRetry={() => {
+                                void quoteQuery.refetch();
+                            }}
+                        />
                         <button
                             type="button"
                             onClick={handleSubmitOrder}
                             disabled={
-                                orderMutation.isPending || !activeAddressId
+                                orderMutation.isPending ||
+                                !activeAddressId ||
+                                quoteQuery.isPending ||
+                                quoteQuery.isError ||
+                                !quoteQuery.data
                             }
                             className="mt-6 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -516,24 +696,33 @@ function LoadingState({ label }: { label: string }) {
     );
 }
 
-// Card địa chỉ có vùng click rộng, trạng thái keyboard/focus rõ và không nhúng radio khó thao tác.
+// Card địa chỉ cho phép chọn cả vùng thông tin, đồng thời đặt nút sửa/xóa riêng để không lồng button sai HTML.
 function AddressCard({
     address,
     selected,
     onSelect,
+    onEdit,
+    onDelete,
+    deleting,
 }: {
     address: UserAddress;
     selected: boolean;
     onSelect: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
+    deleting: boolean;
 }) {
     return (
-        <button
-            type="button"
-            onClick={onSelect}
-            aria-pressed={selected}
-            className={`w-full cursor-pointer rounded-2xl border p-4 text-left transition ${selected ? 'border-zinc-950 bg-zinc-50 shadow-sm' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
+        <article
+            className={`w-full rounded-2xl border p-4 transition ${selected ? 'border-zinc-950 bg-zinc-50 shadow-sm' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
         >
             <div className="flex items-start gap-3">
+                <button
+                    type="button"
+                    onClick={onSelect}
+                    aria-pressed={selected}
+                    className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+                >
                 <div
                     className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-zinc-950 bg-zinc-950 text-white' : 'border-zinc-300 text-transparent'}`}
                 >
@@ -560,8 +749,36 @@ function AddressCard({
                         {formatAddress(address)}
                     </p>
                 </div>
+                </button>
+                <div className="flex shrink-0 gap-1">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+                        aria-label="Chỉnh sửa địa chỉ"
+                        onClick={onEdit}
+                    >
+                        <Pencil className="size-4" aria-hidden="true" />
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 text-zinc-500 hover:bg-red-50 hover:text-red-700"
+                        aria-label="Xóa địa chỉ"
+                        disabled={deleting}
+                        onClick={onDelete}
+                    >
+                        {deleting ? (
+                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                            <Trash2 className="size-4" aria-hidden="true" />
+                        )}
+                    </Button>
+                </div>
             </div>
-        </button>
+        </article>
     );
 }
 

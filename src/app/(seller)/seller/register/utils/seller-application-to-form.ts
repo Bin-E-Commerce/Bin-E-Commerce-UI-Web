@@ -38,8 +38,12 @@ export function toSellerRegisterFormValues(
         pickupAddress: {
             contactName: text(application.pickupAddress.contactName),
             phone: text(application.pickupAddress.phone),
-            provinceId: text(application.pickupAddress.provinceId),
-            wardId: text(application.pickupAddress.wardId),
+            provinceId: text(application.pickupAddress.provinceId?.toString()),
+            provinceName: text(application.pickupAddress.provinceName),
+            districtId: text(application.pickupAddress.districtId?.toString()),
+            districtName: text(application.pickupAddress.districtName),
+            wardCode: text(application.pickupAddress.wardCode),
+            wardName: text(application.pickupAddress.wardName),
             addressLine: text(application.pickupAddress.addressLine),
         },
         payout: {
