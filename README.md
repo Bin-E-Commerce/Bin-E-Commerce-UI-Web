@@ -185,7 +185,7 @@ src/
 ### Order Management
 
 - Real-time order status via polling (shipped, in-transit, delivered)
-- Shipping tracking number linked to GHN/GHTK courier pages
+- Shipping tracking number synchronized from GHN Test
 - Return request form with evidence upload
 
 ### Admin Dashboard
