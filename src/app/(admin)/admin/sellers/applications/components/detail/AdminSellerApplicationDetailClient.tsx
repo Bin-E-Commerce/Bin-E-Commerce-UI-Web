@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {
     ArrowLeft,
+    Ban,
     BadgeCheck,
     CreditCard,
     FileCheck2,
@@ -16,14 +17,12 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useSessionPermission } from '@/services/auth/access';
 import type {
     SellerApplicationDto,
     SellerVerificationDocumentDto,
 } from '@/services/seller';
-import { AdminSellerApplicationStatusBadge } from '../AdminSellerApplicationStatusBadge';
+import { AdminSellerApplicationStatusBadge } from '../shared/AdminSellerApplicationStatusBadge';
 import { useAdminSellerApplication } from '../../hooks/useAdminSellerApplication';
-import { useSellerApplicationLocationNames } from '../../hooks/useSellerApplicationLocationNames';
 import {
     formatAdminDateTime,
     formatBusinessModel,
@@ -109,12 +108,8 @@ function AdminSellerApplicationDetailContent({
     onRefresh,
 }: AdminSellerApplicationDetailContentProps) {
     // Permission lấy từ session do backend resolve; việc ẩn nút chỉ phục vụ UX, endpoint vẫn được gateway và seller-service bảo vệ độc lập.
-    const canRejectApplication = useSessionPermission(
-        'seller.application.reject',
-    );
-    const canApproveApplication = useSessionPermission(
-        'seller.application.approve',
-    );
+    const isPendingReview =
+        String(application.status).toLowerCase() === 'pending_review';
 
     return (
         <div className="space-y-5">
@@ -141,23 +136,35 @@ function AdminSellerApplicationDetailContent({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                        {application.status === 'pending_review' &&
-                        canApproveApplication ? (
+                        {isPendingReview ? (
                             <ApproveSellerApplicationDialog
                                 applicationId={application.id}
                                 shopName={getApplicationShopDisplayName(
                                     application,
                                 )}
-                            />
+                            >
+                                <Button type="button" className="rounded-full">
+                                    <BadgeCheck className="size-4" />
+                                    Chấp thuận hồ sơ
+                                </Button>
+                            </ApproveSellerApplicationDialog>
                         ) : null}
-                        {application.status === 'pending_review' &&
-                        canRejectApplication ? (
+                        {isPendingReview ? (
                             <RejectSellerApplicationDialog
                                 applicationId={application.id}
                                 shopName={getApplicationShopDisplayName(
                                     application,
                                 )}
-                            />
+                            >
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                                >
+                                    <Ban className="size-4" />
+                                    Từ chối hồ sơ
+                                </Button>
+                            </RejectSellerApplicationDialog>
                         ) : null}
                         <Link
                             href="/admin/sellers/applications"
@@ -474,11 +481,6 @@ function ShopInformationSection({ application }: ApplicationSectionProps) {
 
 // Hiển thị địa chỉ lấy hàng bằng tên hành chính thay vì UUID để admin đọc được ngay trên màn hình duyệt.
 function PickupAddressSection({ application }: ApplicationSectionProps) {
-    const locationNames = useSellerApplicationLocationNames(
-        application.pickupAddress.provinceId,
-        application.pickupAddress.wardId,
-    );
-
     return (
         <AdminSellerApplicationDetailSection
             title="Địa chỉ lấy hàng"
@@ -497,19 +499,15 @@ function PickupAddressSection({ application }: ApplicationSectionProps) {
                 />
                 <AdminSellerApplicationDetailField
                     label="Tỉnh / Thành phố"
-                    value={
-                        locationNames.loading
-                            ? 'Đang tải tên địa chỉ...'
-                            : locationNames.provinceName
-                    }
+                    value={formatNullableText(application.pickupAddress.provinceName)}
+                />
+                <AdminSellerApplicationDetailField
+                    label="Quận / Huyện"
+                    value={formatNullableText(application.pickupAddress.districtName)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Phường / Xã"
-                    value={
-                        locationNames.loading
-                            ? 'Đang tải tên địa chỉ...'
-                            : locationNames.wardName
-                    }
+                    value={formatNullableText(application.pickupAddress.wardName)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Địa chỉ chi tiết"

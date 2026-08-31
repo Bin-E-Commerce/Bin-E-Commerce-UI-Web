@@ -7,7 +7,7 @@ import type { SellerApplicationStatus } from '@/services/seller';
 import { AdminSellerApplicationFilters } from './AdminSellerApplicationFilters';
 import { AdminSellerApplicationStats } from './AdminSellerApplicationStats';
 import { AdminSellerApplicationsTable } from './AdminSellerApplicationsTable';
-import { useAdminSellerApplications } from '../hooks/useAdminSellerApplications';
+import { useAdminSellerApplications } from '../../hooks/useAdminSellerApplications';
 
 type AdminSellerApplicationStatusFilter = SellerApplicationStatus | 'all';
 

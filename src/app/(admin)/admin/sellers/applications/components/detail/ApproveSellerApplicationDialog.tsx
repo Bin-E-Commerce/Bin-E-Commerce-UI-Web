@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { BadgeCheck, LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,12 +21,14 @@ import { useApproveSellerApplication } from '../../hooks/useApproveSellerApplica
 interface ApproveSellerApplicationDialogProps {
     applicationId: string;
     shopName: string;
+    children?: ReactNode;
 }
 
 // Xác nhận lần cuối trước khi duyệt vì thao tác này kích hoạt quyền Seller Center và không nên xảy ra do bấm nhầm.
 export function ApproveSellerApplicationDialog({
     applicationId,
     shopName,
+    children,
 }: ApproveSellerApplicationDialogProps) {
     const [open, setOpen] = useState(false);
     const approveMutation = useApproveSellerApplication(applicationId);
@@ -53,10 +55,12 @@ export function ApproveSellerApplicationDialog({
     return (
         <AlertDialog open={open} onOpenChange={handleOpenChange}>
             <AlertDialogTrigger asChild>
-                <Button type="button" className="rounded-full">
-                    <BadgeCheck className="size-4" />
-                    Chấp thuận hồ sơ
-                </Button>
+                {children ?? (
+                    <Button type="button" className="rounded-full">
+                        <BadgeCheck className="size-4" />
+                        Chấp thuận hồ sơ
+                    </Button>
+                )}
             </AlertDialogTrigger>
 
             <AlertDialogContent>

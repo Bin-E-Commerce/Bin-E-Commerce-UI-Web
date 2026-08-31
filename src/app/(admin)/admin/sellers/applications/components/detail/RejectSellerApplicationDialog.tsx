@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Ban, LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,6 +23,7 @@ import { useRejectSellerApplication } from '../../hooks/useRejectSellerApplicati
 interface RejectSellerApplicationDialogProps {
     applicationId: string;
     shopName: string;
+    children?: ReactNode;
 }
 
 const MIN_REASON_LENGTH = 10;
@@ -32,6 +33,7 @@ const MAX_REASON_LENGTH = 1000;
 export function RejectSellerApplicationDialog({
     applicationId,
     shopName,
+    children,
 }: RejectSellerApplicationDialogProps) {
     const [open, setOpen] = useState(false);
     const [reason, setReason] = useState('');
@@ -89,14 +91,16 @@ export function RejectSellerApplicationDialog({
     return (
         <AlertDialog open={open} onOpenChange={handleOpenChange}>
             <AlertDialogTrigger asChild>
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                >
-                    <Ban className="size-4" />
-                    Từ chối hồ sơ
-                </Button>
+                {children ?? (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                    >
+                        <Ban className="size-4" />
+                        Từ chối hồ sơ
+                    </Button>
+                )}
             </AlertDialogTrigger>
 
             <AlertDialogContent className="max-w-lg">

@@ -5,12 +5,12 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { SellerApplicationDto } from '@/services/seller';
 
-import { AdminSellerApplicationStatusBadge } from './AdminSellerApplicationStatusBadge';
+import { AdminSellerApplicationStatusBadge } from '../shared/AdminSellerApplicationStatusBadge';
 import {
     formatAdminDateTime,
     getApplicationOwnerSummary,
     getApplicationShopDisplayName,
-} from '../utils/seller-application-admin-formatters';
+} from '../../utils/seller-application-admin-formatters';
 
 interface AdminSellerApplicationsTableProps {
     items: SellerApplicationDto[];

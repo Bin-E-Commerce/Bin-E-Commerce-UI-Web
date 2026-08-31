@@ -1,7 +1,7 @@
 import type { SellerApplicationStatus } from '@/services/seller';
 import { cn } from '@/lib/utils';
 
-import { formatSellerApplicationStatus } from '../utils/seller-application-admin-formatters';
+import { formatSellerApplicationStatus } from '../../utils/seller-application-admin-formatters';
 
 interface AdminSellerApplicationStatusBadgeProps {
     status: SellerApplicationStatus;
