@@ -6,27 +6,24 @@ import Link from 'next/link';
 import {
     ArrowLeft,
     CalendarDays,
-    Check,
     CircleAlert,
-    Clock3,
     MapPin,
     Package,
     Phone,
     ReceiptText,
-    XCircle,
 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrderProductImages } from '@/hooks/use-order-product-images';
-import { cn } from '@/lib/utils';
-import type { SellerOrderStatus } from '@/services/order/seller-order.api';
+import { useSellerShipment } from '@/hooks/use-shipment';
+import { OrderLifecycleStepper } from '@/common/orders';
 import { useSellerOrderDetail } from '../hooks/use-seller-order-detail';
 import { SellerOrderProductImage } from './seller-order-product-image';
+import { SellerShipmentPanel } from '@/common/shipping/components/seller-shipment-panel';
+import { SellerShipmentQuickAction } from '@/common/shipping/components/seller-shipment-quick-action';
 import {
     formatSellerMoney,
     formatSellerOrderDate,
-    getSellerOrderStatusLabel,
 } from '../utils/seller-order-format';
 
 interface SellerOrderDetailContentProps {
@@ -40,23 +37,13 @@ function formatShippingAddress(address: Record<string, string>): string {
         .join(', ');
 }
 
-// Chọn icon timeline theo trạng thái để Seller nhận biết nhanh thành công, đang xử lý hoặc lỗi/hủy.
-function SellerStatusIcon({ status }: { status: SellerOrderStatus }) {
-    if (status === 'CANCELLED' || status === 'FAILED') {
-        return <XCircle className="size-4" aria-hidden="true" />;
-    }
-    if (status === 'PENDING') {
-        return <Clock3 className="size-4" aria-hidden="true" />;
-    }
-    return <Check className="size-4" aria-hidden="true" />;
-}
-
 // Trình bày order detail với trạng thái loading/error riêng để layout Seller không bị màn trắng.
 export function SellerOrderDetailContent({
     orderId,
 }: SellerOrderDetailContentProps) {
     const orderQuery = useSellerOrderDetail(orderId);
     const legacyImages = useOrderProductImages(orderQuery.data?.items ?? []);
+    const shipmentQuery = useSellerShipment(orderId);
 
     if (orderQuery.isPending) {
         return (
@@ -93,6 +80,13 @@ export function SellerOrderDetailContent({
 
     const order = orderQuery.data;
     const address = order.shippingAddress;
+    const canPrepareShipment =
+        !['CANCELLED', 'DELIVERY_FAILED'].includes(
+            order.fulfillmentStatus ?? order.status,
+        ) &&
+        !shipmentQuery.isPending &&
+        !shipmentQuery.isError &&
+        !shipmentQuery.data;
 
     return (
         <div className="space-y-5">
@@ -127,20 +121,6 @@ export function SellerOrderDetailContent({
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-4">
-                        <span className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500">
-                            <span
-                                className={cn(
-                                    'inline-flex size-5 items-center justify-center',
-                                    order.status === 'CONFIRMED' && 'text-emerald-500',
-                                    order.status === 'PENDING' && 'text-amber-500',
-                                    order.status === 'CANCELLED' && 'text-zinc-400',
-                                    order.status === 'FAILED' && 'text-red-500',
-                                )}
-                            >
-                                <SellerStatusIcon status={order.status} />
-                            </span>
-                            {getSellerOrderStatusLabel(order.status)}
-                        </span>
                         <span className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-600">
                             <ReceiptText className="size-4 text-zinc-500" />
                             Thanh toán COD
@@ -148,38 +128,26 @@ export function SellerOrderDetailContent({
                     </div>
                 </div>
 
-                <section aria-labelledby="seller-order-status-title" className="pt-5">
-                    <h2 id="seller-order-status-title" className="text-sm font-semibold text-zinc-950">
-                        Trạng thái đơn hàng
-                    </h2>
-                    <div className="mt-5 flex flex-col gap-5 md:flex-row md:gap-0">
-                        {order.statusHistory.map((history, index) => (
-                            <div
-                                key={history.id}
-                                className="relative flex min-w-0 flex-1 items-start gap-3 md:block md:text-center"
-                            >
-                                {index < order.statusHistory.length - 1 ? (
-                                    <div className="absolute left-3.5 top-8 h-[calc(100%+1.25rem)] w-px bg-zinc-200 md:left-[calc(50%+1.25rem)] md:right-[calc(-50%+1.25rem)] md:top-5 md:h-px md:w-auto" />
-                                ) : null}
-                                <div className={`relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ring-4 ring-white md:mx-auto ${history.toStatus === 'CONFIRMED' ? 'bg-emerald-500 text-white' : history.toStatus === 'CANCELLED' || history.toStatus === 'FAILED' ? 'bg-red-50 text-red-600 ring-1 ring-red-100' : 'bg-amber-50 text-amber-600 ring-1 ring-amber-100'}`}>
-                                    <SellerStatusIcon status={history.toStatus} />
-                                </div>
-                                <div className="min-w-0 md:mt-3">
-                                    <p className="text-xs font-semibold text-zinc-900">
-                                        {getSellerOrderStatusLabel(history.toStatus)}
-                                    </p>
-                                    <p className="mt-1 text-[11px] leading-5 text-zinc-500">
-                                        {history.reason}
-                                    </p>
-                                    <p className="mt-1 text-[10px] text-zinc-400">
-                                        {formatSellerOrderDate(history.createdAt)}
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                <OrderLifecycleStepper
+                    mode="seller"
+                    currentStage={order.fulfillmentStatus}
+                    legacyStatus={order.status}
+                    createdAt={order.createdAt}
+                    cancelledAt={order.cancelledAt}
+                    cancelReason={order.cancelReason}
+                    shipmentStatus={shipmentQuery.data?.status ?? null}
+                    actionSlot={
+                        canPrepareShipment ? (
+                            <SellerShipmentQuickAction orderId={orderId} />
+                        ) : null
+                    }
+                />
             </header>
+
+            <SellerShipmentPanel
+                orderId={orderId}
+                orderStage={order.fulfillmentStatus ?? order.status}
+            />
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="space-y-5">

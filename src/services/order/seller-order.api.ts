@@ -2,11 +2,12 @@
 
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
-import type { CustomerOrderStatus } from './order.api';
+import type { CustomerOrderStage, CustomerOrderStatus } from './order.api';
 
 const SELLER_ORDERS = `${API_BASE_URL}${API_VERSION}/seller/orders`;
 
-export type SellerOrderStatus = CustomerOrderStatus;
+export type SellerOrderStatus = CustomerOrderStatus | CustomerOrderStage;
+export type SellerOrderStage = CustomerOrderStage;
 
 export interface SellerOrderPreviewItem {
     productId: string;
@@ -21,8 +22,12 @@ export interface SellerOrderListItem {
     id: string;
     orderNumber: string;
     status: SellerOrderStatus;
+    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED';
+    fulfillmentStatus?: SellerOrderStage;
     paymentMethod: 'COD';
     shopItemTotal: string;
+    shippingFee?: string;
+    shippingFeeBreakdown?: Array<Record<string, unknown>>;
     itemCount: number;
     previewItems: SellerOrderPreviewItem[];
     createdAt: string;
@@ -52,8 +57,12 @@ export interface SellerOrderResponse {
     id: string;
     orderNumber: string;
     status: SellerOrderStatus;
+    fulfillmentStatus?: SellerOrderStage;
+    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED';
     paymentMethod: 'COD';
     shopItemTotal: string;
+    shippingFee: string;
+    shippingFeeBreakdown: Array<Record<string, unknown>>;
     shippingAddress: Record<string, string>;
     items: SellerOrderItem[];
     cancelReason: string | null;
@@ -72,6 +81,7 @@ export interface SellerOrderListParams {
     page?: number;
     pageSize?: number;
     status?: SellerOrderStatus;
+    stage?: SellerOrderStage;
     search?: string;
 }
 
@@ -86,6 +96,7 @@ export async function listSellerOrders(
                 page: input.page ?? 1,
                 pageSize: input.pageSize ?? 10,
                 ...(input.status ? { status: input.status } : {}),
+                ...(input.stage ? { stage: input.stage } : {}),
                 ...(input.search?.trim()
                     ? { search: input.search.trim() }
                     : {}),

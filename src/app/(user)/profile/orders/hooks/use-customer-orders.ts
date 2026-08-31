@@ -4,7 +4,6 @@
 
 import {
     keepPreviousData,
-    useQueries,
     useMutation,
     useQuery,
     useQueryClient,
@@ -16,21 +15,23 @@ import {
     getOrder,
     listOrders,
     type CustomerOrderListItem,
-    type CustomerOrderStatus,
+    type CustomerOrderStage,
 } from '@/services/order/order.api';
 import { useOrderProductImages } from '@/hooks/use-order-product-images';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // Query danh sách giữ dữ liệu trang trước trong lúc chuyển trang để giao diện không bị nhấp nháy.
 export function useCustomerOrders(
-    status: CustomerOrderStatus | undefined,
+    stage: CustomerOrderStage | undefined,
     page: number,
+    enabled = true,
 ) {
     return useQuery({
-        queryKey: ['customer-orders', status ?? 'ALL', page],
-        queryFn: () => listOrders({ status, page, pageSize: 10 }),
+        queryKey: ['customer-orders', stage ?? 'ALL', page],
+        queryFn: () => listOrders({ stage, page, pageSize: 10 }),
         placeholderData: keepPreviousData,
         staleTime: 30_000,
+        enabled,
     });
 }
 
@@ -51,11 +52,11 @@ export function useMissingProductImages(
 }
 
 // Query chi tiết luôn đọc theo orderId trên URL nên refresh trang vẫn khôi phục đúng dữ liệu.
-export function useCustomerOrder(orderId: string) {
+export function useCustomerOrder(orderId: string, enabled = true) {
     return useQuery({
         queryKey: ['customer-order', orderId],
         queryFn: () => getOrder(orderId),
-        enabled: Boolean(orderId),
+        enabled: Boolean(orderId) && enabled,
         staleTime: 30_000,
     });
 }

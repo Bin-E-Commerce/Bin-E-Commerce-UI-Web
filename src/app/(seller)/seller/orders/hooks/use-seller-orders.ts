@@ -8,6 +8,7 @@ import { useDeferredValue, useState } from 'react';
 import {
     listSellerOrders,
     type SellerOrderStatus,
+    type SellerOrderStage,
 } from '@/services/order/seller-order.api';
 
 // Đồng bộ state filter với query key để mỗi tổ hợp shop/status/search/page được cache riêng và chuyển trang mượt.
@@ -21,7 +22,8 @@ export function useSellerOrders() {
         queryKey: ['seller-orders', status, deferredSearch, page],
         queryFn: () =>
             listSellerOrders({
-                status,
+                status: status && !['TO_SHIP', 'SHIPPING', 'COMPLETED', 'CANCELLED', 'DELIVERY_FAILED', 'RETURN_REFUND'].includes(status) ? status : undefined,
+                stage: status && ['TO_SHIP', 'SHIPPING', 'COMPLETED', 'CANCELLED', 'DELIVERY_FAILED', 'RETURN_REFUND'].includes(status) ? status as SellerOrderStage : undefined,
                 search: deferredSearch,
                 page,
                 pageSize: 10,

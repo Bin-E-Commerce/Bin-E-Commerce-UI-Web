@@ -1,32 +1,32 @@
-'use client';
-
 // File này dựng trang chi tiết đơn hàng Customer, chỉ trình bày snapshot order và điều khiển hủy COD.
+
+'use client';
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
     ArrowLeft,
     CalendarDays,
-    Check,
     CircleAlert,
-    Clock3,
     MapPin,
     Package,
     Phone,
     ReceiptText,
     ShieldCheck,
     Store,
-    XCircle,
 } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import type { CustomerOrderStatus } from '@/services/order/order.api';
 import {
     useCancelCustomerOrder,
     useCustomerOrder,
     useMissingProductImages,
 } from '../hooks/use-customer-orders';
 import { CancelOrderDialog } from '../components/cancel-order-dialog';
+import { CustomerShipmentPanel } from '@/common/shipping';
+import { OrderLifecycleStepper } from '@/common/orders';
+import { useCustomerTracking } from '@/hooks/use-shipment';
+import type { ShipmentStatus } from '@/services/shipping/shipping.api';
 
 // Format tiền snapshot theo locale Việt Nam, không thay đổi giá trị server đã chốt.
 function formatMoney(value: string): string {
@@ -42,39 +42,32 @@ function formatDate(value: string): string {
 }
 
 // Ghép các phần địa chỉ có dữ liệu để snapshot cũ thiếu quận/huyện vẫn hiển thị tự nhiên.
-function formatShippingAddress(address: Record<string, string>): string {
+function formatShippingAddress(address: Record<string, unknown>): string {
     return [address.street, address.ward, address.district, address.province]
+        .map((value) => (typeof value === 'string' ? value : ''))
         .filter(
             (value) => Boolean(value) && value !== 'Không áp dụng',
         )
         .join(', ');
 }
 
-// Chuyển enum trạng thái thành nhãn người dùng đọc được trong timeline.
-function getStatusTitle(status: CustomerOrderStatus): string {
-    if (status === 'CONFIRMED') return 'Đặt hàng thành công';
-    if (status === 'CANCELLED') return 'Đơn hàng đã hủy';
-    if (status === 'FAILED') return 'Đặt hàng thất bại';
-    return 'Đang xử lý';
-}
-
-// Mô tả ngắn giúp timeline có ngữ cảnh mà không lặp lại toàn bộ lý do kỹ thuật.
-function getStatusDescription(status: CustomerOrderStatus): string {
-    if (status === 'CONFIRMED') return 'Đơn hàng đã được xác nhận';
-    if (status === 'CANCELLED') return 'Đơn hàng không tiếp tục xử lý';
-    if (status === 'FAILED') return 'Đơn hàng chưa được tạo thành công';
-    return 'Hệ thống đang xử lý đơn hàng';
-}
-
-// Chọn icon theo trạng thái để timeline phân biệt nhanh thành công, đang xử lý và lỗi.
-function StatusIcon({ status }: { status: CustomerOrderStatus }) {
-    if (status === 'CANCELLED' || status === 'FAILED') {
-        return <XCircle className="size-5" aria-hidden="true" />;
-    }
-    if (status === 'PENDING') {
-        return <Clock3 className="size-5" aria-hidden="true" />;
-    }
-    return <Check className="size-5" aria-hidden="true" />;
+// Chọn trạng thái shipment đại diện để đơn nhiều shop vẫn tiến về bước cao nhất đang đạt được.
+function getCustomerShipmentStatus(statuses: ShipmentStatus[]): ShipmentStatus | null {
+    const statusRank: Record<ShipmentStatus, number> = {
+        READY_TO_SHIP: 1,
+        PICKUP_ASSIGNED: 2,
+        PICKED_UP: 3,
+        IN_TRANSIT: 4,
+        DELIVERED: 5,
+        FAILED: 0,
+        CANCELLED: 0,
+        RETURNING: 0,
+        RETURNED: 0,
+    };
+    return statuses.reduce<ShipmentStatus | null>((current, status) => {
+        if (!current || statusRank[status] > statusRank[current]) return status;
+        return current;
+    }, null);
 }
 
 // Trang detail đọc order theo id trên URL, vì vậy refresh vẫn giữ đúng phạm vi order của Customer.
@@ -83,6 +76,9 @@ export default function ProfileOrderDetailPage() {
     const orderId = params.orderId;
     const orderQuery = useCustomerOrder(orderId);
     const cancelMutation = useCancelCustomerOrder(orderId);
+    const trackingStage = orderQuery.data?.fulfillmentStatus ?? orderQuery.data?.status;
+    const trackingEnabled = Boolean(orderQuery.data) && !['CANCELLED', 'DELIVERY_FAILED', 'RETURN_REFUND'].includes(trackingStage ?? '');
+    const trackingQuery = useCustomerTracking(orderId, trackingEnabled);
     const legacyItemImages = useMissingProductImages(
         orderQuery.data?.items ?? [],
     );
@@ -113,6 +109,13 @@ export default function ProfileOrderDetailPage() {
     }
 
     const order = orderQuery.data;
+    const shipmentStatus = getCustomerShipmentStatus(
+        trackingQuery.data?.shipments.map((shipment) => shipment.status) ?? [],
+    );
+    // Customer chỉ được hủy khi đơn còn ở bước shop xử lý; sau khi bàn giao vận chuyển, UI không gợi ý thao tác trái nghiệp vụ.
+    const canCancel =
+        order.status === 'CONFIRMED' &&
+        (!order.fulfillmentStatus || order.fulfillmentStatus === 'TO_SHIP');
 
     return (
         <div className="min-h-full bg-zinc-50/60">
@@ -152,7 +155,7 @@ export default function ProfileOrderDetailPage() {
                                 Đặt ngày {formatDate(order.createdAt)}
                             </p>
                         </div>
-                        {order.status === 'CONFIRMED' ? (
+                        {canCancel ? (
                             <CancelOrderDialog
                                 loading={cancelMutation.isPending}
                                 onConfirm={async (reason) => {
@@ -162,57 +165,35 @@ export default function ProfileOrderDetailPage() {
                         ) : null}
                     </div>
 
-                    <section
-                        aria-labelledby="order-status-title"
-                        className="pt-5"
-                    >
-                        <div className="flex items-center justify-between gap-3">
-                            <h2
-                                id="order-status-title"
-                                className="text-sm font-semibold text-zinc-950"
-                            >
-                                Trạng thái đơn hàng
-                            </h2>
-                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                                <ShieldCheck
-                                    className="size-4 text-emerald-600"
-                                    aria-hidden="true"
-                                />
-                                Thanh toán COD
-                            </span>
-                        </div>
-                        <div className="mt-5 flex flex-col gap-5 md:flex-row md:gap-0">
-                            {order.statusHistory.map((history, index) => (
-                                <div
-                                    key={history.id}
-                                    className="relative flex min-w-0 flex-1 items-start gap-3 md:block md:text-center"
-                                >
-                                    {index < order.statusHistory.length - 1 ? (
-                                        <div className="absolute left-3.5 top-8 h-[calc(100%+1.25rem)] w-px bg-zinc-200 md:left-[calc(50%+1.25rem)] md:right-[calc(-50%+1.25rem)] md:top-5 md:h-px md:w-auto" />
-                                    ) : null}
-                                    <div
-                                        className={`relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full ring-4 ring-white md:mx-auto ${history.toStatus === 'CONFIRMED' ? 'bg-emerald-500 text-white' : history.toStatus === 'CANCELLED' || history.toStatus === 'FAILED' ? 'bg-red-50 text-red-600 ring-1 ring-red-100' : 'bg-amber-50 text-amber-600 ring-1 ring-amber-100'}`}
-                                    >
-                                        <StatusIcon status={history.toStatus} />
-                                    </div>
-                                    <div className="min-w-0 md:mt-3">
-                                        <p className="text-sm font-semibold text-zinc-900">
-                                            {getStatusTitle(history.toStatus)}
-                                        </p>
-                                        <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                            {getStatusDescription(
-                                                history.toStatus,
-                                            )}
-                                        </p>
-                                        <p className="mt-1 text-[11px] text-zinc-400">
-                                            {formatDate(history.createdAt)}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
+                    <div className="flex items-center justify-between gap-3 pt-5">
+                        <h2 className="text-sm font-semibold text-zinc-950">
+                            Trạng thái đơn hàng
+                        </h2>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                            <ShieldCheck
+                                className="size-4 text-emerald-600"
+                                aria-hidden="true"
+                            />
+                            Thanh toán COD
+                        </span>
+                    </div>
+                    <OrderLifecycleStepper
+                        mode="customer"
+                        currentStage={order.fulfillmentStatus}
+                        legacyStatus={order.status}
+                        createdAt={order.createdAt}
+                        cancelledAt={order.cancelledAt}
+                        cancelReason={order.cancelReason}
+                        shipmentStatus={shipmentStatus}
+                    />
                 </header>
+
+                <div className="mt-5">
+                    <CustomerShipmentPanel
+                        orderId={orderId}
+                        orderStage={order.fulfillmentStatus ?? order.status}
+                    />
+                </div>
 
                 <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                     <div className="space-y-5">
