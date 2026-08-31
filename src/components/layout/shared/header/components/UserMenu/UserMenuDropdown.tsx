@@ -1,3 +1,5 @@
+// File này hiển thị menu tài khoản và lối tắt đến khu vực phù hợp với role hiện tại.
+// File không quyết định quyền API; các route và thao tác vẫn được backend kiểm tra độc lập.
 'use client';
 
 import Link from 'next/link';
@@ -28,8 +30,8 @@ interface UserMenuDropdownProps {
     user: AuthUser;
 }
 
-// Dropdown tài khoản điều hướng theo accessProfile backend trả về.
-// Cách này tránh SUPPORT_AGENT hoặc ADMIN bị đưa nhầm vào Seller Center chỉ vì có role nội bộ.
+// Dropdown tài khoản ưu tiên Admin Center cho ADMIN/SUPPORT_AGENT, sau đó mới xét Seller Center.
+// Cách này giữ đúng điểm vào sau đăng nhập khi một tài khoản nội bộ đồng thời có quyền seller.
 export function UserMenuDropdown({
     name,
     email,
@@ -38,10 +40,10 @@ export function UserMenuDropdown({
     const dispatch = useDispatch<AppDispatch>();
     const isSeller = canAccessSellerCenter(user);
     const isAdmin = canAccessAdmin(user);
-    const primaryHref = isSeller
-        ? '/seller'
-        : isAdmin
-          ? getDefaultAdminPath(user)
+    const primaryHref = isAdmin
+        ? getDefaultAdminPath(user)
+        : isSeller
+          ? '/seller'
           : '/seller/register';
     const PrimaryIcon = isAdmin && !isSeller ? ShieldCheck : Store;
 

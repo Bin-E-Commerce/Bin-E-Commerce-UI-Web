@@ -6,5 +6,6 @@ export interface PermissionAwareUser {
     role?: string;
     roles?: string[];
     permissions?: string[];
+    permissionGrants?: Array<{ code: string }>;
     accessProfile?: AccessProfile;
 }

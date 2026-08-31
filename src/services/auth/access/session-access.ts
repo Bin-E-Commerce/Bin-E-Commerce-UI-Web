@@ -1,3 +1,5 @@
+// File này chuẩn hóa quyết định truy cập và route mặc định theo session backend trả về.
+// File không tự cấp permission; các endpoint vẫn phải được bảo vệ ở API Gateway và service sở hữu nghiệp vụ.
 import type {
     PermissionAwareUser,
     SessionPermission,
@@ -14,7 +16,10 @@ export function hasPermission(
     user: PermissionAwareUser | null | undefined,
     permission: SessionPermission,
 ): boolean {
-    return Boolean(user?.permissions?.includes(permission));
+    return Boolean(
+        user?.permissions?.includes(permission) ||
+            user?.permissionGrants?.some((grant) => grant.code === permission),
+    );
 }
 
 // Kiểm tra nhiều permission cùng lúc cho các vùng UI lớn như Admin Center.
@@ -73,7 +78,7 @@ export function getDefaultAdminPath(
     return ADMIN_ACCESS_DENIED_PATH;
 }
 
-// Chọn trang mặc định theo role chính trước rồi mới xét accessProfile, tránh ADMIN có thêm permission seller bị điều hướng nhầm.
+// Chọn trang mặc định theo role nghiệp vụ; Admin luôn vào Admin Center trước cả khi accessProfile chưa kịp hydrate đầy đủ.
 export function getDefaultAuthenticatedPath(
     user: PermissionAwareUser | null | undefined,
 ): string {
@@ -84,7 +89,10 @@ export function getDefaultAuthenticatedPath(
     const isSellerRole = roles.includes('SELLER');
 
     if (isBackOfficeRole) {
-        return canAccessAdmin(user) ? getDefaultAdminPath(user) : '/';
+        const adminRoute = user?.accessProfile?.areas.admin.defaultRoute;
+        return adminRoute?.startsWith('/admin')
+            ? adminRoute
+            : ADMIN_DASHBOARD_PATH;
     }
 
     if (isSellerRole && canAccessSellerCenter(user)) {
