@@ -1,5 +1,8 @@
+//
+// Thanh hành động của wizard sản phẩm, phân biệt rõ lưu bản nháp và đăng bán.
+//
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, EyeOff, LoaderCircle, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, EyeOff, LoaderCircle, Send, Warehouse } from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import type { ProductSubmitAction } from '../../hooks/useSellerProductEditor';
@@ -15,6 +18,8 @@ interface ProductCreateActionsProps {
     onBack: () => void;
     onNext: () => void;
     onSubmit: (status: ProductSubmitAction) => void;
+    onCancel?: () => void;
+    onOpenShippingSettings?: () => void;
 }
 
 // Chỉ hiển thị hành động phù hợp với bước hiện tại, tránh cho seller gửi sản phẩm khi còn thiếu dữ liệu ở bước sau.
@@ -28,6 +33,8 @@ export function ProductCreateActions({
     onBack,
     onNext,
     onSubmit,
+    onCancel,
+    onOpenShippingSettings,
 }: ProductCreateActionsProps) {
     const submitting = submittingStatus !== null;
     const isFirstStep = activeStep === 'basic';
@@ -44,11 +51,21 @@ export function ProductCreateActions({
                         : 'Hoàn thiện các bước bắt buộc trước khi đăng bán.'
                     : canContinue
                       ? 'Bước này đã hợp lệ, bạn có thể tiếp tục.'
-                      : 'Hoàn thiện bước này để tiếp tục.'}
+                    : 'Hoàn thiện bước này để tiếp tục.'}
             </p>
+            {isLastStep && mode === 'create' ? (
+                <Link
+                    href="/seller/shipping/settings"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 underline underline-offset-4 hover:text-zinc-950"
+                    onClick={onOpenShippingSettings}
+                >
+                    <Warehouse className="size-3.5" aria-hidden="true" />
+                    Kiểm tra Thiết lập giao nhận
+                </Link>
+            ) : null}
             <div className="flex flex-wrap items-center justify-end gap-2">
                 {isFirstStep ? (
-                    <Link href={cancelHref} className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+                    <Link href={cancelHref} className={buttonVariants({ variant: 'outline', size: 'lg' })} onClick={onCancel}>
                         Hủy
                     </Link>
                 ) : mode === 'edit' ? (

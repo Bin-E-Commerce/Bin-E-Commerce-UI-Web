@@ -40,6 +40,8 @@ export function SellerProductEditorPage({ productId }: SellerProductEditorPagePr
         goNext,
         goBack,
         submitProduct,
+        saveDraftBeforeLeaving,
+        discardDraft,
         isEditMode,
         loadingProduct,
     } = useSellerProductEditor(productId);
@@ -127,6 +129,8 @@ export function SellerProductEditorPage({ productId }: SellerProductEditorPagePr
                             onBack={goBack}
                             onNext={goNext}
                             onSubmit={submitProduct}
+                            onCancel={discardDraft}
+                            onOpenShippingSettings={saveDraftBeforeLeaving}
                         />
                     </form>
                 </main>

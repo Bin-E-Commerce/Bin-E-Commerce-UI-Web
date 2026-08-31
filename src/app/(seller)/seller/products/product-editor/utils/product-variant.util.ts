@@ -1,3 +1,5 @@
+// Tiện ích sinh ma trận biến thể từ các giá trị Seller nhập trong form sản phẩm.
+
 import type {
     ProductCreateOption,
     ProductCreateVariant,
@@ -42,10 +44,18 @@ export function buildProductVariants(
 
     return combinations.map((combination) => {
         const key = combination.ids.join('|');
-        return (
-            currentByKey.get(key) ??
-            createVariant(key, combination.labels.join(' / '), combination.ids)
-        );
+        const label = combination.labels.join(' / ');
+        const existingVariant = currentByKey.get(key);
+
+        // Giữ lại giá, tồn kho, SKU và dữ liệu Seller đã nhập nhưng luôn đồng bộ nhãn theo giá trị mới nhất.
+        // Nếu chỉ trả lại existingVariant, lần gõ đầu tiên "x" sẽ bị giữ nguyên khi Seller hoàn thành "xs" hoặc "xl".
+        return existingVariant
+            ? {
+                  ...existingVariant,
+                  label,
+                  optionValueClientIds: combination.ids,
+              }
+            : createVariant(key, label, combination.ids);
     });
 }
 

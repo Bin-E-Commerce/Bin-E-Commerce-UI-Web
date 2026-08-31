@@ -100,9 +100,7 @@ export function SellerProductsPageContent() {
             setStatusTarget(null);
             setTargetStatus(null);
         } catch {
-            // Đóng modal sau lỗi để toast vẫn báo nguyên nhân nhưng lớp khóa không thể giữ toàn bộ trang.
-            setStatusTarget(null);
-            setTargetStatus(null);
+            // Giữ popup mở để seller đọc nguyên nhân và đi tới Thiết lập giao nhận nếu còn thiếu điều kiện.
         }
     };
 

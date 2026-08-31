@@ -34,6 +34,11 @@ import {
 } from '../utils/seller-product-payload.mapper';
 import { toSellerProductEditFormValues } from '../utils/seller-product-edit.mapper';
 import { useSellerProductDetail } from '../../product-detail/hooks/useSellerProductDetail';
+import {
+    clearProductEditorDraft,
+    readProductEditorDraft,
+    saveProductEditorDraft,
+} from '../utils/product-editor-draft';
 
 export type ProductSubmitAction = CreateSellerProductStatus | 'UPDATE';
 
@@ -89,6 +94,7 @@ export function useSellerProductEditor(productId?: string) {
     const [loadingProduct, setLoadingProduct] = useState(isEditMode);
     const hydratedProductId = useRef<string | null>(null);
     const [activeStep, setActiveStep] = useState<ProductCreateStepId>('basic');
+    const draftHydrated = useRef(false);
     const watchedValues = useWatch({ control: form.control }) as SellerProductCreateFormValues;
     const options = useWatch({ control: form.control, name: 'options' });
     const variants = useWatch({ control: form.control, name: 'variants' });
@@ -128,6 +134,31 @@ export function useSellerProductEditor(productId?: string) {
             }
         })();
     }, [detailQuery.data, form, productId]);
+
+    // Khôi phục bản nháp create một lần sau khi mount để việc đi sang trang giao nhận không làm mất dữ liệu wizard.
+    // Chỉ áp dụng cho sản phẩm mới; edit mode luôn ưu tiên dữ liệu thật từ Product Service và tránh race với hydrate detail.
+    useEffect(() => {
+        if (isEditMode || draftHydrated.current) return;
+
+        const draft = readProductEditorDraft();
+        if (!draft) {
+            draftHydrated.current = true;
+            return;
+        }
+
+        let isMounted = true;
+        queueMicrotask(() => {
+            if (!isMounted) return;
+            draftHydrated.current = true;
+            form.reset(draft.values);
+            setReferences(draft.references);
+            setActiveStep(draft.activeStep);
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [form, isEditMode]);
 
     const validations = useMemo<ProductCreateStepValidations>(
         () => getProductCreateStepValidations(watchedValues, references.attributes),
@@ -281,6 +312,18 @@ export function useSellerProductEditor(productId?: string) {
         if (previousStep) changeStep(previousStep.id);
     };
 
+    // Lưu snapshot form và reference category vào sessionStorage trước khi Seller rời wizard sang cấu hình giao nhận.
+    // Snapshot chỉ dùng trong cùng tab, không gửi lên server và không thay thế bước submit sản phẩm chính thức.
+    const saveDraftBeforeLeaving = () => {
+        if (isEditMode) return;
+        saveProductEditorDraft(form.getValues(), references, activeStep);
+    };
+
+    // Xóa bản nháp khi Seller chủ động hủy để lần tạo sản phẩm sau không khôi phục dữ liệu cũ ngoài ý muốn.
+    const discardDraft = () => {
+        if (!isEditMode) clearProductEditorDraft();
+    };
+
     // Xác thực tuần tự toàn bộ wizard trước khi tạo product, nhờ đó lỗi luôn đưa seller về đúng section.
     const submitProduct = (status: ProductSubmitAction) => {
         void (async () => {
@@ -334,6 +377,7 @@ export function useSellerProductEditor(productId?: string) {
                         ? 'Sản phẩm đã được đăng bán.'
                         : 'Sản phẩm đã được lưu và ẩn.',
                 );
+                clearProductEditorDraft();
                 router.push(`/seller/products?created=${created.id}`);
             } catch (error) {
                 toast.error(getErrorMessage(error));
@@ -360,5 +404,7 @@ export function useSellerProductEditor(productId?: string) {
         goNext,
         goBack,
         submitProduct,
+        saveDraftBeforeLeaving,
+        discardDraft,
     };
 }
