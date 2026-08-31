@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 
 const AlertDialogDismissContext = React.createContext<(() => void) | null>(null);
 
+// File này bọc Radix AlertDialog và giữ vòng đời overlay/pointer-events dùng chung cho toàn bộ popup trong web.
+// Trigger luôn phải được render khi dialog đang đóng; chỉ content của Radix mới được ẩn theo trạng thái open.
 function AlertDialog({
     open,
     defaultOpen,
@@ -23,6 +25,11 @@ function AlertDialog({
         (nextOpen: boolean) => {
             if (!isControlled) {
                 setInternalOpen(nextOpen);
+            }
+
+            if (!nextOpen) {
+                // Xóa khóa tương tác ngay khi đóng để điều hướng hoặc unmount không giữ pointer-events trên body.
+                document.body.style.removeProperty('pointer-events');
             }
 
             onOpenChange?.(nextOpen);
@@ -42,13 +49,11 @@ function AlertDialog({
 
         return () => {
             // Các trang Seller không dùng pointer-events inline cho body; trả về chuỗi rỗng để xóa khóa còn sót.
-            document.body.style.pointerEvents = '';
+            document.body.style.removeProperty('pointer-events');
         };
     }, [isControlled, resolvedOpen]);
 
     // Dialog controlled phải tháo hẳn Portal khi đóng để RemoveScroll giải phóng overlay và quyền tương tác ngay lập tức.
-    if (isControlled && !resolvedOpen) return null;
-
     return (
         <AlertDialogDismissContext.Provider value={dismiss}>
             <AlertDialogPrimitive.Root
