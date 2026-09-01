@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { useAppSelector } from '@/store/hooks';
 import { productService } from '@/services/product';
 import type { ProductDetailData } from '../types/product-detail.types';
 
@@ -22,10 +23,14 @@ async function fetchProductDetail(productId: string): Promise<ProductDetailData>
 
 // Quản lý cache riêng theo product ID để chuyển qua lại giữa các sản phẩm không tải lại dữ liệu vừa xem.
 export function useProductDetail(productId: string) {
+    const initialized = useAppSelector((state) => state.auth.initialized);
+    const userId = useAppSelector((state) => state.auth.user?.id ?? 'guest');
+
     return useQuery({
-        queryKey: ['products', 'detail', productId],
+        queryKey: ['products', 'detail', productId, userId],
         queryFn: () => fetchProductDetail(productId),
-        enabled: Boolean(productId),
+        // Chờ xác định phiên đăng nhập để API detail gắn đúng likedByCurrentUser sau refresh.
+        enabled: Boolean(productId) && initialized,
         staleTime: 5 * 60_000,
     });
 }

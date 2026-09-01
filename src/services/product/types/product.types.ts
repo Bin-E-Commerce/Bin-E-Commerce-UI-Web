@@ -1,3 +1,5 @@
+// File này định nghĩa contract product/review dùng giữa API và các màn hình web.
+// Các field like chỉ là read model công khai; userId nội bộ không được dùng để render danh tính khách hàng.
 export interface ProductBrand {
     id: string;
     name: string;
@@ -84,11 +86,50 @@ export interface ProductAttributeValue {
 export interface ProductReview {
     id: string;
     userId?: string | null;
+    reviewerName?: string | null;
+    reviewerAvatarUrl?: string | null;
+    isAnonymous?: boolean;
     rating: number;
+    title?: string | null;
     content?: string | null;
     images: string[];
+    videos: string[];
     status: string;
     createdAt: string;
+    updatedAt?: string;
+    likeCount?: number;
+    likedByCurrentUser?: boolean;
+    variantName?: string | null;
+}
+
+export interface OrderReviewItemStatus {
+    orderItemId: string;
+    productId: string;
+    variantId: string;
+    productName: string;
+    variantName: string;
+    imageUrl: string | null;
+    canReview: boolean;
+    canEdit: boolean;
+    review: {
+        id: string;
+        rating: number;
+        status: string;
+        title: string | null;
+        content: string | null;
+        images: string[];
+        videos: string[];
+        isAnonymous: boolean;
+        createdAt: string;
+        updatedAt: string;
+    } | null;
+}
+
+export interface OrderReviewStatusResponse {
+    orderId: string;
+    canReview: boolean;
+    reviewDeadline: string | null;
+    items: OrderReviewItemStatus[];
 }
 
 export interface PublicProduct {

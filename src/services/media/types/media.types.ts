@@ -6,6 +6,7 @@ export type MediaUploadPurpose =
     | 'shop_cover'
     | 'seller_document'
     | 'review_image'
+    | 'review_video'
     | 'chat_image';
 
 export type MediaUploadMimeType =
@@ -49,6 +50,13 @@ export interface ProductMediaCleanupAsset {
 export interface CleanupProductAssetsResponse {
     requestedAssetCount: number;
     deletedCount: number;
+}
+
+export type ReviewMediaCleanupPurpose = 'review_image' | 'review_video';
+
+export interface ReviewMediaCleanupAsset {
+    assetId: string;
+    purpose: ReviewMediaCleanupPurpose;
 }
 
 export interface ConfirmAvatarResponse {

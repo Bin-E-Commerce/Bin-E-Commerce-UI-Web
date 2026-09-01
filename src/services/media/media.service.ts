@@ -6,11 +6,13 @@ import type {
     CleanupProductAssetsResponse,
     DeleteMediaAssetResponse,
     ProductMediaCleanupAsset,
+    ReviewMediaCleanupAsset,
     PresignedUploadResponse,
 } from './types/media.types';
 
 const MEDIA_UPLOADS = `${API_BASE_URL}${API_VERSION}/media/uploads`;
 const MEDIA_ASSETS = `${API_BASE_URL}${API_VERSION}/media/assets`;
+const PRODUCT_REVIEW_MEDIA = `${API_BASE_URL}${API_VERSION}/products/reviews/media`;
 
 export const mediaService = {
     // Xin presigned POST từ media-service để frontend upload ảnh trực tiếp lên S3 mà không đẩy binary qua backend.
@@ -84,6 +86,12 @@ export const mediaService = {
     cleanupProductAssets: (assets: ProductMediaCleanupAsset[]) =>
         authorizedAxios
             .post<CleanupProductAssetsResponse>(`${MEDIA_ASSETS}/product/cleanup`, { assets })
+            .then((response) => response.data),
+
+    // Dọn asset review upload dở dang qua Product Service để chỉ xóa media chưa được review nào tham chiếu.
+    cleanupUploadedReviewAssets: (assets: ReviewMediaCleanupAsset[]) =>
+        authorizedAxios
+            .post<CleanupProductAssetsResponse>(`${PRODUCT_REVIEW_MEDIA}/cleanup`, { assets })
             .then((response) => response.data),
 };
 

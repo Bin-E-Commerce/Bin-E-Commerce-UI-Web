@@ -1,3 +1,5 @@
+// File này là section review công khai của product detail.
+// Component lọc theo số sao ở client; backend đã lọc approved và gắn read model like để customer tương tác trực tiếp.
 'use client';
 
 import { MessageSquareText, Star } from 'lucide-react';
@@ -40,7 +42,7 @@ export function ProductReviewsSection({ product }: ProductReviewsSectionProps) {
                         {rating > 0 ? rating.toFixed(1) : '0.0'}
                         <span className="text-base font-medium text-zinc-500"> / 5</span>
                     </p>
-                    <div className="mt-2 flex text-amber-500">
+                    <div className="mt-2 flex text-amber-400">
                         {Array.from({ length: 5 }).map((_, index) => (
                             <Star
                                 key={index}
@@ -77,8 +79,11 @@ export function ProductReviewsSection({ product }: ProductReviewsSectionProps) {
 
             <div className="px-5 sm:px-7">
                 {visibleReviews.length > 0 ? (
-                    visibleReviews.map((review) => (
-                        <ProductReviewCard key={review.id} review={review} />
+                        visibleReviews.map((review) => (
+                        <ProductReviewCard
+                            key={`${review.id}-${review.likedByCurrentUser ? 'liked' : 'unliked'}-${review.likeCount ?? 0}`}
+                            review={review}
+                        />
                     ))
                 ) : (
                     <div className="flex min-h-52 flex-col items-center justify-center py-10 text-center">
@@ -89,7 +94,7 @@ export function ProductReviewsSection({ product }: ProductReviewsSectionProps) {
                             Chưa có đánh giá phù hợp
                         </h3>
                         <p className="mt-1 max-w-sm text-xs leading-5 text-zinc-500">
-                            Đánh giá từ người mua sẽ được hiển thị tại đây sau khi được kiểm duyệt.
+                            Đánh giá verified từ người mua sẽ được hiển thị ngay sau khi gửi thành công.
                         </p>
                     </div>
                 )}
