@@ -111,13 +111,21 @@ export function NotificationBell() {
                             type="button"
                             onClick={() => setStatus(value)}
                             className={cn(
-                                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                                 status === value
                                     ? 'bg-zinc-950 text-white'
                                     : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950',
                             )}
                         >
                             {value === 'all' ? 'Tất cả' : 'Chưa đọc'}
+                            {value === 'unread' && totalUnread > 0 ? (
+                                <span className={cn(
+                                    'min-w-4 rounded-full px-1 text-[10px] font-bold leading-4',
+                                    status === value ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600',
+                                )}>
+                                    {totalUnread > 99 ? '99+' : totalUnread}
+                                </span>
+                            ) : null}
                         </button>
                     ))}
                 </div>

@@ -7,9 +7,13 @@ import type { ComponentType } from 'react';
 import {
     ClipboardList,
     LayoutDashboard,
+    PackagePlus,
     PackageSearch,
+    Settings2,
+    Sparkles,
     ShieldCheck,
     Store,
+    Truck,
 } from 'lucide-react';
 import { AiAssistantIcon } from '@/components/ui/ai-assistant-button';
 
@@ -19,8 +23,12 @@ type SellerNavigationIcon = ComponentType<{ className?: string }>;
 export const SELLER_NAVIGATION_ICON_MAP: Record<string, SellerNavigationIcon> = {
     ClipboardList,
     LayoutDashboard,
+    PackagePlus,
     PackageSearch,
+    Settings2,
+    Sparkles,
     Store,
+    Truck,
     AiAssistant: AiAssistantIcon,
 };
 

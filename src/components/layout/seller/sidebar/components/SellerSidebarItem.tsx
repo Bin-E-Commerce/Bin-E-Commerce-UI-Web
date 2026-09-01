@@ -67,7 +67,6 @@ export function SellerSidebarItem({
                     active ? 'bg-white/10' : 'bg-zinc-100 group-hover:bg-white',
                 )}
             >
-                {/* Icon AI là SVG màu đen; khi mục active cần đảo màu để giữ tương phản trên nền đen. */}
                 <Icon
                     className={cn(
                         'size-4',
