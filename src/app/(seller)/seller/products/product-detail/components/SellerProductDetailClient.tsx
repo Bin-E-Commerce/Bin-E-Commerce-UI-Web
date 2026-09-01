@@ -83,7 +83,7 @@ export function SellerProductDetailClient() {
     };
 
     return (
-        <div className="min-h-fullpb-10 text-zinc-950">
+        <div className="min-h-full pb-10 text-zinc-950">
             <div className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
                 <Link
                     href="/seller/products"
