@@ -10,6 +10,21 @@ import type {
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
 
+export type DeliveryIssueReason = 'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
+
+export interface DeliveryConfirmationInput {
+    decision: 'RECEIVED' | 'ISSUE';
+    reason?: DeliveryIssueReason;
+    itemIds?: string[];
+    note?: string;
+}
+
+// Gửi quyết định nhận hàng; backend giữ ownership, idempotency và trạng thái cuối cùng của order.
+export async function confirmOrderDelivery(orderId: string, input: DeliveryConfirmationInput): Promise<OrderResponse> {
+    const response = await authorizedAxios.post<OrderResponse>(`${ORDERS}/${orderId}/delivery-confirmation`, input);
+    return response.data;
+}
+
 // Tạo order COD với idempotency key để double click hoặc retry mạng không tạo đơn trùng.
 export async function createCodOrder(
     input: CreateCodOrderInput,
@@ -82,15 +97,31 @@ export interface CustomerOrderListResponse {
     page: number;
     pageSize: number;
     totalPages: number;
+    counts?: CustomerOrderTabCounts;
+}
+
+// Số lượng đơn của từng nhóm tab, độc lập với page/filter hiện tại để badge phản ánh đúng toàn bộ tài khoản.
+export interface CustomerOrderTabCounts {
+    all: number;
+    pendingPayment: number;
+    toShip: number;
+    shipping: number;
+    delivered: number;
+    completed: number;
+    cancelled: number;
+    returnRefund: number;
+}
+
+export interface CustomerOrderFilter {
+    status?: CustomerOrderStatus;
+    stage?: CustomerOrderStage;
 }
 
 // Lấy lịch sử order thuộc tài khoản hiện tại, filter và phân trang tại server.
 export async function listOrders(
-    input: {
+    input: CustomerOrderFilter & {
         page?: number;
         pageSize?: number;
-        status?: CustomerOrderStatus;
-        stage?: CustomerOrderStage;
     } = {},
 ): Promise<CustomerOrderListResponse> {
     const response = await authorizedAxios.get<CustomerOrderListResponse>(

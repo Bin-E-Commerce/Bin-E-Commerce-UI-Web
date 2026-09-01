@@ -11,6 +11,7 @@ import {
     Package,
     Phone,
     ReceiptText,
+    Star,
 } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,7 +38,7 @@ function formatShippingAddress(address: Record<string, string>): string {
         .join(', ');
 }
 
-// Trình bày order detail với trạng thái loading/error riêng để layout Seller không bị màn trắng.
+// Trình bày order detail với trạng thái loading/error riêng; sau giao thành công mở lối tắt để Seller xem phản hồi sản phẩm.
 export function SellerOrderDetailContent({
     orderId,
 }: SellerOrderDetailContentProps) {
@@ -87,6 +88,13 @@ export function SellerOrderDetailContent({
         !shipmentQuery.isPending &&
         !shipmentQuery.isError &&
         !shipmentQuery.data;
+    // Trạng thái giao thành công là mốc kết thúc thao tác vận chuyển của Seller;
+    // CTA tiếp theo đưa Seller đến đúng sản phẩm trong Seller Center để xem các review đã được duyệt.
+    const isDeliveryFinished =
+        order.fulfillmentStatus === 'DELIVERED' ||
+        order.fulfillmentStatus === 'COMPLETED' ||
+        shipmentQuery.data?.status === 'DELIVERED';
+    const reviewProductId = order.items.find((item) => Boolean(item.productId))?.productId;
 
     return (
         <div className="space-y-5">
@@ -137,7 +145,15 @@ export function SellerOrderDetailContent({
                     cancelReason={order.cancelReason}
                     shipmentStatus={shipmentQuery.data?.status ?? null}
                     actionSlot={
-                        canPrepareShipment ? (
+                        isDeliveryFinished && reviewProductId ? (
+                            <Link
+                                href={`/seller/products/${reviewProductId}#product-reviews`}
+                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-zinc-950 px-4 text-xs font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20"
+                            >
+                                <Star className="size-3.5" aria-hidden="true" />
+                                Xem đánh giá
+                            </Link>
+                        ) : canPrepareShipment ? (
                             <SellerShipmentQuickAction orderId={orderId} />
                         ) : null
                     }

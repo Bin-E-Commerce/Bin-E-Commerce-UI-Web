@@ -12,6 +12,7 @@ import type { ShipmentStatus } from '@/services/shipping/shipping.api';
 type OrderLifecycleStage =
     | 'TO_SHIP'
     | 'SHIPPING'
+    | 'DELIVERED'
     | 'COMPLETED'
     | 'CANCELLED'
     | 'DELIVERY_FAILED'
@@ -43,6 +44,7 @@ const CUSTOMER_STEPS: LifecycleStep[] = [
     { key: 'preparing', title: 'Shop chuẩn bị', description: 'Shop đang đóng gói sản phẩm' },
     { key: 'handed-over', title: 'Đã bàn giao', description: 'Đơn vị vận chuyển đã nhận hàng' },
     { key: 'delivering', title: 'Đang giao', description: 'Đơn hàng đang trên đường đến bạn' },
+    { key: 'delivered', title: 'Đã giao', description: 'Chờ bạn xác nhận đã nhận hàng' },
     { key: 'completed', title: 'Hoàn thành', description: 'Đơn hàng đã giao thành công' },
 ];
 
@@ -69,7 +71,8 @@ function normalizeStage(
 function getActiveIndex(stage: OrderLifecycleStage, mode: OrderLifecycleMode): number {
     if (stage === 'TO_SHIP') return mode === 'seller' ? 0 : 1;
     if (stage === 'SHIPPING') return 3;
-    if (stage === 'COMPLETED') return 4;
+    if (stage === 'DELIVERED') return 4;
+    if (stage === 'COMPLETED') return mode === 'seller' ? 4 : 5;
     return -1;
 }
 
@@ -94,7 +97,7 @@ function formatLifecycleDate(value: string): string {
 // Marker dùng cùng một kích thước ở mọi breakpoint; nền trắng và chi tiết đen bám theo hệ thống giao diện chung.
 function LifecycleStepMarker({ index, state }: { index: number; state: LifecycleState }) {
     return (
-        <span className="relative flex size-10 items-center justify-center">
+            <span className="relative flex size-10 -translate-y-1 items-center justify-center">
             {state === 'current' ? (
                 <span
                     aria-hidden="true"
@@ -102,8 +105,8 @@ function LifecycleStepMarker({ index, state }: { index: number; state: Lifecycle
                 />
             ) : null}
             <span
-                className={cn(
-                    'relative z-10 flex size-10 items-center justify-center rounded-full border-2 bg-white text-xs font-bold transition-all duration-300 ease-out group-hover:-translate-y-0.5 group-hover:shadow-[0_5px_12px_-8px_rgba(0,0,0,0.5)]',
+                    className={cn(
+                    'relative z-10 flex size-10 items-center justify-center rounded-full border-2 bg-white text-xs font-bold',
                     state === 'complete' && 'border-black bg-black text-white',
                     state === 'current' && 'border-black text-black ring-4 ring-black/10',
                     state === 'upcoming' && 'border-slate-200 text-slate-400',
@@ -115,10 +118,19 @@ function LifecycleStepMarker({ index, state }: { index: number; state: Lifecycle
     );
 }
 
-// Chọn nội dung card trạng thái để Customer và Seller luôn thấy hướng dẫn phù hợp với vai trò.
-function getProgressMessage(mode: OrderLifecycleMode, shipmentStatus: ShipmentStatus | null | undefined): string {
+// Chọn nội dung card trạng thái theo cả order stage và shipment status.
+// Khi giao thành công, Seller không còn thao tác vận chuyển nhưng vẫn cần biết khách hàng có thể đánh giá.
+function getProgressMessage(mode: OrderLifecycleMode, stage: OrderLifecycleStage, shipmentStatus: ShipmentStatus | null | undefined): string {
+    if (stage === 'COMPLETED') {
+        return mode === 'seller'
+            ? 'Đơn hàng đã hoàn thành. Bạn có thể xem lại đánh giá của khách hàng về sản phẩm.'
+            : 'Đơn hàng đã hoàn tất. Cảm ơn bạn đã mua sắm cùng chúng tôi.';
+    }
+    if (mode === 'seller' && (stage === 'DELIVERED' || shipmentStatus === 'DELIVERED')) {
+        return 'Đơn hàng đã giao thành công. Đang chờ khách hàng xác nhận và chia sẻ đánh giá về sản phẩm.';
+    }
     if (mode === 'seller') return 'Hoàn tất thao tác ở khu vực vận chuyển bên dưới để chuyển sang bước kế tiếp.';
-    if (shipmentStatus === 'DELIVERED') return 'Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm.';
+    if (shipmentStatus === 'DELIVERED') return 'Đơn hàng đã đến nơi. Hãy xác nhận bạn đã nhận được hàng.';
     return 'Shop sẽ cập nhật hành trình và mã vận đơn khi đơn được bàn giao cho đơn vị vận chuyển.';
 }
 
@@ -136,12 +148,15 @@ export function OrderLifecycleStepper({
 }: OrderLifecycleStepperProps) {
     const stage = normalizeStage(currentStage, legacyStatus);
     const steps = mode === 'seller' ? SELLER_STEPS : CUSTOMER_STEPS;
-    const shipmentActiveIndex = getShipmentActiveIndex(shipmentStatus, mode);
+    const shipmentActiveIndex = stage === 'COMPLETED' ? -1 : getShipmentActiveIndex(shipmentStatus, mode);
     const activeIndex = shipmentActiveIndex >= 0 ? shipmentActiveIndex : getActiveIndex(stage, mode);
     const isCancelled = stage === 'CANCELLED';
     const isFailed = stage === 'DELIVERY_FAILED';
     const isReturn = stage === 'RETURN_REFUND';
+    const isCompleted = stage === 'COMPLETED';
     const isTerminal = isCancelled || isFailed || isReturn;
+    // Shipment DELIVERED là mốc cuối của Seller dù Order Service có thể đang chờ đồng bộ stage nội bộ.
+    const sellerDeliveryFinished = stage === 'DELIVERED' || stage === 'COMPLETED' || shipmentStatus === 'DELIVERED';
     const activeStep = steps[activeIndex];
     const terminalTitle = isCancelled
         ? 'Đơn hàng đã hủy'
@@ -173,34 +188,36 @@ export function OrderLifecycleStepper({
                         </p>
                     </div>
                     <div className="self-start rounded-full border border-black bg-black px-3.5 py-2 text-xs font-semibold text-white shadow-sm sm:self-auto">
-                        {isTerminal ? terminalTitle : activeStep?.title ?? 'Đang cập nhật'}
+                        {isTerminal ? terminalTitle : isCompleted ? 'Đã hoàn thành' : activeStep?.title ?? 'Đang cập nhật'}
                     </div>
                 </div>
             </div>
 
             <div className="p-5 sm:p-8">
-                <ol className="grid gap-6 md:grid-cols-5 md:gap-0" aria-label="Các bước xử lý đơn hàng">
+                <ol className={cn('grid gap-6 md:gap-0', steps.length === 6 ? 'md:grid-cols-6' : 'md:grid-cols-5')} aria-label="Các bước xử lý đơn hàng">
                     {steps.map((step, index) => {
                         const state: LifecycleState = isTerminal
                             ? index === 0
                                 ? 'complete'
                                 : 'upcoming'
-                            : index < activeIndex
+                            : isCompleted
                               ? 'complete'
-                              : index === activeIndex
-                                ? 'current'
-                                : 'upcoming';
+                              : index < activeIndex
+                                ? 'complete'
+                                : index === activeIndex
+                                  ? 'current'
+                                  : 'upcoming';
 
                         return (
                             <li
                                 key={step.key}
                                 aria-current={state === 'current' ? 'step' : undefined}
-                                className="group relative flex items-start gap-3 md:block md:text-center"
+                                className="relative flex items-start gap-3 md:block md:text-center"
                             >
                                 {index < steps.length - 1 ? (
                                     <span
                                         className={cn(
-                                            'absolute left-1/2 top-5 hidden h-px w-full transition-colors duration-700 ease-out md:block',
+                                            'absolute left-1/2 top-4 hidden h-px w-full transition-colors duration-700 ease-out md:block',
                                             !isTerminal && index < activeIndex ? 'bg-black/55' : 'bg-slate-200',
                                         )}
                                         aria-hidden="true"
@@ -250,9 +267,19 @@ export function OrderLifecycleStepper({
                     <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                         <div className="min-w-0">
                             <p className="text-sm font-semibold text-black">
-                                {mode === 'seller' ? 'Việc cần làm tiếp theo' : shipmentStatus === 'DELIVERED' ? 'Giao hàng thành công' : 'Bạn chưa cần thao tác'}
+                                {mode === 'seller'
+                                    ? isCompleted
+                                        ? 'Đơn hàng đã hoàn thành'
+                                        : sellerDeliveryFinished
+                                          ? 'Đang chờ khách hàng đánh giá'
+                                          : 'Việc cần làm tiếp theo'
+                                    : isCompleted
+                                      ? 'Đơn hàng đã hoàn tất'
+                                      : shipmentStatus === 'DELIVERED'
+                                        ? 'Giao hàng thành công'
+                                        : 'Bạn chưa cần thao tác'}
                             </p>
-                            <p className="mt-1 text-xs leading-5 text-slate-500">{getProgressMessage(mode, shipmentStatus)}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">{getProgressMessage(mode, stage, shipmentStatus)}</p>
                             </div>
                         {actionSlot ? <div className="shrink-0">{actionSlot}</div> : null}
                     </div>

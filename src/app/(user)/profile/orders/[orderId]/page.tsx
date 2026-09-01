@@ -27,6 +27,8 @@ import { CustomerShipmentPanel } from '@/common/shipping';
 import { OrderLifecycleStepper } from '@/common/orders';
 import { useCustomerTracking } from '@/hooks/use-shipment';
 import type { ShipmentStatus } from '@/services/shipping/shipping.api';
+import { DeliveryConfirmationCard } from './components/delivery-confirmation-card';
+import { OrderReviewPanel } from './components/order-review-panel';
 
 // Format tiền snapshot theo locale Việt Nam, không thay đổi giá trị server đã chốt.
 function formatMoney(value: string): string {
@@ -188,6 +190,11 @@ export default function ProfileOrderDetailPage() {
                     />
                 </header>
 
+                <div className="mt-5 space-y-5">
+                    <DeliveryConfirmationCard order={order} />
+                    <OrderReviewPanel order={order} />
+                </div>
+
                 <div className="mt-5">
                     <CustomerShipmentPanel
                         orderId={orderId}
@@ -225,35 +232,44 @@ export default function ProfileOrderDetailPage() {
                                         key={item.id}
                                         className="flex gap-4 py-5 first:pt-5 sm:gap-5"
                                     >
-                                        <div className="size-24 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 sm:size-28">
-                                            {item.imageUrl ||
-                                            legacyItemImages.get(
-                                                item.productId,
-                                            ) ? (
-                                                <img
-                                                    src={
-                                                        item.imageUrl ??
-                                                        legacyItemImages.get(
-                                                            item.productId,
-                                                        ) ??
-                                                        undefined
-                                                    }
-                                                    alt={item.productName}
-                                                    className="size-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex size-full items-center justify-center text-zinc-400">
-                                                    <Package
-                                                        className="size-7"
-                                                        aria-hidden="true"
+                                        <Link
+                                            href={`/products/${item.productId}`}
+                                            aria-label={`Xem ${item.productName}`}
+                                            className="block size-24 shrink-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:size-28"
+                                        >
+                                            <div className="size-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 transition-colors hover:border-zinc-400">
+                                                {item.imageUrl ||
+                                                legacyItemImages.get(
+                                                    item.productId,
+                                                ) ? (
+                                                    <img
+                                                        src={
+                                                            item.imageUrl ??
+                                                            legacyItemImages.get(
+                                                                item.productId,
+                                                            ) ??
+                                                            undefined
+                                                        }
+                                                        alt={item.productName}
+                                                        className="size-full object-cover"
                                                     />
-                                                </div>
-                                            )}
-                                        </div>
+                                                ) : (
+                                                    <div className="flex size-full items-center justify-center text-zinc-400">
+                                                        <Package
+                                                            className="size-7"
+                                                            aria-hidden="true"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Link>
                                         <div className="min-w-0 flex-1">
-                                            <p className="font-semibold leading-6 text-zinc-950">
+                                            <Link
+                                                href={`/products/${item.productId}`}
+                                                className="block font-semibold leading-6 text-zinc-950 underline-offset-4 hover:text-zinc-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+                                            >
                                                 {item.productName}
-                                            </p>
+                                            </Link>
                                             <p className="mt-1 text-sm text-zinc-500">
                                                 {item.variantName !==
                                                 item.productName

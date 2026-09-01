@@ -84,7 +84,7 @@ export function ShipmentTrackingCard({ shipment, sellerActions, viewer = 'custom
                                         </div>
                                         <div className="min-w-0 pb-1">
                                             <p className="text-sm font-semibold text-zinc-950">{statusLabel(event.toStatus, viewer)}</p>
-                                            <p className="mt-1 text-xs leading-5 text-zinc-500">{event.reason || event.locationLabel || 'Hệ thống đã cập nhật trạng thái vận chuyển.'}</p>
+                                            <p className="mt-1 text-xs leading-5 text-zinc-500">{formatEventReason(event.reason, event.toStatus, viewer, event.locationLabel)}</p>
                                             <p className="mt-1 text-[11px] text-zinc-400">{formatShipmentDate(event.occurredAt)}</p>
                                         </div>
                                     </div>
@@ -108,6 +108,27 @@ export function ShipmentTrackingCard({ shipment, sellerActions, viewer = 'custom
             </div>
         </section>
     );
+}
+
+// Chuyển mã reason từ GHN Test thành câu tiếng Việt dễ hiểu; UI không để lộ enum hoặc provider code cho khách hàng.
+function formatEventReason(
+    reason: string | null,
+    status: ShipmentStatus,
+    viewer: 'seller' | 'customer',
+    locationLabel: string | null,
+): string {
+    const providerReasonLabels: Record<string, string> = {
+        ready_to_pick: 'Shop đã chuẩn bị hàng, sẵn sàng bàn giao.',
+        picking: 'Shipper đang được điều phối đến lấy hàng.',
+        picked: 'Đơn vị vận chuyển đã nhận hàng từ shop.',
+        transporting: 'Đơn hàng đang được vận chuyển đến bạn.',
+        delivered: 'Đơn hàng đã được giao thành công.',
+        returning: 'Đơn hàng đang được hoàn về shop.',
+        returned: 'Đơn hàng đã được hoàn về shop.',
+        cancel: 'Vận đơn đã được hủy.',
+    };
+    const normalizedReason = reason?.trim().toLowerCase();
+    return (normalizedReason && providerReasonLabels[normalizedReason]) || reason?.trim() || locationLabel || statusLabel(status, viewer);
 }
 
 // Dùng label tiếng Việt ở timeline thay vì hiển thị enum kỹ thuật từ backend.

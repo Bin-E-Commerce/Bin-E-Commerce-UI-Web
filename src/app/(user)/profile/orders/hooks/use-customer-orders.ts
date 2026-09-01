@@ -15,20 +15,25 @@ import {
     getOrder,
     listOrders,
     type CustomerOrderListItem,
-    type CustomerOrderStage,
+    type CustomerOrderFilter,
 } from '@/services/order/order.api';
 import { useOrderProductImages } from '@/hooks/use-order-product-images';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // Query danh sách giữ dữ liệu trang trước trong lúc chuyển trang để giao diện không bị nhấp nháy.
 export function useCustomerOrders(
-    stage: CustomerOrderStage | undefined,
+    filter: CustomerOrderFilter,
     page: number,
     enabled = true,
 ) {
     return useQuery({
-        queryKey: ['customer-orders', stage ?? 'ALL', page],
-        queryFn: () => listOrders({ stage, page, pageSize: 10 }),
+        queryKey: [
+            'customer-orders',
+            filter.status ?? 'ALL_STATUS',
+            filter.stage ?? 'ALL_STAGES',
+            page,
+        ],
+        queryFn: () => listOrders({ ...filter, page, pageSize: 10 }),
         placeholderData: keepPreviousData,
         staleTime: 30_000,
         enabled,

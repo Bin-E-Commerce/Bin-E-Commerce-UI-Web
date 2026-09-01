@@ -14,7 +14,7 @@ export interface OrderResponse {
     id: string;
     orderNumber: string;
     status: 'PENDING' | 'CONFIRMED' | 'FAILED' | 'CANCELLED';
-    fulfillmentStatus?: 'TO_SHIP' | 'SHIPPING' | 'COMPLETED' | 'CANCELLED' | 'DELIVERY_FAILED' | 'RETURN_REFUND';
+    fulfillmentStatus?: 'TO_SHIP' | 'SHIPPING' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED' | 'DELIVERY_FAILED' | 'RETURN_REFUND';
     paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED';
     paymentMethod: 'COD';
     subtotal: string;
@@ -34,6 +34,15 @@ export interface OrderResponse {
     statusHistory: OrderStatusHistoryResponse[];
     warnings: string[];
     createdAt: string;
+    completedAt: string | null;
+    deliveryConfirmation: DeliveryConfirmationResponse;
+}
+
+export interface DeliveryConfirmationResponse {
+    status: 'PENDING' | 'CONFIRMED' | 'ISSUE_REPORTED' | 'AUTO_CONFIRMED';
+    method: 'CUSTOMER' | 'AUTO' | null;
+    deliveredAt: string | null;
+    deadline: string | null;
 }
 
 export interface OrderStatusHistoryResponse {
