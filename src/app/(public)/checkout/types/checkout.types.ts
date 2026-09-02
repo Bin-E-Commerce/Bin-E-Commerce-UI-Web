@@ -14,8 +14,15 @@ export interface OrderResponse {
     id: string;
     orderNumber: string;
     status: 'PENDING' | 'CONFIRMED' | 'FAILED' | 'CANCELLED';
-    fulfillmentStatus?: 'TO_SHIP' | 'SHIPPING' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED' | 'DELIVERY_FAILED' | 'RETURN_REFUND';
-    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED';
+    fulfillmentStatus?:
+        | 'TO_SHIP'
+        | 'SHIPPING'
+        | 'DELIVERED'
+        | 'COMPLETED'
+        | 'CANCELLED'
+        | 'DELIVERY_FAILED'
+        | 'RETURN_REFUND';
+    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
     paymentMethod: 'COD';
     subtotal: string;
     shippingFee: string;
@@ -24,9 +31,18 @@ export interface OrderResponse {
     note: string | null;
     shippingAddress: Pick<
         UserAddress,
-        'fullName' | 'phone' | 'province' | 'district' | 'ward' | 'street' |
-        'ghnProvinceId' | 'ghnProvinceName' | 'ghnDistrictId' | 'ghnDistrictName' |
-        'ghnWardCode' | 'ghnWardName'
+        | 'fullName'
+        | 'phone'
+        | 'province'
+        | 'district'
+        | 'ward'
+        | 'street'
+        | 'ghnProvinceId'
+        | 'ghnProvinceName'
+        | 'ghnDistrictId'
+        | 'ghnDistrictName'
+        | 'ghnWardCode'
+        | 'ghnWardName'
     > & { label?: string };
     items: OrderItemResponse[];
     cancelReason: string | null;

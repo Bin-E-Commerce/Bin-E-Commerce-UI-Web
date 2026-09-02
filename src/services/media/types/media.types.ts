@@ -1,3 +1,6 @@
+// File này định nghĩa hợp đồng upload media giữa Web và Media Service.
+// Purpose chỉ phục vụ avatar, sản phẩm, review và bằng chứng hoàn hàng; không còn chứng từ chuyển tiền.
+
 export type MediaUploadPurpose =
     | 'avatar'
     | 'product_image'
@@ -7,6 +10,8 @@ export type MediaUploadPurpose =
     | 'seller_document'
     | 'review_image'
     | 'review_video'
+    | 'return_image'
+    | 'return_video'
     | 'chat_image';
 
 export type MediaUploadMimeType =
@@ -52,7 +57,7 @@ export interface CleanupProductAssetsResponse {
     deletedCount: number;
 }
 
-export type ReviewMediaCleanupPurpose = 'review_image' | 'review_video';
+export type ReviewMediaCleanupPurpose = 'review_image' | 'review_video' | 'return_image' | 'return_video';
 
 export interface ReviewMediaCleanupAsset {
     assetId: string;

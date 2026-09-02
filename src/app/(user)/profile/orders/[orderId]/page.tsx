@@ -4,6 +4,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
     ArrowLeft,
     CalendarDays,
@@ -26,9 +27,18 @@ import { CancelOrderDialog } from '../components/cancel-order-dialog';
 import { CustomerShipmentPanel } from '@/common/shipping';
 import { OrderLifecycleStepper } from '@/common/orders';
 import { useCustomerTracking } from '@/hooks/use-shipment';
-import type { ShipmentStatus } from '@/services/shipping/shipping.api';
+import type {
+    ShipmentResponse,
+    ShipmentStatus,
+} from '@/services/shipping/shipping.api';
+import {
+    listOrderReturns,
+    type OrderReturnStatus,
+    type OrderReturnResponse,
+} from '@/services/order/order.api';
 import { DeliveryConfirmationCard } from './components/delivery-confirmation-card';
 import { OrderReviewPanel } from './components/order-review-panel';
+import { OrderReturnPanel } from './components/order-return-panel';
 
 // Format tiền snapshot theo locale Việt Nam, không thay đổi giá trị server đã chốt.
 function formatMoney(value: string): string {
@@ -47,14 +57,14 @@ function formatDate(value: string): string {
 function formatShippingAddress(address: Record<string, unknown>): string {
     return [address.street, address.ward, address.district, address.province]
         .map((value) => (typeof value === 'string' ? value : ''))
-        .filter(
-            (value) => Boolean(value) && value !== 'Không áp dụng',
-        )
+        .filter((value) => Boolean(value) && value !== 'Không áp dụng')
         .join(', ');
 }
 
 // Chọn trạng thái shipment đại diện để đơn nhiều shop vẫn tiến về bước cao nhất đang đạt được.
-function getCustomerShipmentStatus(statuses: ShipmentStatus[]): ShipmentStatus | null {
+function getCustomerShipmentStatus(
+    statuses: ShipmentStatus[],
+): ShipmentStatus | null {
     const statusRank: Record<ShipmentStatus, number> = {
         READY_TO_SHIP: 1,
         PICKUP_ASSIGNED: 2,
@@ -72,15 +82,115 @@ function getCustomerShipmentStatus(statuses: ShipmentStatus[]): ShipmentStatus |
     }, null);
 }
 
+// Xếp hạng tiến độ hoàn hàng để timeline không bị lùi về bước cũ khi order có nhiều request theo từng shop.
+const RETURN_PROGRESS_RANK: Record<OrderReturnResponse['status'], number> = {
+    CUSTOMER_CANCELLED: 0,
+    REJECTED: 0,
+    REQUESTED: 1,
+    APPROVED: 2,
+    AWAITING_SHIPMENT: 2,
+    IN_TRANSIT: 3,
+    SHIPMENT_FAILED: 3,
+    RECEIVED: 4,
+    REFUND_PENDING: 5,
+    INSPECTION_FAILED: 5,
+};
+
+// Chọn request đang hoạt động có tiến độ cao nhất; nếu cùng bước thì dùng bản cập nhật mới hơn để timeline không bị đứng/lùi.
+function getLatestReturnStatus(
+    returns: OrderReturnResponse[] | undefined,
+): OrderReturnResponse['status'] | null {
+    if (!returns?.length) return null;
+    const activeReturns = returns.filter(
+        (item) => !['REJECTED', 'CUSTOMER_CANCELLED'].includes(item.status),
+    );
+    const candidates = activeReturns.length > 0 ? activeReturns : returns;
+    return candidates.reduce((current, item) => {
+        if (!current) return item;
+        const itemRank = RETURN_PROGRESS_RANK[item.status];
+        const currentRank = RETURN_PROGRESS_RANK[current.status];
+        if (itemRank !== currentRank) {
+            return itemRank > currentRank ? item : current;
+        }
+        return item.updatedAt > current.updatedAt ? item : current;
+    }).status;
+}
+
+// Quy đổi trạng thái vận đơn chiều ngược về trạng thái yêu cầu để timeline dùng cùng một ngôn ngữ tiến độ.
+function getReturnStatusFromShipments(
+    shipments: ShipmentResponse[] | undefined,
+): OrderReturnStatus | null {
+    const returnStatusMap: Partial<Record<ShipmentStatus, OrderReturnStatus>> =
+        {
+            RETURNING: 'IN_TRANSIT',
+            RETURNED: 'RECEIVED',
+            FAILED: 'SHIPMENT_FAILED',
+        };
+    return (
+        (shipments ?? [])
+            .filter((shipment) => shipment.shipmentKind === 'RETURN')
+            .reduce<Pick<OrderReturnResponse, 'status' | 'updatedAt'> | null>(
+                (current, shipment) => {
+                    const status = returnStatusMap[shipment.status];
+                    if (!status) return current;
+                    const candidate: Pick<
+                        OrderReturnResponse,
+                        'status' | 'updatedAt'
+                    > = {
+                        status,
+                        updatedAt: shipment.updatedAt,
+                    };
+                    if (!current) return candidate;
+                    const candidateRank =
+                        RETURN_PROGRESS_RANK[candidate.status];
+                    const currentRank = RETURN_PROGRESS_RANK[current.status];
+                    if (candidateRank !== currentRank) {
+                        return candidateRank > currentRank
+                            ? candidate
+                            : current;
+                    }
+                    return candidate.updatedAt > current.updatedAt
+                        ? candidate
+                        : current;
+                },
+                null,
+            )?.status ?? null
+    );
+}
+
+// Đồng bộ request và vận đơn hoàn, tránh timeline hiển thị bước cũ khi hai API cập nhật lệch thời điểm.
+function getCustomerReturnStatus(
+    returns: OrderReturnResponse[] | undefined,
+    shipments: ShipmentResponse[] | undefined,
+): OrderReturnStatus | null {
+    const requestStatus = getLatestReturnStatus(returns);
+    const shipmentStatus = getReturnStatusFromShipments(shipments);
+    if (!requestStatus) return shipmentStatus;
+    if (!shipmentStatus) return requestStatus;
+    return RETURN_PROGRESS_RANK[shipmentStatus] >
+        RETURN_PROGRESS_RANK[requestStatus]
+        ? shipmentStatus
+        : requestStatus;
+}
+
 // Trang detail đọc order theo id trên URL, vì vậy refresh vẫn giữ đúng phạm vi order của Customer.
 export default function ProfileOrderDetailPage() {
     const params = useParams<{ orderId: string }>();
     const orderId = params.orderId;
     const orderQuery = useCustomerOrder(orderId);
     const cancelMutation = useCancelCustomerOrder(orderId);
-    const trackingStage = orderQuery.data?.fulfillmentStatus ?? orderQuery.data?.status;
-    const trackingEnabled = Boolean(orderQuery.data) && !['CANCELLED', 'DELIVERY_FAILED', 'RETURN_REFUND'].includes(trackingStage ?? '');
+    const trackingStage =
+        orderQuery.data?.fulfillmentStatus ?? orderQuery.data?.status;
+    const trackingEnabled =
+        Boolean(orderQuery.data) &&
+        !['CANCELLED', 'DELIVERY_FAILED'].includes(trackingStage ?? '');
     const trackingQuery = useCustomerTracking(orderId, trackingEnabled);
+    const returnsQuery = useQuery({
+        queryKey: ['order-returns', orderId],
+        queryFn: () => listOrderReturns(orderId),
+        staleTime: 15_000,
+        refetchOnMount: 'always',
+    });
     const legacyItemImages = useMissingProductImages(
         orderQuery.data?.items ?? [],
     );
@@ -111,6 +221,10 @@ export default function ProfileOrderDetailPage() {
     }
 
     const order = orderQuery.data;
+    const customerReturnStatus = getCustomerReturnStatus(
+        returnsQuery.data,
+        trackingQuery.data?.shipments,
+    );
     const shipmentStatus = getCustomerShipmentStatus(
         trackingQuery.data?.shipments.map((shipment) => shipment.status) ?? [],
     );
@@ -187,12 +301,14 @@ export default function ProfileOrderDetailPage() {
                         cancelledAt={order.cancelledAt}
                         cancelReason={order.cancelReason}
                         shipmentStatus={shipmentStatus}
+                        returnStatus={customerReturnStatus}
                     />
                 </header>
 
                 <div className="mt-5 space-y-5">
                     <DeliveryConfirmationCard order={order} />
                     <OrderReviewPanel order={order} />
+                    <OrderReturnPanel order={order} />
                 </div>
 
                 <div className="mt-5">
@@ -373,14 +489,22 @@ export default function ProfileOrderDetailPage() {
                             </div>
                         </div>
                         {order.cancelledAt ? (
-                            <div className="mt-5 rounded-2xl bg-red-50 p-3 text-xs leading-5 text-red-700">
-                                <p className="font-semibold">Đơn hàng đã hủy</p>
-                                <p className="mt-1">
-                                    {formatDate(order.cancelledAt)}
-                                    {order.cancelReason
-                                        ? ` · ${order.cancelReason}`
-                                        : ''}
+                            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-5 text-slate-600">
+                                <p className="font-semibold text-slate-950">
+                                    Đơn hàng đã hủy
                                 </p>
+                                <p className="mt-1">
+                                    Đã hủy lúc {formatDate(order.cancelledAt)}
+                                </p>
+                                <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                        Lý do hủy đơn hàng
+                                    </p>
+                                    <p className="mt-1 text-sm leading-6 text-slate-700">
+                                        {order.cancelReason?.trim() ||
+                                            'Chưa có lý do hủy được cung cấp.'}
+                                    </p>
+                                </div>
                             </div>
                         ) : null}
                     </aside>
