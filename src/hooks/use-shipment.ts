@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
     advanceDemoSellerShipment,
+    advanceDemoCustomerReturnShipment,
     cancelSellerShipment,
     createSellerShipment,
     getCustomerTracking,
@@ -43,13 +44,15 @@ export function useCustomerTracking(orderId: string, enabled = true) {
 }
 
 // Dùng chung invalidate/cache/toast cho các thao tác Seller shipment.
-function useSellerShipmentMutation<T>(orderId: string, mutationFn: () => Promise<T>, successMessage: string) {
+function useSellerShipmentMutation<T, TVariables = void>(orderId: string, mutationFn: (variables: TVariables) => Promise<T>, successMessage: string) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn,
         onSuccess: async (shipment) => {
             queryClient.setQueryData(shipmentKey('seller', orderId), shipment);
             await queryClient.invalidateQueries({ queryKey: ['seller-order-detail', orderId] });
+            await queryClient.invalidateQueries({ queryKey: ['seller-orders'] });
+            await queryClient.invalidateQueries({ queryKey: ['customer-orders'] });
             await queryClient.invalidateQueries({ queryKey: shipmentKey('customer', orderId) });
             toast.success(successMessage);
         },
@@ -69,12 +72,32 @@ export function useRefreshSellerShipment(orderId: string) {
 
 // Seller hủy shipment theo điều kiện GHN cho phép.
 export function useCancelSellerShipment(orderId: string) {
-    return useSellerShipmentMutation(orderId, () => cancelSellerShipment(orderId), 'Đã hủy vận đơn.');
+    return useSellerShipmentMutation(orderId, (reason: string) => cancelSellerShipment(orderId, reason), 'Đã hủy vận đơn và hoàn lại tồn kho.');
 }
 
 // Seller bỏ qua một chặng demo và cập nhật lại timeline/map từ response backend.
 export function useAdvanceDemoSellerShipment(orderId: string) {
     return useSellerShipmentMutation(orderId, () => advanceDemoSellerShipment(orderId), 'Đã chuyển sang chặng tiếp theo.');
+}
+
+// Customer mô phỏng một chặng hoàn hàng và làm mới cả yêu cầu hoàn lẫn tracking của order.
+export function useAdvanceDemoCustomerReturnShipment(orderId: string) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (returnId: string) => advanceDemoCustomerReturnShipment(returnId),
+        onSuccess: async (shipment) => {
+            queryClient.setQueryData(shipmentKey('customer', orderId), (current: { shipments: typeof shipment[] } | undefined) => {
+                if (!current) return { orderId, shipments: [shipment] };
+                const shipments = current.shipments.map((item) => item.id === shipment.id ? shipment : item);
+                return { ...current, shipments };
+            });
+            await queryClient.invalidateQueries({ queryKey: ['order-returns', orderId] });
+            await queryClient.invalidateQueries({ queryKey: ['seller-returns'] });
+            await queryClient.invalidateQueries({ queryKey: ['seller-order-detail', orderId] });
+            toast.success(shipment.status === 'RETURNED' ? 'Hàng hoàn đã về shop.' : 'Đã chuyển sang chặng hoàn tiếp theo.');
+        },
+        onError: (error) => toast.error(getErrorMessage(error)),
+    });
 }
 
 // Tải nhãn GHN và chọn đúng đuôi file theo content type server trả về.

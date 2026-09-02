@@ -27,6 +27,8 @@ export interface ShipmentRoutePoint {
 export interface ShipmentResponse {
     id: string;
     orderId: string;
+    shipmentKind: 'FORWARD' | 'RETURN';
+    returnRequestId: string | null;
     provider: 'GHN_TEST';
     trackingCode: string;
     providerStatusCode: number | null;
@@ -57,48 +59,98 @@ export interface CustomerTrackingResponse {
 }
 
 // Tạo vận đơn GHN Test cho shop hiện tại sau khi Seller chuẩn bị đơn.
-export async function createSellerShipment(orderId: string): Promise<ShipmentResponse> {
-    const response = await authorizedAxios.post<ShipmentResponse>(`${SELLER_ORDERS}/${orderId}/shipment`);
+export async function createSellerShipment(
+    orderId: string,
+): Promise<ShipmentResponse> {
+    const response = await authorizedAxios.post<ShipmentResponse>(
+        `${SELLER_ORDERS}/${orderId}/shipment`,
+    );
+    return response.data;
+}
+
+// Tạo vận đơn chiều ngược sau khi seller duyệt yêu cầu hoàn hàng.
+export async function createSellerReturnShipment(
+    returnId: string,
+): Promise<ShipmentResponse> {
+    const response = await authorizedAxios.post<ShipmentResponse>(
+        `${SELLER_ORDERS}/returns/${returnId}/shipment`,
+    );
     return response.data;
 }
 
 // Lấy shipment của seller hiện tại; 404 chỉ nghĩa là shop chưa tạo vận đơn.
-export async function getSellerShipment(orderId: string): Promise<ShipmentResponse | null> {
+export async function getSellerShipment(
+    orderId: string,
+): Promise<ShipmentResponse | null> {
     try {
-        const response = await authorizedAxios.get<ShipmentResponse>(`${SELLER_ORDERS}/${orderId}/shipment`);
+        const response = await authorizedAxios.get<ShipmentResponse>(
+            `${SELLER_ORDERS}/${orderId}/shipment`,
+        );
         return response.data;
     } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) return null;
+        if (axios.isAxiosError(error) && error.response?.status === 404)
+            return null;
         throw error;
     }
 }
 
 // Làm mới trạng thái từ GHN Test, không cho UI tự chuyển bước.
-export async function refreshSellerShipment(orderId: string): Promise<ShipmentResponse> {
-    const response = await authorizedAxios.post<ShipmentResponse>(`${SELLER_ORDERS}/${orderId}/shipment/refresh`);
+export async function refreshSellerShipment(
+    orderId: string,
+): Promise<ShipmentResponse> {
+    const response = await authorizedAxios.post<ShipmentResponse>(
+        `${SELLER_ORDERS}/${orderId}/shipment/refresh`,
+    );
     return response.data;
 }
 
 // Hủy vận đơn khi GHN chưa lấy hàng.
-export async function cancelSellerShipment(orderId: string): Promise<ShipmentResponse> {
-    const response = await authorizedAxios.post<ShipmentResponse>(`${SELLER_ORDERS}/${orderId}/shipment/cancel`);
+export async function cancelSellerShipment(
+    orderId: string,
+    reason: string,
+): Promise<ShipmentResponse> {
+    const response = await authorizedAxios.post<ShipmentResponse>(
+        `${SELLER_ORDERS}/${orderId}/shipment/cancel`,
+        { reason: reason.trim() },
+    );
     return response.data;
 }
 
 // Chuyển shipment sang chặng kế tiếp chỉ trong chế độ GHN Test để phục vụ demo.
-export async function advanceDemoSellerShipment(orderId: string): Promise<ShipmentResponse> {
-    const response = await authorizedAxios.post<ShipmentResponse>(`${SELLER_ORDERS}/${orderId}/shipment/demo/advance`);
+export async function advanceDemoSellerShipment(
+    orderId: string,
+): Promise<ShipmentResponse> {
+    const response = await authorizedAxios.post<ShipmentResponse>(
+        `${SELLER_ORDERS}/${orderId}/shipment/demo/advance`,
+    );
+    return response.data;
+}
+
+// Customer bỏ qua từng chặng reverse shipment; backend tự xác minh ownership bằng session hiện tại.
+export async function advanceDemoCustomerReturnShipment(
+    returnId: string,
+): Promise<ShipmentResponse> {
+    const response = await authorizedAxios.post<ShipmentResponse>(
+        `${ORDERS}/returns/${returnId}/shipment/demo/advance`,
+    );
     return response.data;
 }
 
 // Tải nhãn từ server để credential GHN không bao giờ nằm ở browser.
 export async function printSellerShipmentLabel(orderId: string): Promise<Blob> {
-    const response = await authorizedAxios.get<Blob>(`${SELLER_ORDERS}/${orderId}/shipment/label`, { responseType: 'blob' });
+    const response = await authorizedAxios.get<Blob>(
+        `${SELLER_ORDERS}/${orderId}/shipment/label`,
+        { responseType: 'blob' },
+    );
     return response.data;
 }
 
 // Customer lấy toàn bộ shipment sau khi backend kiểm tra owner của order.
-export async function getCustomerTracking(orderId: string): Promise<CustomerTrackingResponse> {
-    const response = await authorizedAxios.get<CustomerTrackingResponse>(`${ORDERS}/${orderId}/tracking`);
+export async function getCustomerTracking(
+    orderId: string,
+): Promise<CustomerTrackingResponse> {
+    const response = await authorizedAxios.get<CustomerTrackingResponse>(
+        `${ORDERS}/${orderId}/tracking`,
+    );
     return response.data;
 }
