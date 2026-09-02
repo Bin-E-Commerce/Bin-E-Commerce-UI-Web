@@ -1,3 +1,4 @@
+// File này ánh xạ detail Seller vào form chỉnh sửa và luôn ưu tiên tồn khả dụng từ Inventory.
 import type { SellerProductDetail } from '@/services/product';
 import type {
     ProductCreateAttributeValue,
@@ -26,9 +27,13 @@ export function toSellerProductEditFormValues(
 
     const variants = product.variants.map((variant) => {
         const choices = [...(variant.optionChoices ?? [])].sort(
-            (left, right) => left.optionValue.option.position - right.optionValue.option.position,
+            (left, right) =>
+                left.optionValue.option.position -
+                right.optionValue.option.position,
         );
-        const optionValueClientIds = choices.map((choice) => choice.optionValueId);
+        const optionValueClientIds = choices.map(
+            (choice) => choice.optionValueId,
+        );
         return {
             id: variant.id,
             key: optionValueClientIds.join('|') || 'default',
@@ -39,16 +44,21 @@ export function toSellerProductEditFormValues(
             withoutGtin: variant.withoutGtin ?? !variant.gtin,
             price: variant.price,
             originalPrice: variant.originalPrice ?? '',
-            stockQuantity: String(variant.stockQuantity),
+            // Khi edit, ô kho phải phản ánh đúng số lượng có thể bán hiện tại,
+            // không dùng stockQuantity là snapshot tổng vật lý đã cũ sau các lần reserve/release.
+            stockQuantity: String(variant.inventory?.quantityAvailable ?? 0),
             imageUrl: variant.imageUrl ?? '',
         };
     });
 
     const attributes = Object.fromEntries(
         product.attributeValues.map((attribute) => {
-            const selectedOptionIds = Array.isArray(attribute.metadata?.selectedOptionIds)
+            const selectedOptionIds = Array.isArray(
+                attribute.metadata?.selectedOptionIds,
+            )
                 ? attribute.metadata.selectedOptionIds.filter(
-                      (optionId): optionId is string => typeof optionId === 'string',
+                      (optionId): optionId is string =>
+                          typeof optionId === 'string',
                   )
                 : [];
             return [
@@ -85,7 +95,8 @@ export function toSellerProductEditFormValues(
                   assetId: product.videoAssetId ?? '',
                   publicUrl: product.videoUrl,
                   previewUrl: product.videoUrl,
-                  fileName: product.videoUrl.split('/').pop() || 'product-video',
+                  fileName:
+                      product.videoUrl.split('/').pop() || 'product-video',
                   durationSeconds: product.videoDurationSeconds ?? 10,
               }
             : null,

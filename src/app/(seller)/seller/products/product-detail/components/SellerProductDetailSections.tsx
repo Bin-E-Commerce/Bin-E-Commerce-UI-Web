@@ -133,7 +133,9 @@ function VariantRow({ variant }: { variant: ProductVariant }) {
                 ) : null}
             </td>
             <td className="px-4 py-4 font-semibold text-zinc-950">
-                {variant.stockQuantity.toLocaleString('vi-VN')}
+                {(variant.inventory?.quantityAvailable ?? 0).toLocaleString(
+                    'vi-VN',
+                )}
             </td>
             <td className="px-4 py-4">
                 <span

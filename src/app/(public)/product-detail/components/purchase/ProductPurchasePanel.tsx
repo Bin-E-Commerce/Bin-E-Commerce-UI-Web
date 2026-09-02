@@ -26,6 +26,8 @@ import {
 import { cn } from '@/lib/utils';
 import type { ProductDetail } from '@/services/product';
 import { useAddCartItem } from '@/app/(public)/cart/hooks/use-add-cart-item';
+import { useCart } from '@/app/(public)/cart/hooks/use-cart';
+import { useUpdateCartItem } from '@/app/(public)/cart/hooks/use-cart-item-actions';
 import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
 import { useProductPurchase } from '../../hooks/useProductPurchase';
 import { ProductOptionSelector } from './ProductOptionSelector';
@@ -39,6 +41,8 @@ interface ProductPurchasePanelProps {
 export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const purchase = useProductPurchase(product);
     const addCartItemMutation = useAddCartItem();
+    const cartQuery = useCart();
+    const updateCartItemMutation = useUpdateCartItem();
     const pathname = usePathname();
     const router = useRouter();
     const { isAuthenticated, getProtectedHref } = useCartAuthRedirect();
@@ -56,7 +60,10 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const canAddToCart =
         product.originType === 'INTERNAL' &&
         Boolean(purchase.selectedVariant) &&
-        purchase.availableStock > 0;
+        purchase.availableStock > 0 &&
+        (!isAuthenticated || !cartQuery.isLoading);
+    const isCartMutationPending =
+        addCartItemMutation.isPending || updateCartItemMutation.isPending;
 
     // Chỉ gửi product/variant/quantity; Cart Service sẽ kiểm tra lại toàn bộ snapshot và tồn kho trước khi lưu.
     function handleAddToCart(): void {
@@ -76,6 +83,23 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
 
         if (!isAuthenticated) {
             router.push(getProtectedHref(productPath));
+            return;
+        }
+
+        const existingItem = cartQuery.data?.items.find(
+            (item) => item.variantId === purchase.selectedVariant?.id,
+        );
+        if (existingItem) {
+            // Mua ngay là số lượng cuối cùng người dùng chọn, không cộng lại với dòng hàng đã có trong giỏ.
+            updateCartItemMutation.mutate(
+                {
+                    itemId: existingItem.id,
+                    quantity: purchase.quantity,
+                },
+                {
+                    onSuccess: () => router.push('/checkout'),
+                },
+            );
             return;
         }
 
@@ -193,7 +217,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                 {!isAuthenticated && canAddToCart ? (
                     <Link
                         href={getProtectedHref(productPath)}
-                            className={buttonVariants({
+                        className={buttonVariants({
                             variant: 'outline',
                             size: 'lg',
                             className:
@@ -208,7 +232,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                         type="button"
                         variant="outline"
                         size="lg"
-                        disabled={!canAddToCart || addCartItemMutation.isPending}
+                        disabled={!canAddToCart || isCartMutationPending}
                         onClick={handleAddToCart}
                         className="h-12 !border-2 !border-zinc-950 text-zinc-950 hover:bg-zinc-950 hover:text-white"
                     >
@@ -231,32 +255,28 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     >
                         Xem nơi bán
                     </a>
+                ) : !isAuthenticated ? (
+                    <Link
+                        href={getProtectedHref(productPath)}
+                        className={buttonVariants({
+                            size: 'lg',
+                            className: 'h-12 bg-zinc-950 hover:bg-zinc-800',
+                        })}
+                    >
+                        Mua ngay
+                    </Link>
                 ) : (
-                    !isAuthenticated ? (
-                        <Link
-                            href={getProtectedHref(productPath)}
-                            className={buttonVariants({
-                                size: 'lg',
-                                className: 'h-12 bg-zinc-950 hover:bg-zinc-800',
-                            })}
-                        >
-                            Mua ngay
-                        </Link>
-                    ) : (
-                        <Button
-                            type="button"
-                            size="lg"
-                            disabled={
-                                !canAddToCart || addCartItemMutation.isPending
-                            }
-                            onClick={handleBuyNow}
-                            className="h-12 bg-zinc-950 hover:bg-zinc-800"
-                        >
-                            {addCartItemMutation.isPending
-                                ? 'Đang chuẩn bị...'
-                                : 'Mua ngay'}
-                        </Button>
-                    )
+                    <Button
+                        type="button"
+                        size="lg"
+                        disabled={!canAddToCart || isCartMutationPending}
+                        onClick={handleBuyNow}
+                        className="h-12 bg-zinc-950 hover:bg-zinc-800"
+                    >
+                        {isCartMutationPending
+                            ? 'Đang chuẩn bị...'
+                            : 'Mua ngay'}
+                    </Button>
                 )}
             </div>
         </section>

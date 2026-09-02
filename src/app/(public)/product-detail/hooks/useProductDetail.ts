@@ -31,6 +31,8 @@ export function useProductDetail(productId: string) {
         queryFn: () => fetchProductDetail(productId),
         // Chờ xác định phiên đăng nhập để API detail gắn đúng likedByCurrentUser sau refresh.
         enabled: Boolean(productId) && initialized,
-        staleTime: 5 * 60_000,
+        // Lượt bán thay đổi theo trạng thái đơn; không giữ cache 5 phút để số đơn hoàn/hủy phản ánh ngay.
+        staleTime: 0,
+        refetchOnWindowFocus: true,
     });
 }

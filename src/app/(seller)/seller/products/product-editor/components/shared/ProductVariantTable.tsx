@@ -24,7 +24,7 @@ export function ProductVariantTable({
                         <th className="w-44 px-3 py-3">Phân loại</th>
                         <th className="w-36 px-3 py-3">Giá bán *</th>
                         <th className="w-36 px-3 py-3">Giá gốc</th>
-                        <th className="w-28 px-3 py-3">Kho *</th>
+                        <th className="w-28 px-3 py-3">Kho khả dụng *</th>
                         <th className="w-40 px-3 py-3">SKU</th>
                         <th className="w-44 px-3 py-3">GTIN</th>
                         <th className="w-36 px-3 py-3">Không có GTIN</th>
@@ -54,7 +54,9 @@ export function ProductVariantTable({
                                             )
                                         }
                                     />
-                                    <FieldError message={errors?.price?.message} />
+                                    <FieldError
+                                        message={errors?.price?.message}
+                                    />
                                 </td>
                                 <td className="px-3 py-3">
                                     <Input
@@ -130,7 +132,9 @@ export function ProductVariantTable({
                                             )
                                         }
                                     />
-                                    <FieldError message={errors?.gtin?.message} />
+                                    <FieldError
+                                        message={errors?.gtin?.message}
+                                    />
                                 </td>
                                 <td className="px-3 py-4">
                                     <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600">

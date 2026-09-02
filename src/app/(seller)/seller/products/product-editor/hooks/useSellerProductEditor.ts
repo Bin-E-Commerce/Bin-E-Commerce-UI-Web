@@ -9,11 +9,17 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import type { CatalogCategory } from '@/services/catalog';
 import { catalogService } from '@/services/catalog';
-import type { CreateSellerProductStatus, ProductBrand } from '@/services/product';
+import type {
+    CreateSellerProductStatus,
+    ProductBrand,
+} from '@/services/product';
 import { sellerProductService } from '@/services/product';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { PRODUCT_CREATE_STEPS } from '../constants/product-create-steps.constant';
-import { initialSellerProductCreateValues, sellerProductCreateSchema } from '../schemas/seller-product-create.schema';
+import {
+    initialSellerProductCreateValues,
+    sellerProductCreateSchema,
+} from '../schemas/seller-product-create.schema';
 import type {
     ProductCreateAttributeValue,
     SellerProductCreateFormValues,
@@ -55,7 +61,10 @@ function createEmptyAttributeValue(): ProductCreateAttributeValue {
 
 // Chỉ các field của bước hiện tại được trigger khi người dùng bấm “Tiếp tục”.
 // Các bước còn lại vẫn giữ nguyên trong React Hook Form nhờ shouldUnregister=false.
-const STEP_FIELDS: Record<ProductCreateStepId, FieldPath<SellerProductCreateFormValues>[]> = {
+const STEP_FIELDS: Record<
+    ProductCreateStepId,
+    FieldPath<SellerProductCreateFormValues>[]
+> = {
     basic: ['images', 'name', 'categoryId'],
     details: ['brandId', 'description', 'attributes'],
     sales: ['options', 'variants'],
@@ -67,6 +76,13 @@ const STEP_FIELDS: Record<ProductCreateStepId, FieldPath<SellerProductCreateForm
     ],
     other: ['condition', 'countryOfOrigin', 'sellerSku', 'gtin'],
 };
+
+// Chọn bước mở đầu từ query để thao tác “Cập nhật tồn kho” đi thẳng tới bảng SKU.
+function getInitialEditorStep(value: string | null): ProductCreateStepId {
+    return PRODUCT_CREATE_STEPS.some((step) => step.id === value)
+        ? (value as ProductCreateStepId)
+        : 'basic';
+}
 
 // Điều phối dữ liệu tham chiếu, trạng thái wizard và thao tác tạo product graph.
 // Hook này không tự quyết định rule riêng lẻ; checklist, điều hướng và submit đều dùng validator dùng chung.
@@ -84,46 +100,86 @@ export function useSellerProductEditor(productId?: string) {
         reValidateMode: 'onChange',
         shouldUnregister: false,
     });
-    const [references, setReferences] = useState<SellerProductCreateReferences>({
-        category: null,
-        brand: null,
-        attributes: [],
-    });
+    const [references, setReferences] = useState<SellerProductCreateReferences>(
+        {
+            category: null,
+            brand: null,
+            attributes: [],
+        },
+    );
     const [loadingAttributes, setLoadingAttributes] = useState(false);
-    const [submittingStatus, setSubmittingStatus] = useState<ProductSubmitAction | null>(null);
+    const [submittingStatus, setSubmittingStatus] =
+        useState<ProductSubmitAction | null>(null);
     const [loadingProduct, setLoadingProduct] = useState(isEditMode);
     const hydratedProductId = useRef<string | null>(null);
     const [activeStep, setActiveStep] = useState<ProductCreateStepId>('basic');
     const draftHydrated = useRef(false);
-    const watchedValues = useWatch({ control: form.control }) as SellerProductCreateFormValues;
+    const watchedValues = useWatch({
+        control: form.control,
+    }) as SellerProductCreateFormValues;
     const options = useWatch({ control: form.control, name: 'options' });
     const variants = useWatch({ control: form.control, name: 'variants' });
 
+    // Đọc query sau hydration để tránh mismatch SSR, đồng thời mở đúng bước bán hàng từ menu tồn kho.
+    useEffect(() => {
+        if (!isEditMode) return;
+        const requestedStep = new URLSearchParams(window.location.search).get(
+            'step',
+        );
+        const initialStep = getInitialEditorStep(requestedStep);
+        if (initialStep === 'basic') return;
+
+        let isMounted = true;
+        queueMicrotask(() => {
+            if (!isMounted) return;
+            setActiveStep(initialStep);
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isEditMode]);
+
     // Hydrate một lần từ detail và schema category để wizard edit giữ đúng giá trị động seller đã lưu.
     useEffect(() => {
-        if (!productId || !detailQuery.data || hydratedProductId.current === productId) return;
+        if (
+            !productId ||
+            !detailQuery.data ||
+            hydratedProductId.current === productId
+        )
+            return;
         hydratedProductId.current = productId;
         setLoadingProduct(true);
         void (async () => {
             try {
                 const [category, attributes] = await Promise.all([
                     catalogService.getCategory(detailQuery.data.categoryId),
-                    catalogService.listCategoryAttributes(detailQuery.data.categoryId, {
-                        includeOptions: true,
-                        includeConditional: true,
-                    }),
+                    catalogService.listCategoryAttributes(
+                        detailQuery.data.categoryId,
+                        {
+                            includeOptions: true,
+                            includeConditional: true,
+                        },
+                    ),
                 ]);
-                const editValues = toSellerProductEditFormValues(detailQuery.data);
+                const editValues = toSellerProductEditFormValues(
+                    detailQuery.data,
+                );
                 // Bổ sung field rỗng cho attribute mới của category để schema động vẫn render đủ và bắt buộc nhập đúng.
                 editValues.attributes = Object.fromEntries(
                     attributes.map((attribute) => [
                         attribute.id,
-                        editValues.attributes[attribute.id] ?? createEmptyAttributeValue(),
+                        editValues.attributes[attribute.id] ??
+                            createEmptyAttributeValue(),
                     ]),
                 );
                 form.reset(editValues);
                 setReferences({
-                    category: { id: category.id, name: category.name, path: category.path },
+                    category: {
+                        id: category.id,
+                        name: category.name,
+                        path: category.path,
+                    },
                     brand: detailQuery.data.brand ?? null,
                     attributes,
                 });
@@ -161,10 +217,16 @@ export function useSellerProductEditor(productId?: string) {
     }, [form, isEditMode]);
 
     const validations = useMemo<ProductCreateStepValidations>(
-        () => getProductCreateStepValidations(watchedValues, references.attributes),
+        () =>
+            getProductCreateStepValidations(
+                watchedValues,
+                references.attributes,
+            ),
         [watchedValues, references.attributes],
     );
-    const allStepsValid = PRODUCT_CREATE_STEPS.every((step) => validations[step.id].valid);
+    const allStepsValid = PRODUCT_CREATE_STEPS.every(
+        (step) => validations[step.id].valid,
+    );
 
     // Chuyển bước và đưa viewport về đầu workspace để section mới luôn bắt đầu ở vị trí dễ hiểu.
     // Không dùng window.scrollTo({ top: 0 }) vì header/layout có thể có chiều cao khác nhau;
@@ -172,18 +234,24 @@ export function useSellerProductEditor(productId?: string) {
     const changeStep = (step: ProductCreateStepId) => {
         setActiveStep(step);
         window.requestAnimationFrame(() => {
-            document.getElementById('product-create-workspace')?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-            });
+            document
+                .getElementById('product-create-workspace')
+                ?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                });
         });
     };
 
     // Đồng bộ danh sách SKU sinh tự động với nhóm phân loại nhưng không ghi đè giá trị seller đã nhập.
     useEffect(() => {
         const nextVariants = buildProductVariants(options, variants);
-        const currentSignature = variants.map((variant) => `${variant.key}:${variant.label}`).join(',');
-        const nextSignature = nextVariants.map((variant) => `${variant.key}:${variant.label}`).join(',');
+        const currentSignature = variants
+            .map((variant) => `${variant.key}:${variant.label}`)
+            .join(',');
+        const nextSignature = nextVariants
+            .map((variant) => `${variant.key}:${variant.label}`)
+            .join(',');
 
         // Chỉ thay ma trận SKU khi nhóm hoặc giá trị phân loại thực sự đổi để tránh vòng lặp render.
         if (currentSignature !== nextSignature) {
@@ -196,27 +264,44 @@ export function useSellerProductEditor(productId?: string) {
 
     // Chọn category lá, tải thuộc tính động và khởi tạo value rỗng cho từng thuộc tính.
     const selectCategory = async (category: CatalogCategory) => {
-        form.setValue('categoryId', category.id, { shouldDirty: true, shouldValidate: true });
+        form.setValue('categoryId', category.id, {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
         // Xóa thuộc tính của ngành hàng cũ ngay khi seller đổi ngành hàng.
         // Nếu giữ lại object cũ, các option ID không còn thuộc category mới sẽ bị gửi xuống Product Service.
-        form.setValue('attributes', {}, { shouldDirty: true, shouldValidate: false });
+        form.setValue(
+            'attributes',
+            {},
+            { shouldDirty: true, shouldValidate: false },
+        );
         form.clearErrors('categoryId');
         setReferences((current) => ({
             ...current,
-            category: { id: category.id, name: category.name, path: category.path },
+            category: {
+                id: category.id,
+                name: category.name,
+                path: category.path,
+            },
             attributes: [],
         }));
         setLoadingAttributes(true);
 
         try {
-            const attributes = await catalogService.listCategoryAttributes(category.id, {
-                includeOptions: true,
-                includeConditional: true,
-            });
+            const attributes = await catalogService.listCategoryAttributes(
+                category.id,
+                {
+                    includeOptions: true,
+                    includeConditional: true,
+                },
+            );
             form.setValue(
                 'attributes',
                 Object.fromEntries(
-                    attributes.map((attribute) => [attribute.id, createEmptyAttributeValue()]),
+                    attributes.map((attribute) => [
+                        attribute.id,
+                        createEmptyAttributeValue(),
+                    ]),
                 ),
                 { shouldDirty: true },
             );
@@ -234,17 +319,25 @@ export function useSellerProductEditor(productId?: string) {
 
     // Đồng bộ brand được chọn vào ID gửi API và object hiển thị trong combobox.
     const selectBrand = (brand: ProductBrand | null) => {
-        form.setValue('brandId', brand?.id ?? '', { shouldDirty: true, shouldValidate: true });
+        form.setValue('brandId', brand?.id ?? '', {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
         setReferences((current) => ({ ...current, brand }));
     };
 
     // Ghi lỗi thuộc tính động vào đúng field để seller thấy ngay option nào sai hoặc còn thiếu.
     const applyDynamicAttributeErrors = (): boolean => {
-        const validation = validateDynamicAttributes(form.getValues(), references.attributes);
+        const validation = validateDynamicAttributes(
+            form.getValues(),
+            references.attributes,
+        );
 
         // Xoá lỗi custom cũ trước khi ghi lại kết quả mới, tránh giữ thông báo sau khi seller đã sửa.
         for (const attribute of references.attributes) {
-            form.clearErrors(`attributes.${attribute.id}` as FieldPath<SellerProductCreateFormValues>);
+            form.clearErrors(
+                `attributes.${attribute.id}` as FieldPath<SellerProductCreateFormValues>,
+            );
         }
         for (const fieldError of validation.fieldErrors) {
             form.setError(fieldError.fieldName, {
@@ -257,9 +350,14 @@ export function useSellerProductEditor(productId?: string) {
     };
 
     // Chạy cả Zod và rule thuộc tính do Catalog trả về; đây là cổng duy nhất trước khi sang bước kế tiếp.
-    const validateStep = async (step: ProductCreateStepId): Promise<boolean> => {
-        const schemaValid = await form.trigger(STEP_FIELDS[step], { shouldFocus: true });
-        const dynamicValid = step === 'details' ? applyDynamicAttributeErrors() : true;
+    const validateStep = async (
+        step: ProductCreateStepId,
+    ): Promise<boolean> => {
+        const schemaValid = await form.trigger(STEP_FIELDS[step], {
+            shouldFocus: true,
+        });
+        const dynamicValid =
+            step === 'details' ? applyDynamicAttributeErrors() : true;
         // Đọc lại form sau trigger để không dùng snapshot cũ trong render trước đó.
         const currentValidations = getProductCreateStepValidations(
             form.getValues(),
@@ -270,8 +368,12 @@ export function useSellerProductEditor(productId?: string) {
 
     // Khi nhảy tới bước sau, buộc hoàn thành tuần tự các bước đứng trước để không tạo product graph thiếu dữ liệu.
     const goToStep = async (targetStep: ProductCreateStepId) => {
-        const targetIndex = PRODUCT_CREATE_STEPS.findIndex((step) => step.id === targetStep);
-        const activeIndex = PRODUCT_CREATE_STEPS.findIndex((step) => step.id === activeStep);
+        const targetIndex = PRODUCT_CREATE_STEPS.findIndex(
+            (step) => step.id === targetStep,
+        );
+        const activeIndex = PRODUCT_CREATE_STEPS.findIndex(
+            (step) => step.id === activeStep,
+        );
 
         if (targetIndex <= activeIndex) {
             changeStep(targetStep);
@@ -294,10 +396,14 @@ export function useSellerProductEditor(productId?: string) {
 
     // Kiểm tra bước hiện tại rồi chuyển sang bước kế tiếp, giữ nguyên dữ liệu đã nhập ở các bước trước.
     const goNext = async () => {
-        const currentIndex = PRODUCT_CREATE_STEPS.findIndex((step) => step.id === activeStep);
+        const currentIndex = PRODUCT_CREATE_STEPS.findIndex(
+            (step) => step.id === activeStep,
+        );
         const currentStep = PRODUCT_CREATE_STEPS[currentIndex];
         if (!currentStep || !(await validateStep(currentStep.id))) {
-            toast.error('Vui lòng hoàn thiện các trường bắt buộc của bước này.');
+            toast.error(
+                'Vui lòng hoàn thiện các trường bắt buộc của bước này.',
+            );
             return;
         }
 
@@ -307,7 +413,9 @@ export function useSellerProductEditor(productId?: string) {
 
     // Quay lại bước trước mà không reset form, giúp seller kiểm tra và sửa dữ liệu nhanh.
     const goBack = () => {
-        const currentIndex = PRODUCT_CREATE_STEPS.findIndex((step) => step.id === activeStep);
+        const currentIndex = PRODUCT_CREATE_STEPS.findIndex(
+            (step) => step.id === activeStep,
+        );
         const previousStep = PRODUCT_CREATE_STEPS[currentIndex - 1];
         if (previousStep) changeStep(previousStep.id);
     };
@@ -330,7 +438,9 @@ export function useSellerProductEditor(productId?: string) {
             for (const step of PRODUCT_CREATE_STEPS) {
                 if (!(await validateStep(step.id))) {
                     changeStep(step.id);
-                    toast.error(`Vui lòng hoàn thiện bước “${step.label}” trước khi đăng bán.`);
+                    toast.error(
+                        `Vui lòng hoàn thiện bước “${step.label}” trước khi đăng bán.`,
+                    );
                     return;
                 }
             }
@@ -338,7 +448,9 @@ export function useSellerProductEditor(productId?: string) {
             const schemaValid = await form.trigger();
             const dynamicValid = applyDynamicAttributeErrors();
             if (!schemaValid || !dynamicValid) {
-                toast.error('Thông tin sản phẩm chưa hợp lệ. Vui lòng kiểm tra lại các trường báo lỗi.');
+                toast.error(
+                    'Thông tin sản phẩm chưa hợp lệ. Vui lòng kiểm tra lại các trường báo lỗi.',
+                );
                 return;
             }
 
@@ -358,7 +470,9 @@ export function useSellerProductEditor(productId?: string) {
                         queryClient.invalidateQueries({
                             queryKey: ['seller', 'product-detail', productId],
                         }),
-                        queryClient.invalidateQueries({ queryKey: ['seller-products'] }),
+                        queryClient.invalidateQueries({
+                            queryKey: ['seller-products'],
+                        }),
                     ]);
                     toast.success('Sản phẩm đã được cập nhật.');
                     router.push(`/seller/products/${productId}`);

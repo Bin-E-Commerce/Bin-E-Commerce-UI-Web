@@ -26,15 +26,29 @@ export function ProductSalesSection({ form }: ProductSalesSectionProps) {
         >
             <div className="space-y-7">
                 <div>
-                    <h3 className="mb-3 text-sm font-semibold text-zinc-950">Phân loại hàng</h3>
+                    <h3 className="mb-3 text-sm font-semibold text-zinc-950">
+                        Phân loại hàng
+                    </h3>
                     <ProductOptionBuilder form={form} options={options} />
-                    {typeof optionError === 'string' ? <p className="mt-2 text-xs text-red-600">{optionError}</p> : null}
+                    {typeof optionError === 'string' ? (
+                        <p className="mt-2 text-xs text-red-600">
+                            {optionError}
+                        </p>
+                    ) : null}
                 </div>
 
                 <div className="border-t border-zinc-200 pt-6">
-                    <h3 className="text-sm font-semibold text-zinc-950">Danh sách SKU</h3>
-                    <p className="mb-3 mt-1 text-xs text-zinc-500">{variants.length} phân loại có thể bán</p>
-                    <ProductVariantBulkEditor form={form} variantCount={variants.length} />
+                    <h3 className="text-sm font-semibold text-zinc-950">
+                        Danh sách SKU
+                    </h3>
+                    <p className="mb-3 mt-1 text-xs text-zinc-500">
+                        {variants.length} phân loại có thể bán · Kho khả dụng là
+                        số lượng đang bán được ngay
+                    </p>
+                    <ProductVariantBulkEditor
+                        form={form}
+                        variantCount={variants.length}
+                    />
                     <ProductVariantTable form={form} variants={variants} />
                 </div>
             </div>

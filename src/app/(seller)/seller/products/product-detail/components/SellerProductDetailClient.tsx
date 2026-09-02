@@ -10,7 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSellerProductDetail } from '../hooks/useSellerProductDetail';
 import { SellerProductDetailHero } from './SellerProductDetailHero';
 import { SellerProductDetailSections } from './SellerProductDetailSections';
-import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../product-shared/components/SellerProductStatusDialog';
+import {
+    SellerProductStatusDialog,
+    type SellerProductStatusTarget,
+} from '../../product-shared/components/SellerProductStatusDialog';
 import { useChangeSellerProductStatus } from '../../product-shared/hooks/useChangeSellerProductStatus';
 import type { SellerProductPublicationStatus } from '@/services/product';
 
@@ -20,8 +23,10 @@ export function SellerProductDetailClient() {
     const productId =
         typeof params.productId === 'string' ? params.productId : undefined;
     const query = useSellerProductDetail(productId);
-    const [statusTarget, setStatusTarget] = useState<SellerProductStatusTarget | null>(null);
-    const [targetStatus, setTargetStatus] = useState<SellerProductPublicationStatus | null>(null);
+    const [statusTarget, setStatusTarget] =
+        useState<SellerProductStatusTarget | null>(null);
+    const [targetStatus, setTargetStatus] =
+        useState<SellerProductPublicationStatus | null>(null);
     const statusMutation = useChangeSellerProductStatus();
 
     if (query.isLoading) return <SellerProductDetailSkeleton />;
@@ -56,13 +61,18 @@ export function SellerProductDetailClient() {
     const product = query.data;
     // Tổng hợp tồn kho ở cấp variant để seller nhìn đúng số lượng có thể xử lý đơn.
     const totalStock = product.variants.reduce(
-        (total, variant) => total + Math.max(variant.stockQuantity, 0),
+        (total, variant) =>
+            total + Math.max(variant.inventory?.quantityAvailable ?? 0, 0),
         0,
     );
 
     // Mở cùng dialog xác nhận với danh sách để hai điểm thao tác có hành vi và thông điệp nhất quán.
     const openStatusDialog = (nextStatus: SellerProductPublicationStatus) => {
-        setStatusTarget({ id: product.id, name: product.name, status: product.status });
+        setStatusTarget({
+            id: product.id,
+            name: product.name,
+            status: product.status,
+        });
         setTargetStatus(nextStatus);
     };
 

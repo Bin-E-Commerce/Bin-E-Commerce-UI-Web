@@ -58,13 +58,16 @@ export function ProductVariantBulkEditor({
                 min="0"
                 step="1"
                 value={stockQuantity}
-                placeholder="Tồn kho chung"
+                placeholder="Tồn khả dụng chung"
                 onChange={(event) => setStockQuantity(event.target.value)}
             />
             <Button
                 type="button"
                 variant="outline"
-                disabled={variantCount === 0 || (!price && !originalPrice && !stockQuantity)}
+                disabled={
+                    variantCount === 0 ||
+                    (!price && !originalPrice && !stockQuantity)
+                }
                 onClick={applyToAllVariants}
             >
                 <ListChecks className="size-4" />

@@ -1,3 +1,4 @@
+// File này gom các thao tác sản phẩm và mở nhanh đúng khu vực tồn kho khi seller cần nhập hàng.
 'use client';
 
 import Link from 'next/link';
@@ -6,6 +7,7 @@ import {
     ArchiveRestore,
     Eye,
     MoreHorizontal,
+    PackageCheck,
     Pencil,
     Power,
     Trash2,
@@ -38,7 +40,9 @@ export function SellerProductActionsMenu({
     onChangeStatus,
 }: SellerProductActionsMenuProps) {
     const canUpdate = useSessionPermission('seller.product.update');
-    const canChangeStatus = useSessionPermission('seller.product.status.update');
+    const canChangeStatus = useSessionPermission(
+        'seller.product.status.update',
+    );
     const canDelete = useSessionPermission('seller.product.delete');
     const canRestore = useSessionPermission('seller.product.restore');
 
@@ -72,7 +76,10 @@ export function SellerProductActionsMenu({
                                 className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-800 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100"
                                 onSelect={() => onRestore(product)}
                             >
-                                <ArchiveRestore className="size-4 text-zinc-600" aria-hidden="true" />
+                                <ArchiveRestore
+                                    className="size-4 text-zinc-600"
+                                    aria-hidden="true"
+                                />
                                 Khôi phục sản phẩm
                             </DropdownMenu.Item>
                         ) : null
@@ -83,17 +90,37 @@ export function SellerProductActionsMenu({
                                     href={`/seller/products/${product.id}`}
                                     className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100"
                                 >
-                                    <Eye className="size-4 text-zinc-500" aria-hidden="true" />
+                                    <Eye
+                                        className="size-4 text-zinc-500"
+                                        aria-hidden="true"
+                                    />
                                     Xem chi tiết
                                 </Link>
                             </DropdownMenu.Item>
                             {canUpdate ? (
                                 <DropdownMenu.Item asChild>
                                     <Link
+                                        href={`/seller/products/${product.id}/edit?step=sales`}
+                                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100"
+                                    >
+                                        <PackageCheck
+                                            className="size-4 text-zinc-500"
+                                            aria-hidden="true"
+                                        />
+                                        Cập nhật tồn kho
+                                    </Link>
+                                </DropdownMenu.Item>
+                            ) : null}
+                            {canUpdate ? (
+                                <DropdownMenu.Item asChild>
+                                    <Link
                                         href={`/seller/products/${product.id}/edit`}
                                         className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100"
                                     >
-                                        <Pencil className="size-4 text-zinc-500" aria-hidden="true" />
+                                        <Pencil
+                                            className="size-4 text-zinc-500"
+                                            aria-hidden="true"
+                                        />
                                         Chỉnh sửa sản phẩm
                                     </Link>
                                 </DropdownMenu.Item>
@@ -104,7 +131,9 @@ export function SellerProductActionsMenu({
                                     onSelect={() =>
                                         onChangeStatus(
                                             product,
-                                            getNextSellerProductStatus(product.status),
+                                            getNextSellerProductStatus(
+                                                product.status,
+                                            ),
                                         )
                                     }
                                 >
@@ -129,7 +158,10 @@ export function SellerProductActionsMenu({
                                         className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 outline-none transition-colors hover:bg-red-50 focus:bg-red-50"
                                         onSelect={() => onDelete(product)}
                                     >
-                                        <Trash2 className="size-4" aria-hidden="true" />
+                                        <Trash2
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
                                         Xóa sản phẩm
                                     </DropdownMenu.Item>
                                 </>

@@ -44,6 +44,7 @@ export function useHomeData() {
     return useQuery({
         queryKey: ['home', 'catalog-preview'],
         queryFn: fetchHomeData,
-        staleTime: 5 * 60_000,
+        // Card sản phẩm hiển thị lượt bán nên cần lấy lại dữ liệu sau khi đơn chuyển trạng thái.
+        staleTime: 30_000,
     });
 }

@@ -33,13 +33,20 @@ function matchesSelectedValues(
     );
 }
 
+// Dùng đúng số lượng có thể bán sau khi trừ các sản phẩm đang được giữ cho đơn khác.
+function getAvailableStock(variant: ProductVariant | null): number {
+    return Math.max(0, variant?.inventory?.quantityAvailable ?? 0);
+}
+
 // Quản lý lựa chọn SKU và số lượng, đồng thời chặn số lượng vượt quá tồn kho của variant hiện tại.
-export function useProductPurchase(product: ProductDetail): ProductPurchaseState {
+export function useProductPurchase(
+    product: ProductDetail,
+): ProductPurchaseState {
     const sellableVariants = product.variants.filter(
         (variant) => variant.status === 'ACTIVE',
     );
     const initialVariant =
-        sellableVariants.find((variant) => variant.stockQuantity > 0) ??
+        sellableVariants.find((variant) => getAvailableStock(variant) > 0) ??
         sellableVariants[0] ??
         null;
     const [selectedVariant, setSelectedVariant] =
@@ -48,12 +55,7 @@ export function useProductPurchase(product: ProductDetail): ProductPurchaseState
         Record<string, string>
     >(() => getInitialValueIds(initialVariant));
     const [quantity, setQuantityState] = useState(1);
-    const availableStock = Math.max(
-        0,
-        selectedVariant?.inventory?.quantityAvailable ??
-            selectedVariant?.stockQuantity ??
-            0,
-    );
+    const availableStock = getAvailableStock(selectedVariant);
 
     // Cập nhật một nhóm option rồi tìm variant khớp toàn bộ lựa chọn để giá và tồn kho đổi cùng lúc.
     function selectOptionValue(optionId: string, valueId: string): void {
