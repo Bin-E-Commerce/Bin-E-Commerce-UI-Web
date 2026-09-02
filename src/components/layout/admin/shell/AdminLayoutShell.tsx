@@ -23,10 +23,16 @@ interface AdminLayoutShellProps {
 // Khung layout dùng chung cho mọi trang admin: kiểm tra đăng nhập, quyền và render shell quản trị.
 // Layout chỉ điều hướng UI; API vẫn phải được backend bảo vệ bằng permission guard tương ứng.
 export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    // Gắn trạng thái menu với route hiện tại để đổi trang tự ẩn menu trong lúc render,
+    // tránh gọi setState đồng bộ bên trong effect và tạo thêm một vòng render không cần thiết.
+    const [sidebarState, setSidebarState] = useState({
+        pathname: '',
+        open: false,
+    });
     const { user, initialized } = useSelector((state: RootState) => state.auth);
     const router = useRouter();
     const pathname = usePathname();
+    const sidebarOpen = sidebarState.pathname === pathname && sidebarState.open;
     const hasAnyAdminAccess = canAccessAdmin(user);
     const hasCurrentPathAccess = canAccessAdminPath(pathname, user);
 
@@ -36,10 +42,6 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
             router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
         }
     }, [initialized, pathname, router, user]);
-
-    useEffect(() => {
-        setSidebarOpen(false);
-    }, [pathname]);
 
     useEffect(() => {
         if (!initialized || !user) return;
@@ -59,7 +61,14 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
                     : ADMIN_ACCESS_DENIED_PATH,
             );
         }
-    }, [hasAnyAdminAccess, hasCurrentPathAccess, initialized, pathname, router, user]);
+    }, [
+        hasAnyAdminAccess,
+        hasCurrentPathAccess,
+        initialized,
+        pathname,
+        router,
+        user,
+    ]);
 
     if (!initialized || !user) return null;
 
@@ -81,7 +90,7 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
                         type="button"
                         className="absolute inset-0 bg-zinc-950/45"
                         aria-label="Đóng menu quản trị"
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={() => setSidebarState({ pathname, open: false })}
                     />
                     <div className="relative h-full w-80 max-w-[86vw] bg-white shadow-2xl">
                         <Button
@@ -90,11 +99,13 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
                             size="icon"
                             className="absolute right-3 top-3 z-10"
                             aria-label="Đóng menu quản trị"
-                            onClick={() => setSidebarOpen(false)}
+                            onClick={() => setSidebarState({ pathname, open: false })}
                         >
                             <X className="size-5" />
                         </Button>
-                        <AdminSidebar onNavigate={() => setSidebarOpen(false)} />
+                        <AdminSidebar
+                            onNavigate={() => setSidebarState({ pathname, open: false })}
+                        />
                     </div>
                 </div>
             ) : null}
@@ -104,7 +115,7 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
                     userName={user.name}
                     userRole={user.role}
                     avatarUrl={user.avatarUrl}
-                    onOpenSidebar={() => setSidebarOpen(true)}
+                    onOpenSidebar={() => setSidebarState({ pathname, open: true })}
                 />
                 <main className="mx-auto w-full min-w-0 max-w-[1600px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                     {children}

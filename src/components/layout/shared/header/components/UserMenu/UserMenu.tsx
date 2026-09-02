@@ -5,6 +5,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 
 import type { RootState } from '@/store';
+import { getUserDisplayName } from '@/services/auth';
 import { UserMenuSkeleton } from './UserMenuSkeleton';
 import { UserMenuGuest } from './UserMenuGuest';
 import { UserMenuDropdown } from './UserMenuDropdown';
@@ -21,7 +22,8 @@ export function UserMenu() {
         return <UserMenuGuest />;
     }
 
-    const initials = user.name
+    const displayName = getUserDisplayName(user);
+    const initials = displayName
         .split(' ')
         .map((word) => word[0])
         .slice(-2)
@@ -38,7 +40,7 @@ export function UserMenu() {
                     {user.avatarUrl ? (
                         <img
                             src={user.avatarUrl}
-                            alt={user.name}
+                            alt={displayName}
                             className="h-8 w-8 rounded-full object-cover"
                         />
                     ) : (
@@ -47,14 +49,14 @@ export function UserMenu() {
                         </span>
                     )}
                     <span className="hidden max-w-30 truncate lg:block">
-                        {user.name}
+                        {displayName}
                     </span>
                     <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
                 </button>
             </DropdownMenu.Trigger>
 
             <UserMenuDropdown
-                name={user.name}
+                name={displayName}
                 email={user.email}
                 user={user}
             />

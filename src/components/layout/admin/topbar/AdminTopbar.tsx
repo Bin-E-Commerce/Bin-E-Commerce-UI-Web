@@ -1,3 +1,6 @@
+// File này hiển thị topbar quản trị và các thao tác tài khoản cấp khung ứng dụng.
+// Component không quyết định quyền nghiệp vụ; sidebar và backend chịu trách nhiệm đó.
+
 'use client';
 
 import Link from 'next/link';
@@ -17,6 +20,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getUserDisplayName } from '@/services/auth';
 import type { AppDispatch } from '@/store';
 import { logoutUser } from '@/store/slices/authSlice';
 import { NotificationBell } from '@/common/notifications';
@@ -37,6 +41,9 @@ export function AdminTopbar({
 }: AdminTopbarProps) {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
+    const displayName = getUserDisplayName({
+        name: userName,
+    });
 
     // Đăng xuất khỏi Admin Center và đưa người dùng về màn hình đăng nhập.
     async function handleLogout() {
@@ -92,7 +99,7 @@ export function AdminTopbar({
                                 <AdminAvatar avatarUrl={avatarUrl} />
                                 <span className="hidden min-w-0 sm:block">
                                     <span className="block max-w-32 truncate text-sm font-medium text-zinc-800">
-                                        {userName}
+                                        {displayName}
                                     </span>
                                     <span className="block text-[11px] uppercase tracking-wide text-zinc-400">
                                         {userRole}
@@ -109,7 +116,7 @@ export function AdminTopbar({
                             >
                                 <div className="px-3 py-2">
                                     <p className="truncate text-sm font-semibold text-zinc-950">
-                                        {userName}
+                                        {displayName}
                                     </p>
                                     <p className="mt-0.5 text-xs uppercase tracking-wide text-zinc-400">
                                         {userRole}
