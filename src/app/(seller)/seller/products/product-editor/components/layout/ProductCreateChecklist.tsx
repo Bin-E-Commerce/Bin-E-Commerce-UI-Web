@@ -10,7 +10,10 @@ import { Check, Circle, CircleAlert } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { PRODUCT_CREATE_STEPS } from '../../constants/product-create-steps.constant';
-import type { ProductCreateStepId, ProductCreateStepValidations } from '../../types/product-create-step.type';
+import type {
+    ProductCreateStepId,
+    ProductCreateStepValidations,
+} from '../../types/product-create-step.type';
 
 interface ProductCreateChecklistProps {
     activeStep: ProductCreateStepId;
@@ -20,8 +23,12 @@ interface ProductCreateChecklistProps {
 
 // Tính phần trăm hoàn thành từ cùng bộ validation mà form đang sử dụng,
 // nhờ đó thanh tiến độ không bị lệch khi seller chuyển bước hoặc chỉnh sửa dữ liệu.
-function getCompletionPercentage(validations: ProductCreateStepValidations): number {
-    const completedCount = PRODUCT_CREATE_STEPS.filter((step) => validations[step.id].valid).length;
+function getCompletionPercentage(
+    validations: ProductCreateStepValidations,
+): number {
+    const completedCount = PRODUCT_CREATE_STEPS.filter(
+        (step) => validations[step.id].valid,
+    ).length;
 
     return Math.round((completedCount / PRODUCT_CREATE_STEPS.length) * 100);
 }
@@ -51,22 +58,6 @@ export function ProductCreateChecklist({
                         </span>
                     </div>
                 </div>
-
-                <div className="flex w-full items-center gap-3 lg:max-w-[260px]">
-                    <div
-                        className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-zinc-100"
-                        role="progressbar"
-                        aria-label="Tiến độ hoàn thiện sản phẩm"
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={completion}
-                    >
-                        <div
-                            className="h-full rounded-full bg-zinc-950 transition-[width] duration-300"
-                            style={{ width: `${completion}%` }}
-                        />
-                    </div>
-                </div>
             </div>
 
             <nav
@@ -82,17 +73,17 @@ export function ProductCreateChecklist({
                             ? 'Đã hoàn tất'
                             : errorCount > 1
                               ? `${validation.errors[0]} (+${errorCount - 1})`
-                              : validation.errors[0] ?? step.description;
+                              : (validation.errors[0] ?? step.description);
 
                         return (
                             <li key={step.id} className="min-w-0">
                                 <button
                                     type="button"
                                     className={cn(
-                                        'flex min-h-[4.25rem] w-full min-w-0 items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors',
+                                        'flex min-h-[4.25rem] w-full min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-[background-color,border-color,box-shadow,color]',
                                         active
-                                            ? 'bg-zinc-950 text-white shadow-sm'
-                                            : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950',
+                                            ? 'border-zinc-950 bg-zinc-50 text-zinc-950 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.45)]'
+                                            : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 hover:text-zinc-950',
                                     )}
                                     onClick={() => onStepChange(step.id)}
                                     aria-current={active ? 'step' : undefined}
@@ -102,7 +93,7 @@ export function ProductCreateChecklist({
                                         className={cn(
                                             'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border',
                                             active
-                                                ? 'border-white/30 bg-white/10 text-white'
+                                                ? 'border-zinc-950 bg-zinc-950 text-white'
                                                 : validation.valid
                                                   ? 'border-zinc-950 bg-zinc-950 text-white'
                                                   : validation.errors.length > 0
@@ -122,13 +113,17 @@ export function ProductCreateChecklist({
                                     </span>
                                     <span className="min-w-0 flex-1">
                                         <span className="block break-words text-sm font-semibold leading-5">
-                                            <span className="mr-1 text-xs font-medium opacity-60">{index + 1}.</span>
+                                            <span className="mr-1 text-xs font-medium opacity-60">
+                                                {index + 1}.
+                                            </span>
                                             {step.label}
                                         </span>
                                         <span
                                             className={cn(
                                                 'mt-1 block break-words text-xs leading-4',
-                                                active ? 'text-zinc-300' : 'text-zinc-500',
+                                                active
+                                                    ? 'text-zinc-600'
+                                                    : 'text-zinc-500',
                                             )}
                                         >
                                             {statusText}
@@ -142,7 +137,8 @@ export function ProductCreateChecklist({
             </nav>
 
             <p className="border-t border-zinc-100 px-4 py-3 text-xs leading-5 text-zinc-500 sm:px-5">
-                Chỉ có thể đăng bán khi các trường bắt buộc và từng SKU đều hợp lệ.
+                Chỉ có thể đăng bán khi các trường bắt buộc và từng SKU đều hợp
+                lệ.
             </p>
         </section>
     );
