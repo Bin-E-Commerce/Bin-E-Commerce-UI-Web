@@ -53,7 +53,7 @@ export function SellerOrdersPageContent() {
                     <div>
                         <p className="text-xs text-zinc-500">Tổng đơn hàng</p>
                         <p className="text-sm font-semibold tabular-nums text-zinc-950">
-                            {data?.total ?? 0} đơn
+                            {data?.counts?.all ?? data?.total ?? 0} đơn
                         </p>
                     </div>
                 </div>
@@ -62,6 +62,7 @@ export function SellerOrdersPageContent() {
             <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <SellerOrderFilters
                     status={status}
+                    counts={data?.counts}
                     search={search}
                     refreshing={ordersQuery.isFetching}
                     onStatusChange={changeStatus}

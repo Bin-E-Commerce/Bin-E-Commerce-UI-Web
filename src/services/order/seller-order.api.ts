@@ -3,6 +3,7 @@
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 import type { CustomerOrderStage, CustomerOrderStatus } from './order.api';
+import type { OrderReturnResponse, OrderReturnStatus } from './order.api';
 
 const SELLER_ORDERS = `${API_BASE_URL}${API_VERSION}/seller/orders`;
 
@@ -22,7 +23,8 @@ export interface SellerOrderListItem {
     id: string;
     orderNumber: string;
     status: SellerOrderStatus;
-    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED';
+    paymentStatus?:
+        'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
     fulfillmentStatus?: SellerOrderStage;
     paymentMethod: 'COD';
     shopItemTotal: string;
@@ -39,6 +41,18 @@ export interface SellerOrderListResponse {
     page: number;
     pageSize: number;
     totalPages: number;
+    counts: SellerOrderTabCounts;
+}
+
+// Số lượng theo từng bước Seller; returnRefund chỉ gồm yêu cầu Seller còn phải duyệt hoặc kiểm tra.
+export interface SellerOrderTabCounts {
+    all: number;
+    toShip: number;
+    shipping: number;
+    delivered: number;
+    completed: number;
+    cancelled: number;
+    returnRefund: number;
 }
 
 export interface SellerOrderItem {
@@ -58,7 +72,8 @@ export interface SellerOrderResponse {
     orderNumber: string;
     status: SellerOrderStatus;
     fulfillmentStatus?: SellerOrderStage;
-    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING' | 'REFUNDED';
+    paymentStatus?:
+        'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
     paymentMethod: 'COD';
     shopItemTotal: string;
     shippingFee: string;
@@ -112,6 +127,50 @@ export async function getSellerOrder(
 ): Promise<SellerOrderResponse> {
     const response = await authorizedAxios.get<SellerOrderResponse>(
         `${SELLER_ORDERS}/${orderId}`,
+    );
+    return response.data;
+}
+
+// Lấy queue hoàn hàng theo shop hiện tại; backend tự áp dụng shop scope từ session.
+export async function listSellerReturns(
+    status?: OrderReturnStatus,
+): Promise<OrderReturnResponse[]> {
+    const response = await authorizedAxios.get<OrderReturnResponse[]>(
+        `${SELLER_ORDERS}/returns`,
+        {
+            params: status ? { status } : undefined,
+        },
+    );
+    return response.data;
+}
+
+// Seller duyệt hoặc từ chối một yêu cầu hoàn hàng.
+export async function reviewSellerReturn(
+    returnId: string,
+    approved: boolean,
+    note?: string,
+): Promise<OrderReturnResponse> {
+    const response = await authorizedAxios.post<OrderReturnResponse>(
+        `${SELLER_ORDERS}/returns/${returnId}/${approved ? 'approve' : 'reject'}`,
+        {
+            note: note?.trim() || undefined,
+        },
+    );
+    return response.data;
+}
+
+// Seller ghi nhận kết quả kiểm tra kiện hàng đã hoàn về kho.
+export async function inspectSellerReturn(
+    returnId: string,
+    passed: boolean,
+    note?: string,
+): Promise<OrderReturnResponse> {
+    const response = await authorizedAxios.post<OrderReturnResponse>(
+        `${SELLER_ORDERS}/returns/${returnId}/inspection`,
+        {
+            passed,
+            note: note?.trim() || undefined,
+        },
     );
     return response.data;
 }

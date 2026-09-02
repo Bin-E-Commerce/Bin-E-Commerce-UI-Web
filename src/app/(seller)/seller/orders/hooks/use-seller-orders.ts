@@ -11,6 +11,23 @@ import {
     type SellerOrderStage,
 } from '@/services/order/seller-order.api';
 
+const SELLER_STAGE_FILTERS: SellerOrderStatus[] = [
+    'TO_SHIP',
+    'SHIPPING',
+    'DELIVERED',
+    'COMPLETED',
+    'CANCELLED',
+    'DELIVERY_FAILED',
+    'RETURN_REFUND',
+];
+
+// Phân biệt order status và fulfillment stage trước khi tạo query để backend không nhận DELIVERED ở tham số status.
+function isSellerStageFilter(
+    status: SellerOrderStatus,
+): status is SellerOrderStage {
+    return SELLER_STAGE_FILTERS.includes(status);
+}
+
 // Đồng bộ state filter với query key để mỗi tổ hợp shop/status/search/page được cache riêng và chuyển trang mượt.
 export function useSellerOrders() {
     const [status, setStatus] = useState<SellerOrderStatus | undefined>();
@@ -20,16 +37,21 @@ export function useSellerOrders() {
 
     const ordersQuery = useQuery({
         queryKey: ['seller-orders', status, deferredSearch, page],
-        queryFn: () =>
-            listSellerOrders({
-                status: status && !['TO_SHIP', 'SHIPPING', 'COMPLETED', 'CANCELLED', 'DELIVERY_FAILED', 'RETURN_REFUND'].includes(status) ? status : undefined,
-                stage: status && ['TO_SHIP', 'SHIPPING', 'COMPLETED', 'CANCELLED', 'DELIVERY_FAILED', 'RETURN_REFUND'].includes(status) ? status as SellerOrderStage : undefined,
+        queryFn: () => {
+            const stageFilter =
+                status && isSellerStageFilter(status) ? status : undefined;
+
+            return listSellerOrders({
+                status: status && !stageFilter ? status : undefined,
+                stage: stageFilter,
                 search: deferredSearch,
                 page,
                 pageSize: 10,
-            }),
+            });
+        },
         placeholderData: keepPreviousData,
         staleTime: 30_000,
+        refetchOnMount: 'always',
     });
 
     // Đổi search luôn quay về trang đầu để không giữ page cũ vượt quá kết quả mới.

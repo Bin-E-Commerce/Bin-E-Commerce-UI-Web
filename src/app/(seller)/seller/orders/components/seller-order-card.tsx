@@ -1,7 +1,7 @@
 // Card này trình bày một order theo góc nhìn shop: ảnh, item, số lượng và tổng tiền riêng shop.
 
 import Link from 'next/link';
-import { ArrowRight, CalendarDays, CircleX, Package } from 'lucide-react';
+import { ArrowRight, CalendarDays, Package } from 'lucide-react';
 
 import type { SellerOrderListItem } from '@/services/order/seller-order.api';
 import { SellerOrderProductImage } from './seller-order-product-image';
@@ -10,6 +10,7 @@ import {
     formatSellerOrderDate,
 } from '../utils/seller-order-format';
 import { cn } from '@/lib/utils';
+import { SellerOrderStatusBadge } from './seller-order-status-badge';
 
 interface SellerOrderCardProps {
     order: SellerOrderListItem;
@@ -18,8 +19,9 @@ interface SellerOrderCardProps {
 
 // Tạo card có vùng click rõ ràng, đồng thời giữ CTA detail để desktop và mobile đều dễ thao tác.
 export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
-    // Đơn đã hủy dùng nền trung tính và trạng thái dạng metadata để người dùng vẫn nhận biết rõ nhưng card không bị nặng bởi badge.
-    const isCancelled = order.status === 'CANCELLED';
+    // Ưu tiên fulfillment stage vì đây là trạng thái vận hành mà Seller cần xử lý.
+    const lifecycleStatus = order.fulfillmentStatus ?? order.status;
+    const isCancelled = lifecycleStatus === 'CANCELLED';
 
     return (
         <Link
@@ -44,13 +46,10 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    {isCancelled ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                            <CircleX className="size-3.5 text-zinc-400" />
-                            Đã hủy
-                        </span>
-                    ) : null}
-                    <span className="text-xs font-medium text-zinc-500">COD</span>
+                    <SellerOrderStatusBadge status={lifecycleStatus} />
+                    <span className="text-xs font-medium text-zinc-500">
+                        COD
+                    </span>
                 </div>
             </div>
 
@@ -61,7 +60,11 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                             order.previewItems.map((item, index) => (
                                 <SellerOrderProductImage
                                     key={`${order.id}-${item.productName}-${index}`}
-                                    src={item.imageUrl ?? legacyImages.get(item.productId) ?? null}
+                                    src={
+                                        item.imageUrl ??
+                                        legacyImages.get(item.productId) ??
+                                        null
+                                    }
                                     alt={item.productName}
                                 />
                             ))
@@ -74,14 +77,17 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                     </div>
                     <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-zinc-950">
-                            {order.previewItems[0]?.productName ?? 'Sản phẩm trong đơn hàng'}
+                            {order.previewItems[0]?.productName ??
+                                'Sản phẩm trong đơn hàng'}
                         </p>
                         <p className="mt-1 truncate text-sm text-zinc-500">
-                            {order.previewItems[0]?.variantName || 'Sản phẩm của shop'}
+                            {order.previewItems[0]?.variantName ||
+                                'Sản phẩm của shop'}
                         </p>
                         {order.previewItems.length < order.itemCount ? (
                             <p className="mt-1 text-xs text-zinc-400">
-                                Và {order.itemCount - order.previewItems.length} sản phẩm khác
+                                Và {order.itemCount - order.previewItems.length}{' '}
+                                sản phẩm khác
                             </p>
                         ) : null}
                     </div>
