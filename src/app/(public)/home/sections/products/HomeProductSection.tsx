@@ -1,6 +1,7 @@
 import type { PublicProduct } from '@/services/product';
 import { cn } from '@/lib/utils';
 import { ProductCard } from '@/app/(public)/products/components/ProductCard';
+import type { ReactNode } from 'react';
 
 interface HomeProductSectionProps {
     id?: string;
@@ -10,6 +11,7 @@ interface HomeProductSectionProps {
     products: PublicProduct[];
     mode: 'rail' | 'grid';
     ranked?: boolean;
+    footer?: ReactNode;
 }
 
 // Dùng chung bố cục danh sách sản phẩm để các section nhất quán mà không nhân đôi markup.
@@ -21,14 +23,12 @@ export function HomeProductSection({
     products,
     mode,
     ranked = false,
+    footer,
 }: HomeProductSectionProps) {
     if (products.length === 0) return null;
 
     return (
-        <section
-            id={id}
-            className="mt-3 border-y border-zinc-200 bg-white"
-        >
+        <section id={id} className="mt-3 border-y border-zinc-200 bg-white">
             <div className="mx-auto max-w-7xl">
                 <div className="flex min-h-20 flex-col justify-center gap-1 border-b border-zinc-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                     <div>
@@ -60,6 +60,11 @@ export function HomeProductSection({
                         />
                     ))}
                 </div>
+                {footer ? (
+                    <div className="border-t border-zinc-200 px-4 py-4 sm:px-6">
+                        {footer}
+                    </div>
+                ) : null}
             </div>
         </section>
     );

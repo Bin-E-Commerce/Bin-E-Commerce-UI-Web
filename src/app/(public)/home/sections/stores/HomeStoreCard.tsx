@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { Store } from 'lucide-react';
 
 import type { HomeShopSummary } from '../../types/home.types';
@@ -13,7 +14,10 @@ export function HomeStoreCard({ shop }: HomeStoreCardProps) {
     const avatarUrl = getShopAvatarUrl(shop.avatarUrl);
 
     return (
-        <article className="group flex min-h-56 flex-col items-center justify-center border-b border-r border-zinc-100 p-4 text-center transition-colors hover:bg-zinc-50">
+        <Link
+            href={`/shop/${shop.slug}`}
+            className="group flex min-h-56 flex-col items-center justify-center border-b border-r border-zinc-100 p-4 text-center transition-colors hover:bg-zinc-50"
+        >
             <div className="relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-white text-zinc-900 shadow-sm transition-colors group-hover:border-zinc-400">
                 {avatarUrl ? (
                     <Image
@@ -35,6 +39,6 @@ export function HomeStoreCard({ shop }: HomeStoreCardProps) {
                     {shop.productCount} sản phẩm nổi bật
                 </p>
             </div>
-        </article>
+        </Link>
     );
 }

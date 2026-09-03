@@ -6,7 +6,8 @@ import { catalogService } from '@/services/catalog';
 import { productService } from '@/services/product';
 import type { HomeData } from '../types/home.types';
 
-const HOME_PRODUCT_LIMIT = 24;
+// Tải đủ dữ liệu cho các section đầu trang và 24 sản phẩm gợi ý.
+const HOME_PRODUCT_LIMIT = 36;
 const HOME_CATEGORY_LIMIT = 20;
 
 // Tải song song sản phẩm và danh mục để homepage không tạo waterfall giữa hai service độc lập.

@@ -4,6 +4,7 @@ import { useHomeData } from './hooks/useHomeData';
 import { HomeCampaignSection } from './sections/campaign/HomeCampaignSection';
 import { HomeCategorySection } from './sections/categories/HomeCategorySection';
 import { HomeProductSection } from './sections/products/HomeProductSection';
+import { HomeRecommendationSection } from './sections/recommendations/HomeRecommendationSection';
 import { HomeErrorState } from './sections/states/HomeErrorState';
 import { HomePageSkeleton } from './sections/states/HomePageSkeleton';
 import { HomeStoreSection } from './sections/stores/HomeStoreSection';
@@ -31,7 +32,7 @@ export function HomePageContent() {
         (product) => !featuredIds.has(product.id),
     );
     const topSearchProducts = remainingProducts.slice(0, 6);
-    const recommendationProducts = remainingProducts.slice(6, 18);
+    const recommendationProducts = remainingProducts.slice(6, 30);
     const shops = collectFeaturedShops(products, 5);
 
     return (
@@ -64,13 +65,9 @@ export function HomePageContent() {
                 />
             ) : null}
             {recommendationProducts.length > 0 ? (
-                <HomeProductSection
-                    id="recommendations"
-                    eyebrow="Dành cho bạn"
-                    title="Gợi ý hôm nay"
-                    description="Khám phá thêm sản phẩm mới từ các gian hàng trên Bin E-Commerce."
+                <HomeRecommendationSection
                     products={recommendationProducts}
-                    mode="grid"
+                    hasMoreProducts={totalProducts > products.length}
                 />
             ) : null}
         </div>
