@@ -1,3 +1,4 @@
+// File này tập trung các quy tắc trình bày dữ liệu sản phẩm public, không chứa logic gọi API hoặc thay đổi dữ liệu gốc.
 import type { PublicProduct } from '@/services/product';
 
 const PRICE_FORMATTER = new Intl.NumberFormat('vi-VN', {
