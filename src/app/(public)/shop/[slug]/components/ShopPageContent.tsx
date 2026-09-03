@@ -37,18 +37,25 @@ export function ShopPageContent({ slug }: { slug: string }) {
     );
     const profileQuery = usePublicShopProfile(slug);
     const profile = profileQuery.data;
+    const shopType = profile?.shopType ?? 'INTERNAL';
     const isActive = profile?.shop.status === 'active';
     const catalogQuery = usePublicShopCatalog(
         profile?.shop.id,
         filters,
         isActive,
+        shopType,
     );
-    const summaryQuery = usePublicShopSummary(profile?.shop.id, isActive);
+    const summaryQuery = usePublicShopSummary(
+        profile?.shop.id,
+        isActive,
+        shopType,
+    );
     const followMutation = useShopFollowMutation(slug);
 
     // Giữ return URL để guest đăng nhập xong quay lại đúng shop và bộ lọc đang xem.
     function handleFollow() {
         if (!initialized) return;
+        if (profile?.shopType === 'EXTERNAL') return;
         if (!isAuthenticated) {
             router.push(
                 `/login?redirect=${encodeURIComponent(`${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`)}`,
@@ -89,6 +96,7 @@ export function ShopPageContent({ slug }: { slug: string }) {
                     summary={summaryQuery.data}
                     followPending={
                         !initialized ||
+                        profile.shopType === 'EXTERNAL' ||
                         followMutation.follow.isPending ||
                         followMutation.unfollow.isPending
                     }

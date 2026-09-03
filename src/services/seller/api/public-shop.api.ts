@@ -3,7 +3,10 @@
 
 import { API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
-import type { PublicShopResponse } from '../types/public-shop.types';
+import type {
+    PublicShopListResponse,
+    PublicShopResponse,
+} from '../types/public-shop.types';
 
 // Encode identifier để slug có ký tự đặc biệt không làm vỡ path khi adapter gọi API.
 const shopEndpoint = (identifier: string) =>
@@ -11,6 +14,12 @@ const shopEndpoint = (identifier: string) =>
 
 // Adapter giữ toàn bộ URL và HTTP method của public shop ở một boundary duy nhất.
 export const publicShopService = {
+    // Đọc danh sách shop active cho trang khám phá; backend đã phân trang và chỉ trả dữ liệu public.
+    list: (params: { page?: number; pageSize?: number; search?: string } = {}) =>
+        authorizedAxios
+            .get<PublicShopListResponse>(`${API_VERSION}/shops`, { params })
+            .then((response) => response.data),
+
     // Đọc hồ sơ public và trạng thái follow hiện tại của viewer.
     getBySlug: (slug: string) =>
         authorizedAxios

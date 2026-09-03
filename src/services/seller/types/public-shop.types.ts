@@ -4,6 +4,7 @@
 export type PublicShopStatus = 'active' | 'suspended' | 'closed';
 
 export interface PublicShopResponse {
+    shopType?: 'INTERNAL' | 'EXTERNAL';
     shop: {
         id: string;
         slug: string;
@@ -27,4 +28,19 @@ export interface PublicShopResponse {
         lastActiveAt: string | null;
     };
     isFollowing: boolean;
+}
+
+export interface PublicShopListItem {
+    shop: Omit<PublicShopResponse['shop'], 'status'> & {
+        status: PublicShopStatus;
+    };
+    stats: Pick<PublicShopResponse['stats'], 'followerCount' | 'followingCount'>;
+}
+
+export interface PublicShopListResponse {
+    items: PublicShopListItem[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
 }

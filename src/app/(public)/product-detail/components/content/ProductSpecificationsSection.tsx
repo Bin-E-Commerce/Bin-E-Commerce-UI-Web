@@ -16,7 +16,6 @@ export function ProductSpecificationsSection({
         ...(product.brand?.name
             ? [{ id: 'brand', label: 'Thương hiệu', value: product.brand.name }]
             : []),
-        { id: 'origin', label: 'Nguồn dữ liệu', value: product.sourcePlatform?.toUpperCase() ?? 'Bin E-Commerce' },
         ...specifications,
     ];
 
@@ -37,7 +36,10 @@ export function ProductSpecificationsSection({
             </div>
             <dl className="divide-y divide-zinc-100 px-5 py-2 sm:px-7">
                 {rows.map((row) => (
-                    <div key={row.id} className="grid gap-1 py-3 sm:grid-cols-[180px_1fr] sm:gap-5">
+                    <div
+                        key={row.id}
+                        className="grid gap-1 py-3 sm:grid-cols-[180px_1fr] sm:gap-5"
+                    >
                         <dt className="text-sm text-zinc-500">{row.label}</dt>
                         <dd className="break-words text-sm font-medium text-zinc-900">
                             {row.value}

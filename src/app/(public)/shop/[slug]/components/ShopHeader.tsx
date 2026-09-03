@@ -94,18 +94,20 @@ export function ShopHeader({
                         </div>
                     </div>
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-2">
-                    <Button
-                        type="button"
-                        disabled={followPending || !isAvailable}
-                        onClick={onFollow}
-                        variant={profile.isFollowing ? 'outline' : 'default'}
-                    >
-                        {profile.isFollowing
-                            ? 'Đang theo dõi'
-                            : 'Theo dõi shop'}
-                    </Button>
-                </div>
+                {profile.shopType !== 'EXTERNAL' ? (
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                        <Button
+                            type="button"
+                            disabled={followPending || !isAvailable}
+                            onClick={onFollow}
+                            variant={profile.isFollowing ? 'outline' : 'default'}
+                        >
+                            {profile.isFollowing
+                                ? 'Đang theo dõi'
+                                : 'Theo dõi shop'}
+                        </Button>
+                    </div>
+                ) : null}
             </div>
             <div className="grid grid-cols-2 divide-x divide-zinc-100 border-t border-zinc-100 sm:grid-cols-4">
                 <ShopMetric

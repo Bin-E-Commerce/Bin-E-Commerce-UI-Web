@@ -1,9 +1,10 @@
-// Card hiển thị shop nguồn của sản phẩm trên trang chi tiết.
-// Component chỉ trình bày dữ liệu shop công khai và liên kết tới nguồn bán hàng.
+// Card hiển thị shop của sản phẩm trên trang chi tiết.
+// Component chỉ trình bày snapshot shop đã lưu trong Bin E-Commerce và điều hướng tới shop nội bộ.
 // Không thêm thao tác chat hoặc logic mua hàng vào card để giữ đúng phạm vi của product detail.
 
 import Image from 'next/image';
-import { BadgeCheck, ExternalLink, Star, Store } from 'lucide-react';
+import Link from 'next/link';
+import { BadgeCheck, Star, Store } from 'lucide-react';
 
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -41,7 +42,7 @@ export function ProductShopPanel({ shop }: ProductShopPanelProps) {
 
                         <div className="min-w-0">
                             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">
-                                Gian hàng nguồn
+                                Gian hàng
                             </p>
                             <div className="mt-1 flex min-w-0 items-center gap-1.5">
                                 <h2 className="truncate text-lg font-bold tracking-tight text-zinc-950">
@@ -52,32 +53,24 @@ export function ProductShopPanel({ shop }: ProductShopPanelProps) {
                                     aria-label="Shop đã xác minh"
                                 />
                             </div>
-                            <p className="mt-1 text-sm text-zinc-500">
-                                Nguồn {shop.sourcePlatform.toUpperCase()}
-                            </p>
-                            {shop.sourceUrl ? (
-                                <a
-                                    href={shop.sourceUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    aria-label={`Mở shop ${shop.name}`}
-                                    className={cn(
-                                        buttonVariants({
-                                            variant: 'outline',
-                                            size: 'sm',
-                                        }),
-                                        'mt-3 border-zinc-300 transition-colors hover:border-zinc-950 hover:bg-zinc-950 hover:text-white',
-                                    )}
-                                >
-                                    <Store className="h-3.5 w-3.5" />
-                                    Xem shop
-                                    <ExternalLink className="h-3.5 w-3.5" />
-                                </a>
-                            ) : null}
+                            <Link
+                                href={`/shop/${shop.slug}`}
+                                aria-label={`Mở shop ${shop.name}`}
+                                className={cn(
+                                    buttonVariants({
+                                        variant: 'outline',
+                                        size: 'sm',
+                                    }),
+                                    'mt-3 border-zinc-300 transition-colors hover:border-zinc-950 hover:bg-zinc-950 hover:text-white',
+                                )}
+                            >
+                                <Store className="h-3.5 w-3.5" />
+                                Xem shop
+                            </Link>
                         </div>
                     </div>
 
-                    <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4 sm:gap-x-8 sm:gap-y-0">
+                    <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-0">
                         <ShopMetric
                             label="Đánh giá"
                             value={rating > 0 ? rating.toFixed(1) : 'Chưa có'}
@@ -94,10 +87,6 @@ export function ProductShopPanel({ shop }: ProductShopPanelProps) {
                             value={(shop.followerCount ?? 0).toLocaleString(
                                 'vi-VN',
                             )}
-                        />
-                        <ShopMetric
-                            label="Nền tảng"
-                            value={shop.sourcePlatform.toUpperCase()}
                         />
                     </div>
                 </div>

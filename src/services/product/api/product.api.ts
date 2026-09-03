@@ -11,6 +11,7 @@ import type {
 } from '../types/product.types';
 import authorizedAxios from '@/utils/authorizedAxios';
 import publicAxios from '@/utils/publicAxios';
+import type { PublicShopResponse } from '@/services/seller';
 
 export const productService = {
     // Homepage dùng endpoint public qua API Gateway để không phụ thuộc trực tiếp URL nội bộ của product-service.
@@ -32,6 +33,22 @@ export const productService = {
         publicAxios
             .get<ShopCatalogSummary>(
                 `${API_VERSION}/products/shops/${shopId}/summary`,
+            )
+            .then((response) => response.data),
+
+    // Đọc shop crawl từ Product Service để trang customer luôn mở shop nội bộ của Bin E-Commerce.
+    getExternalShopBySlug: (slug: string) =>
+        publicAxios
+            .get<PublicShopResponse>(
+                `${API_VERSION}/products/external-shops/${encodeURIComponent(slug)}`,
+            )
+            .then((response) => response.data),
+
+    // Đọc summary sản phẩm của shop crawl bằng external shop UUID thay vì seller shop UUID.
+    getExternalShopSummary: (shopId: string) =>
+        publicAxios
+            .get<ShopCatalogSummary>(
+                `${API_VERSION}/products/external-shops/${shopId}/summary`,
             )
             .then((response) => response.data),
 
