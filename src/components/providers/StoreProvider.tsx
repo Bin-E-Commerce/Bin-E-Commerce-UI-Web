@@ -1,21 +1,19 @@
+// Provider khởi tạo Redux store duy nhất cho toàn bộ vòng đời client app.
+// Provider không chứa business logic; chỉ kết nối store với React tree và axios interceptor.
+
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { makeStore } from '@/store';
 import type { AppStore } from '@/store';
 import { initAuth } from '@/store/slices/authSlice';
 import { setAppStore } from '@/utils/authorizedAxios';
 
+// Tạo store một lần bằng lazy state để giá trị truyền vào Provider an toàn với React Compiler.
+// Store được giữ ổn định trong suốt vòng đời provider, tránh mất state khi component re-render.
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-    // Dùng useRef để tạo một reference đến store,
-    // đảm bảo store chỉ được tạo một lần duy nhất trong suốt vòng đời của ứng dụng
-    const storeRef = useRef<AppStore | null>(null);
-
-    // Nếu store chưa được tạo, tạo mới và gán vào storeRef.current
-    if (storeRef.current === null) {
-        storeRef.current = makeStore();
-    }
+    const [store] = useState<AppStore>(() => makeStore());
 
     // Khi component được mount, inject store vào authorizedAxios và dispatch initAuth để restore session
     // Mục đích của useEffect này là để đảm bảo rằng khi ứng dụng khởi động,
@@ -26,12 +24,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // Nếu refresh token không hợp lệ hoặc đã hết hạn, session sẽ không được restore và user sẽ ở trạng thái chưa đăng nhập,
     // nhưng app vẫn hoạt động bình thường mà không bị lỗi gì cả
     useEffect(() => {
-        // Lấy reference đến store từ storeRef và inject vào authorizedAxios để interceptor có thể truy cập
-        const store = storeRef.current!;
+        // Dùng cùng instance store với Provider để interceptor và React đọc/ghi một nguồn state duy nhất.
         setAppStore(store);
         // 1 API call duy nhất để restore session: POST /auth/refresh (dùng httpOnly cookie)
         store.dispatch(initAuth());
-    }, []);
+    }, [store]);
 
-    return <Provider store={storeRef.current}>{children}</Provider>;
+    return <Provider store={store}>{children}</Provider>;
 }
