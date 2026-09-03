@@ -42,8 +42,8 @@ export function AddressCard({
                                 {address.fullName}
                             </h3>
                             {address.isDefault ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
-                                    <Check className="size-3" /> Mặc định
+                                <span className="inline-flex items-center gap-1 rounded-md border border-zinc-950 bg-zinc-950 px-2 py-1 text-xs font-semibold text-white shadow-sm shadow-zinc-950/10">
+                                    <Check className="size-3 text-white" /> Mặc định
                                 </span>
                             ) : null}
                         </div>

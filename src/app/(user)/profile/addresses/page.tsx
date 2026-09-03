@@ -43,12 +43,9 @@ export default function AddressesPage() {
             <div className="flex flex-col gap-8 md:flex-row">
                 <ProfileSidebar />
                 <main className="min-w-0 flex-1">
-                    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+                    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-5">
                         <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                                    Tài khoản
-                                </p>
                                 <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">
                                     Địa chỉ giao hàng
                                 </h1>
@@ -86,8 +83,8 @@ export default function AddressesPage() {
                             </p>
                         ) : addressesQuery.isError ? (
                             <p className="rounded-2xl border border-dashed border-red-200 p-8 text-center text-sm text-red-600">
-                                Không thể tải danh sách địa chỉ. Vui lòng thử lại
-                                sau.
+                                Không thể tải danh sách địa chỉ. Vui lòng thử
+                                lại sau.
                             </p>
                         ) : addresses.length === 0 ? (
                             <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center">
