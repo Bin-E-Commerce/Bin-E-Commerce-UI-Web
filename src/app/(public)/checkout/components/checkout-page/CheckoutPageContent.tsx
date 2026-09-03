@@ -1,6 +1,6 @@
-// Component này trình bày checkout Phase 1: chọn địa chỉ, xác nhận COD và kết quả tạo đơn.
-// Form không nhận item hoặc giá từ người dùng; Cart/Order Service là nguồn dữ liệu và phép tính chính thức.
-// Các trạng thái loading, lỗi, rỗng địa chỉ và thành công được hiển thị riêng để người dùng luôn biết bước tiếp theo.
+// Component nÃ y trÃ¬nh bÃ y checkout Phase 1: chá»n Ä‘á»‹a chá»‰, xÃ¡c nháº­n COD vÃ  káº¿t quáº£ táº¡o Ä‘Æ¡n.
+// Form khÃ´ng nháº­n item hoáº·c giÃ¡ tá»« ngÆ°á»i dÃ¹ng; Cart/Order Service lÃ  nguá»“n dá»¯ liá»‡u vÃ  phÃ©p tÃ­nh chÃ­nh thá»©c.
+// CÃ¡c tráº¡ng thÃ¡i loading, lá»—i, rá»—ng Ä‘á»‹a chá»‰ vÃ  thÃ nh cÃ´ng Ä‘Æ°á»£c hiá»ƒn thá»‹ riÃªng Ä‘á»ƒ ngÆ°á»i dÃ¹ng luÃ´n biáº¿t bÆ°á»›c tiáº¿p theo.
 
 'use client';
 
@@ -16,7 +16,6 @@ import {
     Loader2,
     MapPin,
     PackageCheck,
-    Pencil,
     Plus,
     ShieldCheck,
     Trash2,
@@ -26,7 +25,6 @@ import { toast } from 'sonner';
 
 import { useCart } from '@/app/(public)/cart/hooks/use-cart';
 import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
@@ -38,20 +36,18 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { CreateAddressPayload, UserAddress } from '@/services/auth';
-import type { OrderResponse } from '../../types/checkout.types';
-import {
-    useCheckout,
-    useCheckoutQuote,
-} from '../../hooks/use-checkout';
+import { useCheckout, useCheckoutQuote } from '../../hooks/use-checkout';
 import { AddressForm } from '../address-form/AddressForm';
 import { CheckoutShippingQuoteNotice } from './CheckoutShippingQuoteNotice';
+import { CheckoutAddressCard } from './CheckoutAddressCard';
+import { CheckoutShell, LoadingState } from './CheckoutStateViews';
 
 const EMPTY_ADDRESSES: UserAddress[] = [];
 
-// Định dạng tiền VND tại lớp trình bày, còn subtotal/total authoritative vẫn lấy nguyên từ backend.
+// Äá»‹nh dáº¡ng tiá»n VND táº¡i lá»›p trÃ¬nh bÃ y, cÃ²n subtotal/total authoritative váº«n láº¥y nguyÃªn tá»« backend.
 function formatPrice(value: string): string {
     const amount = Number(value);
-    if (!Number.isFinite(amount)) return '0 ₫';
+    if (!Number.isFinite(amount)) return '0 â‚«';
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
         currency: 'VND',
@@ -59,12 +55,12 @@ function formatPrice(value: string): string {
     }).format(amount);
 }
 
-// Trả địa chỉ thành một dòng dễ quét trong card mà không làm mất các thành phần hành chính.
+// Tráº£ Ä‘á»‹a chá»‰ thÃ nh má»™t dÃ²ng dá»… quÃ©t trong card mÃ  khÃ´ng lÃ m máº¥t cÃ¡c thÃ nh pháº§n hÃ nh chÃ­nh.
 function formatAddress(address: UserAddress): string {
     return `${address.street}, ${address.ward}, ${address.district}, ${address.province}`;
 }
 
-// Tạo checkout page hoàn chỉnh từ cart, address query và order mutation đã tách riêng khỏi UI.
+// Táº¡o checkout page hoÃ n chá»‰nh tá»« cart, address query vÃ  order mutation Ä‘Ã£ tÃ¡ch riÃªng khá»i UI.
 export function CheckoutPageContent() {
     const { initialized, isAuthenticated } = useCartAuthRedirect();
     const cartQuery = useCart();
@@ -78,7 +74,9 @@ export function CheckoutPageContent() {
     const [selectedAddressId, setSelectedAddressId] = useState('');
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [editingAddress, setEditingAddress] = useState<UserAddress>();
-    const [deletingAddress, setDeletingAddress] = useState<UserAddress | null>(null);
+    const [deletingAddress, setDeletingAddress] = useState<UserAddress | null>(
+        null,
+    );
     const [note, setNote] = useState('');
     const router = useRouter();
 
@@ -93,14 +91,14 @@ export function CheckoutPageContent() {
     const activeAddressId = selectedAddressId || fallbackAddressId;
     const quoteQuery = useCheckoutQuote(activeAddressId);
 
-    // Chỉ chặn guest sau khi initAuth hoàn tất; nếu chạy sớm hơn, refresh checkout sẽ redirect sai trước khi cookie được restore.
+    // Chá»‰ cháº·n guest sau khi initAuth hoÃ n táº¥t; náº¿u cháº¡y sá»›m hÆ¡n, refresh checkout sáº½ redirect sai trÆ°á»›c khi cookie Ä‘Æ°á»£c restore.
     useEffect(() => {
         if (initialized && !isAuthenticated) {
             window.location.replace('/login?redirect=%2Fcheckout');
         }
     }, [initialized, isAuthenticated]);
 
-    // Lưu mới hoặc cập nhật địa chỉ, sau đó chọn địa chỉ vừa được server xác nhận.
+    // LÆ°u má»›i hoáº·c cáº­p nháº­t Ä‘á»‹a chá»‰, sau Ä‘Ã³ chá»n Ä‘á»‹a chá»‰ vá»«a Ä‘Æ°á»£c server xÃ¡c nháº­n.
     async function handleSaveAddress(
         payload: CreateAddressPayload,
     ): Promise<boolean> {
@@ -116,24 +114,24 @@ export function CheckoutPageContent() {
             setEditingAddress(undefined);
             return true;
         } catch {
-            // Mutation đã hiển thị lỗi qua onError; handler chỉ ngăn lỗi promise nổi lên thành unhandled rejection.
+            // Mutation Ä‘Ã£ hiá»ƒn thá»‹ lá»—i qua onError; handler chá»‰ ngÄƒn lá»—i promise ná»•i lÃªn thÃ nh unhandled rejection.
             return false;
         }
     }
 
-    // Mở lại form với snapshot địa chỉ hiện tại để người dùng sửa mà không phải nhập lại từ đầu.
+    // Má»Ÿ láº¡i form vá»›i snapshot Ä‘á»‹a chá»‰ hiá»‡n táº¡i Ä‘á»ƒ ngÆ°á»i dÃ¹ng sá»­a mÃ  khÃ´ng pháº£i nháº­p láº¡i tá»« Ä‘áº§u.
     function handleEditAddress(address: UserAddress): void {
         setEditingAddress(address);
         setShowAddressForm(true);
     }
 
-    // Đóng form và xóa trạng thái chỉnh sửa để lần thêm tiếp theo luôn bắt đầu từ dữ liệu rỗng.
+    // ÄÃ³ng form vÃ  xÃ³a tráº¡ng thÃ¡i chá»‰nh sá»­a Ä‘á»ƒ láº§n thÃªm tiáº¿p theo luÃ´n báº¯t Ä‘áº§u tá»« dá»¯ liá»‡u rá»—ng.
     function handleCancelAddressForm(): void {
         setShowAddressForm(false);
         setEditingAddress(undefined);
     }
 
-    // Xác nhận xóa ở server rồi bỏ địa chỉ khỏi lựa chọn hiện tại nếu card đó đang được dùng.
+    // XÃ¡c nháº­n xÃ³a á»Ÿ server rá»“i bá» Ä‘á»‹a chá»‰ khá»i lá»±a chá»n hiá»‡n táº¡i náº¿u card Ä‘Ã³ Ä‘ang Ä‘Æ°á»£c dÃ¹ng.
     async function handleDeleteAddress(): Promise<void> {
         if (!deletingAddress) return;
 
@@ -147,19 +145,21 @@ export function CheckoutPageContent() {
             }
             setDeletingAddress(null);
         } catch {
-            // Mutation đã hiển thị lỗi; giữ dialog mở để người dùng biết thao tác chưa hoàn tất.
+            // Mutation Ä‘Ã£ hiá»ƒn thá»‹ lá»—i; giá»¯ dialog má»Ÿ Ä‘á»ƒ ngÆ°á»i dÃ¹ng biáº¿t thao tÃ¡c chÆ°a hoÃ n táº¥t.
         }
     }
 
-    // Chỉ gửi đơn sau khi địa chỉ hợp lệ và quote đã thành công; nếu quote lỗi, backend có thể không biết phí cần thu.
-    // Chặn ở cả handler lẫn nút để bảo vệ luồng checkout khi trạng thái query thay đổi giữa hai lần render.
+    // Chá»‰ gá»­i Ä‘Æ¡n sau khi Ä‘á»‹a chá»‰ há»£p lá»‡ vÃ  quote Ä‘Ã£ thÃ nh cÃ´ng; náº¿u quote lá»—i, backend cÃ³ thá»ƒ khÃ´ng biáº¿t phÃ­ cáº§n thu.
+    // Cháº·n á»Ÿ cáº£ handler láº«n nÃºt Ä‘á»ƒ báº£o vá»‡ luá»“ng checkout khi tráº¡ng thÃ¡i query thay Ä‘á»•i giá»¯a hai láº§n render.
     function handleSubmitOrder(): void {
         if (!activeAddressId) {
-            toast.error('Vui lòng chọn hoặc thêm địa chỉ giao hàng.');
+            toast.error('Vui lÃ²ng chá»n hoáº·c thÃªm Ä‘á»‹a chá»‰ giao hÃ ng.');
             return;
         }
         if (quoteQuery.isPending || quoteQuery.isError || !quoteQuery.data) {
-            toast.error('Chưa thể tính phí giao hàng. Vui lòng thử lại trước khi đặt hàng.');
+            toast.error(
+                'ChÆ°a thá»ƒ tÃ­nh phÃ­ giao hÃ ng. Vui lÃ²ng thá»­ láº¡i trÆ°á»›c khi Ä‘áº·t hÃ ng.',
+            );
             return;
         }
         orderMutation.mutate(
@@ -168,8 +168,9 @@ export function CheckoutPageContent() {
                 note: note.trim() || undefined,
             },
             {
-                // Chuyển thẳng đến detail order vừa tạo để khách hàng thấy ngay mã đơn, trạng thái và snapshot giao hàng.
-                onSuccess: (order) => router.replace(`/profile/orders/${order.id}`),
+                // Chuyá»ƒn tháº³ng Ä‘áº¿n detail order vá»«a táº¡o Ä‘á»ƒ khÃ¡ch hÃ ng tháº¥y ngay mÃ£ Ä‘Æ¡n, tráº¡ng thÃ¡i vÃ  snapshot giao hÃ ng.
+                onSuccess: (order) =>
+                    router.replace(`/profile/orders/${order.id}`),
             },
         );
     }
@@ -177,7 +178,7 @@ export function CheckoutPageContent() {
     if (!initialized || cartQuery.isPending || addressesQuery.isPending) {
         return (
             <CheckoutShell>
-                <LoadingState label="Đang chuẩn bị trang thanh toán..." />
+                <LoadingState label="Äang chuáº©n bá»‹ trang thanh toÃ¡n..." />
             </CheckoutShell>
         );
     }
@@ -185,7 +186,7 @@ export function CheckoutPageContent() {
     if (!isAuthenticated) {
         return (
             <CheckoutShell>
-                <LoadingState label="Đang chuyển tới trang đăng nhập..." />
+                <LoadingState label="Äang chuyá»ƒn tá»›i trang Ä‘Äƒng nháº­p..." />
             </CheckoutShell>
         );
     }
@@ -198,18 +199,18 @@ export function CheckoutPageContent() {
                         <PackageCheck className="size-7" aria-hidden="true" />
                     </div>
                     <h1 className="mt-5 text-2xl font-bold tracking-tight text-zinc-950">
-                        Không thể tải thông tin thanh toán
+                        KhÃ´ng thá»ƒ táº£i thÃ´ng tin thanh toÃ¡n
                     </h1>
                     <p className="mt-3 text-sm leading-6 text-zinc-500">
-                        Vui lòng thử lại hoặc quay về giỏ hàng để kiểm tra sản
-                        phẩm.
+                        Vui lÃ²ng thá»­ láº¡i hoáº·c quay vá» giá» hÃ ng Ä‘á»ƒ kiá»ƒm tra sáº£n
+                        pháº©m.
                     </p>
                     <Link
                         href="/cart"
                         className="mt-6 inline-flex h-11 items-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800"
                     >
                         <ArrowLeft className="size-4" aria-hidden="true" /> Quay
-                        lại giỏ hàng
+                        láº¡i giá» hÃ ng
                     </Link>
                 </section>
             </CheckoutShell>
@@ -231,20 +232,20 @@ export function CheckoutPageContent() {
                             />
                         </div>
                         <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">
-                            Sẵn sàng mua sắm
+                            Sáºµn sÃ ng mua sáº¯m
                         </p>
                         <h1 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">
-                            Giỏ hàng đang trống
+                            Giá» hÃ ng Ä‘ang trá»‘ng
                         </h1>
                         <p className="mt-2 text-sm leading-6 text-zinc-500">
-                            Thêm sản phẩm để bắt đầu thanh toán đơn hàng của
-                            bạn.
+                            ThÃªm sáº£n pháº©m Ä‘á»ƒ báº¯t Ä‘áº§u thanh toÃ¡n Ä‘Æ¡n hÃ ng cá»§a
+                            báº¡n.
                         </p>
                         <Link
                             href="/"
                             className="mt-6 inline-flex h-10 items-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                         >
-                            Khám phá sản phẩm
+                            KhÃ¡m phÃ¡ sáº£n pháº©m
                         </Link>
                     </div>
                 </section>
@@ -268,14 +269,14 @@ export function CheckoutPageContent() {
                                         aria-hidden="true"
                                     />
                                 </span>
-                                Quay lại giỏ hàng
+                                Quay láº¡i giá» hÃ ng
                             </Link>
                             <div className="mt-3">
                                 <h1 className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-                                    Thanh toán
+                                    Thanh toÃ¡n
                                 </h1>
                                 <p className="mt-1 max-w-2xl text-sm leading-5 text-zinc-500">
-                                    Chọn địa chỉ nhận hàng và xác nhận đơn COD.
+                                    Chá»n Ä‘á»‹a chá»‰ nháº­n hÃ ng vÃ  xÃ¡c nháº­n Ä‘Æ¡n COD.
                                 </p>
                             </div>
                         </div>
@@ -284,7 +285,7 @@ export function CheckoutPageContent() {
                                 className="size-3.5 text-emerald-600"
                                 aria-hidden="true"
                             />
-                            Thanh toán an toàn
+                            Thanh toÃ¡n an toÃ n
                         </div>
                     </div>
                 </div>
@@ -295,13 +296,13 @@ export function CheckoutPageContent() {
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                                        Bước 01
+                                        BÆ°á»›c 01
                                     </p>
                                     <h2 className="mt-2 text-xl font-bold text-zinc-950">
-                                        Địa chỉ giao hàng
+                                        Äá»‹a chá»‰ giao hÃ ng
                                     </h2>
                                     <p className="mt-1 text-sm text-zinc-500">
-                                        Chọn địa chỉ bạn muốn nhận đơn hàng.
+                                        Chá»n Ä‘á»‹a chá»‰ báº¡n muá»‘n nháº­n Ä‘Æ¡n hÃ ng.
                                     </p>
                                 </div>
                                 <MapPin
@@ -313,7 +314,7 @@ export function CheckoutPageContent() {
                             {addresses.length > 0 ? (
                                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                                     {addresses.map((address) => (
-                                        <AddressCard
+                                        <CheckoutAddressCard
                                             key={address.id}
                                             address={address}
                                             selected={
@@ -322,19 +323,25 @@ export function CheckoutPageContent() {
                                             onSelect={() =>
                                                 setSelectedAddressId(address.id)
                                             }
-                                            onEdit={() => handleEditAddress(address)}
-                                            onDelete={() => setDeletingAddress(address)}
+                                            onEdit={() =>
+                                                handleEditAddress(address)
+                                            }
+                                            onDelete={() =>
+                                                setDeletingAddress(address)
+                                            }
                                             deleting={
                                                 deleteAddressMutation.isPending &&
-                                                deleteAddressMutation.variables === address.id
+                                                deleteAddressMutation.variables ===
+                                                    address.id
                                             }
+                                            formatAddress={formatAddress}
                                         />
                                     ))}
                                 </div>
                             ) : (
                                 <p className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm leading-6 text-zinc-600">
-                                    Bạn chưa có địa chỉ giao hàng. Thêm địa chỉ
-                                    mới để tiếp tục.
+                                    Báº¡n chÆ°a cÃ³ Ä‘á»‹a chá»‰ giao hÃ ng. ThÃªm Ä‘á»‹a chá»‰
+                                    má»›i Ä‘á»ƒ tiáº¿p tá»¥c.
                                 </p>
                             )}
 
@@ -357,8 +364,8 @@ export function CheckoutPageContent() {
                                     />
                                 </span>
                                 {showAddressForm
-                                    ? 'Đóng form địa chỉ'
-                                    : 'Thêm địa chỉ mới'}
+                                    ? 'ÄÃ³ng form Ä‘á»‹a chá»‰'
+                                    : 'ThÃªm Ä‘á»‹a chá»‰ má»›i'}
                             </button>
 
                             {showAddressForm ? (
@@ -386,12 +393,18 @@ export function CheckoutPageContent() {
                             <AlertDialogContent className="max-w-md">
                                 <AlertDialogHeader>
                                     <div className="mb-1 flex size-11 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-                                        <AlertTriangle className="size-5" aria-hidden="true" />
+                                        <AlertTriangle
+                                            className="size-5"
+                                            aria-hidden="true"
+                                        />
                                     </div>
-                                    <AlertDialogTitle>Xóa địa chỉ giao hàng?</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                        XÃ³a Ä‘á»‹a chá»‰ giao hÃ ng?
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Địa chỉ này sẽ bị xóa khỏi danh sách sử dụng khi thanh toán.
-                                        Đơn hàng đã tạo trước đó vẫn giữ nguyên thông tin.
+                                        Äá»‹a chá»‰ nÃ y sáº½ bá»‹ xÃ³a khá»i danh sÃ¡ch sá»­
+                                        dá»¥ng khi thanh toÃ¡n. ÄÆ¡n hÃ ng Ä‘Ã£ táº¡o
+                                        trÆ°á»›c Ä‘Ã³ váº«n giá»¯ nguyÃªn thÃ´ng tin.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
 
@@ -410,13 +423,19 @@ export function CheckoutPageContent() {
                                 ) : null}
 
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel disabled={deleteAddressMutation.isPending}>
-                                        Hủy
+                                    <AlertDialogCancel
+                                        disabled={
+                                            deleteAddressMutation.isPending
+                                        }
+                                    >
+                                        Há»§y
                                     </AlertDialogCancel>
                                     <Button
                                         type="button"
                                         variant="destructive"
-                                        disabled={deleteAddressMutation.isPending}
+                                        disabled={
+                                            deleteAddressMutation.isPending
+                                        }
                                         onClick={handleDeleteAddress}
                                     >
                                         {deleteAddressMutation.isPending ? (
@@ -424,7 +443,7 @@ export function CheckoutPageContent() {
                                         ) : (
                                             <Trash2 className="size-4" />
                                         )}
-                                        Xóa địa chỉ
+                                        XÃ³a Ä‘á»‹a chá»‰
                                     </Button>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
@@ -440,13 +459,13 @@ export function CheckoutPageContent() {
                                 </div>
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                                        Bước 02
+                                        BÆ°á»›c 02
                                     </p>
                                     <h2 className="mt-2 text-xl font-bold text-zinc-950">
-                                        Phương thức thanh toán
+                                        PhÆ°Æ¡ng thá»©c thanh toÃ¡n
                                     </h2>
                                     <p className="mt-1 text-sm text-zinc-500">
-                                        Phase 1 hỗ trợ thanh toán khi nhận hàng.
+                                        Phase 1 há»— trá»£ thanh toÃ¡n khi nháº­n hÃ ng.
                                     </p>
                                 </div>
                             </div>
@@ -459,11 +478,11 @@ export function CheckoutPageContent() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <p className="font-semibold text-zinc-950">
-                                        Thanh toán khi nhận hàng (COD)
+                                        Thanh toÃ¡n khi nháº­n hÃ ng (COD)
                                     </p>
                                     <p className="mt-1 text-sm text-zinc-500">
-                                        Thanh toán trực tiếp cho đơn vị giao
-                                        hàng.
+                                        Thanh toÃ¡n trá»±c tiáº¿p cho Ä‘Æ¡n vá»‹ giao
+                                        hÃ ng.
                                     </p>
                                 </div>
                                 <CheckCircle2
@@ -473,9 +492,9 @@ export function CheckoutPageContent() {
                             </div>
                             <label className="mt-6 block">
                                 <span className="text-sm font-semibold text-zinc-800">
-                                    Ghi chú cho người bán{' '}
+                                    Ghi chÃº cho ngÆ°á»i bÃ¡n{' '}
                                     <span className="font-normal text-zinc-400">
-                                        (không bắt buộc)
+                                        (khÃ´ng báº¯t buá»™c)
                                     </span>
                                 </span>
                                 <textarea
@@ -485,7 +504,7 @@ export function CheckoutPageContent() {
                                     }
                                     maxLength={500}
                                     rows={3}
-                                    placeholder="Ví dụ: Giao giờ hành chính..."
+                                    placeholder="VÃ­ dá»¥: Giao giá» hÃ nh chÃ­nh..."
                                     className="mt-2 w-full resize-none rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-4 focus:ring-zinc-950/5"
                                 />
                             </label>
@@ -502,10 +521,10 @@ export function CheckoutPageContent() {
                             </div>
                             <div>
                                 <h2 className="font-bold text-zinc-950">
-                                    Tóm tắt đơn hàng
+                                    TÃ³m táº¯t Ä‘Æ¡n hÃ ng
                                 </h2>
                                 <p className="text-sm text-zinc-500">
-                                    {cart.totalItems} sản phẩm
+                                    {cart.totalItems} sáº£n pháº©m
                                 </p>
                             </div>
                         </div>
@@ -531,7 +550,7 @@ export function CheckoutPageContent() {
                                             {item.productName}
                                         </p>
                                         <p className="mt-1 text-xs text-zinc-500">
-                                            {item.variantName} · SL:{' '}
+                                            {item.variantName} Â· SL:{' '}
                                             {item.quantity}
                                         </p>
                                     </div>
@@ -544,46 +563,62 @@ export function CheckoutPageContent() {
                         <div className="mt-6 border-t border-zinc-100 pt-5">
                             <div className="space-y-3 rounded-2xl bg-zinc-50/80 p-4 text-sm">
                                 <div className="flex items-center justify-between gap-4 text-zinc-500">
-                                    <span>Tạm tính</span>
+                                    <span>Táº¡m tÃ­nh</span>
                                     <span className="font-medium text-zinc-800">
-                                        {formatPrice(quote?.subtotal ?? cart.subtotal)}
+                                        {formatPrice(
+                                            quote?.subtotal ?? cart.subtotal,
+                                        )}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-4 text-zinc-500">
                                     <div className="flex items-center gap-2">
-                                        <span>Phí vận chuyển</span>
+                                        <span>PhÃ­ váº­n chuyá»ƒn</span>
                                         <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 ring-1 ring-zinc-200">
                                             GHN
                                         </span>
                                     </div>
                                     {quoteQuery.isFetching && !quote ? (
-                                        <span className="font-medium text-zinc-600">Đang tính...</span>
+                                        <span className="font-medium text-zinc-600">
+                                            Äang tÃ­nh...
+                                        </span>
                                     ) : quote ? (
                                         <span className="font-semibold text-zinc-900">
                                             {Number(quote.shippingFee) === 0
-                                                ? 'Miễn phí'
-                                                : formatPrice(quote.shippingFee)}
+                                                ? 'Miá»…n phÃ­'
+                                                : formatPrice(
+                                                      quote.shippingFee,
+                                                  )}
                                         </span>
                                     ) : quoteQuery.isError ? (
-                                        <span className="font-medium text-red-600">Chưa tính được</span>
+                                        <span className="font-medium text-red-600">
+                                            ChÆ°a tÃ­nh Ä‘Æ°á»£c
+                                        </span>
                                     ) : (
-                                        <span className="font-medium text-zinc-400">Chọn địa chỉ</span>
+                                        <span className="font-medium text-zinc-400">
+                                            Chá»n Ä‘á»‹a chá»‰
+                                        </span>
                                     )}
                                 </div>
                             </div>
                             <div className="mt-4 flex items-end justify-between gap-4">
                                 <div>
-                                    <p className="text-sm font-semibold text-zinc-950">Tổng thanh toán</p>
-                                    <p className="mt-1 text-xs text-zinc-400">Đã bao gồm phí giao hàng</p>
+                                    <p className="text-sm font-semibold text-zinc-950">
+                                        Tá»•ng thanh toÃ¡n
+                                    </p>
+                                    <p className="mt-1 text-xs text-zinc-400">
+                                        ÄÃ£ bao gá»“m phÃ­ giao hÃ ng
+                                    </p>
                                 </div>
                                 <span className="text-xl font-bold tracking-tight text-zinc-950">
-                                    {quote ? formatPrice(quote.totalAmount) : '—'}
+                                    {quote
+                                        ? formatPrice(quote.totalAmount)
+                                        : 'â€”'}
                                 </span>
                             </div>
                         </div>
                         <p className="mt-4 text-xs leading-5 text-zinc-400">
-                            Giá và tồn kho sẽ được kiểm tra lại ở máy chủ trước
-                            khi đơn được xác nhận.
+                            GiÃ¡ vÃ  tá»“n kho sáº½ Ä‘Æ°á»£c kiá»ƒm tra láº¡i á»Ÿ mÃ¡y chá»§ trÆ°á»›c
+                            khi Ä‘Æ¡n Ä‘Æ°á»£c xÃ¡c nháº­n.
                         </p>
                         <CheckoutShippingQuoteNotice
                             isPending={quoteQuery.isFetching}
@@ -618,11 +653,11 @@ export function CheckoutPageContent() {
                                         className="size-4 animate-spin"
                                         aria-hidden="true"
                                     />{' '}
-                                    Đang xác nhận...
+                                    Äang xÃ¡c nháº­n...
                                 </>
                             ) : (
                                 <>
-                                    Đặt hàng COD{' '}
+                                    Äáº·t hÃ ng COD{' '}
                                     <Check
                                         className="size-4"
                                         aria-hidden="true"
@@ -637,213 +672,5 @@ export function CheckoutPageContent() {
     );
 }
 
-// Bọc checkout bằng nền trung tính; trạng thái rỗng dùng khung ngắn hơn để không tạo cảm giác trang bị kéo dài vô ích.
-function CheckoutShell({
-    children,
-    compact = false,
-}: {
-    children: React.ReactNode;
-    compact?: boolean;
-}) {
-    return (
-        <main
-            className={cn(
-                'bg-zinc-50 px-4 pb-8 sm:px-6 lg:px-8',
-                compact
-                    ? 'relative flex min-h-[calc(100vh-8rem)] items-center justify-center py-8 lg:py-10'
-                    : 'min-h-[calc(100vh-8rem)] pt-4 sm:pt-5 lg:pb-12 lg:pt-6',
-            )}
-        >
-            {children}
-        </main>
-    );
-}
+// Bá»c checkout báº±ng ná»n trung tÃ­nh; tráº¡ng thÃ¡i rá»—ng dÃ¹ng khung ngáº¯n hÆ¡n Ä‘á»ƒ khÃ´ng táº¡o cáº£m giÃ¡c trang bá»‹ kÃ©o dÃ i vÃ´ Ã­ch.
 
-// Trạng thái tải dùng chung để tránh layout nhảy giữa các request address/cart.
-function LoadingState({ label }: { label: string }) {
-    return (
-        <section
-            role="status"
-            aria-live="polite"
-            className="flex min-h-[480px] items-center justify-center px-4 py-12"
-        >
-            <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-7 text-center shadow-[0_18px_50px_-30px_rgba(24,24,27,0.45)] sm:p-9">
-                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-lg shadow-zinc-950/15">
-                    <PackageCheck
-                        className="size-8"
-                        strokeWidth={1.7}
-                        aria-hidden="true"
-                    />
-                </div>
-                <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-                    Checkout
-                </p>
-                <h1 className="mt-2 text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
-                    {label}
-                </h1>
-                <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-zinc-500">
-                    Đang tải thông tin cần thiết để bạn tiếp tục đặt hàng.
-                </p>
-                <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-zinc-700">
-                    <Loader2
-                        className="size-4 animate-spin text-zinc-500"
-                        aria-hidden="true"
-                    />
-                    Vui lòng chờ một chút...
-                </div>
-            </div>
-        </section>
-    );
-}
-
-// Card địa chỉ cho phép chọn cả vùng thông tin, đồng thời đặt nút sửa/xóa riêng để không lồng button sai HTML.
-function AddressCard({
-    address,
-    selected,
-    onSelect,
-    onEdit,
-    onDelete,
-    deleting,
-}: {
-    address: UserAddress;
-    selected: boolean;
-    onSelect: () => void;
-    onEdit: () => void;
-    onDelete: () => void;
-    deleting: boolean;
-}) {
-    return (
-        <article
-            className={`w-full rounded-2xl border p-4 transition ${selected ? 'border-zinc-950 bg-zinc-50 shadow-sm' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
-        >
-            <div className="flex items-start gap-3">
-                <button
-                    type="button"
-                    onClick={onSelect}
-                    aria-pressed={selected}
-                    className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-                >
-                <div
-                    className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-zinc-950 bg-zinc-950 text-white' : 'border-zinc-300 text-transparent'}`}
-                >
-                    <Check className="size-3" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-zinc-950">
-                            {address.fullName}
-                        </p>
-                        <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-semibold text-zinc-600">
-                            {address.label}
-                        </span>
-                        {address.isDefault ? (
-                            <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600">
-                                Mặc định
-                            </span>
-                        ) : null}
-                    </div>
-                    <p className="mt-1 text-sm text-zinc-600">
-                        {address.phone}
-                    </p>
-                    <p className="mt-2 text-xs leading-5 text-zinc-500">
-                        {formatAddress(address)}
-                    </p>
-                </div>
-                </button>
-                <div className="flex shrink-0 gap-1">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
-                        aria-label="Chỉnh sửa địa chỉ"
-                        onClick={onEdit}
-                    >
-                        <Pencil className="size-4" aria-hidden="true" />
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-zinc-500 hover:bg-red-50 hover:text-red-700"
-                        aria-label="Xóa địa chỉ"
-                        disabled={deleting}
-                        onClick={onDelete}
-                    >
-                        {deleting ? (
-                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                        ) : (
-                            <Trash2 className="size-4" aria-hidden="true" />
-                        )}
-                    </Button>
-                </div>
-            </div>
-        </article>
-    );
-}
-
-// Màn hình thành công xác nhận order number, tổng tiền và địa chỉ snapshot mà server đã chốt.
-function CheckoutSuccess({ order }: { order: OrderResponse }) {
-    return (
-        <CheckoutShell>
-            <section className="mx-auto max-w-2xl rounded-[2rem] border border-zinc-200 bg-white p-7 text-center shadow-sm sm:p-12">
-                <div className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-600">
-                    <CheckCircle2 className="size-9" aria-hidden="true" />
-                </div>
-                <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
-                    Đặt hàng thành công
-                </p>
-                <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-950">
-                    Cảm ơn bạn đã mua sắm
-                </h1>
-                <p className="mt-3 text-sm leading-6 text-zinc-500">
-                    Đơn COD của bạn đã được xác nhận và tồn kho đã được giữ.
-                </p>
-                <div className="mx-auto mt-8 max-w-md rounded-2xl bg-zinc-50 p-5 text-left">
-                    <div className="flex justify-between gap-4 text-sm">
-                        <span className="text-zinc-500">Mã đơn hàng</span>
-                        <strong className="text-zinc-950">
-                            {order.orderNumber}
-                        </strong>
-                    </div>
-                    <div className="mt-3 flex justify-between gap-4 text-sm">
-                        <span className="text-zinc-500">Tổng thanh toán</span>
-                        <strong className="text-zinc-950">
-                            {formatPrice(order.totalAmount)}
-                        </strong>
-                    </div>
-                    <div className="mt-4 border-t border-zinc-200 pt-4 text-sm">
-                        <p className="font-semibold text-zinc-800">
-                            Giao tới {order.shippingAddress.fullName}
-                        </p>
-                        <p className="mt-1 leading-5 text-zinc-500">
-                            {order.shippingAddress.street},{' '}
-                            {order.shippingAddress.ward},{' '}
-                            {order.shippingAddress.district},{' '}
-                            {order.shippingAddress.province}
-                        </p>
-                    </div>
-                </div>
-                {order.warnings.length > 0 ? (
-                    <p className="mx-auto mt-5 max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-xs leading-5 text-amber-800">
-                        {order.warnings[0]}
-                    </p>
-                ) : null}
-                <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                    <Link
-                        href="/"
-                        className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white hover:bg-zinc-800"
-                    >
-                        Tiếp tục mua sắm
-                    </Link>
-                    <Link
-                        href={`/profile/orders/${order.id}`}
-                        className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 px-5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
-                    >
-                        Xem đơn hàng
-                    </Link>
-                </div>
-            </section>
-        </CheckoutShell>
-    );
-}
