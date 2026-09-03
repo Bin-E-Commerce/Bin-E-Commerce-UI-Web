@@ -7,8 +7,8 @@
 import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
-import type { OrderReturnStatus } from '@/services/order/order.api';
-import type { ShipmentStatus } from '@/services/shipping/shipping.api';
+import type { OrderReturnStatus } from '@/services/order';
+import type { ShipmentStatus } from '@/services/shipping';
 
 type OrderLifecycleStage =
     | 'TO_SHIP'

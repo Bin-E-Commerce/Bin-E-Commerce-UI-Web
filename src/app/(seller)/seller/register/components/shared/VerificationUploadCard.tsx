@@ -5,7 +5,7 @@ import { Loader2, UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { mediaService, type MediaUploadMimeType } from '@/services/media';
-import type { PresignedUploadResponse } from '@/services/media/types/media.types';
+import type { PresignedUploadResponse } from '@/services/media';
 import type { SellerVerificationDocumentDto } from '@/services/seller';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 

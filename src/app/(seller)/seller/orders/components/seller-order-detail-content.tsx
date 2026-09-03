@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { useOrderProductImages } from '@/hooks/use-order-product-images';
-import { useSellerShipment } from '@/hooks/use-shipment';
+import { useOrderProductImages } from '@/hooks/orders/use-order-product-images';
+import { useSellerShipment } from '@/hooks/shipping/use-shipment';
 import { OrderLifecycleStepper } from '@/common/orders';
 import { useSellerOrderDetail } from '../hooks/use-seller-order-detail';
 import { SellerOrderProductImage } from './seller-order-product-image';

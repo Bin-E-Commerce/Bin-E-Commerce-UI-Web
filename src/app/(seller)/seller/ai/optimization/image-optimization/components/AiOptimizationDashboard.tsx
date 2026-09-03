@@ -9,11 +9,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, BarChart3, CheckCircle2, ChevronRight, Package, RefreshCw } from 'lucide-react';
+import {
+    AlertCircle,
+    BarChart3,
+    CheckCircle2,
+    ChevronRight,
+    Package,
+    RefreshCw,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { sellerProductService } from '@/services/product/seller-product.service';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { sellerProductService } from '@/services/product';
 import type { SellerProductListItem } from '@/services/product';
 import { useAppSelector } from '@/store/hooks';
 import { hasPermission } from '@/services/auth/access/session-access';

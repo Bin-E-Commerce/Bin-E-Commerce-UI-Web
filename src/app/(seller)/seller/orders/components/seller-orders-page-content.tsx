@@ -10,7 +10,7 @@ import { SellerOrdersEmptyState } from './seller-orders-empty-state';
 import { SellerOrdersPagination } from './seller-orders-pagination';
 import { SellerOrdersSkeleton } from './seller-orders-skeleton';
 import { useSellerOrders } from '../hooks/use-seller-orders';
-import { useOrderProductImages } from '@/hooks/use-order-product-images';
+import { useOrderProductImages } from '@/hooks/orders/use-order-product-images';
 
 // Phối hợp mọi state của list trong một component để page route chỉ còn nhiệm vụ compose feature.
 export function SellerOrdersPageContent() {

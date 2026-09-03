@@ -6,7 +6,7 @@ import type {
     GhnDistrictOption,
     GhnProvinceOption,
     GhnWardOption,
-} from '@/services/shipping/shipping-location.service';
+} from '@/services/shipping';
 import type { CheckoutAddressFormState } from '@/app/(public)/checkout/schemas/checkout-address.schema';
 
 export type GhnLocationOption =

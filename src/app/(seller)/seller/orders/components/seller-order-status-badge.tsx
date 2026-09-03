@@ -1,6 +1,6 @@
 // Badge trạng thái dùng cho các màn hình legacy còn cần hiển thị enum; list chính dùng accent/timeline nhẹ hơn.
 import { cn } from '@/lib/utils';
-import type { SellerOrderStatus } from '@/services/order/seller-order.api';
+import type { SellerOrderStatus } from '@/services/order';
 import { getSellerOrderStatusLabel } from '../utils/seller-order-format';
 
 // Chọn tone theo lifecycle để seller quét nhanh mà không lạm dụng màu đỏ.

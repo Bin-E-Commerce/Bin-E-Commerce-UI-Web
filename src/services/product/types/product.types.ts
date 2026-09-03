@@ -135,11 +135,14 @@ export interface OrderReviewStatusResponse {
 export interface PublicProduct {
     id: string;
     originType?: 'INTERNAL' | 'EXTERNAL';
+    sellerShopId?: string | null;
     name: string;
     slug: string;
     shortDescription?: string | null;
     minPrice: string;
     maxPrice: string;
+    displayPrice: string;
+    displayOriginalPrice: string | null;
     totalSold: number;
     ratingAvg?: string | null;
     reviewCount: number;
@@ -172,6 +175,20 @@ export interface ListProductsParams {
     search?: string;
     originType?: 'INTERNAL' | 'EXTERNAL';
     status?: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+    sellerShopId?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
+    inStock?: boolean;
+    sort?: 'newest' | 'price_asc' | 'price_desc' | 'rating_desc' | 'sold_desc';
+}
+
+export interface ShopCatalogSummary {
+    shopId: string;
+    productCount: number;
+    ratingAvg: string | null;
+    reviewCount: number;
+    categoryIds: string[];
 }
 
 export interface PaginatedProductResponse<T> {

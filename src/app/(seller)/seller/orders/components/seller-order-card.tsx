@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, CalendarDays, Package } from 'lucide-react';
 
-import type { SellerOrderListItem } from '@/services/order/seller-order.api';
+import type { SellerOrderListItem } from '@/services/order';
 import { SellerOrderProductImage } from './seller-order-product-image';
 import {
     formatSellerMoney,

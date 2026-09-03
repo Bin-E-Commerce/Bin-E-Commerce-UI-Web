@@ -19,7 +19,7 @@ import type {
     SellerProductListItem,
     SellerProductPublicationStatus,
 } from '@/services/product';
-import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
+import { useSessionPermission } from '@/hooks/auth/use-session-access';
 import { getNextSellerProductStatus } from '../utils/seller-product-status';
 
 interface SellerProductActionsMenuProps {

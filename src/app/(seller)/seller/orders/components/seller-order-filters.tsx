@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import type {
     SellerOrderStatus,
     SellerOrderTabCounts,
-} from '@/services/order/seller-order.api';
+} from '@/services/order';
 
 interface SellerOrderFiltersProps {
     status: SellerOrderStatus | undefined;

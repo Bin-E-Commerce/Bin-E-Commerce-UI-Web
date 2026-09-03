@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
+import { useSessionPermission } from '@/hooks/auth/use-session-access';
 import type { ProductNameSuggestion } from '@/services/ai';
 import type {
     SellerProductCreateFormValues,

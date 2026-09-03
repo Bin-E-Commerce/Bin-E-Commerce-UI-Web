@@ -24,7 +24,7 @@ import {
     listOrderReturns,
     type OrderReturnReason,
     type OrderReturnResponse,
-} from '@/services/order/order.api';
+} from '@/services/order';
 import { mediaService } from '@/services/media';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
@@ -36,7 +36,7 @@ import { uploadReturnMedia } from '../utils/return-media-upload';
 import {
     useAdvanceDemoCustomerReturnShipment,
     useCustomerTracking,
-} from '@/hooks/use-shipment';
+} from '@/hooks/shipping/use-shipment';
 
 const REASONS: Array<{
     value: OrderReturnReason;

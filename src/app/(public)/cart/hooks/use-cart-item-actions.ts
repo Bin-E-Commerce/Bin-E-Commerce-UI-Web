@@ -6,7 +6,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { removeCartItem, updateCartItem } from '@/services/cart/cart.api';
+import { removeCartItem, updateCartItem } from '@/services/cart';
 import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { Cart, UpdateCartItemInput } from '../types/cart.types';

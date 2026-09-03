@@ -1,3 +1,3 @@
-export * from './media.service';
+export * from './api/media.api';
 export * from './types/media.types';
 

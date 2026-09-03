@@ -9,7 +9,7 @@ import {
     listSellerOrders,
     type SellerOrderStatus,
     type SellerOrderStage,
-} from '@/services/order/seller-order.api';
+} from '@/services/order';
 
 const SELLER_STAGE_FILTERS: SellerOrderStatus[] = [
     'TO_SHIP',

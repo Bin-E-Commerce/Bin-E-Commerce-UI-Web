@@ -17,7 +17,7 @@ import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
 import { authService } from '@/services/auth';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { useConfetti } from '@/hooks/useConfetti';
+import { useConfetti } from '@/hooks/ui/use-confetti';
 
 const RESEND_COOLDOWN = 60;
 

@@ -1,2 +1,2 @@
-export * from './notification.service';
+export * from './api/notification.api';
 export * from './types/notification.types';

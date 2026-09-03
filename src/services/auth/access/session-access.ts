@@ -3,7 +3,7 @@
 import type {
     PermissionAwareUser,
     SessionPermission,
-} from './types/session-access.types';
+} from '../types/session-access.types';
 
 export const ADMIN_ACCESS_DENIED_PATH = '/admin/access-denied';
 export const ADMIN_DASHBOARD_PATH = '/admin/dashboard';

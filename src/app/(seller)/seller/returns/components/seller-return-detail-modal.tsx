@@ -11,8 +11,8 @@ import {
     ImageLightboxThumbnail,
     type ImageLightboxMedia,
 } from '@/common/reviews/components/ImageLightbox';
-import type { OrderReturnResponse } from '@/services/order/order.api';
-import type { SellerOrderResponse } from '@/services/order/seller-order.api';
+import type { OrderReturnResponse } from '@/services/order';
+import type { SellerOrderResponse } from '@/services/order';
 
 interface SellerReturnDetailModalProps {
     request: OrderReturnResponse;

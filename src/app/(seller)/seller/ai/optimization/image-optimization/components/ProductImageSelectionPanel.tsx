@@ -4,7 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, ImageIcon, Loader2 } from 'lucide-react';
-import { sellerProductService } from '@/services/product/seller-product.service';
+import { sellerProductService } from '@/services/product';
 import { cn } from '@/lib/utils';
 
 interface ProductImageSelectionPanelProps {

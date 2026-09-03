@@ -22,7 +22,7 @@ import type {
     CustomerOrderFilter,
     CustomerOrderStage,
     CustomerOrderStatus,
-} from '@/services/order/order.api';
+} from '@/services/order';
 import {
     useCustomerOrders,
     useLegacyOrderPreviewImages,

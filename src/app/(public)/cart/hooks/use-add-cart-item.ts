@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { addCartItem } from '@/services/cart/cart.api';
+import { addCartItem } from '@/services/cart';
 import type { AddCartItemInput, Cart } from '../types/cart.types';
 
 // Cung cấp mutation dùng chung cho product detail và các CTA thêm vào giỏ sau này.

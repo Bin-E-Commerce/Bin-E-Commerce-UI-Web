@@ -16,8 +16,8 @@ import {
     listOrders,
     type CustomerOrderListItem,
     type CustomerOrderFilter,
-} from '@/services/order/order.api';
-import { useOrderProductImages } from '@/hooks/use-order-product-images';
+} from '@/services/order';
+import { useOrderProductImages } from '@/hooks/orders/use-order-product-images';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // Query danh sách giữ dữ liệu trang trước trong lúc chuyển trang để giao diện không bị nhấp nháy.

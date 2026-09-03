@@ -26,16 +26,16 @@ import {
 import { CancelOrderDialog } from '../components/cancel-order-dialog';
 import { CustomerShipmentPanel } from '@/common/shipping';
 import { OrderLifecycleStepper } from '@/common/orders';
-import { useCustomerTracking } from '@/hooks/use-shipment';
+import { useCustomerTracking } from '@/hooks/shipping/use-shipment';
 import type {
     ShipmentResponse,
     ShipmentStatus,
-} from '@/services/shipping/shipping.api';
+} from '@/services/shipping';
 import {
     listOrderReturns,
     type OrderReturnStatus,
     type OrderReturnResponse,
-} from '@/services/order/order.api';
+} from '@/services/order';
 import { DeliveryConfirmationCard } from './components/delivery-confirmation-card';
 import { OrderReviewPanel } from './components/order-review-panel';
 import { OrderReturnPanel } from './components/order-return-panel';

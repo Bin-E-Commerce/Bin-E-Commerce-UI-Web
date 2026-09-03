@@ -13,7 +13,7 @@ import {
     useMap,
 } from 'react-leaflet';
 import type { LatLngBoundsExpression, LatLngTuple } from 'leaflet';
-import type { ShipmentRoutePoint } from '@/services/shipping/shipping.api';
+import type { ShipmentRoutePoint } from '@/services/shipping';
 
 interface ShipmentMapProps {
     routePoints: ShipmentRoutePoint[];

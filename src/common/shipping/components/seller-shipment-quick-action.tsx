@@ -5,7 +5,7 @@
 import { Loader2, Truck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { useCreateSellerShipment } from '@/hooks/use-shipment';
+import { useCreateSellerShipment } from '@/hooks/shipping/use-shipment';
 
 interface SellerShipmentQuickActionProps {
     orderId: string;

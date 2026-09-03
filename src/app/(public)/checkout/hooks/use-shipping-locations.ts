@@ -3,7 +3,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { shippingLocationService } from '@/services/shipping/shipping-location.service';
+import { shippingLocationService } from '@/services/shipping';
 
 // Tải tỉnh, quận/huyện và phường/xã theo đúng chuỗi phụ thuộc của GHN.
 export function useShippingLocations(provinceId: number | null, districtId: number | null) {

@@ -11,7 +11,7 @@ import {
     formatSellerProductUpdatedAt,
 } from '../../product-shared/utils/seller-product-formatters';
 import { SellerProductStatusBadge } from '../../product-shared/components/SellerProductStatusBadge';
-import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
+import { useSessionPermission } from '@/hooks/auth/use-session-access';
 import type { SellerProductPublicationStatus } from '@/services/product';
 
 interface SellerProductDetailHeroProps {

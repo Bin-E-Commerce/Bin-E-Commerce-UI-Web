@@ -13,7 +13,7 @@ import {
     usePrintSellerShipmentLabel,
     useRefreshSellerShipment,
     useSellerShipment,
-} from '@/hooks/use-shipment';
+} from '@/hooks/shipping/use-shipment';
 
 interface SellerShipmentPanelProps {
     orderId: string;

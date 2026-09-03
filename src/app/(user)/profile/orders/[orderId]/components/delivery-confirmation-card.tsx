@@ -14,7 +14,7 @@ import {
     createOrderReturn,
     type DeliveryIssueReason,
     type OrderReturnReason,
-} from '@/services/order/order.api';
+} from '@/services/order';
 import { mediaService, type ReviewMediaCleanupAsset } from '@/services/media';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import {

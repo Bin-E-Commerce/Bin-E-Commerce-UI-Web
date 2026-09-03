@@ -20,7 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { useSessionPermission } from '@/services/auth/access/useSessionAccess';
+import { useSessionPermission } from '@/hooks/auth/use-session-access';
 import type {
     SellerProductCreateReferences,
     SellerProductCreateFormValues,

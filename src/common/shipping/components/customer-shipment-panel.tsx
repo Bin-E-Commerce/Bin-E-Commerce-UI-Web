@@ -7,7 +7,7 @@
 
 import { CircleAlert, RefreshCw, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCustomerTracking } from '@/hooks/use-shipment';
+import { useCustomerTracking } from '@/hooks/shipping/use-shipment';
 import { ShipmentTrackingCard } from './shipment-tracking-card';
 
 interface CustomerShipmentPanelProps {

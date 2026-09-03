@@ -18,7 +18,7 @@ import { mapSellerNavigation } from './utils/map-seller-navigation';
 import {
     listSellerOrders,
     listSellerReturns,
-} from '@/services/order/seller-order.api';
+} from '@/services/order';
 
 interface SellerSidebarProps {
     onNavigate?: () => void;

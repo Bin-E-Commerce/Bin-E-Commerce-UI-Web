@@ -6,8 +6,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { confirmOrderDelivery, type DeliveryConfirmationInput } from '@/services/order/order.api';
-import { productService } from '@/services/product/product.service';
+import {
+    confirmOrderDelivery,
+    type DeliveryConfirmationInput,
+} from '@/services/order';
+import { productService } from '@/services/product';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // Lấy trạng thái review theo order để form hiển thị đúng item đã gửi hoặc còn có thể đánh giá.
@@ -25,14 +28,23 @@ export function useConfirmOrderDelivery(orderId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (input: DeliveryConfirmationInput) => confirmOrderDelivery(orderId, input),
+        mutationFn: (input: DeliveryConfirmationInput) =>
+            confirmOrderDelivery(orderId, input),
         onSuccess: async (order) => {
             queryClient.setQueryData(['customer-order', orderId], order);
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ['customer-orders'] }),
-                queryClient.invalidateQueries({ queryKey: ['order-review-status', orderId] }),
+                queryClient.invalidateQueries({
+                    queryKey: ['customer-orders'],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['order-review-status', orderId],
+                }),
             ]);
-            toast.success(order.deliveryConfirmation.status === 'ISSUE_REPORTED' ? 'Đã ghi nhận vấn đề của bạn.' : 'Đã xác nhận nhận hàng.');
+            toast.success(
+                order.deliveryConfirmation.status === 'ISSUE_REPORTED'
+                    ? 'Đã ghi nhận vấn đề của bạn.'
+                    : 'Đã xác nhận nhận hàng.',
+            );
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
@@ -43,7 +55,16 @@ export function useCreateOrderReview(orderId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (input: { productId: string; orderItemId: string; rating: number; title?: string; content?: string; images?: string[]; videos?: string[]; isAnonymous?: boolean }) =>
+        mutationFn: (input: {
+            productId: string;
+            orderItemId: string;
+            rating: number;
+            title?: string;
+            content?: string;
+            images?: string[];
+            videos?: string[];
+            isAnonymous?: boolean;
+        }) =>
             productService.createReview(input.productId, {
                 orderItemId: input.orderItemId,
                 rating: input.rating,
@@ -55,10 +76,16 @@ export function useCreateOrderReview(orderId: string) {
             }),
         onSuccess: async (_review, variables) => {
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ['order-review-status', orderId] }),
-                queryClient.invalidateQueries({ queryKey: ['products', 'detail', variables.productId] }),
+                queryClient.invalidateQueries({
+                    queryKey: ['order-review-status', orderId],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['products', 'detail', variables.productId],
+                }),
             ]);
-            toast.success('Đã gửi đánh giá. Cảm ơn bạn đã chia sẻ trải nghiệm.');
+            toast.success(
+                'Đã gửi đánh giá. Cảm ơn bạn đã chia sẻ trải nghiệm.',
+            );
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
@@ -80,18 +107,23 @@ export function useUpdateOrderReview(orderId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (input: UpdateOrderReviewInput) => productService.updateReview(input.reviewId, {
-            rating: input.rating,
-            title: input.title,
-            content: input.content,
-            images: input.images,
-            videos: input.videos,
-            isAnonymous: input.isAnonymous,
-        }),
+        mutationFn: (input: UpdateOrderReviewInput) =>
+            productService.updateReview(input.reviewId, {
+                rating: input.rating,
+                title: input.title,
+                content: input.content,
+                images: input.images,
+                videos: input.videos,
+                isAnonymous: input.isAnonymous,
+            }),
         onSuccess: async (_review, variables) => {
             await Promise.all([
-                queryClient.invalidateQueries({ queryKey: ['order-review-status', orderId] }),
-                queryClient.invalidateQueries({ queryKey: ['products', 'detail', variables.productId] }),
+                queryClient.invalidateQueries({
+                    queryKey: ['order-review-status', orderId],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['products', 'detail', variables.productId],
+                }),
             ]);
             toast.success('Đã cập nhật đánh giá của bạn.');
         },

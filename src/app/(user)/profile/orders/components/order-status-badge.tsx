@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { CustomerOrderStatus } from '@/services/order/order.api';
+import type { CustomerOrderStatus } from '@/services/order';
 
 const STATUS_LABELS: Record<CustomerOrderStatus, string> = {
     PENDING: 'Đang xử lý',

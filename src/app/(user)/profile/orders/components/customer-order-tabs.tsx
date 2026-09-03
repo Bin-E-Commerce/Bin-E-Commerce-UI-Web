@@ -15,7 +15,7 @@ import {
 import type {
     CustomerOrderFilter,
     CustomerOrderTabCounts,
-} from '@/services/order/order.api';
+} from '@/services/order';
 
 interface CustomerOrderTabsProps {
     activeFilter: CustomerOrderFilter;

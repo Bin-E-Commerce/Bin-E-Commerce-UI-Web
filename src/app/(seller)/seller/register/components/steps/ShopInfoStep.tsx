@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 import { Input } from '@/components/ui/input';
 import { mediaService, type MediaUploadMimeType } from '@/services/media';
-import type { PresignedUploadResponse } from '@/services/media/types/media.types';
+import type { PresignedUploadResponse } from '@/services/media';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { BUSINESS_MODEL_OPTIONS } from '../../constants/seller-register-options.constant';
 import { useRootCategories } from '../../hooks/useRootCategories';

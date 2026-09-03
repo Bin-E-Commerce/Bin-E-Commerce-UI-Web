@@ -4,7 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { getSellerOrder } from '@/services/order/seller-order.api';
+import { getSellerOrder } from '@/services/order';
 
 // Chỉ kích hoạt request khi route đã có orderId hợp lệ, tránh gọi API với giá trị undefined trong lúc hydration.
 export function useSellerOrderDetail(orderId: string) {

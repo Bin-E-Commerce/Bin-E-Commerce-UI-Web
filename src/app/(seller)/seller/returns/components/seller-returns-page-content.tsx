@@ -22,8 +22,8 @@ import {
     inspectSellerReturn,
     listSellerReturns,
     reviewSellerReturn,
-} from '@/services/order/seller-order.api';
-import { createSellerReturnShipment } from '@/services/shipping/shipping.api';
+} from '@/services/order';
+import { createSellerReturnShipment } from '@/services/shipping';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { SellerReturnDetailModal } from './seller-return-detail-modal';
 import { SellerReturnRejectDialog } from './seller-return-reject-dialog';

@@ -5,7 +5,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useAppSelector } from "@/store/hooks";
-import { getActiveCart } from "@/services/cart/cart.api";
+import { getActiveCart } from "@/services/cart";
 
 // Tải cart chỉ sau khi auth restore xác nhận Customer; Guest sẽ được chuyển tới login ở UI.
 export function useCart() {

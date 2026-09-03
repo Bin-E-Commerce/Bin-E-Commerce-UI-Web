@@ -1,5 +1,5 @@
 // Các hàm format Seller order chỉ xử lý trình bày, không chứa quyền hoặc gọi API.
-import type { SellerOrderStatus } from '@/services/order/seller-order.api';
+import type { SellerOrderStatus } from '@/services/order';
 
 // Định dạng tiền VND từ decimal string do PostgreSQL trả về.
 export function formatSellerMoney(value: string): string { const amount = Number(value); return Number.isFinite(amount) ? `${new Intl.NumberFormat('vi-VN').format(amount)} ₫` : `${value} ₫`; }

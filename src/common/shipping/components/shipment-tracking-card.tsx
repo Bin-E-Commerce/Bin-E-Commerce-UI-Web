@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import { Check, CircleAlert, Clock3, MapPin, PackageCheck, Truck } from 'lucide-react';
 
-import type { ShipmentResponse, ShipmentStatus } from '@/services/shipping/shipping.api';
+import type { ShipmentResponse, ShipmentStatus } from '@/services/shipping';
 import { cn } from '@/lib/utils';
 
 const ShipmentMap = dynamic(() => import('./shipment-map'), {
