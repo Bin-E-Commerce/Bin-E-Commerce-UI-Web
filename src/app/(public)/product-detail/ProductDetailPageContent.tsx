@@ -1,3 +1,6 @@
+// Composition UI cho trang chi tiết product.
+// File này chỉ điều phối các section và query; logic public shop nằm ở feature Shop/Product Shop.
+
 'use client';
 
 import { ProductDescriptionSection } from './components/content/ProductDescriptionSection';
@@ -8,6 +11,7 @@ import { ProductPurchasePanel } from './components/purchase/ProductPurchasePanel
 import { ProductRecommendationsSection } from './components/recommendations/ProductRecommendationsSection';
 import { ProductReviewsSection } from './components/reviews/ProductReviewsSection';
 import { ProductShopPanel } from './components/shop/ProductShopPanel';
+import { InternalProductShopPanel } from './components/shop/InternalProductShopPanel';
 import { ProductDetailErrorState } from './components/states/ProductDetailErrorState';
 import { ProductDetailSkeleton } from './components/states/ProductDetailSkeleton';
 import { useProductDetail } from './hooks/useProductDetail';
@@ -28,7 +32,9 @@ export function ProductDetailPageContent({
     }
 
     if (productQuery.isError || !productQuery.data) {
-        return <ProductDetailErrorState onRetry={() => productQuery.refetch()} />;
+        return (
+            <ProductDetailErrorState onRetry={() => productQuery.refetch()} />
+        );
     }
 
     const { product, recommendations } = productQuery.data;
@@ -55,6 +61,8 @@ export function ProductDetailPageContent({
 
             {product.externalShop ? (
                 <ProductShopPanel shop={product.externalShop} />
+            ) : product.sellerShopId ? (
+                <InternalProductShopPanel shopId={product.sellerShopId} />
             ) : null}
 
             <div className="mx-auto grid max-w-7xl gap-3 px-3 py-3 sm:px-6 lg:px-8">

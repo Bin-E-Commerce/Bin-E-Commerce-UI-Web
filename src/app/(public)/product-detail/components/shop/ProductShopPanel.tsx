@@ -1,5 +1,9 @@
+// Card hiển thị shop nguồn của sản phẩm trên trang chi tiết.
+// Component chỉ trình bày dữ liệu shop công khai và liên kết tới nguồn bán hàng.
+// Không thêm thao tác chat hoặc logic mua hàng vào card để giữ đúng phạm vi của product detail.
+
 import Image from 'next/image';
-import { BadgeCheck, MessageCircle, Star, Store } from 'lucide-react';
+import { BadgeCheck, ExternalLink, Star, Store } from 'lucide-react';
 
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,80 +14,92 @@ interface ProductShopPanelProps {
     shop: ProductExternalShop;
 }
 
-// Trình bày thông tin nhà bán cùng các tín hiệu uy tín có thật từ dữ liệu nguồn.
+// Trình bày shop nguồn theo bố cục hai vùng: nhận diện ở bên trái và chỉ số ở bên phải.
+// Các số liệu đều lấy trực tiếp từ read model của sản phẩm; giá trị thiếu được hiển thị an toàn.
 export function ProductShopPanel({ shop }: ProductShopPanelProps) {
     const avatarUrl = getProductShopAvatarUrl(shop.avatarUrl);
     const rating = Number(shop.ratingAvg ?? 0);
 
     return (
-        <section className="mt-3 border-y border-zinc-200 bg-white">
-            <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex min-w-0 items-center gap-4">
-                    <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50">
-                        {avatarUrl ? (
-                            <Image
-                                src={avatarUrl}
-                                alt={shop.name}
-                                fill
-                                sizes="64px"
-                                className="object-cover"
-                            />
-                        ) : (
-                            <Store className="h-6 w-6 text-zinc-500" />
-                        )}
-                    </div>
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                            <h2 className="truncate text-lg font-bold text-zinc-950">
-                                {shop.name}
-                            </h2>
-                            <BadgeCheck className="h-4 w-4 shrink-0 text-red-600" />
+        <section className="mx-auto mt-4 w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <div className="flex flex-col gap-6 p-5 sm:p-6 lg:flex-row lg:items-stretch">
+                    <div className="flex min-w-0 items-center gap-4 lg:w-[36%] lg:border-r lg:border-zinc-100 lg:pr-8">
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 ring-4 ring-zinc-50">
+                            {avatarUrl ? (
+                                <Image
+                                    src={avatarUrl}
+                                    alt={shop.name}
+                                    fill
+                                    sizes="64px"
+                                    className="object-cover"
+                                />
+                            ) : (
+                                <Store className="absolute inset-0 m-auto h-6 w-6 text-zinc-400" />
+                            )}
                         </div>
-                        <p className="mt-1 text-xs uppercase text-zinc-500">
-                            Gian hàng từ {shop.sourcePlatform}
-                        </p>
-                        <div className="mt-3 flex gap-2">
-                            <button
-                                type="button"
-                                disabled
-                                className={cn(
-                                    buttonVariants({ variant: 'outline', size: 'sm' }),
-                                    'disabled:cursor-not-allowed',
-                                )}
-                            >
-                                <MessageCircle className="h-3.5 w-3.5" />
-                                Trò chuyện
-                            </button>
+
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                Gian hàng nguồn
+                            </p>
+                            <div className="mt-1 flex min-w-0 items-center gap-1.5">
+                                <h2 className="truncate text-lg font-bold tracking-tight text-zinc-950">
+                                    {shop.name}
+                                </h2>
+                                <BadgeCheck
+                                    className="h-4 w-4 shrink-0 text-zinc-950"
+                                    aria-label="Shop đã xác minh"
+                                />
+                            </div>
+                            <p className="mt-1 text-sm text-zinc-500">
+                                Nguồn {shop.sourcePlatform.toUpperCase()}
+                            </p>
                             {shop.sourceUrl ? (
                                 <a
                                     href={shop.sourceUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className={buttonVariants({ size: 'sm' })}
+                                    aria-label={`Mở shop ${shop.name}`}
+                                    className={cn(
+                                        buttonVariants({
+                                            variant: 'outline',
+                                            size: 'sm',
+                                        }),
+                                        'mt-3 border-zinc-300 transition-colors hover:border-zinc-950 hover:bg-zinc-950 hover:text-white',
+                                    )}
                                 >
                                     <Store className="h-3.5 w-3.5" />
                                     Xem shop
+                                    <ExternalLink className="h-3.5 w-3.5" />
                                 </a>
                             ) : null}
                         </div>
                     </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-zinc-200 bg-zinc-200 sm:grid-cols-4 lg:min-w-[520px]">
-                    <ShopMetric
-                        label="Đánh giá"
-                        value={rating > 0 ? rating.toFixed(1) : 'Chưa có'}
-                        icon={<Star className="h-3.5 w-3.5" />}
-                    />
-                    <ShopMetric
-                        label="Lượt đánh giá"
-                        value={(shop.reviewCount ?? 0).toLocaleString('vi-VN')}
-                    />
-                    <ShopMetric
-                        label="Người theo dõi"
-                        value={(shop.followerCount ?? 0).toLocaleString('vi-VN')}
-                    />
-                    <ShopMetric label="Nguồn" value={shop.sourcePlatform.toUpperCase()} />
+                    <div className="grid flex-1 grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4 sm:gap-x-8 sm:gap-y-0">
+                        <ShopMetric
+                            label="Đánh giá"
+                            value={rating > 0 ? rating.toFixed(1) : 'Chưa có'}
+                            icon={<Star className="h-3.5 w-3.5 fill-current" />}
+                        />
+                        <ShopMetric
+                            label="Lượt đánh giá"
+                            value={(shop.reviewCount ?? 0).toLocaleString(
+                                'vi-VN',
+                            )}
+                        />
+                        <ShopMetric
+                            label="Người theo dõi"
+                            value={(shop.followerCount ?? 0).toLocaleString(
+                                'vi-VN',
+                            )}
+                        />
+                        <ShopMetric
+                            label="Nền tảng"
+                            value={shop.sourcePlatform.toUpperCase()}
+                        />
+                    </div>
                 </div>
             </div>
         </section>
@@ -96,13 +112,13 @@ interface ShopMetricProps {
     icon?: React.ReactNode;
 }
 
-// Hiển thị một chỉ số shop trong ô có kích thước ổn định để số liệu dễ so sánh.
+// Hiển thị một chỉ số trong ô có đường phân cách nhẹ để người dùng quét nhanh thông tin shop.
 function ShopMetric({ label, value, icon }: ShopMetricProps) {
     return (
-        <div className="bg-white px-4 py-4 text-center">
-            <p className="text-xs text-zinc-500">{label}</p>
-            <p className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-zinc-950">
-                {icon}
+        <div className="border-zinc-100 first:border-l-0 sm:border-l sm:pl-6">
+            <p className="text-sm text-zinc-500">{label}</p>
+            <p className="mt-1 inline-flex items-center gap-1.5 text-base font-semibold text-zinc-950">
+                {icon ? <span className="text-zinc-950">{icon}</span> : null}
                 {value}
             </p>
         </div>
