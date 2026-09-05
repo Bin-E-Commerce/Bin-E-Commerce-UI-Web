@@ -37,6 +37,7 @@ export interface CartItem {
     productId: string;
     variantId: string;
     sellerShopId: string | null;
+    originType: 'INTERNAL' | 'EXTERNAL';
     sku: string;
     productName: string;
     variantName: string;

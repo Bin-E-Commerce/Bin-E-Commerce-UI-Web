@@ -68,9 +68,8 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const isExternalProduct =
         product.originType === 'EXTERNAL' || Boolean(product.externalShop);
     const canAddToCart =
-        !isExternalProduct &&
         Boolean(purchase.selectedVariant) &&
-        purchase.availableStock > 0 &&
+        (isExternalProduct || purchase.availableStock > 0) &&
         (!isAuthenticated || !cartQuery.isLoading);
     const isCartMutationPending =
         addCartItemMutation.isPending || updateCartItemMutation.isPending;
@@ -225,18 +224,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {isExternalProduct ? (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        onClick={handleExternalPurchaseAttempt}
-                        className="h-12 border-2 border-zinc-950 text-zinc-950 hover:bg-zinc-950 hover:text-white"
-                    >
-                        <ShoppingCart className="h-4 w-4" />
-                        Thêm vào giỏ
-                    </Button>
-                ) : !isAuthenticated && canAddToCart ? (
+                {!isAuthenticated && canAddToCart ? (
                     <Link
                         href={getProtectedHref(productPath)}
                         className={buttonVariants({
