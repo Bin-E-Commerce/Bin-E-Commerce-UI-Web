@@ -1,9 +1,13 @@
 // File này trình bày card sản phẩm dùng chung cho storefront, không sở hữu logic mua hàng hay lựa chọn variant.
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 import { PackageOpen, Star } from 'lucide-react';
 
 import type { PublicProduct } from '@/services/product';
+import { trackRecommendationInteraction } from '@/services/recommendation';
 import { cn } from '@/lib/utils';
 import {
     calculateDiscountPercent,
@@ -17,6 +21,7 @@ interface ProductCardProps {
     product: PublicProduct;
     compact?: boolean;
     rank?: number;
+    trackingPage?: string;
 }
 
 // Trình bày ảnh, giá, ưu đãi và tín hiệu tin cậy trong một card gọn; card không hiển thị thương hiệu hoặc shop.
@@ -24,7 +29,9 @@ export function ProductCard({
     product,
     compact = false,
     rank,
+    trackingPage = 'storefront',
 }: ProductCardProps) {
+    const cardRef = useRef<HTMLAnchorElement>(null);
     const imageUrl = getProductThumbnail(product);
     const rating = getProductRating(product);
     const hasPriceRange = product.minPrice !== product.maxPrice;
@@ -36,9 +43,40 @@ export function ProductCard({
     );
     const hasRating = rating > 0;
 
+    useEffect(() => {
+        const cardElement = cardRef.current;
+        if (!cardElement || typeof IntersectionObserver === 'undefined') return;
+
+        let hasTrackedImpression = false;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (!entry?.isIntersecting || hasTrackedImpression) return;
+                hasTrackedImpression = true;
+                void trackRecommendationInteraction({
+                    interactionType: 'PRODUCT_IMPRESSED',
+                    productId: product.id,
+                    page: trackingPage,
+                }).catch(() => undefined);
+                observer.disconnect();
+            },
+            { threshold: 0.5 },
+        );
+
+        observer.observe(cardElement);
+        return () => observer.disconnect();
+    }, [product.id, trackingPage]);
+
     return (
         <Link
+            ref={cardRef}
             href={`/products/${product.id}`}
+            onClick={() => {
+                void trackRecommendationInteraction({
+                    interactionType: 'PRODUCT_CLICKED',
+                    productId: product.id,
+                    page: trackingPage,
+                }).catch(() => undefined);
+            }}
             aria-label={`Xem chi tiết ${product.name}`}
             className={cn(
                 'group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-md',

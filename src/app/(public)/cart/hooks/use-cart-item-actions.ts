@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { removeCartItem, updateCartItem } from '@/services/cart';
+import { trackRecommendationInteraction } from '@/services/recommendation';
 import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { Cart, UpdateCartItemInput } from '../types/cart.types';
@@ -37,11 +38,24 @@ export function useRemoveCartItem() {
     const userId = useAppSelector((state) => state.auth.user?.id ?? null);
     const queryKey = ['cart', userId ?? 'anonymous'];
 
-    return useMutation<Cart, unknown, string>({
+    return useMutation<Cart, unknown, string, { item: Cart['items'][number] | undefined }>({
         mutationFn: removeCartItem,
-        onSuccess: async (cart) => {
+        onMutate: async (itemId) => {
+            const cart = queryClient.getQueryData<Cart>(queryKey);
+            return { item: cart?.items.find((item) => item.id === itemId) };
+        },
+        onSuccess: async (cart, _itemId, context) => {
             queryClient.setQueryData(queryKey, cart);
             await queryClient.invalidateQueries({ queryKey });
+            if (context?.item) {
+                void trackRecommendationInteraction({
+                    interactionType: 'PRODUCT_REMOVED_FROM_CART',
+                    productId: context.item.productId,
+                    variantId: context.item.variantId,
+                    quantity: context.item.quantity,
+                    page: 'cart',
+                }).catch(() => undefined);
+            }
             toast.success('Đã xóa sản phẩm khỏi giỏ hàng.');
         },
         onError: (error) => {

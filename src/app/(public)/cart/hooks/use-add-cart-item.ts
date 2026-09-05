@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { addCartItem } from '@/services/cart';
+import { trackRecommendationInteraction } from '@/services/recommendation';
 import type { AddCartItemInput, Cart } from '../types/cart.types';
 
 // Cung cấp mutation dùng chung cho product detail và các CTA thêm vào giỏ sau này.
@@ -18,12 +19,19 @@ export function useAddCartItem() {
 
     return useMutation<Cart, unknown, AddCartItemInput>({
         mutationFn: addCartItem,
-        onSuccess: async (cart) => {
+        onSuccess: async (cart, input) => {
             // Ghi đè cache bằng response chuẩn rồi invalidate để các component khác nhận totalItems mới nhất.
             queryClient.setQueryData(['cart', userId ?? 'anonymous'], cart);
             await queryClient.invalidateQueries({
                 queryKey: ['cart', userId ?? 'anonymous'],
             });
+            void trackRecommendationInteraction({
+                interactionType: 'PRODUCT_ADDED_TO_CART',
+                productId: input.productId,
+                variantId: input.variantId,
+                quantity: input.quantity,
+                page: 'product_detail',
+            }).catch(() => undefined);
             toast.success('Đã thêm sản phẩm vào giỏ hàng.');
         },
         onError: (error) => {

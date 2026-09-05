@@ -3,6 +3,10 @@
 
 'use client';
 
+import { useEffect } from 'react';
+
+import { trackRecommendationInteraction } from '@/services/recommendation';
+
 import { ProductDescriptionSection } from './components/content/ProductDescriptionSection';
 import { ProductSpecificationsSection } from './components/content/ProductSpecificationsSection';
 import { ProductGallery } from './components/gallery/ProductGallery';
@@ -26,6 +30,18 @@ export function ProductDetailPageContent({
     productId,
 }: ProductDetailPageContentProps) {
     const productQuery = useProductDetail(productId);
+
+    useEffect(() => {
+        const product = productQuery.data?.product;
+        if (!product) return;
+
+        void trackRecommendationInteraction({
+            interactionType: 'PRODUCT_VIEWED',
+            productId: product.id,
+            categoryId: product.categoryId,
+            page: 'product_detail',
+        }).catch(() => undefined);
+    }, [productQuery.data?.product]);
 
     if (productQuery.isPending) {
         return <ProductDetailSkeleton />;

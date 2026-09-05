@@ -15,6 +15,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { ProductCard } from '@/app/(public)/products/components/ProductCard';
+import { trackRecommendationInteraction } from '@/services/recommendation';
 import type {
     PaginatedProductResponse,
     PublicProduct,
@@ -62,8 +63,16 @@ export function ShopCatalog({
     function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
+        const search = String(formData.get('search') ?? '').trim();
+        if (search) {
+            void trackRecommendationInteraction({
+                interactionType: 'SEARCH_PERFORMED',
+                query: search,
+                page: 'shop_catalog',
+            }).catch(() => undefined);
+        }
         onFilterChange({
-            search: String(formData.get('search') ?? '').trim(),
+            search,
             minPrice: parseOptionalPrice(formData.get('minPrice')),
             maxPrice: parseOptionalPrice(formData.get('maxPrice')),
             page: 1,
