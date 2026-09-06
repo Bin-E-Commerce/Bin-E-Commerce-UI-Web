@@ -17,4 +17,32 @@ export interface TrackRecommendationInteractionInput {
     page?: string;
     position?: number;
     quantity?: number;
+    recommendationRequestId?: string;
+    recommendationItemId?: string;
+    recommendationSource?: string;
+    recommendationRank?: number;
+    surface?: 'home' | 'product_detail' | 'recommendations_page';
+}
+
+import type { PublicProduct } from '@/services/product';
+
+export interface RecommendationItem {
+    product: PublicProduct;
+    rank: number;
+    score: number;
+    source: string;
+    reasons: string[];
+}
+
+export interface RecommendationResponse {
+    requestId: string;
+    strategy: 'PERSONALIZED' | 'SESSION_BASED' | 'COLD_START';
+    profileState: 'USER' | 'GUEST' | 'NEW_USER';
+    items: RecommendationItem[];
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    generatedAt: string;
+    ruleVersion: string;
 }

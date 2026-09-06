@@ -53,18 +53,25 @@ export function RecommendationsPageContent() {
         useCartAuthRedirect();
     const page = getPageFromSearchParams(searchParams.get('page'));
     const recommendationsQuery = useRecommendations(
-        initialized && isAuthenticated,
+        initialized && (isAuthenticated || page === 1),
         page,
     );
 
     useEffect(() => {
         // Guest không được gọi API danh sách mở rộng; chuyển về login để sau đó quay lại đúng trang.
-        if (initialized && !isAuthenticated) {
+        if (initialized && !isAuthenticated && page > 1) {
             redirectToLogin(
                 `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`,
             );
         }
-    }, [initialized, isAuthenticated, pathname, redirectToLogin, searchParams]);
+    }, [
+        initialized,
+        isAuthenticated,
+        page,
+        pathname,
+        redirectToLogin,
+        searchParams,
+    ]);
 
     const totalPages = recommendationsQuery.data?.totalPages ?? 1;
     const totalProducts = recommendationsQuery.data?.total ?? 0;
@@ -86,6 +93,11 @@ export function RecommendationsPageContent() {
             return;
         }
 
+        if (!isAuthenticated) {
+            redirectToLogin(`${pathname}?page=${nextPage}`);
+            return;
+        }
+
         router.push(
             nextPage === 1 ? pathname : `${pathname}?page=${nextPage}`,
             { scroll: false },
@@ -95,7 +107,7 @@ export function RecommendationsPageContent() {
             ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    if (!initialized || !isAuthenticated) {
+    if (!initialized) {
         return (
             <div className="bg-zinc-100 px-3 py-8 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
@@ -129,8 +141,9 @@ export function RecommendationsPageContent() {
                                 tiếp theo của bạn.
                             </p>
                             <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-500">
-                                Xem nhanh những lựa chọn nổi bật, so sánh thông tin
-                                cần thiết và tìm ra món đồ thật sự phù hợp với bạn.
+                                Xem nhanh những lựa chọn nổi bật, so sánh thông
+                                tin cần thiết và tìm ra món đồ thật sự phù hợp
+                                với bạn.
                             </p>
                             <a
                                 href="#recommendation-results"
@@ -207,10 +220,22 @@ export function RecommendationsPageContent() {
                         </div>
                     ) : pageItems.length > 0 ? (
                         <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 sm:gap-3 sm:p-5 lg:grid-cols-5 xl:grid-cols-6">
-                            {pageItems.map((product) => (
+                            {pageItems.map((item) => (
                                 <ProductCard
-                                    key={product.id}
-                                    product={product}
+                                    key={item.product.id}
+                                    product={item.product}
+                                    rank={item.rank}
+                                    trackingPage="recommendations_page"
+                                    trackingContext={{
+                                        recommendationRequestId:
+                                            recommendationsQuery.data
+                                                ?.requestId,
+                                        recommendationItemId: item.product.id,
+                                        recommendationSource: item.source,
+                                        recommendationRank: item.rank,
+                                        surface: 'recommendations_page',
+                                    }}
+                                    recommendationReason={item.reasons[0]}
                                 />
                             ))}
                         </div>

@@ -71,7 +71,8 @@ authorizedAxios.interceptors.request.use(
 
         // Gửi sessionId hiện tại để backend/gateway nhận diện request thuộc phiên nào.
         const sessionId = appStore?.getState().auth.sessionId;
-        if (sessionId) {
+        // Giữ session header tường minh của recommendation để guest session trước login không bị auth session ghi đè khi merge.
+        if (sessionId && !config.headers['X-Session-Id']) {
             config.headers['X-Session-Id'] = sessionId;
         }
         return config;

@@ -9,6 +9,7 @@ import { makeStore } from '@/store';
 import type { AppStore } from '@/store';
 import { initAuth } from '@/store/slices/authSlice';
 import { setAppStore } from '@/utils/authorizedAxios';
+import { mergeRecommendationSession } from '@/services/recommendation';
 
 // Tạo store một lần bằng lazy state để giá trị truyền vào Provider an toàn với React Compiler.
 // Store được giữ ổn định trong suốt vòng đời provider, tránh mất state khi component re-render.
@@ -27,7 +28,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // Dùng cùng instance store với Provider để interceptor và React đọc/ghi một nguồn state duy nhất.
         setAppStore(store);
         // 1 API call duy nhất để restore session: POST /auth/refresh (dùng httpOnly cookie)
-        store.dispatch(initAuth());
+        // Sau khi restore user, merge idempotent session guest để hành vi trước login được giữ lại.
+        void store
+            .dispatch(initAuth())
+            .unwrap()
+            .then((auth) => {
+                if (auth?.user?.id) {
+                    return mergeRecommendationSession().catch(() => undefined);
+                }
+                return undefined;
+            });
     }, [store]);
 
     return <Provider store={store}>{children}</Provider>;

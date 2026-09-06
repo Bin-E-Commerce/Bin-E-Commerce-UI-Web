@@ -2,6 +2,7 @@ import type { PublicProduct } from '@/services/product';
 import { cn } from '@/lib/utils';
 import { ProductCard } from '@/app/(public)/products/components/ProductCard';
 import type { ReactNode } from 'react';
+import type { ProductCardTrackingContext } from '@/app/(public)/products/components/ProductCard';
 
 interface HomeProductSectionProps {
     id?: string;
@@ -12,6 +13,8 @@ interface HomeProductSectionProps {
     mode: 'rail' | 'grid';
     ranked?: boolean;
     footer?: ReactNode;
+    trackingContextByProductId?: Record<string, ProductCardTrackingContext>;
+    recommendationReasonByProductId?: Record<string, string>;
 }
 
 // Dùng chung bố cục danh sách sản phẩm để các section nhất quán mà không nhân đôi markup.
@@ -24,6 +27,8 @@ export function HomeProductSection({
     mode,
     ranked = false,
     footer,
+    trackingContextByProductId,
+    recommendationReasonByProductId,
 }: HomeProductSectionProps) {
     if (products.length === 0) return null;
 
@@ -57,6 +62,12 @@ export function HomeProductSection({
                             product={product}
                             compact={mode === 'rail'}
                             rank={ranked ? index + 1 : undefined}
+                            trackingContext={
+                                trackingContextByProductId?.[product.id]
+                            }
+                            recommendationReason={
+                                recommendationReasonByProductId?.[product.id]
+                            }
                         />
                     ))}
                 </div>

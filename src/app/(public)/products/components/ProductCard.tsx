@@ -17,11 +17,21 @@ import {
     getProductThumbnail,
 } from '../utils/product-formatters';
 
+export interface ProductCardTrackingContext {
+    recommendationRequestId?: string;
+    recommendationItemId?: string;
+    recommendationSource?: string;
+    recommendationRank?: number;
+    surface?: 'home' | 'product_detail' | 'recommendations_page';
+}
+
 interface ProductCardProps {
     product: PublicProduct;
     compact?: boolean;
     rank?: number;
     trackingPage?: string;
+    trackingContext?: ProductCardTrackingContext;
+    recommendationReason?: string;
 }
 
 // Trình bày ảnh, giá, ưu đãi và tín hiệu tin cậy trong một card gọn; card không hiển thị thương hiệu hoặc shop.
@@ -30,6 +40,8 @@ export function ProductCard({
     compact = false,
     rank,
     trackingPage = 'storefront',
+    trackingContext,
+    recommendationReason,
 }: ProductCardProps) {
     const cardRef = useRef<HTMLAnchorElement>(null);
     const imageUrl = getProductThumbnail(product);
@@ -56,6 +68,7 @@ export function ProductCard({
                     interactionType: 'PRODUCT_IMPRESSED',
                     productId: product.id,
                     page: trackingPage,
+                    ...trackingContext,
                 }).catch(() => undefined);
                 observer.disconnect();
             },
@@ -64,7 +77,15 @@ export function ProductCard({
 
         observer.observe(cardElement);
         return () => observer.disconnect();
-    }, [product.id, trackingPage]);
+    }, [
+        product.id,
+        trackingPage,
+        trackingContext?.recommendationRequestId,
+        trackingContext?.recommendationItemId,
+        trackingContext?.recommendationSource,
+        trackingContext?.recommendationRank,
+        trackingContext?.surface,
+    ]);
 
     return (
         <Link
@@ -75,6 +96,7 @@ export function ProductCard({
                     interactionType: 'PRODUCT_CLICKED',
                     productId: product.id,
                     page: trackingPage,
+                    ...trackingContext,
                 }).catch(() => undefined);
             }}
             aria-label={`Xem chi tiết ${product.name}`}
@@ -110,9 +132,19 @@ export function ProductCard({
             </div>
 
             <div className="flex flex-1 flex-col p-3">
+                {product.originType === 'EXTERNAL' ? (
+                    <span className="mb-2 w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        Sản phẩm tham khảo
+                    </span>
+                ) : null}
                 <p className="line-clamp-2 min-h-10 text-sm font-medium leading-5 text-zinc-900">
                     {product.name}
                 </p>
+                {recommendationReason ? (
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-500">
+                        {recommendationReason}
+                    </p>
+                ) : null}
                 <div className="mt-2 flex min-h-5 items-center gap-1.5 text-xs text-zinc-500">
                     <span
                         className={cn(
@@ -132,7 +164,11 @@ export function ProductCard({
                                     {rating.toFixed(1)}
                                     {product.reviewCount > 0 ? (
                                         <span className="ml-1 text-zinc-400">
-                                            ({product.reviewCount.toLocaleString('vi-VN')})
+                                            (
+                                            {product.reviewCount.toLocaleString(
+                                                'vi-VN',
+                                            )}
+                                            )
                                         </span>
                                     ) : null}
                                 </>

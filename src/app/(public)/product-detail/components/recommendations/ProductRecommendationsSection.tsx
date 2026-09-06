@@ -1,8 +1,8 @@
 import { ProductCard } from '@/app/(public)/products/components/ProductCard';
-import type { PublicProduct } from '@/services/product';
+import type { ProductDetailRecommendation } from '../../types/product-detail.types';
 
 interface ProductRecommendationsSectionProps {
-    products: PublicProduct[];
+    products: ProductDetailRecommendation[];
 }
 
 // Hiển thị sản phẩm liên quan bằng card dùng chung để luồng khám phá nhất quán với trang chủ.
@@ -29,8 +29,22 @@ export function ProductRecommendationsSection({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
-                    {products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
+                    {products.map((item) => (
+                        <ProductCard
+                            key={item.product.id}
+                            product={item.product}
+                            rank={item.rank}
+                            trackingPage="product_detail"
+                            trackingContext={{
+                                recommendationRequestId:
+                                    item.recommendationRequestId,
+                                recommendationItemId: item.product.id,
+                                recommendationSource: item.source,
+                                recommendationRank: item.rank,
+                                surface: 'product_detail',
+                            }}
+                            recommendationReason={item.reasons?.[0]}
+                        />
                     ))}
                 </div>
             </div>

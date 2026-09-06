@@ -7,7 +7,15 @@ import type {
 
 export interface ProductDetailData {
     product: ProductDetail;
-    recommendations: PublicProduct[];
+    recommendations: ProductDetailRecommendation[];
+}
+
+export interface ProductDetailRecommendation {
+    product: PublicProduct;
+    rank?: number;
+    source?: string;
+    reasons?: string[];
+    recommendationRequestId?: string;
 }
 
 export interface ProductBreadcrumbItem {
