@@ -35,14 +35,26 @@ export function ProductRecommendationsSection({
                             product={item.product}
                             rank={item.rank}
                             trackingPage="product_detail"
-                            trackingContext={{
-                                recommendationRequestId:
-                                    item.recommendationRequestId,
-                                recommendationItemId: item.product.id,
-                                recommendationSource: item.source,
-                                recommendationRank: item.rank,
-                                surface: 'product_detail',
-                            }}
+                            trackingContext={
+                                item.recommendationRequestId &&
+                                item.recommendationItemId
+                                    ? {
+                                          recommendationRequestId:
+                                              item.recommendationRequestId,
+                                          recommendationItemId:
+                                              item.recommendationItemId,
+                                          recommendationSource: item.source,
+                                          recommendationRank: item.rank,
+                                          surface: 'product_detail',
+                                          recommendationPolicyVersion:
+                                              item.recommendationPolicyVersion,
+                                          recommendationExperimentId:
+                                              item.recommendationExperimentId,
+                                          recommendationExperimentVariant:
+                                              item.recommendationExperimentVariant,
+                                      }
+                                    : undefined
+                            }
                             recommendationReason={item.reasons?.[0]}
                         />
                     ))}

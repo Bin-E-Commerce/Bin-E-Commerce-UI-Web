@@ -23,6 +23,9 @@ export interface ProductCardTrackingContext {
     recommendationSource?: string;
     recommendationRank?: number;
     surface?: 'home' | 'product_detail' | 'recommendations_page';
+    recommendationPolicyVersion?: string;
+    recommendationExperimentId?: string;
+    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID';
 }
 
 interface ProductCardProps {
@@ -54,6 +57,17 @@ export function ProductCard({
         displayOriginalPrice,
     );
     const hasRating = rating > 0;
+    const recommendationRequestId = trackingContext?.recommendationRequestId;
+    const recommendationItemId = trackingContext?.recommendationItemId;
+    const recommendationSource = trackingContext?.recommendationSource;
+    const recommendationRank = trackingContext?.recommendationRank;
+    const surface = trackingContext?.surface;
+    const recommendationPolicyVersion =
+        trackingContext?.recommendationPolicyVersion;
+    const recommendationExperimentId =
+        trackingContext?.recommendationExperimentId;
+    const recommendationExperimentVariant =
+        trackingContext?.recommendationExperimentVariant;
 
     useEffect(() => {
         const cardElement = cardRef.current;
@@ -68,7 +82,14 @@ export function ProductCard({
                     interactionType: 'PRODUCT_IMPRESSED',
                     productId: product.id,
                     page: trackingPage,
-                    ...trackingContext,
+                    recommendationRequestId,
+                    recommendationItemId,
+                    recommendationSource,
+                    recommendationRank,
+                    surface,
+                    recommendationPolicyVersion,
+                    recommendationExperimentId,
+                    recommendationExperimentVariant,
                 }).catch(() => undefined);
                 observer.disconnect();
             },
@@ -80,11 +101,14 @@ export function ProductCard({
     }, [
         product.id,
         trackingPage,
-        trackingContext?.recommendationRequestId,
-        trackingContext?.recommendationItemId,
-        trackingContext?.recommendationSource,
-        trackingContext?.recommendationRank,
-        trackingContext?.surface,
+        recommendationRequestId,
+        recommendationItemId,
+        recommendationSource,
+        recommendationRank,
+        surface,
+        recommendationPolicyVersion,
+        recommendationExperimentId,
+        recommendationExperimentVariant,
     ]);
 
     return (
@@ -96,7 +120,14 @@ export function ProductCard({
                     interactionType: 'PRODUCT_CLICKED',
                     productId: product.id,
                     page: trackingPage,
-                    ...trackingContext,
+                    recommendationRequestId,
+                    recommendationItemId,
+                    recommendationSource,
+                    recommendationRank,
+                    surface,
+                    recommendationPolicyVersion,
+                    recommendationExperimentId,
+                    recommendationExperimentVariant,
                 }).catch(() => undefined);
             }}
             aria-label={`Xem chi tiết ${product.name}`}

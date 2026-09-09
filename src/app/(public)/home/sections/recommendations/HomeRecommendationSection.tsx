@@ -32,10 +32,16 @@ export function HomeRecommendationSection({
             item.product.id,
             {
                 recommendationRequestId: recommendationQuery.data?.requestId,
-                recommendationItemId: item.product.id,
+                recommendationItemId: item.recommendationItemId,
                 recommendationSource: item.source,
                 recommendationRank: item.rank,
                 surface: 'home' as const,
+                recommendationPolicyVersion:
+                    recommendationQuery.data?.rankingPolicyVersion,
+                recommendationExperimentId:
+                    recommendationQuery.data?.experiment?.id ?? undefined,
+                recommendationExperimentVariant:
+                    recommendationQuery.data?.experiment?.variant ?? undefined,
             },
         ]),
     );

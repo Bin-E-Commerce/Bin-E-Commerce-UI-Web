@@ -22,12 +22,16 @@ export interface TrackRecommendationInteractionInput {
     recommendationSource?: string;
     recommendationRank?: number;
     surface?: 'home' | 'product_detail' | 'recommendations_page';
+    recommendationPolicyVersion?: string;
+    recommendationExperimentId?: string;
+    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID';
 }
 
 import type { PublicProduct } from '@/services/product';
 
 export interface RecommendationItem {
     product: PublicProduct;
+    recommendationItemId: string;
     rank: number;
     score: number;
     source: string;
@@ -45,4 +49,9 @@ export interface RecommendationResponse {
     totalPages: number;
     generatedAt: string;
     ruleVersion: string;
+    rankingPolicyVersion: string;
+    experiment: {
+        id: string;
+        variant: 'CONTROL' | 'HYBRID';
+    } | null;
 }

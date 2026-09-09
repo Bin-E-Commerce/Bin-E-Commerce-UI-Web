@@ -16,6 +16,11 @@ import type {
 type ProductRecommendationResult = {
     requestId?: string;
     items: ProductDetailRecommendation[];
+    rankingPolicyVersion?: string;
+    experiment?: {
+        id: string;
+        variant: 'CONTROL' | 'HYBRID';
+    } | null;
 };
 
 // Tải chi tiết và danh sách gợi ý song song để tránh chờ product xong mới bắt đầu request liên quan.
@@ -40,7 +45,6 @@ async function fetchProductDetail(
                     sort: 'sold_desc',
                 })
                 .then((response) => ({
-                    requestId: 'product-detail-fallback',
                     items: response.items.map((item, index) => ({
                         product: item,
                         rank: index + 1,
@@ -61,6 +65,12 @@ async function fetchProductDetail(
             .map((item) => ({
                 ...item,
                 recommendationRequestId: recommendationPage.requestId,
+                recommendationItemId: item.recommendationItemId,
+                recommendationPolicyVersion:
+                    recommendationPage.rankingPolicyVersion,
+                recommendationExperimentId: recommendationPage.experiment?.id,
+                recommendationExperimentVariant:
+                    recommendationPage.experiment?.variant,
             })),
     };
 }

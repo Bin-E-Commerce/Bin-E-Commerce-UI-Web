@@ -230,10 +230,19 @@ export function RecommendationsPageContent() {
                                         recommendationRequestId:
                                             recommendationsQuery.data
                                                 ?.requestId,
-                                        recommendationItemId: item.product.id,
+                                        recommendationItemId: item.recommendationItemId,
                                         recommendationSource: item.source,
                                         recommendationRank: item.rank,
                                         surface: 'recommendations_page',
+                                        recommendationPolicyVersion:
+                                            recommendationsQuery.data
+                                                ?.rankingPolicyVersion,
+                                        recommendationExperimentId:
+                                            recommendationsQuery.data?.experiment
+                                                ?.id ?? undefined,
+                                        recommendationExperimentVariant:
+                                            recommendationsQuery.data?.experiment
+                                                ?.variant ?? undefined,
                                     }}
                                     recommendationReason={item.reasons[0]}
                                 />

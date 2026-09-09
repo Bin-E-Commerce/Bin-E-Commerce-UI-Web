@@ -16,6 +16,10 @@ export interface ProductDetailRecommendation {
     source?: string;
     reasons?: string[];
     recommendationRequestId?: string;
+    recommendationItemId?: string;
+    recommendationPolicyVersion?: string;
+    recommendationExperimentId?: string;
+    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID';
 }
 
 export interface ProductBreadcrumbItem {
