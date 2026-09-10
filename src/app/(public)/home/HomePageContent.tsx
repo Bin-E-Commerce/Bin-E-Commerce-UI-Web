@@ -61,13 +61,11 @@ export function HomePageContent() {
                     description="Những lựa chọn đáng chú ý trong danh sách sản phẩm hiện tại."
                     products={topSearchProducts}
                     mode="rail"
-                    ranked
                 />
             ) : null}
             {recommendationProducts.length > 0 ? (
                 <HomeRecommendationSection
                     products={recommendationProducts}
-                    hasMoreProducts={totalProducts > products.length}
                 />
             ) : null}
         </div>

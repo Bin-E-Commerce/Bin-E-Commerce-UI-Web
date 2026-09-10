@@ -31,7 +31,6 @@ export interface ProductCardTrackingContext {
 interface ProductCardProps {
     product: PublicProduct;
     compact?: boolean;
-    rank?: number;
     trackingPage?: string;
     trackingContext?: ProductCardTrackingContext;
     recommendationReason?: string;
@@ -41,7 +40,6 @@ interface ProductCardProps {
 export function ProductCard({
     product,
     compact = false,
-    rank,
     trackingPage = 'storefront',
     trackingContext,
     recommendationReason,
@@ -136,11 +134,6 @@ export function ProductCard({
                 compact && 'w-44 shrink-0 snap-start sm:w-auto',
             )}
         >
-            {rank ? (
-                <span className="absolute left-2 top-2 z-10 flex h-7 min-w-7 items-center justify-center rounded-md bg-zinc-950 px-2 text-[11px] font-bold text-white shadow-sm">
-                    TOP {rank}
-                </span>
-            ) : null}
             {discountPercent > 0 ? (
                 <span className="absolute right-2 top-2 z-10 rounded-md bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700">
                     -{discountPercent}%

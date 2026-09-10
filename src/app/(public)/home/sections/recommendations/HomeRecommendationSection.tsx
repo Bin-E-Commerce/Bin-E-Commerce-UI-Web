@@ -3,7 +3,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, LockKeyhole, Sparkles } from 'lucide-react';
+import { ArrowRight, Compass, LockKeyhole } from 'lucide-react';
 
 import type { PublicProduct } from '@/services/product';
 import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
@@ -12,7 +12,6 @@ import { useHomeRecommendations } from './useHomeRecommendations';
 
 interface HomeRecommendationSectionProps {
     products: PublicProduct[];
-    hasMoreProducts: boolean;
 }
 
 // Trình bày danh sách gợi ý hiện tại và tạo CTA phù hợp với trạng thái phiên.
@@ -20,7 +19,6 @@ interface HomeRecommendationSectionProps {
 // user đã đăng nhập được đưa thẳng tới toàn bộ danh sách mà không thay đổi request backend.
 export function HomeRecommendationSection({
     products,
-    hasMoreProducts,
 }: HomeRecommendationSectionProps) {
     const recommendationQuery = useHomeRecommendations();
     const { initialized, isAuthenticated, getProtectedHref } =
@@ -55,12 +53,9 @@ export function HomeRecommendationSection({
         recommendedProducts.length > 0 ? recommendedProducts : products;
     // Guest luôn cần thấy CTA mở rộng sau khi auth đã hydrate, vì quyền xem thêm phụ thuộc đăng nhập
     // chứ không phụ thuộc riêng vào totalPages hiện tại của result set recommendation.
-    const shouldShowMoreCta =
-        initialized &&
-        (!isAuthenticated ||
-            (recommendationQuery.data
-                ? recommendationQuery.data.totalPages > 1
-                : hasMoreProducts));
+    // CTA luôn được giữ khi section có sản phẩm để người dùng luôn có lối vào trang gợi ý.
+    // Guest được đưa sang login; user đã đăng nhập đi thẳng đến trang gợi ý.
+    const shouldShowMoreCta = initialized && displayedProducts.length > 0;
     if (displayedProducts.length === 0) return null;
 
     return (
@@ -80,7 +75,7 @@ export function HomeRecommendationSection({
                             <div className="flex items-start gap-3">
                                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
                                     {isAuthenticated ? (
-                                        <Sparkles className="h-4 w-4" />
+                                        <Compass className="h-4 w-4" />
                                     ) : (
                                         <LockKeyhole className="h-4 w-4" />
                                     )}

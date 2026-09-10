@@ -33,7 +33,6 @@ export function ProductRecommendationsSection({
                         <ProductCard
                             key={item.product.id}
                             product={item.product}
-                            rank={item.rank}
                             trackingPage="product_detail"
                             trackingContext={
                                 item.recommendationRequestId &&

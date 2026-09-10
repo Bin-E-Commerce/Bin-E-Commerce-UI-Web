@@ -224,7 +224,6 @@ export function RecommendationsPageContent() {
                                 <ProductCard
                                     key={item.product.id}
                                     product={item.product}
-                                    rank={item.rank}
                                     trackingPage="recommendations_page"
                                     trackingContext={{
                                         recommendationRequestId:

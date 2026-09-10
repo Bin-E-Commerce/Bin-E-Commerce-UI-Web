@@ -11,7 +11,6 @@ interface HomeProductSectionProps {
     description: string;
     products: PublicProduct[];
     mode: 'rail' | 'grid';
-    ranked?: boolean;
     footer?: ReactNode;
     trackingContextByProductId?: Record<string, ProductCardTrackingContext>;
     recommendationReasonByProductId?: Record<string, string>;
@@ -25,7 +24,6 @@ export function HomeProductSection({
     description,
     products,
     mode,
-    ranked = false,
     footer,
     trackingContextByProductId,
     recommendationReasonByProductId,
@@ -56,12 +54,11 @@ export function HomeProductSection({
                             : 'grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 sm:p-4 lg:grid-cols-4 xl:grid-cols-6',
                     )}
                 >
-                    {products.map((product, index) => (
+                    {products.map((product) => (
                         <ProductCard
                             key={product.id}
                             product={product}
                             compact={mode === 'rail'}
-                            rank={ranked ? index + 1 : undefined}
                             trackingContext={
                                 trackingContextByProductId?.[product.id]
                             }
@@ -72,7 +69,7 @@ export function HomeProductSection({
                     ))}
                 </div>
                 {footer ? (
-                    <div className="border-t border-zinc-200 px-4 py-4 sm:px-6">
+                    <div className="border-t border-zinc-200 py-4">
                         {footer}
                     </div>
                 ) : null}
