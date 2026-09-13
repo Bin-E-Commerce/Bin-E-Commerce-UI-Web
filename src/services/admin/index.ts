@@ -5,3 +5,5 @@ export * from './api/shop-profile-changes.api';
 export * from './types/access-control.types';
 export * from './types/seller-applications.types';
 export * from './types/shop-profile-changes.types';
+export * from './api/recommendation.api';
+export * from './types/recommendation.types';
