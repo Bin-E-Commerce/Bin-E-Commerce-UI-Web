@@ -12,7 +12,6 @@ import {
     LayoutDashboard,
     LogOut,
     Menu,
-    Search,
     ShieldCheck,
     ShoppingBag,
     UserRound,
@@ -77,13 +76,6 @@ export function AdminTopbar({
                             Quản trị vận hành và kiểm soát nền tảng
                         </p>
                     </div>
-                </div>
-
-                <div className="mx-auto hidden h-10 w-full max-w-xl items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 md:flex">
-                    <Search className="size-4 text-zinc-400" />
-                    <span className="text-sm text-zinc-400">
-                        Tìm hồ sơ, người dùng, đơn hàng hoặc sản phẩm...
-                    </span>
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">

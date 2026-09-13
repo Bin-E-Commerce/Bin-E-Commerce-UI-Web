@@ -33,11 +33,9 @@ export function CartPreview({
     onClose,
     onRetry,
 }: CartPreviewProps) {
-    const previewItems = cart?.items.slice(0, 3) ?? [];
-    const remainingItemCount = Math.max(
-        (cart?.items.length ?? 0) - previewItems.length,
-        0,
-    );
+    // Hiển thị toàn bộ line item trong vùng cuộn; nếu chỉ cắt 3 item thì sản phẩm còn lại không thể được tìm thấy bằng scroll.
+    // Chiều cao tối đa vẫn được giữ ở danh sách nên footer, subtotal và nút xem cart luôn nằm ngoài vùng cuộn và dễ thao tác.
+    const previewItems = cart?.items ?? [];
 
     return (
         <div
@@ -47,7 +45,9 @@ export function CartPreview({
         >
             <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-5">
                 <div>
-                    <h2 className="text-base font-bold text-zinc-950">Giỏ hàng</h2>
+                    <h2 className="text-base font-bold text-zinc-950">
+                        Giỏ hàng
+                    </h2>
                     {cart && (
                         <p className="mt-1 text-xs text-zinc-500">
                             {cart.totalItems} sản phẩm
@@ -160,7 +160,9 @@ export function CartPreview({
                                             <p className="line-clamp-2 text-sm font-semibold leading-5 text-zinc-900 transition-colors group-hover:text-zinc-600 group-hover:underline">
                                                 {item.productName}
                                             </p>
-                                            {item.variantName && item.variantName !== item.productName ? (
+                                            {item.variantName &&
+                                            item.variantName !==
+                                                item.productName ? (
                                                 <p className="mt-1 truncate text-xs text-zinc-500 transition-colors group-hover:text-zinc-600">
                                                     {item.variantName}
                                                 </p>
@@ -172,7 +174,8 @@ export function CartPreview({
                                     </div>
                                     <div className="mt-3 flex items-center justify-between gap-3">
                                         <span className="text-xs text-zinc-500">
-                                            {formatCartPrice(item.unitPrice)} × {item.quantity}
+                                            {formatCartPrice(item.unitPrice)} ×{' '}
+                                            {item.quantity}
                                         </span>
                                         <CartItemActions item={item} compact />
                                     </div>
@@ -182,13 +185,10 @@ export function CartPreview({
                     </div>
 
                     <div className="border-t border-zinc-100 px-6 py-5">
-                        {remainingItemCount > 0 && (
-                            <p className="mb-3 text-xs text-zinc-500">
-                                Còn {remainingItemCount} sản phẩm khác trong giỏ hàng.
-                            </p>
-                        )}
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-sm text-zinc-500">Tạm tính</span>
+                            <span className="text-sm text-zinc-500">
+                                Tạm tính
+                            </span>
                             <span className="text-base font-bold text-zinc-950">
                                 {formatCartPrice(cart?.subtotal ?? '0')}
                             </span>
