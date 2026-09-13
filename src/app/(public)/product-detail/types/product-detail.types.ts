@@ -19,7 +19,7 @@ export interface ProductDetailRecommendation {
     recommendationItemId?: string;
     recommendationPolicyVersion?: string;
     recommendationExperimentId?: string;
-    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID';
+    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID' | 'ML_HYBRID';
 }
 
 export interface ProductBreadcrumbItem {

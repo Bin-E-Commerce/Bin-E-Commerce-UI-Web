@@ -4,17 +4,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import {
-    getRecommendationSessionId,
-    getRecommendations,
-} from '@/services/recommendation';
+import { getRecommendations } from '@/services/recommendation';
+import { useRecommendationSessionId } from '@/services/recommendation/hooks/use-recommendation-session';
 import { useAppSelector } from '@/store/hooks';
 import { RECOMMENDATIONS_PAGE_SIZE } from '../constants/recommendations.constants';
 
 // Tải đúng 24 sản phẩm theo trang để giao diện luôn khớp với lưới sáu cột trên màn hình lớn.
 export function useRecommendations(enabled: boolean, page: number) {
     const userId = useAppSelector((state) => state.auth.user?.id ?? null);
-    const sessionId = getRecommendationSessionId();
+    const sessionId = useRecommendationSessionId();
     const actorKey = userId
         ? `user:${userId}`
         : `session:${sessionId ?? 'anonymous'}`;
@@ -28,7 +26,8 @@ export function useRecommendations(enabled: boolean, page: number) {
                 page,
                 pageSize: RECOMMENDATIONS_PAGE_SIZE,
             }),
-        enabled,
+        // Guest chỉ gọi page 1 sau khi session browser đã sẵn sàng; user cũng dùng session để giữ context.
+        enabled: enabled && Boolean(sessionId),
         staleTime: 30_000,
     });
 }

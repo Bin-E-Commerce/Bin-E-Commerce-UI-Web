@@ -12,6 +12,13 @@ import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { Cart, UpdateCartItemInput } from '../types/cart.types';
 
+type RemoveCartItemInput = {
+    itemId: string;
+    productId: string;
+    variantId: string;
+    quantity: number;
+};
+
 // Cập nhật quantity trên server rồi ghi đè cache cart để mọi nơi trong header và trang cart đồng bộ.
 export function useUpdateCartItem() {
     const queryClient = useQueryClient();
@@ -38,24 +45,20 @@ export function useRemoveCartItem() {
     const userId = useAppSelector((state) => state.auth.user?.id ?? null);
     const queryKey = ['cart', userId ?? 'anonymous'];
 
-    return useMutation<Cart, unknown, string, { item: Cart['items'][number] | undefined }>({
-        mutationFn: removeCartItem,
-        onMutate: async (itemId) => {
-            const cart = queryClient.getQueryData<Cart>(queryKey);
-            return { item: cart?.items.find((item) => item.id === itemId) };
-        },
-        onSuccess: async (cart, _itemId, context) => {
+    return useMutation<Cart, unknown, RemoveCartItemInput>({
+        // Dùng itemId cho request nhưng giữ snapshot từ UI để tracking không phụ thuộc cache cart.
+        mutationFn: ({ itemId }) => removeCartItem(itemId),
+        onSuccess: async (cart, variables) => {
             queryClient.setQueryData(queryKey, cart);
             await queryClient.invalidateQueries({ queryKey });
-            if (context?.item) {
-                void trackRecommendationInteraction({
-                    interactionType: 'PRODUCT_REMOVED_FROM_CART',
-                    productId: context.item.productId,
-                    variantId: context.item.variantId,
-                    quantity: context.item.quantity,
-                    page: 'cart',
-                }).catch(() => undefined);
-            }
+            // Gửi event sau khi xóa thành công; không gửi trước để tránh ghi nhận thao tác thất bại.
+            void trackRecommendationInteraction({
+                interactionType: 'PRODUCT_REMOVED_FROM_CART',
+                productId: variables.productId,
+                variantId: variables.variantId,
+                quantity: variables.quantity,
+                page: 'cart',
+            }).catch(() => undefined);
             toast.success('Đã xóa sản phẩm khỏi giỏ hàng.');
         },
         onError: (error) => {

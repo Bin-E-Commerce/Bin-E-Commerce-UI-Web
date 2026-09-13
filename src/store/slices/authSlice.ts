@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { authService, type AuthUser } from '@/services/auth';
+import { clearRecommendationSession } from '@/services/recommendation/session';
 
 interface AuthState {
     accessToken: string | null;
@@ -21,7 +22,11 @@ const initialState: AuthState = {
 // Gọi 1 lần khi app mount — dùng httpOnly cookie để restore session (1 API call duy nhất)
 export const initAuth = createAsyncThunk(
     'auth/initAuth',
-    async (): Promise<{ accessToken: string; sessionId: string; user: AuthUser } | null> => {
+    async (): Promise<{
+        accessToken: string;
+        sessionId: string;
+        user: AuthUser;
+    } | null> => {
         try {
             const res = await authService.refresh();
             if (res?.data?.accessToken) {
@@ -59,6 +64,9 @@ export const logoutUser = createAsyncThunk(
             console.error('Logout API failed:', error);
             // Dù server có lỗi, vẫn dùng rejectWithValue để luồng logout ở client không bị ngắt.
             return rejectWithValue(null);
+        } finally {
+            // Guest session có thể đã được merge với user hiện tại; logout phải cắt liên kết trước user kế tiếp.
+            clearRecommendationSession();
         }
     },
 );
@@ -69,11 +77,16 @@ const authSlice = createSlice({
     reducers: {
         setAuth(
             state,
-            action: PayloadAction<{ accessToken: string; sessionId?: string; user?: AuthUser }>,
+            action: PayloadAction<{
+                accessToken: string;
+                sessionId?: string;
+                user?: AuthUser;
+            }>,
         ) {
             state.accessToken = action.payload.accessToken;
             if (action.payload.user) state.user = action.payload.user;
-            if (action.payload.sessionId !== undefined) state.sessionId = action.payload.sessionId;
+            if (action.payload.sessionId !== undefined)
+                state.sessionId = action.payload.sessionId;
             state.initialized = true;
         },
         clearAuth(state) {

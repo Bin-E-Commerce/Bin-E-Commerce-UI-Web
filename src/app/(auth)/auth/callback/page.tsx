@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { authService } from '@/services/auth';
+import { mergeRecommendationSession } from '@/services/recommendation';
 import { getDefaultAuthenticatedPath } from '@/services/auth/access';
 import { setAuth } from '@/store/slices/authSlice';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -73,13 +74,15 @@ function CallbackHandler() {
 
         authService
             .socialCallback(provider, { code, state })
-            .then((res) => {
+            .then(async (res) => {
                 dispatch(
                     setAuth({
                         accessToken: res.data.accessToken,
                         user: res.data.user,
                     }),
                 );
+                // OAuth callback không luôn remount StoreProvider nên phải merge ngay tại đây.
+                await mergeRecommendationSession().catch(() => undefined);
                 toast.success(`Đăng nhập bằng ${provider} thành công!`);
                 router.replace(getDefaultAuthenticatedPath(res.data.user));
             })

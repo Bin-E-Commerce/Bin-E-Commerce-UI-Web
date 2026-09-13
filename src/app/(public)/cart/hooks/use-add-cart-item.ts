@@ -9,7 +9,11 @@ import { toast } from 'sonner';
 import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { addCartItem } from '@/services/cart';
-import { trackRecommendationInteraction } from '@/services/recommendation';
+import {
+    clearRecommendationAttribution,
+    getStoredRecommendationAttribution,
+    trackRecommendationInteraction,
+} from '@/services/recommendation';
 import type { AddCartItemInput, Cart } from '../types/cart.types';
 
 // Cung cấp mutation dùng chung cho product detail và các CTA thêm vào giỏ sau này.
@@ -25,13 +29,24 @@ export function useAddCartItem() {
             await queryClient.invalidateQueries({
                 queryKey: ['cart', userId ?? 'anonymous'],
             });
-            void trackRecommendationInteraction({
+            const attribution = getStoredRecommendationAttribution(
+                input.productId,
+            );
+            const trackingPromise = trackRecommendationInteraction({
                 interactionType: 'PRODUCT_ADDED_TO_CART',
                 productId: input.productId,
                 variantId: input.variantId,
                 quantity: input.quantity,
                 page: 'product_detail',
-            }).catch(() => undefined);
+                ...attribution,
+            });
+            // Chỉ xóa context sau khi Gateway nhận event; nếu tracking lỗi, lần thao tác sau vẫn còn cơ hội gửi lại attribution.
+            void trackingPromise
+                .then(() => {
+                    if (attribution)
+                        clearRecommendationAttribution(input.productId);
+                })
+                .catch(() => undefined);
             toast.success('Đã thêm sản phẩm vào giỏ hàng.');
         },
         onError: (error) => {

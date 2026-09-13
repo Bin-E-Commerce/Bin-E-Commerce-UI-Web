@@ -7,7 +7,12 @@ import { useEffect, useRef } from 'react';
 import { PackageOpen, Star } from 'lucide-react';
 
 import type { PublicProduct } from '@/services/product';
-import { trackRecommendationInteraction } from '@/services/recommendation';
+import {
+    queueRecommendationImpression,
+    rememberRecommendationAttribution,
+    trackRecommendationInteraction,
+} from '@/services/recommendation';
+import type { RecommendationAttributionContext } from '@/services/recommendation';
 import { cn } from '@/lib/utils';
 import {
     calculateDiscountPercent,
@@ -17,16 +22,8 @@ import {
     getProductThumbnail,
 } from '../utils/product-formatters';
 
-export interface ProductCardTrackingContext {
-    recommendationRequestId?: string;
-    recommendationItemId?: string;
-    recommendationSource?: string;
-    recommendationRank?: number;
-    surface?: 'home' | 'product_detail' | 'recommendations_page';
-    recommendationPolicyVersion?: string;
-    recommendationExperimentId?: string;
-    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID';
-}
+export type ProductCardTrackingContext =
+    Partial<RecommendationAttributionContext>;
 
 interface ProductCardProps {
     product: PublicProduct;
@@ -74,9 +71,14 @@ export function ProductCard({
         let hasTrackedImpression = false;
         const observer = new IntersectionObserver(
             ([entry]) => {
-                if (!entry?.isIntersecting || hasTrackedImpression) return;
+                if (
+                    !entry?.isIntersecting ||
+                    entry.intersectionRatio < 0.5 ||
+                    hasTrackedImpression
+                )
+                    return;
                 hasTrackedImpression = true;
-                void trackRecommendationInteraction({
+                queueRecommendationImpression({
                     interactionType: 'PRODUCT_IMPRESSED',
                     productId: product.id,
                     page: trackingPage,
@@ -88,7 +90,7 @@ export function ProductCard({
                     recommendationPolicyVersion,
                     recommendationExperimentId,
                     recommendationExperimentVariant,
-                }).catch(() => undefined);
+                });
                 observer.disconnect();
             },
             { threshold: 0.5 },
@@ -114,6 +116,13 @@ export function ProductCard({
             ref={cardRef}
             href={`/products/${product.id}`}
             onClick={() => {
+                // Giữ context trước khi điều hướng để CTA add-to-cart ở trang chi tiết có thể gửi attribution hợp lệ.
+                rememberRecommendationAttribution(
+                    product.id,
+                    trackingContext as
+                        | RecommendationAttributionContext
+                        | undefined,
+                );
                 void trackRecommendationInteraction({
                     interactionType: 'PRODUCT_CLICKED',
                     productId: product.id,

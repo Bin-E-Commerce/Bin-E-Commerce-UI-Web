@@ -4,16 +4,14 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useAppSelector } from '@/store/hooks';
-import {
-    getRecommendationSessionId,
-    getRecommendations,
-} from '@/services/recommendation';
+import { getRecommendations } from '@/services/recommendation';
+import { useRecommendationSessionId } from '@/services/recommendation/hooks/use-recommendation-session';
 
 // Đọc session auth trước khi gọi endpoint guest/user và tránh request recommendation khi app chưa hydrate xong.
 export function useHomeRecommendations() {
     const initialized = useAppSelector((state) => state.auth.initialized);
     const userId = useAppSelector((state) => state.auth.user?.id ?? null);
-    const sessionId = getRecommendationSessionId();
+    const sessionId = useRecommendationSessionId();
     const actorKey = userId
         ? `user:${userId}`
         : `session:${sessionId ?? 'anonymous'}`;
@@ -26,7 +24,8 @@ export function useHomeRecommendations() {
                 page: 1,
                 pageSize: 24,
             }),
-        enabled: initialized,
+        // Chờ session được tạo sau hydration để query key không đổi giữa SSR và client lần render đầu.
+        enabled: initialized && Boolean(sessionId),
         staleTime: 60_000,
         retry: 1,
     });

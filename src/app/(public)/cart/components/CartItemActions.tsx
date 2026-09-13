@@ -5,7 +5,10 @@
 
 import { Minus, Plus, Trash2 } from 'lucide-react';
 
-import { useRemoveCartItem, useUpdateCartItem } from '../hooks/use-cart-item-actions';
+import {
+    useRemoveCartItem,
+    useUpdateCartItem,
+} from '../hooks/use-cart-item-actions';
 import type { CartItem } from '../types/cart.types';
 
 interface CartItemActionsProps {
@@ -45,50 +48,66 @@ export function CartItemActions({
     // Xóa item khỏi cart; thao tác này không cần Product Service nên vẫn dọn được sản phẩm đã ngừng bán.
     function handleRemove(): void {
         if (isBusy) return;
-        removeMutation.mutate(item.id);
+        removeMutation.mutate({
+            itemId: item.id,
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity,
+        });
     }
 
     return (
         <div className="flex items-center gap-2">
             {showQuantityActions && (
                 <div className="flex items-center overflow-hidden rounded-lg border border-zinc-200 bg-white">
-                <button
-                    type="button"
-                    onClick={handleDecrease}
-                    disabled={item.quantity <= 1 || isBusy}
-                    className={`${buttonSize} flex cursor-pointer items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-950 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-white`}
-                    aria-label="Giảm số lượng"
-                >
-                    <Minus className={compact ? 'h-3 w-3' : 'h-4 w-4'} aria-hidden="true" />
-                </button>
-                <span
-                    className={`${compact ? 'min-w-8 px-1 text-xs' : 'min-w-10 px-2 text-sm'} text-center font-medium text-zinc-800`}
-                    aria-label={`Số lượng ${item.quantity}`}
-                >
-                    {item.quantity}
-                </span>
-                <button
-                    type="button"
-                    onClick={handleIncrease}
-                    disabled={item.quantity >= 999 || isBusy}
-                    className={`${buttonSize} flex cursor-pointer items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-950 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-white`}
-                    aria-label="Tăng số lượng"
-                >
-                    <Plus className={compact ? 'h-3 w-3' : 'h-4 w-4'} aria-hidden="true" />
-                </button>
+                    <button
+                        type="button"
+                        onClick={handleDecrease}
+                        disabled={item.quantity <= 1 || isBusy}
+                        className={`${buttonSize} flex cursor-pointer items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-950 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-white`}
+                        aria-label="Giảm số lượng"
+                    >
+                        <Minus
+                            className={compact ? 'h-3 w-3' : 'h-4 w-4'}
+                            aria-hidden="true"
+                        />
+                    </button>
+                    <span
+                        className={`${compact ? 'min-w-8 px-1 text-xs' : 'min-w-10 px-2 text-sm'} text-center font-medium text-zinc-800`}
+                        aria-label={`Số lượng ${item.quantity}`}
+                    >
+                        {item.quantity}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={handleIncrease}
+                        disabled={item.quantity >= 999 || isBusy}
+                        className={`${buttonSize} flex cursor-pointer items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-950 hover:text-white disabled:cursor-not-allowed disabled:text-zinc-300 disabled:hover:bg-white`}
+                        aria-label="Tăng số lượng"
+                    >
+                        <Plus
+                            className={compact ? 'h-3 w-3' : 'h-4 w-4'}
+                            aria-hidden="true"
+                        />
+                    </button>
                 </div>
             )}
             {showRemoveAction && (
                 <button
-                type="button"
-                onClick={handleRemove}
-                disabled={isBusy}
-                className={`${removeButtonSize} flex cursor-pointer items-center justify-center gap-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50`}
-                aria-label="Xóa sản phẩm"
-                title="Xóa sản phẩm"
-            >
-                <Trash2 className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden="true" />
-                {!compact && <span className="text-xs font-semibold">Xóa</span>}
+                    type="button"
+                    onClick={handleRemove}
+                    disabled={isBusy}
+                    className={`${removeButtonSize} flex cursor-pointer items-center justify-center gap-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50`}
+                    aria-label="Xóa sản phẩm"
+                    title="Xóa sản phẩm"
+                >
+                    <Trash2
+                        className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}
+                        aria-hidden="true"
+                    />
+                    {!compact && (
+                        <span className="text-xs font-semibold">Xóa</span>
+                    )}
                 </button>
             )}
         </div>

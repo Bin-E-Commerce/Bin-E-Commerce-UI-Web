@@ -16,6 +16,7 @@ import {
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
 import { authService } from '@/services/auth';
+import { mergeRecommendationSession } from '@/services/recommendation';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { useConfetti } from '@/hooks/ui/use-confetti';
 
@@ -96,6 +97,8 @@ export function useRegisterForm() {
                     user: res.data.user,
                 }),
             );
+            // Merge hành vi guest ngay sau OTP để đăng ký mới cũng giữ được intent trước xác thực.
+            await mergeRecommendationSession().catch(() => undefined);
             fireConfetti();
             toast.success('Đăng ký thành công! Chào mừng bạn!');
             router.push('/');

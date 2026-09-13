@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import { authService } from '@/services/auth';
 import type { AuthUser } from '@/services/auth';
+import { mergeRecommendationSession } from '@/services/recommendation';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
 import { getDefaultAuthenticatedPath } from '@/services/auth/access';
@@ -45,6 +46,8 @@ export function useLoginForm() {
                     user: res.data.user,
                 }),
             );
+            // Merge trước khi redirect để hành vi guest không bị bỏ lỡ khi login không reload toàn app.
+            await mergeRecommendationSession().catch(() => undefined);
             toast.success('Đăng nhập thành công!');
             router.push(resolveLoginRedirect(res.data.user));
         } catch (err: unknown) {

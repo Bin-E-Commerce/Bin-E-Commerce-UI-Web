@@ -4,97 +4,121 @@ import { useQuery } from '@tanstack/react-query';
 
 import { useAppSelector } from '@/store/hooks';
 import { productService } from '@/services/product';
-import {
-    getRecommendationSessionId,
-    getRecommendations,
-} from '@/services/recommendation';
+import { getRecommendations } from '@/services/recommendation';
+import { useRecommendationSessionId } from '@/services/recommendation/hooks/use-recommendation-session';
+import type { RecommendationResponse } from '@/services/recommendation/types/recommendation.types';
 import type {
     ProductDetailData,
     ProductDetailRecommendation,
 } from '../types/product-detail.types';
 
-type ProductRecommendationResult = {
-    requestId?: string;
-    items: ProductDetailRecommendation[];
-    rankingPolicyVersion?: string;
-    experiment?: {
-        id: string;
-        variant: 'CONTROL' | 'HYBRID';
-    } | null;
-};
-
-// Tải chi tiết và danh sách gợi ý song song để tránh chờ product xong mới bắt đầu request liên quan.
-async function fetchProductDetail(
+// Recommendation là phần bổ trợ; lỗi hoặc độ trễ của nó không được chặn product detail chính.
+async function fetchProductRecommendations(
     productId: string,
-): Promise<ProductDetailData> {
-    const productPromise = productService.getProductById(productId);
-    const recommendationPromise: Promise<ProductRecommendationResult> =
-        getRecommendations({
+): Promise<RecommendationResponse> {
+    try {
+        return await getRecommendations({
             surface: 'product_detail',
             productId,
             page: 1,
             pageSize: 6,
-        }).catch(() =>
-            // Recommendation lỗi không được làm hỏng trang chi tiết; catalog public là fallback an toàn cho khu vực liên quan.
-            productService
-                .listProducts({
-                    page: 1,
-                    pageSize: 6,
-                    status: 'ACTIVE',
-                    inStock: true,
-                    sort: 'sold_desc',
-                })
-                .then((response) => ({
-                    items: response.items.map((item, index) => ({
-                        product: item,
-                        rank: index + 1,
-                        source: 'FALLBACK_BEST_SELLING',
-                        reasons: ['Được chọn từ những sản phẩm bán chạy'],
-                    })),
-                })),
-        );
-    const [product, recommendationPage] = await Promise.all([
-        productPromise,
-        recommendationPromise,
-    ]);
-
-    return {
-        product,
-        recommendations: recommendationPage.items
-            .filter((item) => item.product.id !== product.id)
-            .map((item) => ({
-                ...item,
-                recommendationRequestId: recommendationPage.requestId,
-                recommendationItemId: item.recommendationItemId,
-                recommendationPolicyVersion:
-                    recommendationPage.rankingPolicyVersion,
-                recommendationExperimentId: recommendationPage.experiment?.id,
-                recommendationExperimentVariant:
-                    recommendationPage.experiment?.variant,
+        });
+    } catch {
+        // Fallback catalog chỉ phục vụ section liên quan khi Recommendation Service tạm thời lỗi.
+        const response = await productService.listProducts({
+            page: 1,
+            pageSize: 7,
+            status: 'ACTIVE',
+            inStock: true,
+            sort: 'sold_desc',
+        });
+        return {
+            requestId: '',
+            strategy: 'COLD_START',
+            profileState: 'GUEST',
+            items: response.items.map((product, index) => ({
+                product,
+                recommendationItemId: `fallback-${product.id}`,
+                rank: index + 1,
+                score: 0,
+                source: 'FALLBACK_BEST_SELLING',
+                reasons: ['Được chọn từ những sản phẩm bán chạy'],
             })),
-    };
+            page: 1,
+            pageSize: 7,
+            total: response.total,
+            totalPages: response.totalPages,
+            generatedAt: new Date().toISOString(),
+            ruleVersion: 'fallback',
+            rankingPolicyVersion: 'fallback',
+            rankingModelVersion: null,
+            experiment: null,
+        };
+    }
 }
 
-// Quản lý cache riêng theo product ID để chuyển qua lại giữa các sản phẩm không tải lại dữ liệu vừa xem.
+// Gắn context recommendation vào item để click/card tracking giữ đúng request, rank và experiment đã phục vụ.
+function mapRecommendationItems(
+    response: RecommendationResponse | undefined,
+    currentProductId: string,
+): ProductDetailRecommendation[] {
+    return (response?.items ?? [])
+        .filter((item) => item.product.id !== currentProductId)
+        .map((item) => ({
+            ...item,
+            recommendationRequestId: response?.requestId,
+            recommendationItemId: item.recommendationItemId,
+            recommendationPolicyVersion: response?.rankingPolicyVersion,
+            recommendationExperimentId: response?.experiment?.id,
+            recommendationExperimentVariant: response?.experiment?.variant,
+        }));
+}
+
+// Tách query product và recommendation để nội dung chính render ngay cả khi session hoặc recommendation backend chậm.
 export function useProductDetail(productId: string) {
     const initialized = useAppSelector((state) => state.auth.initialized);
     const userId = useAppSelector((state) => state.auth.user?.id ?? 'guest');
-    const recommendationSessionId = getRecommendationSessionId() ?? 'anonymous';
+    const recommendationSessionId = useRecommendationSessionId();
 
-    return useQuery({
-        // Session cũng ảnh hưởng danh sách liên quan nên phải nằm trong key để đổi actor không dùng dữ liệu cũ.
-        queryKey: [
-            'products',
-            'detail',
-            productId,
-            userId,
-            recommendationSessionId,
-        ],
-        queryFn: () => fetchProductDetail(productId),
-        // Chờ xác định phiên đăng nhập để API detail gắn đúng likedByCurrentUser sau refresh.
+    const productQuery = useQuery({
+        queryKey: ['products', 'detail', productId],
+        queryFn: () => productService.getProductById(productId),
         enabled: Boolean(productId) && initialized,
-        // Lượt bán thay đổi theo trạng thái đơn; không giữ cache 5 phút để số đơn hoàn/hủy phản ánh ngay.
         staleTime: 0,
         refetchOnWindowFocus: true,
     });
+
+    const recommendationQuery = useQuery({
+        queryKey: [
+            'recommendations',
+            'product-detail',
+            productId,
+            userId,
+            recommendationSessionId ?? 'pending',
+        ],
+        queryFn: () => fetchProductRecommendations(productId),
+        // Chờ session chỉ cho query phụ; product detail không bị phụ thuộc vào việc tạo guest session ở browser.
+        enabled:
+            Boolean(productId) &&
+            initialized &&
+            Boolean(recommendationSessionId),
+        staleTime: 60_000,
+        refetchOnWindowFocus: false,
+        retry: 0,
+    });
+
+    return {
+        ...productQuery,
+        data: productQuery.data
+            ? ({
+                  product: productQuery.data,
+                  recommendations: mapRecommendationItems(
+                      recommendationQuery.data,
+                      productQuery.data.id,
+                  ),
+              } satisfies ProductDetailData)
+            : undefined,
+        // Section liên quan có thể vẫn đang tải sau khi nội dung product đã hiển thị.
+        isFetching: productQuery.isFetching || recommendationQuery.isFetching,
+    };
 }

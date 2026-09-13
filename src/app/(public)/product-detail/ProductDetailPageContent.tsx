@@ -3,9 +3,10 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { trackRecommendationInteraction } from '@/services/recommendation';
+import { useRecommendationSessionId } from '@/services/recommendation/hooks/use-recommendation-session';
 
 import { ProductDescriptionSection } from './components/content/ProductDescriptionSection';
 import { ProductSpecificationsSection } from './components/content/ProductSpecificationsSection';
@@ -30,10 +31,19 @@ export function ProductDetailPageContent({
     productId,
 }: ProductDetailPageContentProps) {
     const productQuery = useProductDetail(productId);
+    const recommendationSessionId = useRecommendationSessionId();
+    const viewedProductIdRef = useRef<string | null>(null);
 
     useEffect(() => {
         const product = productQuery.data?.product;
-        if (!product) return;
+        // Refetch/focus chỉ cập nhật dữ liệu; không nên tính lại một page view cho cùng product.
+        if (
+            !product ||
+            !recommendationSessionId ||
+            viewedProductIdRef.current === product.id
+        )
+            return;
+        viewedProductIdRef.current = product.id;
 
         void trackRecommendationInteraction({
             interactionType: 'PRODUCT_VIEWED',
@@ -41,7 +51,7 @@ export function ProductDetailPageContent({
             categoryId: product.categoryId,
             page: 'product_detail',
         }).catch(() => undefined);
-    }, [productQuery.data?.product]);
+    }, [productQuery.data?.product, recommendationSessionId]);
 
     if (productQuery.isPending) {
         return <ProductDetailSkeleton />;
