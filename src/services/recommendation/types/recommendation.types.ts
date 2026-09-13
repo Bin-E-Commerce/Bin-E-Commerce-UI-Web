@@ -24,7 +24,20 @@ export interface TrackRecommendationInteractionInput {
     surface?: 'home' | 'product_detail' | 'recommendations_page';
     recommendationPolicyVersion?: string;
     recommendationExperimentId?: string;
-    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID';
+    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID' | 'ML_HYBRID';
+}
+
+// Context đã được Recommendation Service ký để nối click của recommendation với hành động add-to-cart sau khi người dùng sang trang chi tiết.
+// Các field này chỉ là metadata attribution, không thay thế user identity do API Gateway xác định.
+export interface RecommendationAttributionContext {
+    recommendationRequestId: string;
+    recommendationItemId: string;
+    recommendationSource: string;
+    recommendationRank: number;
+    surface: 'home' | 'product_detail' | 'recommendations_page';
+    recommendationPolicyVersion: string;
+    recommendationExperimentId?: string;
+    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID' | 'ML_HYBRID';
 }
 
 import type { PublicProduct } from '@/services/product';
@@ -50,8 +63,9 @@ export interface RecommendationResponse {
     generatedAt: string;
     ruleVersion: string;
     rankingPolicyVersion: string;
+    rankingModelVersion: string | null;
     experiment: {
         id: string;
-        variant: 'CONTROL' | 'HYBRID';
+        variant: 'CONTROL' | 'HYBRID' | 'ML_HYBRID';
     } | null;
 }
