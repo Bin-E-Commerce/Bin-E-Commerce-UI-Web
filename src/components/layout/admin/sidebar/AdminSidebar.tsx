@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import {
+    BarChart3,
     ClipboardCheck,
     FilePenLine,
     LayoutDashboard,
@@ -25,6 +26,7 @@ interface AdminSidebarProps {
 }
 
 const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
+    BarChart3,
     ClipboardCheck,
     FilePenLine,
     LayoutDashboard,
