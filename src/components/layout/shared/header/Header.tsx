@@ -8,12 +8,11 @@ import { useHeaderScroll } from './hooks/useHeaderScroll';
 import { HeaderLogo } from './components/HeaderLogo';
 import { NavLinks } from './components/NavLinks';
 import { SearchBar } from './components/SearchBar';
-import { WishlistIcon } from './components/WishlistIcon';
 import { CartIcon } from './components/CartIcon';
 import { UserMenu } from './components/UserMenu';
 
 // Hiển thị điều hướng và các thao tác chính theo cùng một container responsive với nội dung storefront.
-// Component không tự quản lý dữ liệu trang; các nút tìm kiếm, yêu thích, giỏ hàng và tài khoản giữ trách nhiệm riêng.
+// Component không tự quản lý dữ liệu trang; tìm kiếm, giỏ hàng và tài khoản giữ trách nhiệm riêng.
 export function Header() {
     const scrolled = useHeaderScroll();
 
@@ -30,7 +29,6 @@ export function Header() {
                     <NavLinks />
                     <div className="flex min-w-0 flex-1 items-center justify-end gap-0">
                         <SearchBar />
-                        <WishlistIcon />
                         <CartIcon />
                         <UserMenu />
                     </div>
