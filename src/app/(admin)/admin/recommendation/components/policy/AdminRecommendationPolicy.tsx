@@ -13,8 +13,8 @@ import { ChevronDown, ChevronUp, Info, RotateCcw, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     RankingWeightDetails,
-    type RankingWeightKey,
-} from './RankingWeightDetails';
+} from '@/app/(public)/showcase/recommendation/components/ranking/RankingWeightDetails';
+import type { RankingWeightKey } from '@/app/(public)/showcase/recommendation/components/ranking/RankingWeightDetails.types';
 import type {
     RecommendationAdminPolicy,
     UpdateRecommendationPolicyPayload,
