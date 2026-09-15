@@ -1,3 +1,4 @@
+// Điều hướng footer công khai; showcase chỉ giới thiệu hệ thống, không yêu cầu tài khoản hay quyền quản trị.
 export const FOOTER_LINKS = {
     'Mua sắm': [
         { href: '/products', label: 'Tất cả sản phẩm' },
@@ -13,5 +14,6 @@ export const FOOTER_LINKS = {
         { href: '/about', label: 'Về chúng tôi' },
         { href: '/contact', label: 'Liên hệ' },
         { href: '/privacy', label: 'Chính sách bảo mật' },
+        { href: '/showcase', label: 'Kiến trúc & công nghệ' },
     ],
 } as const;
