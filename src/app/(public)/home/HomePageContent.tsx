@@ -9,6 +9,7 @@ import { HomeErrorState } from './sections/states/HomeErrorState';
 import { HomePageSkeleton } from './sections/states/HomePageSkeleton';
 import { HomeStoreSection } from './sections/stores/HomeStoreSection';
 import { HomeShortcutSection } from './sections/shortcuts/HomeShortcutSection';
+import { HomeShowcasePrompt } from './components/HomeShowcasePrompt';
 import {
     collectFeaturedShops,
     selectFeaturedProducts,
@@ -37,6 +38,7 @@ export function HomePageContent() {
 
     return (
         <div className="bg-zinc-100 pb-10 text-zinc-950">
+            <HomeShowcasePrompt />
             <HomeCampaignSection
                 products={campaignProducts}
                 totalProducts={totalProducts}
