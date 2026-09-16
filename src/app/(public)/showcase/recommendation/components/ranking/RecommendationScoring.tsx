@@ -1,7 +1,6 @@
 // Trình bày luồng chấm điểm candidate và công thức Standard/AI-Enhanced trong trang showcase.
 // Component chỉ giải thích, không tự tính ranking; trọng số và quy tắc hiển thị phải khớp Recommendation Service.
 // Các số trong ví dụ là dữ liệu giả định, không được diễn giải thành xác suất mua hàng.
-import { Scale } from 'lucide-react';
 import {
     RankingWeightDetails,
 } from './RankingWeightDetails';
@@ -68,14 +67,14 @@ const scoreFeatures: ScoreFeature[] = [
 ];
 
 const workedExample = [
-    { name: 'Sở thích hồ sơ', score: '0,80', weight: '25%', contribution: '0,200' },
-    { name: 'Phiên hiện tại', score: '0,60', weight: '18%', contribution: '0,108' },
-    { name: 'Tương tự nội dung', score: '0,90', weight: '15%', contribution: '0,135' },
-    { name: 'Hành vi đi cùng', score: '0,50', weight: '10%', contribution: '0,050' },
-    { name: 'Phổ biến', score: '0,70', weight: '12%', contribution: '0,084' },
-    { name: 'Độ mới', score: '0,55', weight: '8%', contribution: '0,044' },
-    { name: 'Chất lượng', score: '0,90', weight: '8%', contribution: '0,072' },
-    { name: 'Khám phá', score: '0,00', weight: '4%', contribution: '0,000' },
+    { name: 'Sở thích hồ sơ', meaning: 'Mức hợp với sở thích dài hạn theo sản phẩm, danh mục và thương hiệu.', score: '0,80', weight: '25%', contribution: '0,200' },
+    { name: 'Phiên hiện tại', meaning: 'Mức khớp với danh mục, thương hiệu và sản phẩm người dùng vừa xem.', score: '0,60', weight: '18%', contribution: '0,108' },
+    { name: 'Tương tự nội dung', meaning: 'Độ gần nội dung hoặc embedding giữa candidate và ngữ cảnh hiện tại.', score: '0,90', weight: '15%', contribution: '0,135' },
+    { name: 'Hành vi đi cùng', meaning: 'Mức candidate thường được xem, thêm giỏ hoặc mua cùng sản phẩm khác.', score: '0,50', weight: '10%', contribution: '0,050' },
+    { name: 'Phổ biến', meaning: 'Tín hiệu nhu cầu chung từ tổng đã bán và thứ hạng trending/best-selling.', score: '0,70', weight: '12%', contribution: '0,084' },
+    { name: 'Độ mới', meaning: 'Mức ưu tiên dành cho sản phẩm mới dựa trên tuổi trong catalog.', score: '0,55', weight: '8%', contribution: '0,044' },
+    { name: 'Chất lượng', meaning: 'Kết hợp rating, số review và khả năng còn hàng để phục vụ.', score: '0,90', weight: '8%', contribution: '0,072' },
+    { name: 'Khám phá', meaning: 'Cơ hội thử sản phẩm mới từ EXPLORE/NEWEST khi sở thích chưa rõ.', score: '0,00', weight: '4%', contribution: '0,000' },
 ];
 
 // Giải thích dữ liệu đầu vào, phép tính từng bước và phần AI chỉ bổ sung vào baseline Standard.
@@ -180,25 +179,35 @@ export function RecommendationScoring() {
                         <div className="flex flex-wrap items-end justify-between gap-2">
                             <div>
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Bước 2 · Nhân từng tín hiệu với trọng số</p>
-                                <p className="mt-1 text-xs leading-5 text-zinc-600">Ví dụ minh họa theo trọng số mặc định trong code; mỗi đóng góp = điểm tín hiệu × trọng số.</p>
+                                <p className="mt-1 text-xs leading-5 text-zinc-600">Bảng này giải thích đúng vai trò của Standard: mỗi tín hiệu có ý nghĩa và nguồn điểm riêng, sau đó mới nhân với weight để tạo phần đóng góp. Đây là phép tính xác định, không phải prediction từ model AI.</p>
                             </div>
                             <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[10px] font-medium text-zinc-600">8 tín hiệu · tổng trọng số 100%</span>
                         </div>
-                        <div className="mt-3 overflow-x-auto rounded-2xl border border-zinc-200">
-                            <div className="min-w-[600px]">
-                                <div className="grid grid-cols-[1.4fr_0.7fr_0.7fr_0.9fr] gap-3 bg-zinc-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 sm:px-4">
-                                    <span>Tín hiệu</span><span className="text-right">Điểm</span><span className="text-right">Trọng số</span><span className="text-right">Đóng góp</span>
-                                </div>
-                                {workedExample.map((row) => (
-                                    <div key={row.name} className="grid grid-cols-[1.4fr_0.7fr_0.7fr_0.9fr] gap-3 border-t border-zinc-100 px-3 py-2.5 text-xs sm:px-4">
-                                        <span className="text-zinc-700">{row.name}</span>
-                                        <span className="text-right font-mono text-zinc-600">{row.score}</span>
-                                        <span className="text-right font-mono text-zinc-600">{row.weight}</span>
-                                        <span className="text-right font-mono font-semibold text-zinc-900">{row.contribution}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                         <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200">
+                             <table className="min-w-[760px] w-full table-fixed border-collapse text-left text-[11px] leading-5">
+                                 <caption className="sr-only">Ý nghĩa, điểm đầu vào, trọng số và phần đóng góp của từng tín hiệu Standard</caption>
+                                 <colgroup>
+                                     <col className="w-[24%]" />
+                                     <col className="w-[44%]" />
+                                     <col className="w-[16%]" />
+                                     <col className="w-[16%]" />
+                                 </colgroup>
+                                 <thead className="bg-zinc-50 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                                      <tr><th className="px-3 py-2.5">Tín hiệu</th><th className="px-3 py-2.5">Ý nghĩa / nguồn điểm</th><th className="px-3 py-2.5 text-right">Điểm · weight</th><th className="px-3 py-2.5 text-right">Đóng góp</th></tr>
+                                 </thead>
+                                 <tbody className="divide-y divide-zinc-100 text-zinc-600">
+                                     {workedExample.map((row) => (
+                                         <tr key={row.name}>
+                                             <td className="px-3 py-2.5 font-mono text-zinc-900">{row.name}</td>
+                                             <td className="px-3 py-2.5 text-zinc-600">{row.meaning}</td>
+                                             <td className="px-3 py-2.5 text-right font-mono text-zinc-700">{row.score}<span className="mx-1 text-zinc-300">·</span>{row.weight}</td>
+                                             <td className="px-3 py-2.5 text-right font-mono font-semibold text-zinc-900">{row.score} × {row.weight.replace('%', '')}% = {row.contribution}</td>
+                                         </tr>
+                                     ))}
+                                 </tbody>
+                             </table>
+                         </div>
+                         <p className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-[11px] leading-5 text-zinc-600"><strong className="text-zinc-900">Cách đọc:</strong> ví dụ “Sở thích hồ sơ” có điểm 0,80 và trọng số 25%, nên đóng góp <span className="font-mono">0,80 × 0,25 = 0,200</span>. Cộng tám đóng góp được 0,693 trước khi trừ penalty.</p>
                       </section>
 
                         <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
@@ -213,45 +222,6 @@ export function RecommendationScoring() {
                             </div>
                         </div>
 
-                        <div className="mt-5 flex items-center gap-3">
-                            <span className="h-px flex-1 bg-zinc-200" />
-                            <span className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Nếu bật AI-Enhanced · bước kế tiếp</span>
-                            <span className="h-px flex-1 bg-zinc-200" />
-                        </div>
-                        <section className="mt-3 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5" aria-label="Cách AI kết hợp với điểm Standard">
-                            <div className="flex items-center gap-2">
-                                <Scale aria-hidden="true" className="size-4 text-zinc-700" />
-                                <h5 className="text-sm font-semibold text-zinc-950">AI-Enhanced: lấy Standard làm nền, AI điều chỉnh một phần</h5>
-                            </div>
-                            <p className="mt-2 text-xs leading-5 text-zinc-600">Chế độ này dùng cùng candidate và điểm Standard đã tính ở trên. Model trả thêm một điểm dự đoán cho từng sản phẩm; hệ thống chỉ kết hợp điểm đó khi AI-Enhanced được bật và có prediction hợp lệ.</p>
-                            <code className="mt-3 block overflow-x-auto rounded-xl border border-zinc-200 bg-white p-3 font-mono text-xs leading-5 text-zinc-800">S_cuối = clamp(S_standard × (1 − λ) + S_AI × λ, 0, 1)</code>
-                            <div className="mt-3 rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
-                                <p><strong className="text-zinc-900">Ý nghĩa các ký hiệu:</strong> <span className="font-mono">S_standard</span> là điểm Standard đã tính; <span className="font-mono">S_AI</span> là điểm model dự đoán cho chính candidate đó; <span className="font-mono">λ</span> là tỷ lệ ảnh hưởng của AI.</p>
-                                <p className="mt-1"><span className="font-mono">1 − λ</span> là phần Standard còn lại. <span className="font-mono">clamp(x, 0, 1)</span> nghĩa là nếu x nhỏ hơn 0 thì lấy 0, lớn hơn 1 thì lấy 1, còn trong khoảng thì giữ nguyên.</p>
-                            </div>
-                            <div className="mt-3 grid gap-2 grid-cols-1">
-                                <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
-                                    <p className="font-semibold text-zinc-900">Bước 1 · Tính phần Standard</p>
-                                    <p className="mt-1">λ mặc định là 0,3, vậy phần Standard còn lại là 1 − λ = 1 − 0,3 = 0,7 (70%). Nhân điểm Standard với tỷ lệ này:</p>
-                                    <p className="mt-1 font-mono text-zinc-800">0,653 × (1 − 0,3) = 0,653 × 0,7 = 0,4571</p>
-                                </div>
-                                <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
-                                    <p className="font-semibold text-zinc-900">Bước 2 · Tính phần AI</p>
-                                    <p className="mt-1">Nhân điểm dự đoán AI với λ. Ở mặc định λ = 0,3, AI chỉ đóng góp 30% vào điểm cuối:</p>
-                                    <p className="mt-1 font-mono text-zinc-800">0,800 × 0,3 = 0,2400</p>
-                                </div>
-                                <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
-                                    <p className="font-semibold text-zinc-900">Bước 3 · Cộng hai phần và áp dụng clamp</p>
-                                    <p className="mt-1">Cộng hai đóng góp. Kết quả 0,6971 đã nằm trong 0–1 nên clamp giữ nguyên; trong ví dụ, viết gọn đến ba chữ số thập phân:</p>
-                                    <p className="mt-1 font-mono font-semibold text-zinc-950">0,4571 + 0,2400 = 0,6971 → clamp = 0,6971 ≈ 0,697</p>
-                                </div>
-                            </div>
-                            <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                <p className="rounded-xl bg-white p-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Cách hiểu λ:</strong> λ là tỷ lệ ảnh hưởng của AI, được cấu hình từ 0 đến tối đa 0,5. λ = 0 nghĩa là chỉ dùng Standard; λ = 0,5 nghĩa là Standard và AI có trọng số ngang nhau. Mặc định 0,3 giữ Standard làm phần chính.</p>
-                                <p className="rounded-xl bg-white p-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Khi AI không dùng được:</strong> nếu một sản phẩm thiếu prediction hợp lệ, riêng sản phẩm đó giữ điểm Standard. Nếu request AI lỗi hoặc timeout, toàn bộ danh sách dùng Standard để không làm gián đoạn gợi ý.</p>
-                            </div>
-                            <p className="mt-3 text-[11px] leading-5 text-zinc-500">Điểm cuối vẫn là điểm xếp hạng, không phải xác suất mua. λ thấp giữ kết quả gần baseline; tăng λ làm thứ hạng nhạy hơn với model và cần được kiểm chứng bằng experiment.</p>
-                        </section>
                     </div>
 
                 <p className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Cách đọc kết quả:</strong> 0,653 là điểm dùng để so thứ tự các ứng viên trong lần gợi ý này, <strong>không phải xác suất mua 65,3%</strong>. Ví dụ là số giả định để minh họa.</p>

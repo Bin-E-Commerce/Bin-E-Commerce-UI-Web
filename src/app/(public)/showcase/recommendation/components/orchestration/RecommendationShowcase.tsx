@@ -8,6 +8,7 @@ import { RecommendationRequestOverview } from './RecommendationRequestOverview';
 import { RecommendationReadingGuide } from '../shared/RecommendationReadingGuide';
 import { RecommendationReliability } from '../ranking/RecommendationReliability';
 import { RecommendationScoring } from '../ranking/RecommendationScoring';
+import { RecommendationAiEnhancedRanking } from '../ranking/RecommendationAiEnhancedRanking';
 import { RecommendationSignals } from '../ranking/RecommendationSignals';
 import { recommendationTableOfContents } from '../../constants/recommendation-table-of-contents.constant';
 
@@ -88,6 +89,7 @@ export function RecommendationShowcase() {
                                         >
                                             <RecommendationScoring />
                                         </RecommendationDisclosure>
+                                        <RecommendationAiEnhancedRanking />
                                         <RecommendationDisclosure
                                             id="recommendation-reliability-logic"
                                             number="2.3"

@@ -10,6 +10,7 @@ type RecommendationStepHeaderProps = {
     asideContent?: ReactNode;
     className?: string;
     titleLevel?: 4 | 5;
+    showDivider?: boolean;
 };
 
 // Chuẩn hóa header bước; nội dung phụ và metadata là tùy chọn, còn huy hiệu và tiêu đề luôn giữ chung bố cục.
@@ -21,12 +22,13 @@ export function RecommendationStepHeader({
     asideContent,
     className = '',
     titleLevel = 4,
+    showDivider = true,
 }: RecommendationStepHeaderProps) {
     const Heading = titleLevel === 5 ? 'h5' : 'h4';
 
     return (
         <header
-            className={`relative flex min-w-0 flex-col gap-3 pb-4 after:absolute after:inset-x-4 after:bottom-0 after:h-px after:bg-zinc-200 after:content-[''] sm:flex-row sm:items-center sm:justify-between ${className}`}
+            className={`relative flex min-w-0 flex-col gap-3 ${showDivider ? "pb-4 after:absolute after:inset-x-4 after:bottom-0 after:h-px after:bg-zinc-200 after:content-['']" : 'pb-0'} sm:flex-row sm:items-center sm:justify-between ${className}`}
         >
             <div className="flex min-w-0 items-center gap-3">
                 <RecommendationStepBadge number={number} />

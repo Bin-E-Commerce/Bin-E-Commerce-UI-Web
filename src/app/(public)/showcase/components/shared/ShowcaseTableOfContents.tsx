@@ -153,7 +153,7 @@ export function ShowcaseTableOfContents({ variant, items }: ShowcaseTableOfConte
 
     if (variant === 'mobile') {
         return (
-            <details ref={mobileDetailsRef} className="group rounded-2xl border border-zinc-200 bg-white p-3 xl:hidden">
+                <details ref={mobileDetailsRef} className="group rounded-2xl border border-zinc-200 bg-white p-4 xl:hidden">
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-zinc-800 [&::-webkit-details-marker]:hidden">
                     <ListTree aria-hidden="true" className="size-4 text-zinc-500" />
                     Mục lục trang

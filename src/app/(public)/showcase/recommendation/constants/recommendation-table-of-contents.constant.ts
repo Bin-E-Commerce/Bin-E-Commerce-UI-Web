@@ -76,6 +76,10 @@ export const recommendationTableOfContents: ShowcaseTocItem[] = [
                             { id: 'ranking-feature-exploration', label: '2.2.2.8 · Khám phá sản phẩm mới' },
                         ],
                     },
+                    {
+                        id: 'ai-enhanced-ranking-formula',
+                        label: '2.2.3 · Công thức AI-Enhanced Ranking',
+                    },
                 ],
             },
             {

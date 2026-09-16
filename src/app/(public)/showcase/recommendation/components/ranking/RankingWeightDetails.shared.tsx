@@ -37,7 +37,7 @@ export function DetailTerm({ term, children }: DetailTermProps) {
                 {term}
             </code>
             <span className="min-w-0 text-[13px] leading-5 text-zinc-600">
-                — {children}
+                {children}
             </span>
         </li>
     );
@@ -56,4 +56,3 @@ export function DetailFormula({ children }: DetailFormulaProps) {
         </section>
     );
 }
-
