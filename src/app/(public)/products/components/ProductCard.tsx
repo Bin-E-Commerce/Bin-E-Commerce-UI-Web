@@ -28,6 +28,7 @@ export type ProductCardTrackingContext =
 interface ProductCardProps {
     product: PublicProduct;
     compact?: boolean;
+    className?: string;
     trackingPage?: string;
     trackingContext?: ProductCardTrackingContext;
     recommendationReason?: string;
@@ -37,6 +38,7 @@ interface ProductCardProps {
 export function ProductCard({
     product,
     compact = false,
+    className,
     trackingPage = 'storefront',
     trackingContext,
     recommendationReason,
@@ -59,10 +61,8 @@ export function ProductCard({
     const surface = trackingContext?.surface;
     const recommendationPolicyVersion =
         trackingContext?.recommendationPolicyVersion;
-    const recommendationExperimentId =
-        trackingContext?.recommendationExperimentId;
-    const recommendationExperimentVariant =
-        trackingContext?.recommendationExperimentVariant;
+    const recommendationRankingMode =
+        trackingContext?.recommendationRankingMode;
 
     useEffect(() => {
         const cardElement = cardRef.current;
@@ -88,8 +88,7 @@ export function ProductCard({
                     recommendationRank,
                     surface,
                     recommendationPolicyVersion,
-                    recommendationExperimentId,
-                    recommendationExperimentVariant,
+                    recommendationRankingMode,
                 });
                 observer.disconnect();
             },
@@ -107,8 +106,7 @@ export function ProductCard({
         recommendationRank,
         surface,
         recommendationPolicyVersion,
-        recommendationExperimentId,
-        recommendationExperimentVariant,
+        recommendationRankingMode,
     ]);
 
     return (
@@ -133,14 +131,14 @@ export function ProductCard({
                     recommendationRank,
                     surface,
                     recommendationPolicyVersion,
-                    recommendationExperimentId,
-                    recommendationExperimentVariant,
+                    recommendationRankingMode,
                 }).catch(() => undefined);
             }}
             aria-label={`Xem chi tiết ${product.name}`}
             className={cn(
                 'group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-md',
                 compact && 'w-44 shrink-0 snap-start sm:w-auto',
+                className,
             )}
         >
             {discountPercent > 0 ? (
@@ -165,11 +163,6 @@ export function ProductCard({
             </div>
 
             <div className="flex flex-1 flex-col p-3">
-                {product.originType === 'EXTERNAL' ? (
-                    <span className="mb-2 w-fit rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                        Sản phẩm tham khảo
-                    </span>
-                ) : null}
                 <p className="line-clamp-2 min-h-10 text-sm font-medium leading-5 text-zinc-900">
                     {product.name}
                 </p>

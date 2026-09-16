@@ -867,7 +867,7 @@ export function RecommendationSignals() {
                     <p className="mt-2 text-[10px] leading-4 text-zinc-500">
                         Các giới hạn nêu trên là default/guardrail trong code để
                         giữ request hữu hạn; muốn chọn con số khác cần đo
-                        coverage, latency và kết quả experiment trên cùng mục
+                        coverage, latency và hiệu quả ranking trên cùng mục
                         tiêu.
                     </p>
                 </div>

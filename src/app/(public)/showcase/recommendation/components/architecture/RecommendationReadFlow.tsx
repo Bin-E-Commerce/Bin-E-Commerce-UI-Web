@@ -268,7 +268,7 @@ export function RecommendationReadFlow() {
                                         Admin tinh chỉnh{' '}
                                         <code>hybridWeights</code> trong policy;{' '}
                                         <code>HYBRID</code> là baseline để đối
-                                        chiếu experiment.
+                                        chiếu ranking mode.
                                     </dd>
                                 </div>
                             </dl>
@@ -313,9 +313,8 @@ export function RecommendationReadFlow() {
                                     </dt>
                                     <dd className="mt-1 text-xs leading-5 text-zinc-600">
                                         <code>mlBlend</code> mặc định 0,3, giới
-                                        hạn tối đa 0,5. Experiment giữ
-                                        user/session ở cùng variant để so kết
-                                        quả có attribution.
+                                        hạn tối đa 0,5. Analytics nhóm theo
+                                        ranking mode thực tế để đo hiệu quả có attribution.
                                     </dd>
                                 </div>
                                 <div>
@@ -483,7 +482,7 @@ export function RecommendationReadFlow() {
                                     Dấu vết xếp hạng
                                 </p>
                                 <h5 className="mt-1 text-sm font-semibold text-zinc-950">
-                                    Policy, model và experiment
+                                    Policy, model và ranking mode
                                 </h5>
                             </header>
                             <dl className="space-y-2.5 p-4 text-xs leading-5">
@@ -508,11 +507,11 @@ export function RecommendationReadFlow() {
                                 </div>
                                 <div>
                                     <dt className="font-mono text-[11px] font-medium text-zinc-800">
-                                        experiment · variant
+                                        rankingMode
                                     </dt>
                                     <dd className="text-zinc-600">
                                         ID và nhánh đang được so sánh; nếu
-                                        request không thuộc experiment thì là{' '}
+                                        request dùng mode nào thì ghi nhận đúng mode đó; khi fallback là{' '}
                                         <code>null</code>.
                                     </dd>
                                 </div>

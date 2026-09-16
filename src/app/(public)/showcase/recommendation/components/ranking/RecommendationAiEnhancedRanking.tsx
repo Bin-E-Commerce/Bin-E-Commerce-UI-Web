@@ -82,7 +82,7 @@ export function RecommendationAiEnhancedRanking() {
                                     number="03"
                                     eyebrow="Điều kiện · runtime policy"
                                     title="Kiểm tra điều kiện chạy AI"
-                                    description="Kiểm tra policy, traffic bucket và trạng thái model."
+                                    description="Kiểm tra policy, khả năng gọi model và trạng thái model."
                                     titleLevel={5}
                                     showDivider={false}
                                 />
@@ -618,8 +618,8 @@ export function RecommendationAiEnhancedRanking() {
                             <RecommendationStepHeader
                                 number="01"
                                 eyebrow="Điều kiện · runtime policy"
-                                title="Kiểm tra policy và traffic assignment"
-                                description="Chỉ request đủ điều kiện mới được phép đi vào nhánh AI."
+                                title="Kiểm tra policy và khả năng chạy AI"
+                                description="Khi policy bật, mọi request đều được thử bằng AI; model lỗi sẽ fallback Standard."
                                 titleLevel={5}
                             />
                             <div className="mt-3 grid gap-2 pt-1 text-[11px] leading-5 text-zinc-600 md:grid-cols-3">
@@ -627,8 +627,8 @@ export function RecommendationAiEnhancedRanking() {
                                     <strong className="text-zinc-900">
                                         Tại sao cần:
                                     </strong>{' '}
-                                    AI có chi phí, độ trễ và rủi ro riêng, nên
-                                    không thể gọi cho mọi request.
+                                    Cần biết AI đang được bật hay tắt trước khi
+                                    chọn mode phục vụ request.
                                 </p>
                                 <p>
                                     <strong className="text-zinc-900">
@@ -636,24 +636,17 @@ export function RecommendationAiEnhancedRanking() {
                                     </strong>{' '}
                                     Đọc{' '}
                                     <span className="font-mono">mlEnabled</span>
-                                    ,{' '}
-                                    <span className="font-mono">
-                                        experimentEnabled
-                                    </span>{' '}
-                                    và{' '}
-                                    <span className="font-mono">
-                                        trafficPercent
-                                    </span>
-                                    . Hash actor/session giúp một người giữ
-                                    nguyên variant.
+                                    . Khi bật, AI áp dụng cho 100% request đủ
+                                    điều kiện; không hash actor/session để chia
+                                    nhóm.
                                 </p>
                                 <p>
                                     <strong className="text-zinc-900">
                                         Đánh đổi:
                                     </strong>{' '}
-                                    Traffic thấp an toàn và rẻ hơn nhưng cần
-                                    nhiều thời gian để đủ dữ liệu đo. Traffic 0%
-                                    luôn dùng Standard.
+                                    AI có thể tốn thêm độ trễ; vì vậy model lỗi
+                                    hoặc không hợp lệ vẫn phải fallback về
+                                    Standard để không làm hỏng response.
                                 </p>
                             </div>
                         </section>
@@ -809,7 +802,7 @@ export function RecommendationAiEnhancedRanking() {
                                         Tại sao cần:
                                     </strong>{' '}
                                     Prediction sai có thể làm sai thứ hạng và cả
-                                    số liệu A/B test.
+                                    số liệu phân tích hiệu quả.
                                 </p>
                                 <p>
                                     <strong className="text-zinc-900">
@@ -866,7 +859,7 @@ export function RecommendationAiEnhancedRanking() {
                                     <span className="font-mono">
                                         rankingMode
                                     </span>
-                                    , model version, experiment.
+                                    và model version.
                                 </p>
                                 <p>
                                     <strong className="text-zinc-900">
@@ -1064,9 +1057,9 @@ export function RecommendationAiEnhancedRanking() {
                                 <strong className="text-zinc-900">
                                     Rollout:
                                 </strong>{' '}
-                                AI chỉ bổ sung score; Standard vẫn là baseline,
-                                nên có thể bật theo traffic và tắt ngay khi
-                                model không ổn định.
+                                    AI chỉ bổ sung score; Standard vẫn là baseline,
+                                    nên có thể bật cho toàn bộ request và tắt ngay
+                                    khi model không ổn định.
                             </div>
                         </div>
                         <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-[11px] leading-5 text-zinc-600">
@@ -1797,14 +1790,13 @@ export function RecommendationAiEnhancedRanking() {
                                 <tbody className="divide-y divide-zinc-100 text-zinc-600">
                                     <tr>
                                         <td className="px-3 py-2.5">
-                                            Policy tắt hoặc traffic = 0%
+                                            Policy AI tắt
                                         </td>
                                         <td className="px-3 py-2.5">
                                             100% Standard
                                         </td>
                                         <td className="px-3 py-2.5 font-mono">
-                                            HYBRID · modelVersion=null ·
-                                            experiment=null
+                                            HYBRID · modelVersion=null · rankingMode=HYBRID
                                         </td>
                                     </tr>
                                     <tr>
@@ -1816,7 +1808,7 @@ export function RecommendationAiEnhancedRanking() {
                                             100% Standard
                                         </td>
                                         <td className="px-3 py-2.5 font-mono">
-                                            HYBRID · không ghi nhận ML treatment
+                                            HYBRID · ghi nhận Standard/Fallback
                                         </td>
                                     </tr>
                                     <tr>
@@ -1828,7 +1820,7 @@ export function RecommendationAiEnhancedRanking() {
                                             100% Standard
                                         </td>
                                         <td className="px-3 py-2.5 font-mono">
-                                            HYBRID · modelVersion=null
+                                            HYBRID · modelVersion=null · rankingMode=HYBRID
                                         </td>
                                     </tr>
                                     <tr>
@@ -1839,8 +1831,7 @@ export function RecommendationAiEnhancedRanking() {
                                             Blend theo λ
                                         </td>
                                         <td className="px-3 py-2.5 font-mono">
-                                            ML_HYBRID · modelVersion ·
-                                            experiment
+                                            ML_HYBRID · modelVersion · rankingMode=ML_HYBRID
                                         </td>
                                     </tr>
                                 </tbody>

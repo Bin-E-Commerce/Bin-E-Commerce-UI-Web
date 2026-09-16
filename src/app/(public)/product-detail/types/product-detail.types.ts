@@ -1,3 +1,5 @@
+// File này định nghĩa view-model riêng của product detail; không sở hữu API fetching hay logic ranking.
+
 import type {
     ProductDetail,
     ProductImage,
@@ -7,6 +9,7 @@ import type {
 
 export interface ProductDetailData {
     product: ProductDetail;
+    shopProducts: PublicProduct[];
     recommendations: ProductDetailRecommendation[];
 }
 
@@ -18,8 +21,7 @@ export interface ProductDetailRecommendation {
     recommendationRequestId?: string;
     recommendationItemId?: string;
     recommendationPolicyVersion?: string;
-    recommendationExperimentId?: string;
-    recommendationExperimentVariant?: 'CONTROL' | 'HYBRID' | 'ML_HYBRID';
+    recommendationRankingMode?: 'HYBRID' | 'ML_HYBRID';
 }
 
 export interface ProductBreadcrumbItem {

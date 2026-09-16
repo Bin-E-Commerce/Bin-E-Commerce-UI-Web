@@ -63,7 +63,7 @@ export function ProductDetailPageContent({
         );
     }
 
-    const { product, recommendations } = productQuery.data;
+    const { product, shopProducts, recommendations } = productQuery.data;
     const breadcrumbs = getProductBreadcrumbs(product);
 
     return (
@@ -103,7 +103,17 @@ export function ProductDetailPageContent({
                 <ProductReviewsSection product={product} />
             </div>
 
-            <ProductRecommendationsSection products={recommendations} />
+            <ProductRecommendationsSection
+                shopProducts={shopProducts}
+                products={recommendations}
+                shopHref={
+                    product.externalShop?.slug
+                        ? `/shop/${product.externalShop.slug}`
+                        : product.sellerShopId
+                          ? `/shop/${product.sellerShopId}`
+                          : null
+                }
+            />
         </div>
     );
 }

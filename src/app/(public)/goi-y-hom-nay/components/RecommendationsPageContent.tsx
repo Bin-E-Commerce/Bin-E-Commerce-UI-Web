@@ -229,19 +229,17 @@ export function RecommendationsPageContent() {
                                         recommendationRequestId:
                                             recommendationsQuery.data
                                                 ?.requestId,
-                                        recommendationItemId: item.recommendationItemId,
+                                        recommendationItemId:
+                                            item.recommendationItemId,
                                         recommendationSource: item.source,
                                         recommendationRank: item.rank,
                                         surface: 'recommendations_page',
                                         recommendationPolicyVersion:
                                             recommendationsQuery.data
                                                 ?.rankingPolicyVersion,
-                                        recommendationExperimentId:
-                                            recommendationsQuery.data?.experiment
-                                                ?.id ?? undefined,
-                                        recommendationExperimentVariant:
-                                            recommendationsQuery.data?.experiment
-                                                ?.variant ?? undefined,
+                                        recommendationRankingMode:
+                                            recommendationsQuery.data
+                                                ?.rankingMode,
                                     }}
                                     recommendationReason={item.reasons[0]}
                                 />

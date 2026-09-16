@@ -20,7 +20,7 @@ const recommendationRequestSteps: ShowcaseFlowStep[] = [
         title: 'Nạp ngữ cảnh',
         summary:
             'Hệ thống kiểm tra kết quả đã cache; nếu cần tạo mới thì đọc lịch sử sở thích và hoạt động phiên.',
-        detail: 'Cache key bao gồm loại/ID actor, session, surface, productId, page/pageSize, version cache, policy và variant experiment. Khi cache miss, RecommendationQueryService đọc tối đa 30 preference sản phẩm, 12 danh mục và 12 thương hiệu; session context đến từ Redis. Có preference dương thì strategy là PERSONALIZED; nếu không nhưng session context tồn tại thì SESSION_BASED; không có context mới là COLD_START. Cache hit vẫn cấp requestId và item token mới cho lần phục vụ hiện tại.',
+        detail: 'Cache key bao gồm loại/ID actor, session, surface, productId, page/pageSize, version cache, policy và ranking mode. Khi cache miss, RecommendationQueryService đọc tối đa 30 preference sản phẩm, 12 danh mục và 12 thương hiệu; session context đến từ Redis. Có preference dương thì strategy là PERSONALIZED; nếu không nhưng session context tồn tại thì SESSION_BASED; không có context mới là COLD_START. Cache hit vẫn cấp requestId và item token mới cho lần phục vụ hiện tại.',
         output: 'Context đã chọn đúng user/guest, strategy và phiên bản policy; không dùng lẫn response của actor hoặc trang khác.',
         implementation:
             'RecommendationQueryService · ProfileQueryService · SessionContextService · RecommendationRedisService',
@@ -40,17 +40,17 @@ const recommendationRequestSteps: ShowcaseFlowStep[] = [
         title: 'Chấm và sắp xếp',
         summary:
             'Standard Ranking tính điểm cho từng candidate, rồi cân bằng danh mục, thương hiệu và shop.',
-        detail: 'RankingFeatureService tính 8 tín hiệu trong [0,1]; RecommendationRuleService chuẩn hóa tổng trọng số về 100%, còn negativePenalty được trừ riêng và bị chặn tối đa 0,15. Có hai cách xếp cùng candidate: Standard áp dụng trọng số đã cấu hình; AI-Enhanced kết hợp điểm Standard với dự đoán ML theo mlBlend. Dữ liệu experiment có attribution giúp so sánh hai cách và tinh chỉnh trọng số/tỷ lệ AI theo mục tiêu. Nếu lượt AI thiếu prediction hoặc modelVersion hợp lệ, hệ thống dùng Standard và không tính lượt fallback là AI. Trong code, hai mode này mang tên HYBRID và ML_HYBRID. RecommendationRankingService sắp xếp, trộn quota nguồn khi cold-start rồi diversity theo cửa sổ: product_detail tối đa 2 cùng category, 2 cùng brand, 3 cùng shop trong 6 item; surface khác là 4/3/5 trong 24 item. Nếu quota làm thiếu danh sách, lượt thứ hai nới quota thay vì bỏ hết candidate.',
+        detail: 'RankingFeatureService tính 8 tín hiệu trong [0,1]; RecommendationRuleService chuẩn hóa tổng trọng số về 100%, còn negativePenalty được trừ riêng và bị chặn tối đa 0,15. Có hai mode trên cùng candidate: Standard áp dụng trọng số đã cấu hình; AI-Enhanced kết hợp điểm Standard với dự đoán ML theo mlBlend cho toàn bộ traffic khi được bật. Nếu lượt AI thiếu prediction hoặc modelVersion hợp lệ, hệ thống dùng Standard và analytics ghi nhận đúng mode fallback. Trong code, hai mode này mang tên HYBRID và ML_HYBRID. RecommendationRankingService sắp xếp, trộn quota nguồn khi cold-start rồi diversity theo cửa sổ: product_detail tối đa 2 cùng category, 2 cùng brand, 3 cùng shop trong 6 item; surface khác là 4/3/5 trong 24 item. Nếu quota làm thiếu danh sách, lượt thứ hai nới quota thay vì bỏ hết candidate.',
         output: 'Danh sách canonical tối đa 180 item; sau đó API mới cắt trang (pageSize tối đa 24, product_detail tối đa 6).',
         implementation:
-            'RankingExperimentService · RankingFeatureService · RecommendationRankingService · RecommendationMlRankingService',
+            'RankingFeatureService · RecommendationRankingService · RecommendationMlRankingService',
     },
     {
         id: 'response',
         title: 'Hiển thị kết quả',
         summary:
             'Web nhận product card cùng thứ hạng, nguồn gợi ý và dấu vết bảo vệ attribution.',
-        detail: 'Mỗi item trả rank, score đã làm tròn 6 chữ số, source và reason do backend ánh xạ; cùng response có requestId, strategy, profileState, page và policy/model/experiment metadata. Item token được ký để gắn product, rank, source, surface, policy và experiment. ProductCard chỉ queue impression khi ít nhất 50% card đi vào viewport; client khử trùng lặp rồi gửi batch tối đa 20 event. Cache hit cũng tạo token mới, không dùng lại attribution của request trước.',
+        detail: 'Mỗi item trả rank, score đã làm tròn 6 chữ số, source và reason do backend ánh xạ; cùng response có requestId, strategy, profileState, page và policy/model/ranking-mode metadata. Item token được ký để gắn product, rank, source, surface, policy và ranking mode. ProductCard chỉ queue impression khi ít nhất 50% card đi vào viewport; client khử trùng lặp rồi gửi batch tối đa 20 event. Cache hit cũng tạo token mới, không dùng lại attribution của request trước.',
         output: 'Web render được product card và có đủ metadata để click/impression sau này truy ngược đúng recommendation item.',
         implementation:
             'RecommendationQueryService.toResponseItem · RecommendationTrackingTokenService · ProductCard · impression-queue',
@@ -73,7 +73,7 @@ const recommendationFeedbackSteps: ShowcaseFlowStep[] = [
         title: 'API xác thực và đưa vào Kafka',
         summary:
             'Request tracking được kiểm tra rồi xếp hàng; người dùng không phải chờ profile tính toán xong.',
-        detail: 'Web gọi POST /api/v1/recommendation/events hoặc /events/batch qua Gateway. InteractionIngestionService lấy userId/sessionId từ trusted header, từ chối attribution thiếu/sai và verify item token bằng actor, product, rank, source, surface, policy/experiment. Server tự cấp eventId và occurredAt rồi publish recommendation.interactions.v1. Batch API chấp nhận 1–50 event; HTTP 202 chỉ có nghĩa Kafka đã nhận, không có nghĩa profile đã cập nhật. Kafka lỗi thì API trả lỗi, không báo queued giả.',
+        detail: 'Web gọi POST /api/v1/recommendation/events hoặc /events/batch qua Gateway. InteractionIngestionService lấy userId/sessionId từ trusted header, từ chối attribution thiếu/sai và verify item token bằng actor, product, rank, source, surface, policy/ranking mode. Server tự cấp eventId và occurredAt rồi publish recommendation.interactions.v1. Batch API chấp nhận 1–50 event; HTTP 202 chỉ có nghĩa Kafka đã nhận, không có nghĩa profile đã cập nhật. Kafka lỗi thì API trả lỗi, không báo queued giả.',
         output: 'Event đã được broker tiếp nhận, có định danh/thời gian từ server và có thể được consumer retry an toàn.',
         implementation:
             'RecommendationProxyController → InteractionController → InteractionIngestionService → KafkaProducerService',

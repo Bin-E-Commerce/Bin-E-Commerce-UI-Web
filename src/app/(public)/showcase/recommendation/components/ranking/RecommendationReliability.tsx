@@ -112,7 +112,7 @@ export function RecommendationReliability() {
                                 </strong>{' '}
                                 timeout ngắn giữ request nhanh nhưng có thể
                                 fallback thường xuyên hơn. Lượt fallback không
-                                bị tính nhầm là AI trong experiment.
+                                bị tính nhầm là AI khi fallback.
                             </div>
                         </dl>
                     </article>
@@ -191,7 +191,7 @@ export function RecommendationReliability() {
                         <p className="mt-1.5 text-xs leading-5 text-zinc-600">
                             Impression chỉ ghi khi ít nhất 50% thẻ sản phẩm hiện
                             trong màn hình. Click mang token đã ký để xác định
-                            đúng món, thứ hạng, nguồn và experiment.
+                                    đúng món, thứ hạng, nguồn và ranking mode.
                         </p>
                     </article>
                     <article className="rounded-2xl border border-zinc-200 bg-white p-4">

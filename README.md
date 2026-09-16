@@ -137,7 +137,7 @@ This keeps service discovery, authentication enforcement, rate limiting, request
 - review shop profile change requests;
 - manage access-control information;
 - inspect recommendation analytics;
-- adjust recommendation policy and AI rollout;
+- adjust recommendation policy and AI ranking status;
 - review policy history and rollback;
 - operate platform-facing admin screens.
 
@@ -212,7 +212,7 @@ This keeps service discovery, authentication enforcement, rate limiting, request
 - access-control overview;
 - recommendation analytics;
 - recommendation policy configuration;
-- AI traffic and candidate-source controls;
+- AI ranking switch and read-only model/source status;
 - policy history and rollback UI.
 
 ### Platform showcase
@@ -589,7 +589,7 @@ Recommendation cards can carry:
 - rank;
 - surface;
 - policy version;
-- experiment variant;
+- ranking mode;
 - signed tracking context.
 
 Clicks and impressions are sent through the recommendation tracking adapter. An impression queue batches repeated viewport signals so remounts do not create uncontrolled duplicates.
@@ -650,9 +650,9 @@ The recommendation admin screen can display:
 
 - Standard Ranking baseline;
 - AI-enabled state;
-- traffic percentage;
+- AI blend percentage;
 - model readiness/fallback;
-- candidate-source flags;
+- candidate pipeline operational status;
 - ranking weights;
 - policy version;
 - audit history.

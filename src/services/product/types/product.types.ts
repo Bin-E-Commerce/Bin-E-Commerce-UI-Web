@@ -136,6 +136,7 @@ export interface PublicProduct {
     id: string;
     originType?: 'INTERNAL' | 'EXTERNAL';
     sellerShopId?: string | null;
+    externalShopId?: string | null;
     name: string;
     slug: string;
     shortDescription?: string | null;
@@ -176,6 +177,7 @@ export interface ListProductsParams {
     originType?: 'INTERNAL' | 'EXTERNAL';
     status?: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     sellerShopId?: string;
+    externalShopId?: string;
     minPrice?: number;
     maxPrice?: number;
     minRating?: number;

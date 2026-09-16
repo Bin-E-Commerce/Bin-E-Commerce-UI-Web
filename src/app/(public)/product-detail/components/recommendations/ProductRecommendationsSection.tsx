@@ -1,64 +1,45 @@
-import { ProductCard } from '@/app/(public)/products/components/ProductCard';
+// File này ghép hai carousel product detail; không query API và không quyết định ranking/exclusion.
+
+import type { PublicProduct } from '@/services/product';
+
+import { ProductRecommendationCarousel } from './ProductRecommendationCarousel';
 import type { ProductDetailRecommendation } from '../../types/product-detail.types';
 
 interface ProductRecommendationsSectionProps {
+    shopProducts: PublicProduct[];
     products: ProductDetailRecommendation[];
+    shopHref: string | null;
 }
 
-// Hiển thị sản phẩm liên quan bằng card dùng chung để luồng khám phá nhất quán với trang chủ.
+// Ghép hai carousel độc lập; lỗi hoặc rỗng của một nguồn không được ẩn nguồn còn lại trên product detail.
 export function ProductRecommendationsSection({
+    shopProducts,
     products,
+    shopHref,
 }: ProductRecommendationsSectionProps) {
-    if (products.length === 0) return null;
-
     return (
-        <section className="border-y border-zinc-200 bg-white">
-            <div className="mx-auto max-w-7xl px-3 py-7 sm:px-6 lg:px-8">
-                <div className="mb-5 flex items-end justify-between gap-4">
-                    <div>
-                        <p className="text-xs font-semibold uppercase text-red-600">
-                            Có thể bạn quan tâm
-                        </p>
-                        <h2 className="mt-1 text-xl font-bold text-zinc-950 sm:text-2xl">
-                            Sản phẩm liên quan
-                        </h2>
-                    </div>
-                    <p className="hidden max-w-md text-right text-sm leading-6 text-zinc-500 sm:block">
-                        Khám phá thêm các lựa chọn đang có trên Bin E-Commerce.
-                    </p>
-                </div>
+        <div className="space-y-3">
+            {shopHref && shopProducts.length > 0 ? (
+                <ProductRecommendationCarousel
+                    title="Các sản phẩm khác của Shop"
+                    actionLabel="Xem tất cả"
+                    actionHref={shopHref}
+                    products={shopProducts.map((product) => ({ product }))}
+                    showNavigation={false}
+                />
+            ) : null}
 
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
-                    {products.map((item) => (
-                        <ProductCard
-                            key={item.product.id}
-                            product={item.product}
-                            trackingPage="product_detail"
-                            trackingContext={
-                                item.recommendationRequestId &&
-                                item.recommendationItemId
-                                    ? {
-                                          recommendationRequestId:
-                                              item.recommendationRequestId,
-                                          recommendationItemId:
-                                              item.recommendationItemId,
-                                          recommendationSource: item.source,
-                                          recommendationRank: item.rank,
-                                          surface: 'product_detail',
-                                          recommendationPolicyVersion:
-                                              item.recommendationPolicyVersion,
-                                          recommendationExperimentId:
-                                              item.recommendationExperimentId,
-                                          recommendationExperimentVariant:
-                                              item.recommendationExperimentVariant,
-                                      }
-                                    : undefined
-                            }
-                            recommendationReason={item.reasons?.[0]}
-                        />
-                    ))}
-                </div>
-            </div>
-        </section>
+            <ProductRecommendationCarousel
+                title="Có thể bạn cũng thích"
+                actionLabel="Xem thêm"
+                actionHref="/goi-y-hom-nay"
+                products={products}
+                showRecommendationMetadata
+                requiresAuth
+                showNavigation={false}
+                layout="grid"
+                actionPlacement="footer"
+            />
+        </div>
     );
 }

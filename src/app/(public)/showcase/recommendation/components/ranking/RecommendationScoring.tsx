@@ -264,7 +264,7 @@ export function RecommendationScoring() {
                                     <p className="mt-1">Ví dụ: 0,8 × 25% = 0,20 điểm. Hệ thống cộng đóng góp của tám tiêu chí rồi trừ penalty riêng.</p>
                                 </div>
                             </div>
-                            <p className="mt-4 border-t border-zinc-200 pt-3 text-[11px] leading-5 text-zinc-500">Các trọng số hiển thị bên dưới là mặc định trong code, chưa phải kết quả A/B tối ưu. Mỗi tiêu chí được tách thành một hàng để dễ xem công thức, ví dụ và đánh đổi.</p>
+                            <p className="mt-4 border-t border-zinc-200 pt-3 text-[11px] leading-5 text-zinc-500">Các trọng số hiển thị bên dưới là mặc định trong code, chưa phải cấu hình tối ưu theo dữ liệu thực tế. Mỗi tiêu chí được tách thành một hàng để dễ xem công thức, ví dụ và đánh đổi.</p>
                         </div>
                     </section>
                 <div className="mt-3 grid grid-cols-1 items-start gap-2.5">

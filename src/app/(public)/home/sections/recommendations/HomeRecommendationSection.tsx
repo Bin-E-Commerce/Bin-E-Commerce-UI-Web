@@ -3,7 +3,6 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Compass, LockKeyhole } from 'lucide-react';
 
 import type { PublicProduct } from '@/services/product';
 import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
@@ -21,8 +20,7 @@ export function HomeRecommendationSection({
     products,
 }: HomeRecommendationSectionProps) {
     const recommendationQuery = useHomeRecommendations();
-    const { initialized, isAuthenticated, getProtectedHref } =
-        useCartAuthRedirect();
+    const { initialized, getProtectedHref } = useCartAuthRedirect();
     const recommendedProducts =
         recommendationQuery.data?.items.map((item) => item.product) ?? [];
     const trackingContextByProductId = Object.fromEntries(
@@ -36,10 +34,8 @@ export function HomeRecommendationSection({
                 surface: 'home' as const,
                 recommendationPolicyVersion:
                     recommendationQuery.data?.rankingPolicyVersion,
-                recommendationExperimentId:
-                    recommendationQuery.data?.experiment?.id ?? undefined,
-                recommendationExperimentVariant:
-                    recommendationQuery.data?.experiment?.variant ?? undefined,
+                recommendationRankingMode:
+                    recommendationQuery.data?.rankingMode,
             },
         ]),
     );
@@ -70,50 +66,21 @@ export function HomeRecommendationSection({
             recommendationReasonByProductId={recommendationReasonByProductId}
             footer={
                 shouldShowMoreCta ? (
-                    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4 sm:px-5 sm:py-5">
-                        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-start gap-3">
-                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
-                                    {isAuthenticated ? (
-                                        <Compass className="h-4 w-4" />
-                                    ) : (
-                                        <LockKeyhole className="h-4 w-4" />
-                                    )}
-                                </span>
-                                <div>
-                                    <p className="text-sm font-bold text-zinc-950 sm:text-base">
-                                        {isAuthenticated
-                                            ? 'Vẫn còn nhiều lựa chọn hợp gu đang chờ bạn.'
-                                            : 'Mở khóa những gợi ý hợp gu hơn.'}
-                                    </p>
-                                    <p className="mt-1 max-w-2xl text-xs leading-5 text-zinc-500 sm:text-sm">
-                                        {isAuthenticated
-                                            ? 'Khám phá thêm sản phẩm từ nhiều ngành hàng, được sắp xếp theo những gì bạn quan tâm.'
-                                            : 'Đăng nhập để Bin ghi nhớ sở thích, lượt xem và giỏ hàng, rồi chọn ra những sản phẩm phù hợp hơn cho bạn.'}
-                                    </p>
-                                </div>
-                            </div>
-                            <Link
-                                href={
-                                    initialized
-                                        ? getProtectedHref('/goi-y-hom-nay')
-                                        : '#recommendations'
-                                }
-                                aria-disabled={!initialized}
-                                onClick={(event) => {
-                                    if (!initialized) event.preventDefault();
-                                }}
-                                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 aria-disabled:pointer-events-none aria-disabled:opacity-50"
-                            >
-                                {!isAuthenticated ? (
-                                    <LockKeyhole className="h-4 w-4" />
-                                ) : null}
-                                {isAuthenticated
-                                    ? 'Xem toàn bộ gợi ý'
-                                    : 'Đăng nhập để khám phá thêm'}
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </div>
+                    <div className="flex justify-center">
+                        <Link
+                            href={
+                                initialized
+                                    ? getProtectedHref('/goi-y-hom-nay')
+                                    : '#recommendations'
+                            }
+                            aria-disabled={!initialized}
+                            onClick={(event) => {
+                                if (!initialized) event.preventDefault();
+                            }}
+                            className="inline-flex items-center rounded-md border border-zinc-900 px-5 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+                        >
+                            Xem thêm
+                        </Link>
                     </div>
                 ) : null
             }

@@ -13,7 +13,7 @@ interface StoredAttribution {
 }
 
 // Lưu context của card vừa được click theo product để request add-to-cart sau đó vẫn đo được conversion recommendation.
-// Chỉ lưu context đầy đủ và có thời hạn; card listing thông thường không tạo record nên không làm bẩn số liệu A/B.
+// Chỉ lưu context đầy đủ và có thời hạn; card listing thông thường không tạo record nên không làm bẩn recommendation analytics.
 export function rememberRecommendationAttribution(
     productId: string,
     context?: RecommendationAttributionContext,

@@ -97,7 +97,7 @@ export function ColdStartFlow() {
                         </article>
                         <article className="rounded-lg border border-zinc-200 bg-white p-3">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Đánh đổi & cách cải thiện</p>
-                            <p className="mt-1.5 text-xs leading-5 text-zinc-700">Nguồn thị trường giúp tránh danh sách rỗng nhưng có thể quá đại trà; bestseller nhìn về tổng bán, newest ưu tiên độ mới, explore ưu tiên tính ổn định. Các mức 80/80/60/80 là giới hạn hiện tại, cần đánh giá coverage, latency và kết quả experiment trước khi tinh chỉnh.</p>
+                            <p className="mt-1.5 text-xs leading-5 text-zinc-700">Nguồn thị trường giúp tránh danh sách rỗng nhưng có thể quá đại trà; bestseller nhìn về tổng bán, newest ưu tiên độ mới, explore ưu tiên tính ổn định. Các mức 80/80/60/80 là giới hạn hiện tại, cần đánh giá coverage, latency và hiệu quả ranking trên toàn bộ traffic trước khi tinh chỉnh.</p>
                         </article>
                     </div>
                 </section>
