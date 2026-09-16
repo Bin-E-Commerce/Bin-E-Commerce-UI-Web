@@ -2,7 +2,7 @@
 
 import type { DailyActivity } from './types';
 
-// Định dạng tỷ lệ API trả về dạng số thập phân thành phần trăm để hiển thị trong bảng A/B.
+// Định dạng tỷ lệ API trả về dạng số thập phân thành phần trăm cho bảng performance.
 export function formatPercent(value: number): string {
     return `${(value * 100).toFixed(1)}%`;
 }

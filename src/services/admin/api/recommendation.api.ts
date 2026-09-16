@@ -6,7 +6,7 @@ import type {
     RecommendationAdminActorsResponse,
     RecommendationAdminActivityResponse,
     RecommendationAdminOverview,
-    RecommendationAdminExperiment,
+    RecommendationAdminRankingPerformance,
     RecommendationAdminPolicy,
     UpdateRecommendationPolicyPayload,
 } from '../types/recommendation.types';
@@ -26,12 +26,12 @@ export const adminRecommendationService = {
             )
             .then((response) => response.data),
 
-    // Lấy aggregate từng variant để Admin kiểm tra A/B trước khi tăng traffic treatment.
-    getExperiments: (range?: RecommendationAnalyticsRange) =>
+    // Lấy aggregate theo ranking mode thực tế trên toàn bộ traffic.
+    getRankingPerformance: (range?: RecommendationAnalyticsRange) =>
         authorizedAxios
             .get<
-                RecommendationAdminExperiment[]
-            >(`${API_VERSION}/admin/recommendation/experiments`, { params: range })
+                RecommendationAdminRankingPerformance[]
+            >(`${API_VERSION}/admin/recommendation/ranking-performance`, { params: range })
             .then((response) => response.data),
 
     // Lấy danh sách user/session có activity, phục vụ màn hình điều tra theo tài khoản.

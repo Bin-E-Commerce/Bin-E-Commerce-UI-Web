@@ -46,9 +46,8 @@ export interface RecommendationAdminOverview {
     }>;
 }
 
-export interface RecommendationAdminExperiment {
-    experimentId: string;
-    variant: string;
+export interface RecommendationAdminRankingPerformance {
+    rankingMode: string;
     events: number;
     impressions: number;
     clicks: number;
@@ -104,24 +103,14 @@ export interface RecommendationPolicyConfig {
     hybridWeights: Record<string, number>;
     mlEnabled: boolean;
     mlBlend: number;
-    experimentEnabled: boolean;
-    trafficPercent: number;
-    candidateSources: {
-        semanticEnabled: boolean;
-        coBehaviorEnabled: boolean;
-    };
 }
 
 export interface RecommendationPolicyRuntimeStatus {
     standardEnabled: true;
     aiPolicyEnabled: boolean;
-    experimentEnabled: boolean;
-    trafficPercent: number;
     candidateSources: {
         semanticEnabled: boolean;
         coBehaviorEnabled: boolean;
-        semanticPolicyEnabled: boolean;
-        coBehaviorPolicyEnabled: boolean;
         semanticMasterEnabled: boolean;
         coBehaviorMasterEnabled: boolean;
         pipelineMasterEnabled: boolean;
@@ -150,11 +139,5 @@ export interface UpdateRecommendationPolicyPayload {
     hybridWeights: Record<string, number>;
     mlEnabled: boolean;
     mlBlend: number;
-    experimentEnabled: boolean;
-    trafficPercent: number;
-    candidateSources: {
-        semanticEnabled: boolean;
-        coBehaviorEnabled: boolean;
-    };
     reason?: string;
 }

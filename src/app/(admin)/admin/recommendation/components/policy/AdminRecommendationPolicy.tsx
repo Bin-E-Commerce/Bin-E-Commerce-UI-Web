@@ -14,7 +14,6 @@ import {
     ChevronUp,
     CircleAlert,
     Info,
-    LockKeyhole,
     RotateCcw,
     Save,
 } from 'lucide-react';
@@ -50,12 +49,6 @@ function formatDate(value: string | null): string {
 function normalizeBlend(value: number): number {
     if (!Number.isFinite(value)) return 0.3;
     return Math.min(0.5, Math.max(0, value));
-}
-
-// Giới hạn traffic ở UI để giá trị hiển thị luôn khớp với contract backend trước khi submit.
-function normalizeTraffic(value: number): number {
-    if (!Number.isFinite(value)) return 0;
-    return Math.min(100, Math.max(0, value));
 }
 
 // Chuyển weight nội bộ dạng 0-1 thành phần trăm dễ đọc; backend vẫn nhận giá trị dạng số thập phân.
@@ -472,22 +465,15 @@ function AiRankingDetails({ blend }: AiRankingDetailsProps) {
                         </h4>
                         <ol className="mt-1 list-inside list-decimal space-y-1">
                             <li>Policy bật AI-Enhanced Ranking.</li>
+                            <li>Khi bật, mọi request đều được thử bằng model AI.</li>
                             <li>
-                                Experiment A/B được bật, có traffic lớn hơn 0 và
-                                request được phân vào nhóm AI. Bật checkbox hoặc
-                                đặt tỷ lệ pha điểm riêng lẻ chưa đủ để cấp
-                                traffic.
-                            </li>
-                            <li>
-                                AI Service phải nạp được model artifact thật và
-                                trả về điểm hợp lệ cho sản phẩm.
+                                AI Service phải có model artifact thật và trả về điểm hợp lệ cho sản phẩm.
                             </li>
                         </ol>
                         <p className="mt-2">
-                            Nếu thiếu model, chỉ nhận scorer dự phòng, timeout,
-                            lỗi hoặc không có điểm hợp lệ, hệ thống dùng lại
-                            Standard và không ghi request đó thành lượt AI trong
-                            báo cáo experiment.
+                            Nếu thiếu model, timeout, lỗi hoặc không có điểm hợp
+                            lệ, hệ thống dùng lại Standard và analytics ghi nhận
+                            đúng mode Standard/Fallback.
                         </p>
                     </section>
 
@@ -496,18 +482,18 @@ function AiRankingDetails({ blend }: AiRankingDetailsProps) {
                             Lưu ý với cấu hình local mặc định
                         </h4>
                         <p className="mt-1">
-                            Docker Compose mặc định tắt experiment và đặt
-                            traffic AI bằng 0; đồng thời{' '}
+                            Docker Compose có thể tắt AI hoặc candidate source
+                            bằng master switch vận hành; đồng thời{' '}
                             <code className="rounded bg-white px-1 text-zinc-900">
                                 RANKING_MODEL_PATH
                             </code>{' '}
                             để trống. Khi chưa cấu hình model đã huấn luyện, AI
                             Service dùng scorer dự phòng mà Recommendation
                             Service chủ động bỏ qua. Do đó hệ thống vẫn xếp bằng
-                            Standard, dù policy có lưu tỷ lệ pha AI. Muốn AI
-                            thật sự tác động cần chuẩn bị artifact model, cấu
-                            hình đường dẫn nạp model và bật experiment có
-                            traffic.
+                            Standard. Muốn AI thật sự tác động cần chuẩn bị
+                            artifact model và cấu hình đường dẫn nạp model. Khi
+                            AI bật và model sẵn sàng, mọi request sẽ được thử
+                            bằng AI.
                         </p>
                     </section>
                 </div>
@@ -534,40 +520,14 @@ export function AdminRecommendationPolicy({
         () => policy?.config.mlEnabled ?? false,
     );
     const [mlBlend, setMlBlend] = useState(() => policy?.config.mlBlend ?? 0.3);
-    const [experimentEnabled, setExperimentEnabled] = useState(
-        () => policy?.config.experimentEnabled ?? false,
-    );
-    const [trafficPercent, setTrafficPercent] = useState(
-        () => policy?.config.trafficPercent ?? 0,
-    );
-    const [candidateSources, setCandidateSources] = useState(() => ({
-        semanticEnabled: policy?.config.candidateSources.semanticEnabled ?? true,
-        coBehaviorEnabled:
-            policy?.config.candidateSources.coBehaviorEnabled ?? true,
-    }));
     const [reason, setReason] = useState('');
 
-    // Gửi Standard weights và cấu hình AI tùy chọn; backend normalize và audit trong transaction.
+    // Gửi Standard weights và cấu hình AI; backend normalize và audit trong transaction.
     function save(): void {
-        const nextTraffic = normalizeTraffic(trafficPercent);
-        const changesRollout =
-            (mlEnabled && !policy?.config.mlEnabled) ||
-            nextTraffic !== (policy?.config.trafficPercent ?? 0);
-        if (
-            changesRollout &&
-            !window.confirm(
-                'Bạn đang thay đổi rollout AI. Hãy xác nhận để tiếp tục lưu policy mới.',
-            )
-        ) {
-            return;
-        }
         onSave({
             hybridWeights,
             mlEnabled,
             mlBlend: normalizeBlend(mlBlend),
-            experimentEnabled,
-            trafficPercent: nextTraffic,
-            candidateSources,
             reason,
         });
     }
@@ -579,6 +539,18 @@ export function AdminRecommendationPolicy({
             </div>
         );
     }
+
+    const modelStatus = policy?.runtime.model;
+    const modelStatusLabel = !modelStatus?.reachable
+        ? 'Không kết nối'
+        : modelStatus.ready
+          ? 'Ready'
+          : 'Fallback';
+    const modelStatusClassName = !modelStatus?.reachable
+        ? 'border-amber-200 bg-amber-50 text-amber-700'
+        : modelStatus.ready
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          : 'border-zinc-200 bg-zinc-100 text-zinc-600';
 
     return (
         <div className="space-y-4">
@@ -610,7 +582,7 @@ export function AdminRecommendationPolicy({
                                 Version {policy?.version ?? '—'}
                             </span>
                         </div>
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             <div className="rounded-lg border border-zinc-200 bg-white p-3">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                                     Standard Ranking
@@ -630,11 +602,9 @@ export function AdminRecommendationPolicy({
                                     ) : (
                                         <CircleAlert className="size-4 text-zinc-500" />
                                     )}
-                                    {policy?.runtime.aiPolicyEnabled &&
-                                    policy.runtime.experimentEnabled &&
-                                    policy.runtime.trafficPercent > 0
+                                    {policy?.runtime.aiPolicyEnabled
                                         ? policy.runtime.model.ready
-                                            ? 'Có thể chạy theo traffic'
+                                            ? 'Đang hoạt động · 100% request'
                                             : 'Đang fallback về Standard'
                                         : 'Đang tắt'}
                                 </p>
@@ -652,17 +622,6 @@ export function AdminRecommendationPolicy({
                                         : 'Không kết nối được AI Service'}
                                 </p>
                             </div>
-                            <div className="rounded-lg border border-zinc-200 bg-white p-3">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                                    Traffic AI
-                                </p>
-                                <p className="mt-2 text-sm font-semibold text-zinc-950">
-                                    {policy?.runtime.trafficPercent ?? trafficPercent}%
-                                </p>
-                                <p className="mt-1 text-xs text-zinc-500">
-                                    Policy version có hiệu lực sau khi lưu.
-                                </p>
-                            </div>
                         </div>
                         {policy?.runtime.aiPolicyEnabled &&
                         (!policy.runtime.model.ready ||
@@ -670,7 +629,7 @@ export function AdminRecommendationPolicy({
                             <div className="mt-3 flex gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
                                 <CircleAlert className="mt-0.5 size-4 shrink-0" />
                                 <p>
-                                    Policy đã bật nhưng model thật chưa sẵn sàng. Request vẫn dùng Standard Ranking và không được ghi nhận là AI treatment.
+                                    Policy đã bật nhưng model thật chưa sẵn sàng. Request vẫn dùng Standard Ranking và analytics ghi nhận đúng mode fallback.
                                 </p>
                             </div>
                         ) : null}
@@ -786,27 +745,40 @@ export function AdminRecommendationPolicy({
                     <div className="rounded-xl border border-zinc-200 bg-white p-4">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <h3 className="text-sm font-semibold text-zinc-950">
-                                    AI-Enhanced Ranking
-                                </h3>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="text-sm font-semibold text-zinc-950">
+                                        AI-Enhanced Ranking
+                                    </h3>
+                                    <span
+                                        className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${modelStatusClassName}`}
+                                    >
+                                        {modelStatusLabel}
+                                    </span>
+                                </div>
                                 <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                    AI chỉ chạy khi policy được bật và
-                                    experiment cấp traffic. Model chưa sẵn sàng
-                                    hoặc gặp lỗi sẽ tự fallback về Standard
-                                    Ranking.
+                                    Khi bật, AI được thử trên toàn bộ request.
+                                    Model chưa sẵn sàng hoặc gặp lỗi sẽ tự
+                                    fallback về Standard Ranking.
                                 </p>
                             </div>
-                            <label className="inline-flex items-center gap-2 text-sm font-medium text-zinc-900">
-                                <input
-                                    type="checkbox"
-                                    checked={mlEnabled}
-                                    onChange={(event) =>
-                                        setMlEnabled(event.target.checked)
-                                    }
-                                    className="accent-zinc-950"
-                                />
-                                Bật AI-Enhanced Ranking
-                            </label>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={mlEnabled}
+                                aria-label="Bật hoặc tắt AI-Enhanced Ranking"
+                                onClick={() => setMlEnabled((enabled) => !enabled)}
+                                className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${mlEnabled ? 'border-zinc-950 bg-white text-zinc-900 hover:bg-zinc-50' : 'border-zinc-300 bg-white text-zinc-700 hover:border-zinc-950'}`}
+                            >
+                                <span>{mlEnabled ? 'Đang bật' : 'Đang tắt'}</span>
+                                <span
+                                    aria-hidden="true"
+                                    className={`relative h-5 w-9 rounded-full transition ${mlEnabled ? 'bg-zinc-950' : 'bg-zinc-200'}`}
+                                >
+                                    <span
+                                        className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition ${mlEnabled ? 'left-[18px]' : 'left-0.5'}`}
+                                    />
+                                </span>
+                            </button>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-3">
                             <label className="flex items-center gap-2 text-sm text-zinc-700">
@@ -839,114 +811,16 @@ export function AdminRecommendationPolicy({
                                 điểm Standard Ranking.
                             </p>
                         </div>
-                        <div className="mt-4 grid gap-3 border-t border-zinc-200 pt-4 md:grid-cols-2">
-                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-900">
-                                <input
-                                    type="checkbox"
-                                    checked={experimentEnabled}
-                                    onChange={(event) =>
-                                        setExperimentEnabled(event.target.checked)
-                                    }
-                                    className="accent-zinc-950"
-                                />
-                                Bật experiment chia traffic
-                            </label>
-                            <label className="flex items-center gap-2 text-sm text-zinc-700">
-                                Traffic AI
-                                <input
-                                    type="number"
-                                    min={0}
-                                    max={100}
-                                    step={5}
-                                    value={normalizeTraffic(trafficPercent)}
-                                    onChange={(event) =>
-                                        setTrafficPercent(
-                                            normalizeTraffic(Number(event.target.value)),
-                                        )
-                                    }
-                                    disabled={!mlEnabled || !experimentEnabled}
-                                    className="h-9 w-20 rounded-md border border-zinc-300 bg-white px-2 text-right text-sm font-semibold text-zinc-950 outline-none transition focus:border-zinc-950 focus:ring-2 focus:ring-zinc-950/10 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
-                                    aria-label="Traffic AI (%)"
-                                />
-                                <span className="text-xs text-zinc-500">%</span>
-                            </label>
-                        </div>
                         <p className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
-                            AI không thay thế hoàn toàn Standard Ranking. Ví dụ blend 30% nghĩa là điểm cuối gồm 70% Standard và 30% điểm từ model AI; traffic quyết định bao nhiêu actor được thử AI.
+                            AI không thay thế hoàn toàn Standard Ranking. Ví dụ blend 30% nghĩa là điểm cuối gồm 70% Standard và 30% điểm từ model AI; khi bật AI, cách pha này áp dụng cho toàn bộ request hợp lệ.
+                        </p>
+                        <p className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
+                            <CheckCircle2 className="size-4 text-zinc-700" />
+                            Candidate pipeline tự động sử dụng toàn bộ nguồn dữ liệu;
+                            ENV chỉ dùng làm công tắc khẩn cấp.
                         </p>
                         <AiRankingDetails blend={normalizeBlend(mlBlend)} />
                     </div>
-
-                    <section className="rounded-xl border border-zinc-200 bg-white p-4">
-                        <div>
-                            <h3 className="text-sm font-semibold text-zinc-950">
-                                Candidate sources
-                            </h3>
-                            <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                Chọn nguồn candidate được phép tham gia trước bước ranking. ENV master switch luôn có quyền khóa cao hơn policy Admin.
-                            </p>
-                        </div>
-                        <div className="mt-4 grid gap-3 md:grid-cols-2">
-                            {([
-                                {
-                                    key: 'semanticEnabled' as const,
-                                    label: 'Semantic candidates',
-                                    description: 'Lấy sản phẩm tương tự từ embedding/Qdrant.',
-                                    master: policy?.runtime.candidateSources.semanticMasterEnabled && policy.runtime.candidateSources.pipelineMasterEnabled,
-                                    policyEnabled: policy?.runtime.candidateSources.semanticPolicyEnabled ?? true,
-                                },
-                                {
-                                    key: 'coBehaviorEnabled' as const,
-                                    label: 'Co-behavior candidates',
-                                    description: 'Lấy sản phẩm dựa trên hành vi xem, thêm giỏ hoặc mua cùng nhau.',
-                                    master: policy?.runtime.candidateSources.coBehaviorMasterEnabled && policy.runtime.candidateSources.pipelineMasterEnabled,
-                                    policyEnabled: policy?.runtime.candidateSources.coBehaviorPolicyEnabled ?? true,
-                                },
-                            ]).map((source) => {
-                                const masterEnabled = source.master ?? false;
-                                return (
-                                    <label
-                                        key={source.key}
-                                        className="flex items-start justify-between gap-3 rounded-lg border border-zinc-200 bg-white p-3"
-                                    >
-                                        <span>
-                                            <span className="block text-sm font-semibold text-zinc-900">
-                                                {source.label}
-                                            </span>
-                                            <span className="mt-1 block text-xs leading-5 text-zinc-500">
-                                                {source.description}
-                                            </span>
-                                            <span className="mt-2 flex items-center gap-1 text-xs text-zinc-500">
-                                                {masterEnabled ? (
-                                                    <CheckCircle2 className="size-3.5" />
-                                                ) : (
-                                                    <LockKeyhole className="size-3.5" />
-                                                )}
-                                                {masterEnabled
-                                                    ? source.policyEnabled
-                                                        ? 'Policy bật · ENV cho phép'
-                                                        : 'Policy đang tắt'
-                                                    : 'Bị khóa bởi ENV master switch'}
-                                            </span>
-                                        </span>
-                                        <input
-                                            type="checkbox"
-                                            checked={candidateSources[source.key]}
-                                            disabled={!masterEnabled}
-                                            onChange={(event) =>
-                                                setCandidateSources((current) => ({
-                                                    ...current,
-                                                    [source.key]: event.target.checked,
-                                                }))
-                                            }
-                                            className="mt-0.5 accent-zinc-950"
-                                            aria-label={source.label}
-                                        />
-                                    </label>
-                                );
-                            })}
-                        </div>
-                    </section>
                 </div>
 
                 <div className="mt-5 border-t border-zinc-200 pt-4">
@@ -970,6 +844,7 @@ export function AdminRecommendationPolicy({
                             type="button"
                             onClick={save}
                             disabled={saving || !policy}
+                            className="h-10 self-end"
                         >
                             <Save className="size-4" />
                             {saving ? 'Đang lưu...' : 'Áp dụng policy'}

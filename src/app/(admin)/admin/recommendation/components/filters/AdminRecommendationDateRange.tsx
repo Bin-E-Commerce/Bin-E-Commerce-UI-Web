@@ -1,4 +1,4 @@
-// Bộ lọc thời gian dùng chung cho Overview và A/B aggregate; component chỉ render input và phát sự kiện, không tự gọi API.
+// Bộ lọc thời gian dùng chung cho Overview và ranking performance; component chỉ render input và phát sự kiện, không tự gọi API.
 
 'use client';
 

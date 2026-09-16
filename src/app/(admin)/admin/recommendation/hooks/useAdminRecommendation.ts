@@ -79,14 +79,14 @@ export function useAdminRecommendation() {
         queryFn: () => adminRecommendationService.getOverview(analyticsRange),
         enabled: activeTab === 'overview',
     });
-    const experimentsQuery = useQuery({
+    const rankingPerformanceQuery = useQuery({
         queryKey: [
-            'admin-recommendation-experiments',
+            'admin-recommendation-ranking-performance',
             analyticsRange?.from ?? 'default',
             analyticsRange?.to ?? 'default',
         ],
         queryFn: () =>
-            adminRecommendationService.getExperiments(analyticsRange),
+            adminRecommendationService.getRankingPerformance(analyticsRange),
         enabled: activeTab === 'overview',
     });
     const actorsQuery = useQuery({
@@ -178,7 +178,10 @@ export function useAdminRecommendation() {
 
     // Làm mới hai nguồn dữ liệu của Overview cùng lúc để nút refresh không tạo trạng thái nửa cũ/nửa mới.
     function refreshOverview() {
-        void Promise.all([overviewQuery.refetch(), experimentsQuery.refetch()]);
+        void Promise.all([
+            overviewQuery.refetch(),
+            rankingPerformanceQuery.refetch(),
+        ]);
     }
 
     // Validate range trước khi đổi query key; giới hạn 31 ngày đồng bộ với backend để lỗi được phản hồi ngay trên UI.
@@ -240,7 +243,7 @@ export function useAdminRecommendation() {
         overview: overviewQuery.data ?? null,
         overviewLoading: overviewQuery.isFetching,
         overviewError: overviewQuery.isError,
-        experiments: experimentsQuery.data ?? [],
+        rankingPerformance: rankingPerformanceQuery.data ?? [],
         refreshOverview,
         actors: actorsQuery.data?.items ?? [],
         actorsLoading: actorsQuery.isFetching,

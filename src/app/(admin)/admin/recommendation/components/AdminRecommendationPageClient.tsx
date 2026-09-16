@@ -92,7 +92,7 @@ export function AdminRecommendationPageClient() {
             {state.activeTab === 'overview' ? (
                 <AdminRecommendationOverview
                     overview={state.overview}
-                    experiments={state.experiments}
+                    rankingPerformance={state.rankingPerformance}
                     loading={state.overviewLoading}
                 />
             ) : null}
