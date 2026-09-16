@@ -104,6 +104,35 @@ export interface RecommendationPolicyConfig {
     hybridWeights: Record<string, number>;
     mlEnabled: boolean;
     mlBlend: number;
+    experimentEnabled: boolean;
+    trafficPercent: number;
+    candidateSources: {
+        semanticEnabled: boolean;
+        coBehaviorEnabled: boolean;
+    };
+}
+
+export interface RecommendationPolicyRuntimeStatus {
+    standardEnabled: true;
+    aiPolicyEnabled: boolean;
+    experimentEnabled: boolean;
+    trafficPercent: number;
+    candidateSources: {
+        semanticEnabled: boolean;
+        coBehaviorEnabled: boolean;
+        semanticPolicyEnabled: boolean;
+        coBehaviorPolicyEnabled: boolean;
+        semanticMasterEnabled: boolean;
+        coBehaviorMasterEnabled: boolean;
+        pipelineMasterEnabled: boolean;
+    };
+    model: {
+        reachable: boolean;
+        ready: boolean;
+        fallback: boolean;
+        modelVersion: string | null;
+        featureCount: number | null;
+    };
 }
 
 export interface RecommendationAdminPolicy {
@@ -111,6 +140,7 @@ export interface RecommendationAdminPolicy {
     version: string;
     status: string;
     config: RecommendationPolicyConfig;
+    runtime: RecommendationPolicyRuntimeStatus;
     createdBy: string | null;
     reason: string | null;
     createdAt: string | null;
@@ -120,5 +150,11 @@ export interface UpdateRecommendationPolicyPayload {
     hybridWeights: Record<string, number>;
     mlEnabled: boolean;
     mlBlend: number;
+    experimentEnabled: boolean;
+    trafficPercent: number;
+    candidateSources: {
+        semanticEnabled: boolean;
+        coBehaviorEnabled: boolean;
+    };
     reason?: string;
 }

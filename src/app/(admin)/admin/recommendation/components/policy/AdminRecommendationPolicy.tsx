@@ -8,7 +8,16 @@ import {
     type ReactNode,
     type SetStateAction,
 } from 'react';
-import { ChevronDown, ChevronUp, Info, RotateCcw, Save } from 'lucide-react';
+import {
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    CircleAlert,
+    Info,
+    LockKeyhole,
+    RotateCcw,
+    Save,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -41,6 +50,12 @@ function formatDate(value: string | null): string {
 function normalizeBlend(value: number): number {
     if (!Number.isFinite(value)) return 0.3;
     return Math.min(0.5, Math.max(0, value));
+}
+
+// Giới hạn traffic ở UI để giá trị hiển thị luôn khớp với contract backend trước khi submit.
+function normalizeTraffic(value: number): number {
+    if (!Number.isFinite(value)) return 0;
+    return Math.min(100, Math.max(0, value));
 }
 
 // Chuyển weight nội bộ dạng 0-1 thành phần trăm dễ đọc; backend vẫn nhận giá trị dạng số thập phân.
@@ -519,14 +534,40 @@ export function AdminRecommendationPolicy({
         () => policy?.config.mlEnabled ?? false,
     );
     const [mlBlend, setMlBlend] = useState(() => policy?.config.mlBlend ?? 0.3);
+    const [experimentEnabled, setExperimentEnabled] = useState(
+        () => policy?.config.experimentEnabled ?? false,
+    );
+    const [trafficPercent, setTrafficPercent] = useState(
+        () => policy?.config.trafficPercent ?? 0,
+    );
+    const [candidateSources, setCandidateSources] = useState(() => ({
+        semanticEnabled: policy?.config.candidateSources.semanticEnabled ?? true,
+        coBehaviorEnabled:
+            policy?.config.candidateSources.coBehaviorEnabled ?? true,
+    }));
     const [reason, setReason] = useState('');
 
     // Gửi Standard weights và cấu hình AI tùy chọn; backend normalize và audit trong transaction.
     function save(): void {
+        const nextTraffic = normalizeTraffic(trafficPercent);
+        const changesRollout =
+            (mlEnabled && !policy?.config.mlEnabled) ||
+            nextTraffic !== (policy?.config.trafficPercent ?? 0);
+        if (
+            changesRollout &&
+            !window.confirm(
+                'Bạn đang thay đổi rollout AI. Hãy xác nhận để tiếp tục lưu policy mới.',
+            )
+        ) {
+            return;
+        }
         onSave({
             hybridWeights,
             mlEnabled,
             mlBlend: normalizeBlend(mlBlend),
+            experimentEnabled,
+            trafficPercent: nextTraffic,
+            candidateSources,
             reason,
         });
     }
@@ -555,6 +596,86 @@ export function AdminRecommendationPolicy({
                 </div>
 
                 <div className="mt-5 space-y-4">
+                    <section className="rounded-xl border border-zinc-200 bg-white p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 className="text-sm font-semibold text-zinc-950">
+                                    Trạng thái đang chạy
+                                </h3>
+                                <p className="mt-1 text-xs leading-5 text-zinc-500">
+                                    Đây là trạng thái policy đã lưu kết hợp với model và các master switch của môi trường.
+                                </p>
+                            </div>
+                            <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-600">
+                                Version {policy?.version ?? '—'}
+                            </span>
+                        </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-lg border border-zinc-200 bg-white p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                                    Standard Ranking
+                                </p>
+                                <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+                                    <CheckCircle2 className="size-4 text-zinc-700" />
+                                    Đang hoạt động · Baseline bắt buộc
+                                </p>
+                            </div>
+                            <div className="rounded-lg border border-zinc-200 bg-white p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                                    AI Ranking
+                                </p>
+                                <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-zinc-950">
+                                    {policy?.runtime.model.ready ? (
+                                        <CheckCircle2 className="size-4 text-zinc-700" />
+                                    ) : (
+                                        <CircleAlert className="size-4 text-zinc-500" />
+                                    )}
+                                    {policy?.runtime.aiPolicyEnabled &&
+                                    policy.runtime.experimentEnabled &&
+                                    policy.runtime.trafficPercent > 0
+                                        ? policy.runtime.model.ready
+                                            ? 'Có thể chạy theo traffic'
+                                            : 'Đang fallback về Standard'
+                                        : 'Đang tắt'}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border border-zinc-200 bg-white p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                                    Model
+                                </p>
+                                <p className="mt-2 text-sm font-semibold text-zinc-950">
+                                    {policy?.runtime.model.modelVersion ?? 'Chưa sẵn sàng'}
+                                </p>
+                                <p className="mt-1 text-xs text-zinc-500">
+                                    {policy?.runtime.model.reachable
+                                        ? `${policy.runtime.model.featureCount ?? 0} feature · ${policy.runtime.model.ready ? 'ready' : 'fallback'}`
+                                        : 'Không kết nối được AI Service'}
+                                </p>
+                            </div>
+                            <div className="rounded-lg border border-zinc-200 bg-white p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                                    Traffic AI
+                                </p>
+                                <p className="mt-2 text-sm font-semibold text-zinc-950">
+                                    {policy?.runtime.trafficPercent ?? trafficPercent}%
+                                </p>
+                                <p className="mt-1 text-xs text-zinc-500">
+                                    Policy version có hiệu lực sau khi lưu.
+                                </p>
+                            </div>
+                        </div>
+                        {policy?.runtime.aiPolicyEnabled &&
+                        (!policy.runtime.model.ready ||
+                            !policy.runtime.model.reachable) ? (
+                            <div className="mt-3 flex gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
+                                <CircleAlert className="mt-0.5 size-4 shrink-0" />
+                                <p>
+                                    Policy đã bật nhưng model thật chưa sẵn sàng. Request vẫn dùng Standard Ranking và không được ghi nhận là AI treatment.
+                                </p>
+                            </div>
+                        ) : null}
+                    </section>
+
                     <WeightGroup
                         title="Standard Ranking"
                         description="Kết hợp tín hiệu hành vi, nội dung và quan hệ giữa các sản phẩm."
@@ -662,7 +783,7 @@ export function AdminRecommendationPolicy({
                         />
                     </WeightGroup>
 
-                    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                    <div className="rounded-xl border border-zinc-200 bg-white p-4">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <h3 className="text-sm font-semibold text-zinc-950">
@@ -718,8 +839,114 @@ export function AdminRecommendationPolicy({
                                 điểm Standard Ranking.
                             </p>
                         </div>
+                        <div className="mt-4 grid gap-3 border-t border-zinc-200 pt-4 md:grid-cols-2">
+                            <label className="flex items-center gap-2 text-sm font-medium text-zinc-900">
+                                <input
+                                    type="checkbox"
+                                    checked={experimentEnabled}
+                                    onChange={(event) =>
+                                        setExperimentEnabled(event.target.checked)
+                                    }
+                                    className="accent-zinc-950"
+                                />
+                                Bật experiment chia traffic
+                            </label>
+                            <label className="flex items-center gap-2 text-sm text-zinc-700">
+                                Traffic AI
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={normalizeTraffic(trafficPercent)}
+                                    onChange={(event) =>
+                                        setTrafficPercent(
+                                            normalizeTraffic(Number(event.target.value)),
+                                        )
+                                    }
+                                    disabled={!mlEnabled || !experimentEnabled}
+                                    className="h-9 w-20 rounded-md border border-zinc-300 bg-white px-2 text-right text-sm font-semibold text-zinc-950 outline-none transition focus:border-zinc-950 focus:ring-2 focus:ring-zinc-950/10 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+                                    aria-label="Traffic AI (%)"
+                                />
+                                <span className="text-xs text-zinc-500">%</span>
+                            </label>
+                        </div>
+                        <p className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
+                            AI không thay thế hoàn toàn Standard Ranking. Ví dụ blend 30% nghĩa là điểm cuối gồm 70% Standard và 30% điểm từ model AI; traffic quyết định bao nhiêu actor được thử AI.
+                        </p>
                         <AiRankingDetails blend={normalizeBlend(mlBlend)} />
                     </div>
+
+                    <section className="rounded-xl border border-zinc-200 bg-white p-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-zinc-950">
+                                Candidate sources
+                            </h3>
+                            <p className="mt-1 text-xs leading-5 text-zinc-500">
+                                Chọn nguồn candidate được phép tham gia trước bước ranking. ENV master switch luôn có quyền khóa cao hơn policy Admin.
+                            </p>
+                        </div>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                            {([
+                                {
+                                    key: 'semanticEnabled' as const,
+                                    label: 'Semantic candidates',
+                                    description: 'Lấy sản phẩm tương tự từ embedding/Qdrant.',
+                                    master: policy?.runtime.candidateSources.semanticMasterEnabled && policy.runtime.candidateSources.pipelineMasterEnabled,
+                                    policyEnabled: policy?.runtime.candidateSources.semanticPolicyEnabled ?? true,
+                                },
+                                {
+                                    key: 'coBehaviorEnabled' as const,
+                                    label: 'Co-behavior candidates',
+                                    description: 'Lấy sản phẩm dựa trên hành vi xem, thêm giỏ hoặc mua cùng nhau.',
+                                    master: policy?.runtime.candidateSources.coBehaviorMasterEnabled && policy.runtime.candidateSources.pipelineMasterEnabled,
+                                    policyEnabled: policy?.runtime.candidateSources.coBehaviorPolicyEnabled ?? true,
+                                },
+                            ]).map((source) => {
+                                const masterEnabled = source.master ?? false;
+                                return (
+                                    <label
+                                        key={source.key}
+                                        className="flex items-start justify-between gap-3 rounded-lg border border-zinc-200 bg-white p-3"
+                                    >
+                                        <span>
+                                            <span className="block text-sm font-semibold text-zinc-900">
+                                                {source.label}
+                                            </span>
+                                            <span className="mt-1 block text-xs leading-5 text-zinc-500">
+                                                {source.description}
+                                            </span>
+                                            <span className="mt-2 flex items-center gap-1 text-xs text-zinc-500">
+                                                {masterEnabled ? (
+                                                    <CheckCircle2 className="size-3.5" />
+                                                ) : (
+                                                    <LockKeyhole className="size-3.5" />
+                                                )}
+                                                {masterEnabled
+                                                    ? source.policyEnabled
+                                                        ? 'Policy bật · ENV cho phép'
+                                                        : 'Policy đang tắt'
+                                                    : 'Bị khóa bởi ENV master switch'}
+                                            </span>
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            checked={candidateSources[source.key]}
+                                            disabled={!masterEnabled}
+                                            onChange={(event) =>
+                                                setCandidateSources((current) => ({
+                                                    ...current,
+                                                    [source.key]: event.target.checked,
+                                                }))
+                                            }
+                                            className="mt-0.5 accent-zinc-950"
+                                            aria-label={source.label}
+                                        />
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </section>
                 </div>
 
                 <div className="mt-5 border-t border-zinc-200 pt-4">

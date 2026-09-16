@@ -51,6 +51,7 @@ async function fetchProductRecommendations(
             generatedAt: new Date().toISOString(),
             ruleVersion: 'fallback',
             rankingPolicyVersion: 'fallback',
+            rankingMode: 'HYBRID',
             rankingModelVersion: null,
             experiment: null,
         };
