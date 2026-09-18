@@ -89,6 +89,7 @@ function CallbackHandler() {
                 dispatch(
                     setAuth({
                         accessToken: res.data.accessToken,
+                        sessionId: res.data.sessionId,
                         user: res.data.user,
                     }),
                 );

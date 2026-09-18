@@ -94,6 +94,7 @@ export function useRegisterForm() {
             dispatch(
                 setAuth({
                     accessToken: res.data.accessToken,
+                    sessionId: res.data.sessionId,
                     user: res.data.user,
                 }),
             );

@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Provider } from 'react-redux';
 import { makeStore } from '@/store';
 import type { AppStore } from '@/store';
@@ -15,6 +15,7 @@ import { mergeRecommendationSession } from '@/services/recommendation';
 // Store được giữ ổn định trong suốt vòng đời provider, tránh mất state khi component re-render.
 export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [store] = useState<AppStore>(() => makeStore());
+    const authRestoreStarted = useRef(false);
 
     // Khi component được mount, inject store vào authorizedAxios và dispatch initAuth để restore session
     // Mục đích của useEffect này là để đảm bảo rằng khi ứng dụng khởi động,
@@ -27,6 +28,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // Dùng cùng instance store với Provider để interceptor và React đọc/ghi một nguồn state duy nhất.
         setAppStore(store);
+
+        // Refresh token có cơ chế rotate nên hai request đồng thời sẽ làm request thứ hai dùng token cũ.
+        // Guard này đặc biệt cần trong React Strict Mode, nơi effect có thể được chạy lại khi development.
+        if (authRestoreStarted.current) return;
+        authRestoreStarted.current = true;
+
         // 1 API call duy nhất để restore session: POST /auth/refresh (dùng httpOnly cookie)
         // Sau khi restore user, merge idempotent session guest để hành vi trước login được giữ lại.
         void store
