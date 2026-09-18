@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux';
 import { Store } from 'lucide-react';
 
 import type { RootState } from '@/store';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { SellerNavItem } from './types/seller-nav-item.type';
 import {
     useMarkNotificationsReadByBadgeKey,
@@ -15,10 +16,7 @@ import {
 } from '@/common/notifications';
 import { SellerSidebarGroup } from './components/SellerSidebarGroup';
 import { mapSellerNavigation } from './utils/map-seller-navigation';
-import {
-    listSellerOrders,
-    listSellerReturns,
-} from '@/services/order';
+import { listSellerOrders, listSellerReturns } from '@/services/order';
 
 interface SellerSidebarProps {
     onNavigate?: () => void;
@@ -97,15 +95,17 @@ export function SellerSidebar({ onNavigate }: SellerSidebarProps) {
             </div>
 
             <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-                {visibleGroups.map((group) => (
-                    <SellerSidebarGroup
-                        key={group.title}
-                        group={group}
-                        pathname={pathname}
-                        search={search}
-                        onNavigate={handleItemNavigate}
-                    />
-                ))}
+                <TooltipProvider>
+                    {visibleGroups.map((group) => (
+                        <SellerSidebarGroup
+                            key={group.title}
+                            group={group}
+                            pathname={pathname}
+                            search={search}
+                            onNavigate={handleItemNavigate}
+                        />
+                    ))}
+                </TooltipProvider>
             </nav>
         </aside>
     );

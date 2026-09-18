@@ -14,6 +14,7 @@ import type { LucideIcon } from 'lucide-react';
 
 import type { RootState } from '@/store';
 import { getDefaultAdminPath } from '@/services/auth/access';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { AdminSidebarGroup } from './components/AdminSidebarGroup';
 import type { AdminNavGroup, AdminNavItem } from './types/admin-nav-item.type';
 import {
@@ -119,14 +120,16 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
             </Link>
 
             <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-                {visibleGroups.map((group) => (
-                    <AdminSidebarGroup
-                        key={group.title}
-                        group={group}
-                        pathname={pathname}
-                        onNavigate={handleItemNavigate}
-                    />
-                ))}
+                <TooltipProvider>
+                    {visibleGroups.map((group) => (
+                        <AdminSidebarGroup
+                            key={group.title}
+                            group={group}
+                            pathname={pathname}
+                            onNavigate={handleItemNavigate}
+                        />
+                    ))}
+                </TooltipProvider>
             </nav>
         </aside>
     );

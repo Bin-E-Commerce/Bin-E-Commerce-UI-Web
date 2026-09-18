@@ -35,11 +35,17 @@ function TooltipTrigger(
 }
 
 // Hiển thị nội dung đầy đủ trong portal để tooltip không bị cắt bởi card hoặc lưới sản phẩm.
+type TooltipContentProps = React.ComponentProps<typeof TooltipPrimitive.Content> & {
+    arrowClassName?: string;
+};
+
 function TooltipContent({
     className,
     sideOffset = 6,
+    arrowClassName,
+    children,
     ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+}: TooltipContentProps) {
     return (
         <TooltipPrimitive.Portal>
             <TooltipPrimitive.Content
@@ -50,7 +56,12 @@ function TooltipContent({
                     className,
                 )}
                 {...props}
-            />
+            >
+                {children}
+                <TooltipPrimitive.Arrow
+                    className={cn('fill-zinc-950', arrowClassName)}
+                />
+            </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>
     );
 }

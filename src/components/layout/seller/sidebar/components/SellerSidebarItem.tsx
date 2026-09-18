@@ -8,6 +8,11 @@
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { SellerNavItem } from '../types/seller-nav-item.type';
 
 interface SellerSidebarItemProps {
@@ -51,48 +56,60 @@ export function SellerSidebarItem({
     const active = isSellerNavItemActive(item, pathname, search);
 
     return (
-        <Link
-            href={item.href}
-            onClick={() => onNavigate?.(item)}
-            className={cn(
-                'group flex min-h-12 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
-                active
-                    ? 'bg-zinc-950 text-white shadow-sm'
-                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950',
-            )}
-        >
-            <span
-                className={cn(
-                    'flex size-8 shrink-0 items-center justify-center rounded-md',
-                    active ? 'bg-white/10' : 'bg-zinc-100 group-hover:bg-white',
-                )}
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Link
+                    href={item.href}
+                    onClick={() => onNavigate?.(item)}
+                    className={cn(
+                        'group flex min-h-12 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                        active
+                            ? 'bg-zinc-950 text-white shadow-sm'
+                            : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950',
+                    )}
+                >
+                    <span
+                        className={cn(
+                            'flex size-8 shrink-0 items-center justify-center rounded-md',
+                            active ? 'bg-white' : 'bg-zinc-100 group-hover:bg-white',
+                        )}
+                    >
+                        <Icon
+                            className={cn(
+                                'size-4',
+                                active && 'text-zinc-950',
+                            )}
+                        />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{item.label}</span>
+                        <span
+                            className={cn(
+                                'block truncate text-xs',
+                                active ? 'text-zinc-300' : 'text-zinc-400',
+                            )}
+                        >
+                            {item.description}
+                        </span>
+                    </span>
+                    {(item.badgeCount ?? 0) > 0 ? (
+                        <span
+                            className="ml-auto flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-5 text-white"
+                            aria-label={`${item.badgeCount} thông báo chưa đọc`}
+                        >
+                            {(item.badgeCount ?? 0) > 99 ? '99+' : item.badgeCount}
+                        </span>
+                    ) : null}
+                </Link>
+            </TooltipTrigger>
+            {/* Tooltip hiển thị toàn bộ mô tả khi subtitle trong sidebar bị rút gọn. */}
+            <TooltipContent
+                side="right"
+                className="border border-zinc-200 bg-white text-zinc-950 shadow-md"
+                arrowClassName="fill-white stroke-zinc-200"
             >
-                <Icon
-                    className={cn(
-                        'size-4',
-                        active && item.code === 'seller.ai.image_optimization' && 'invert',
-                    )}
-                />
-            </span>
-            <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{item.label}</span>
-                <span
-                    className={cn(
-                        'block truncate text-xs',
-                        active ? 'text-zinc-300' : 'text-zinc-400',
-                    )}
-                >
-                    {item.description}
-                </span>
-            </span>
-            {(item.badgeCount ?? 0) > 0 ? (
-                <span
-                    className="ml-auto flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-5 text-white"
-                    aria-label={`${item.badgeCount} thông báo chưa đọc`}
-                >
-                    {(item.badgeCount ?? 0) > 99 ? '99+' : item.badgeCount}
-                </span>
-            ) : null}
-        </Link>
+                {item.description}
+            </TooltipContent>
+        </Tooltip>
     );
 }
