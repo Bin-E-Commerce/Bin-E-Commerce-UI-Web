@@ -3,9 +3,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Check, ImageIcon, Loader2 } from 'lucide-react';
+import { ImageIcon, Loader2 } from 'lucide-react';
 import { sellerProductService } from '@/services/product';
-import { cn } from '@/lib/utils';
+import { ProductImageOption } from './ProductImageOption';
+import { getMediaAssetId } from './product-image-selection.utils';
 
 interface ProductImageSelectionPanelProps {
     productId: string;
@@ -17,13 +18,6 @@ interface ProductImageSelectionPanelProps {
 interface ProductImageSelection {
     assetIds: string[];
     primaryImageUrl: string | null;
-}
-
-// Trích media asset UUID từ URL đã được Product Service phát hành; URL không bao giờ được gửi lên API AI.
-function getMediaAssetId(imageUrl: string): string | null {
-    const parts = imageUrl.split('/').filter(Boolean);
-    const candidate = parts.at(-2);
-    return candidate && /^[0-9a-f-]{36}$/i.test(candidate) ? candidate : null;
 }
 
 // Hiển thị gallery đã được Product Service xác thực để seller chọn chính xác một ảnh nguồn cho mỗi job.
@@ -95,43 +89,18 @@ export function ProductImageSelectionPanel({
                         if (!assetId) return null;
                         const selected = selectedAssetIds.includes(assetId);
                         return (
-                            <button
-                                type="button"
+                            <ProductImageOption
                                 key={assetId}
+                                assetId={assetId}
+                                imageUrl={image.imageUrl}
+                                altText={image.altText ?? null}
+                                sortOrder={image.sortOrder}
+                                isThumbnail={image.isThumbnail}
+                                isOptimized={Boolean(image.aiAssetId)}
+                                selected={selected}
                                 disabled={disabled}
-                                onClick={() => toggleImage(assetId)}
-                                className={cn(
-                                    'relative aspect-square overflow-hidden rounded-xl border-2 bg-zinc-50 transition-[border-color,box-shadow] disabled:cursor-not-allowed disabled:opacity-60',
-                                    selected
-                                        ? 'border-zinc-950 shadow-md'
-                                        : 'border-zinc-200 hover:border-zinc-400',
-                                )}
-                                aria-pressed={selected}
-                                aria-label={`${selected ? 'Bỏ chọn' : 'Chọn'} ảnh ${image.sortOrder + 1}`}
-                            >
-                                <img
-                                    src={image.imageUrl}
-                                    alt={
-                                        image.altText ??
-                                        `Ảnh sản phẩm ${image.sortOrder + 1}`
-                                    }
-                                    className="h-full w-full object-cover"
-                                    loading="lazy"
-                                />
-                                {selected ? (
-                                    <span className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-zinc-950 text-white">
-                                        <Check
-                                            className="size-3.5"
-                                            aria-hidden="true"
-                                        />
-                                    </span>
-                                ) : null}
-                                {image.isThumbnail ? (
-                                    <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-700">
-                                        Ảnh đại diện
-                                    </span>
-                                ) : null}
-                            </button>
+                                onSelect={toggleImage}
+                            />
                         );
                     })}
                     {images.length === 0 ? (

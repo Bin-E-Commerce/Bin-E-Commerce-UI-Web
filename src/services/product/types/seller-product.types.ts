@@ -1,4 +1,4 @@
-import type { ProductBrand, ProductDetail } from './product.types';
+import type { ProductBrand, ProductDetail, ProductImage } from './product.types';
 
 export type SellerProductStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'DELETED';
 export type SellerProductPublicationStatus = 'ACTIVE' | 'INACTIVE';
@@ -59,6 +59,8 @@ export interface SellerProductListResponse {
 }
 
 export interface SellerProductDetail extends ProductDetail {
+    // Seller cần lineage của từng ảnh để phân biệt ảnh gốc với ảnh đã được AI apply.
+    images?: SellerProductImage[];
     status: SellerProductStatus;
     sellerSku?: string | null;
     gtin?: string | null;
@@ -68,6 +70,11 @@ export interface SellerProductDetail extends ProductDetail {
     packageLengthCm?: string | null;
     packageWidthCm?: string | null;
     packageHeightCm?: string | null;
+}
+
+export interface SellerProductImage extends ProductImage {
+    sourceAssetId?: string | null;
+    aiAssetId?: string | null;
 }
 
 export type ProductCondition = 'new' | 'used_like_new' | 'used_good';

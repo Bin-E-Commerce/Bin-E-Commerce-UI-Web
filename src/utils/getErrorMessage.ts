@@ -46,6 +46,15 @@ export function getErrorMessage(err: unknown): string {
                 : Array.isArray(rawMessage)
                   ? rawMessage[0]
                   : 'Request failed';
+        if (err.response?.data?.code === 'AI_RATE_LIMITED') {
+            const details = err.response.data.details as
+                | { used?: number; limit?: number; retryAfterSeconds?: number }
+                | undefined;
+            if (details?.used !== undefined && details.limit !== undefined) {
+                return `Bạn đã dùng ${details.used}/${details.limit} lượt AI trong cửa sổ hiện tại. Vui lòng thử lại sau.`;
+            }
+            return 'Bạn đã dùng hết lượt AI trong cửa sổ hiện tại. Vui lòng thử lại sau.';
+        }
         // Đây là lỗi proxy dùng chung cho nhiều service, không được suy diễn thành lỗi AI.
         if (serverMsg === 'Upstream service unavailable') {
             return err.response?.status
@@ -54,7 +63,11 @@ export function getErrorMessage(err: unknown): string {
         }
 
         // Khi backend không có message nghiệp vụ cụ thể, giữ status để người dùng biết đây là lỗi máy chủ.
-        if (err.response?.status && err.response.status >= 500 && !VI_ERROR_MAP[serverMsg]) {
+        if (
+            err.response?.status &&
+            err.response.status >= 500 &&
+            !VI_ERROR_MAP[serverMsg]
+        ) {
             return `Lỗi máy chủ (${err.response.status}). Vui lòng thử lại sau.`;
         }
 
