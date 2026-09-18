@@ -78,7 +78,7 @@ export function PreviewResultPane({
 }: PreviewResultPaneProps) {
     return (
         <div className="space-y-3" aria-live="polite">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-h-8 items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
                     <span className="flex size-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-950 shadow-sm">
                         <AiAssistantIcon size={20} />
@@ -91,12 +91,12 @@ export function PreviewResultPane({
             </div>
             <div
                 className={cn(
-                    'relative flex h-[360px] items-center justify-center overflow-hidden rounded-2xl p-2 transition-colors sm:h-[440px]',
+                    'relative flex h-[360px] items-center justify-center overflow-hidden rounded-2xl border p-2 transition-colors sm:h-[440px]',
                     generatedImage
-                        ? 'border border-zinc-200 bg-zinc-50 p-0 shadow-[0_18px_45px_-30px_rgba(24,24,27,0.45)]'
+                        ? 'border-zinc-200 bg-zinc-50 shadow-[0_18px_45px_-30px_rgba(24,24,27,0.45)]'
                         : isFailed
-                          ? 'border border-zinc-200 bg-zinc-50'
-                          : 'border border-zinc-800 bg-zinc-950 shadow-[0_24px_55px_-30px_rgba(24,24,27,0.7)]',
+                          ? 'border-zinc-200 bg-zinc-50'
+                          : 'border-zinc-800 bg-zinc-950 shadow-[0_24px_55px_-30px_rgba(24,24,27,0.7)]',
                 )}
             >
                 {!generatedImage && !isFailed ? (

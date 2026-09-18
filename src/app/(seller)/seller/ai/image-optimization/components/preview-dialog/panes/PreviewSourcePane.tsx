@@ -16,9 +16,14 @@ export function PreviewSourcePane({
 }: PreviewSourcePaneProps) {
     return (
         <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-h-8 items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    <ImageIcon className="size-4" aria-hidden="true" />
+                    <span
+                        className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 shadow-sm"
+                        aria-hidden="true"
+                    >
+                        <ImageIcon className="size-4" />
+                    </span>
                     Ảnh hiện tại
                 </div>
                 <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
