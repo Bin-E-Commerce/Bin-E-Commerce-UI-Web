@@ -24,7 +24,9 @@ interface SellerProductEditorPageProps {
 
 // Hiển thị chung wizard tạo/chỉnh sửa, chỉ thay đổi nguồn dữ liệu và hành động submit theo productId.
 // Dùng chung cho route tạo mới và chỉnh sửa; productId có mặt thì hook hydrate dữ liệu hiện tại.
-export function SellerProductEditorPage({ productId }: SellerProductEditorPageProps) {
+export function SellerProductEditorPage({
+    productId,
+}: SellerProductEditorPageProps) {
     const {
         form,
         references,
@@ -67,11 +69,10 @@ export function SellerProductEditorPage({ productId }: SellerProductEditorPagePr
                         <PackagePlus className="size-5" />
                     </span>
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                            Quản lý sản phẩm
-                        </p>
                         <h1 className="mt-1 text-2xl font-bold text-zinc-950">
-                            {isEditMode ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+                            {isEditMode
+                                ? 'Chỉnh sửa sản phẩm'
+                                : 'Thêm sản phẩm mới'}
                         </h1>
                         <p className="mt-1 text-sm text-zinc-500">
                             {isEditMode
@@ -81,7 +82,11 @@ export function SellerProductEditorPage({ productId }: SellerProductEditorPagePr
                     </div>
                 </div>
                 <Link
-                    href={productId ? `/seller/products/${productId}` : '/seller/products'}
+                    href={
+                        productId
+                            ? `/seller/products/${productId}`
+                            : '/seller/products'
+                    }
                     className={buttonVariants({
                         variant: 'outline',
                         size: 'lg',
@@ -125,7 +130,11 @@ export function SellerProductEditorPage({ productId }: SellerProductEditorPagePr
                             canSubmit={canSubmit}
                             submittingStatus={submittingStatus}
                             mode={isEditMode ? 'edit' : 'create'}
-                            cancelHref={productId ? `/seller/products/${productId}` : '/seller/products'}
+                            cancelHref={
+                                productId
+                                    ? `/seller/products/${productId}`
+                                    : '/seller/products'
+                            }
                             onBack={goBack}
                             onNext={goNext}
                             onSubmit={submitProduct}

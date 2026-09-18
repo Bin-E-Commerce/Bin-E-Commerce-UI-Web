@@ -19,24 +19,28 @@ import { SellerProductRestoreDialog } from './SellerProductRestoreDialog';
 import { useDeleteSellerProduct } from '../hooks/useDeleteSellerProduct';
 import type { SellerProductListItem } from '@/services/product';
 import type { SellerProductPublicationStatus } from '@/services/product';
-import { SellerProductStatusDialog, type SellerProductStatusTarget } from '../../product-shared/components/SellerProductStatusDialog';
+import {
+    SellerProductStatusDialog,
+    type SellerProductStatusTarget,
+} from '../../product-shared/components/SellerProductStatusDialog';
 import { useChangeSellerProductStatus } from '../../product-shared/hooks/useChangeSellerProductStatus';
 import { useRestoreSellerProduct } from '../hooks/useRestoreSellerProduct';
 
 // Điều phối toàn bộ trạng thái trang sản phẩm seller nhưng giao từng vùng hiển thị cho component chuyên trách.
 export function SellerProductsPageContent() {
-    const [deleteTarget, setDeleteTarget] = useState<SellerProductListItem | null>(null);
-    const [statusTarget, setStatusTarget] = useState<SellerProductStatusTarget | null>(null);
-    const [targetStatus, setTargetStatus] = useState<SellerProductPublicationStatus | null>(null);
+    const [deleteTarget, setDeleteTarget] =
+        useState<SellerProductListItem | null>(null);
+    const [statusTarget, setStatusTarget] =
+        useState<SellerProductStatusTarget | null>(null);
+    const [targetStatus, setTargetStatus] =
+        useState<SellerProductPublicationStatus | null>(null);
     const deleteMutation = useDeleteSellerProduct();
     const statusMutation = useChangeSellerProductStatus();
     const restoreMutation = useRestoreSellerProduct();
-    const [restoreTarget, setRestoreTarget] = useState<SellerProductListItem | null>(null);
+    const [restoreTarget, setRestoreTarget] =
+        useState<SellerProductListItem | null>(null);
     const user = useAppSelector((state) => state.auth.user);
-    const canCreateProduct = canAccessSellerPath(
-        '/seller/products/new',
-        user,
-    );
+    const canCreateProduct = canAccessSellerPath('/seller/products/new', user);
 
     const {
         search,
@@ -84,7 +88,11 @@ export function SellerProductsPageContent() {
         product: SellerProductListItem,
         nextStatus: SellerProductPublicationStatus,
     ) => {
-        setStatusTarget({ id: product.id, name: product.name, status: product.status });
+        setStatusTarget({
+            id: product.id,
+            name: product.name,
+            status: product.status,
+        });
         setTargetStatus(nextStatus);
     };
 
@@ -120,9 +128,6 @@ export function SellerProductsPageContent() {
         <div className="overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm">
             <header className="flex flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <p className="text-xs font-semibold uppercase text-zinc-500">
-                        Quản lý sản phẩm
-                    </p>
                     <h1 className="mt-1 text-2xl font-bold text-zinc-950">
                         Tất cả sản phẩm
                     </h1>
@@ -209,7 +214,8 @@ export function SellerProductsPageContent() {
                 product={deleteTarget}
                 loading={deleteMutation.isPending}
                 onOpenChange={(open) => {
-                    if (!open && !deleteMutation.isPending) setDeleteTarget(null);
+                    if (!open && !deleteMutation.isPending)
+                        setDeleteTarget(null);
                 }}
                 onConfirm={handleConfirmDelete}
             />
@@ -229,7 +235,8 @@ export function SellerProductsPageContent() {
                 product={restoreTarget}
                 loading={restoreMutation.isPending}
                 onOpenChange={(open) => {
-                    if (!open && !restoreMutation.isPending) setRestoreTarget(null);
+                    if (!open && !restoreMutation.isPending)
+                        setRestoreTarget(null);
                 }}
                 onConfirm={handleConfirmRestore}
             />
