@@ -5,6 +5,7 @@ import type { UserAddress } from '@/services/auth';
 // Input form checkout được hook chuyển thành request Order API có idempotency key.
 export interface CreateCodOrderInput {
     shippingAddressId: string;
+    cartItemId?: string;
     note?: string;
     idempotencyKey: string;
 }

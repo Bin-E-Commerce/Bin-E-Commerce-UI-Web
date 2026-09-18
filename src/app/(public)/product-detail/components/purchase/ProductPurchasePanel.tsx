@@ -34,6 +34,7 @@ import {
 } from '@/app/(public)/products/utils/product-formatters';
 import { cn } from '@/lib/utils';
 import type { ProductDetail } from '@/services/product';
+import type { Cart } from '@/app/(public)/cart/types/cart.types';
 import { useAddCartItem } from '@/app/(public)/cart/hooks/use-add-cart-item';
 import { useCart } from '@/app/(public)/cart/hooks/use-cart';
 import { useUpdateCartItem } from '@/app/(public)/cart/hooks/use-cart-item-actions';
@@ -90,7 +91,20 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         setIsExternalNoticeOpen(true);
     }
 
-    // Mua ngay dùng cùng mutation với thêm giỏ để server xác nhận variant/tồn kho trước khi chuyển sang checkout.
+    // Điều hướng sang checkout với đúng cartItemId mà Cart Service trả về sau mutation.
+    // Checkout dùng ID này để backend quote/reserve một dòng hàng, còn các sản phẩm khác vẫn nằm trong active cart.
+    function goToBuyNowCheckout(cart: Cart): void {
+        const selectedItem = cart.items.find(
+            (item) => item.variantId === purchase.selectedVariant?.id,
+        );
+        if (!selectedItem) return;
+        router.push(
+            `/checkout?cartItemId=${encodeURIComponent(selectedItem.id)}`,
+        );
+    }
+
+    // Mua ngay vẫn dùng mutation thêm/cập nhật cart để server xác nhận variant và tồn kho,
+    // nhưng không còn chuyển tới checkout toàn bộ cart như luồng cũ.
     // Với Customer chưa đăng nhập, giữ lại đường dẫn sản phẩm để sau khi xác thực có thể tiếp tục chọn và mua.
     function handleBuyNow(): void {
         if (!canAddToCart || !purchase.selectedVariant) return;
@@ -109,9 +123,10 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                 {
                     itemId: existingItem.id,
                     quantity: purchase.quantity,
+                    showSuccessToast: false,
                 },
                 {
-                    onSuccess: () => router.push('/checkout'),
+                    onSuccess: (cart) => goToBuyNowCheckout(cart),
                 },
             );
             return;
@@ -122,9 +137,10 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                 productId: product.id,
                 variantId: purchase.selectedVariant.id,
                 quantity: purchase.quantity,
+                showSuccessToast: false,
             },
             {
-                onSuccess: () => router.push('/checkout'),
+                onSuccess: (cart) => goToBuyNowCheckout(cart),
             },
         );
     }

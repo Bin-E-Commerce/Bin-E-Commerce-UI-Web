@@ -16,13 +16,22 @@ import {
 } from '@/services/recommendation';
 import type { AddCartItemInput, Cart } from '../types/cart.types';
 
+// Cờ trình bày chỉ điều khiển toast của frontend; không được truyền xuống Cart API.
+type AddCartItemMutationInput = AddCartItemInput & {
+    showSuccessToast?: boolean;
+};
+
 // Cung cấp mutation dùng chung cho product detail và các CTA thêm vào giỏ sau này.
 export function useAddCartItem() {
     const queryClient = useQueryClient();
     const userId = useAppSelector((state) => state.auth.user?.id ?? null);
 
-    return useMutation<Cart, unknown, AddCartItemInput>({
-        mutationFn: addCartItem,
+    return useMutation<Cart, unknown, AddCartItemMutationInput>({
+        mutationFn: (mutationInput) => {
+            const { showSuccessToast, ...input } = mutationInput;
+            void showSuccessToast;
+            return addCartItem(input);
+        },
         onSuccess: async (cart, input) => {
             // Ghi đè cache bằng response chuẩn rồi invalidate để các component khác nhận totalItems mới nhất.
             queryClient.setQueryData(['cart', userId ?? 'anonymous'], cart);
@@ -47,7 +56,9 @@ export function useAddCartItem() {
                         clearRecommendationAttribution(input.productId);
                 })
                 .catch(() => undefined);
-            toast.success('Đã thêm sản phẩm vào giỏ hàng.');
+            if (input.showSuccessToast !== false) {
+                toast.success('Đã thêm sản phẩm vào giỏ hàng.');
+            }
         },
         onError: (error) => {
             toast.error(getErrorMessage(error));

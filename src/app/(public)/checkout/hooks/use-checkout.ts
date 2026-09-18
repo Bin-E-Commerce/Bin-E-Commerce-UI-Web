@@ -111,10 +111,14 @@ export function useCheckout() {
 }
 
 // Tính quote theo địa chỉ GHN đã lưu trong Auth Service.
-export function useCheckoutQuote(shippingAddressId: string) {
+// Tính quote theo địa chỉ và tùy chọn item Mua ngay; bỏ cartItemId sẽ giữ nguyên checkout toàn bộ giỏ.
+export function useCheckoutQuote(
+    shippingAddressId: string,
+    cartItemId?: string,
+) {
     return useQuery({
-        queryKey: ['checkout-quote', shippingAddressId],
-        queryFn: () => getOrderQuote(shippingAddressId),
+        queryKey: ['checkout-quote', shippingAddressId, cartItemId ?? 'cart'],
+        queryFn: () => getOrderQuote(shippingAddressId, cartItemId),
         enabled: Boolean(shippingAddressId),
         staleTime: 20_000,
         refetchOnWindowFocus: false,

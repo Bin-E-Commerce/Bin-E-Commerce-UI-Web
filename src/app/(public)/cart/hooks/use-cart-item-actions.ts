@@ -19,19 +19,30 @@ type RemoveCartItemInput = {
     quantity: number;
 };
 
+// Cờ này chỉ phục vụ UI; mutation sẽ loại bỏ trước khi gửi quantity tới Cart Service.
+type UpdateCartItemMutationInput = UpdateCartItemInput & {
+    showSuccessToast?: boolean;
+};
+
 // Cập nhật quantity trên server rồi ghi đè cache cart để mọi nơi trong header và trang cart đồng bộ.
 export function useUpdateCartItem() {
     const queryClient = useQueryClient();
     const userId = useAppSelector((state) => state.auth.user?.id ?? null);
     const queryKey = ['cart', userId ?? 'anonymous'];
 
-    return useMutation<Cart, unknown, UpdateCartItemInput>({
-        mutationFn: updateCartItem,
-        onSuccess: async (cart) => {
+    return useMutation<Cart, unknown, UpdateCartItemMutationInput>({
+        mutationFn: (mutationInput) => {
+            const { showSuccessToast, ...input } = mutationInput;
+            void showSuccessToast;
+            return updateCartItem(input);
+        },
+        onSuccess: async (cart, input) => {
             // Không optimistic update vì quantity hợp lệ còn phụ thuộc tồn kho do Cart Service xác nhận.
             queryClient.setQueryData(queryKey, cart);
             await queryClient.invalidateQueries({ queryKey });
-            toast.success('Đã cập nhật số lượng sản phẩm.');
+            if (input.showSuccessToast !== false) {
+                toast.success('Đã cập nhật số lượng sản phẩm.');
+            }
         },
         onError: (error) => {
             toast.error(getErrorMessage(error));

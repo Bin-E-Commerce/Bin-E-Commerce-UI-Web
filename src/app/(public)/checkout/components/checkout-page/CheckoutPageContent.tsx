@@ -5,7 +5,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
     AlertTriangle,
@@ -79,6 +79,8 @@ export function CheckoutPageContent() {
     );
     const [note, setNote] = useState('');
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const buyNowCartItemId = searchParams.get('cartItemId') ?? undefined;
 
     const addresses = addressesQuery.data ?? EMPTY_ADDRESSES;
     const fallbackAddressId = useMemo(
@@ -89,7 +91,7 @@ export function CheckoutPageContent() {
         [addresses],
     );
     const activeAddressId = selectedAddressId || fallbackAddressId;
-    const quoteQuery = useCheckoutQuote(activeAddressId);
+    const quoteQuery = useCheckoutQuote(activeAddressId, buyNowCartItemId);
 
     // Chỉ chặn guest sau khi initAuth hoàn tất; nếu chạy sớm hơn, refresh checkout sẽ redirect sai trước khi cookie được restore.
     useEffect(() => {
@@ -165,6 +167,7 @@ export function CheckoutPageContent() {
         orderMutation.mutate(
             {
                 shippingAddressId: activeAddressId,
+                cartItemId: buyNowCartItemId,
                 note: note.trim() || undefined,
             },
             {
@@ -218,8 +221,20 @@ export function CheckoutPageContent() {
     }
 
     const cart = cartQuery.data;
+    // Khi có cartItemId, chỉ render item đã chọn để giao diện khớp với quote/order server-side.
+    // Không lọc ở browser để thay thế kiểm tra backend; đây chỉ là dữ liệu trình bày và fallback UX.
+    const checkoutItems = buyNowCartItemId
+        ? cart.items.filter((item) => item.id === buyNowCartItemId)
+        : cart.items;
+    const checkoutTotalItems = checkoutItems.reduce(
+        (total, item) => total + item.quantity,
+        0,
+    );
+    const checkoutSubtotal = checkoutItems
+        .reduce((total, item) => total + Number(item.lineTotal), 0)
+        .toString();
     const quote = quoteQuery.data;
-    if (cart.items.length === 0) {
+    if (checkoutItems.length === 0) {
         return (
             <CheckoutShell compact>
                 <section className="relative mx-auto flex min-h-[320px] max-w-2xl items-center justify-center overflow-hidden rounded-[2rem] border border-zinc-200 bg-white px-6 py-10 text-center shadow-[0_20px_60px_-36px_rgba(24,24,27,0.45)] sm:min-h-[360px] sm:px-12">
@@ -524,12 +539,12 @@ export function CheckoutPageContent() {
                                     Tóm tắt đơn hàng
                                 </h2>
                                 <p className="text-sm text-zinc-500">
-                                    {cart.totalItems} sản phẩm
+                                    {checkoutTotalItems} sản phẩm
                                 </p>
                             </div>
                         </div>
                         <div className="mt-6 space-y-4 border-t border-zinc-100 pt-5">
-                            {cart.items.map((item) => (
+                            {checkoutItems.map((item) => (
                                 <div key={item.id} className="flex gap-3">
                                     <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
                                         {item.imageUrl ? (
@@ -566,7 +581,7 @@ export function CheckoutPageContent() {
                                     <span>Tạm tính</span>
                                     <span className="font-medium text-zinc-800">
                                         {formatPrice(
-                                            quote?.subtotal ?? cart.subtotal,
+                                            quote?.subtotal ?? checkoutSubtotal,
                                         )}
                                     </span>
                                 </div>

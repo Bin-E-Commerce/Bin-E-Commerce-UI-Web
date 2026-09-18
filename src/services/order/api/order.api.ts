@@ -34,6 +34,7 @@ export async function createCodOrder(
         ORDERS,
         {
             shippingAddressId: input.shippingAddressId,
+            ...(input.cartItemId ? { cartItemId: input.cartItemId } : {}),
             paymentMethod: 'COD',
             note: input.note?.trim() || undefined,
         },
@@ -54,9 +55,13 @@ export interface OrderQuoteResponse {
 }
 
 // Quote chỉ truyền addressId; item, shop và số tiền authoritative được đọc ở backend.
-export async function getOrderQuote(shippingAddressId: string): Promise<OrderQuoteResponse> {
+export async function getOrderQuote(
+    shippingAddressId: string,
+    cartItemId?: string,
+): Promise<OrderQuoteResponse> {
     const response = await authorizedAxios.post<OrderQuoteResponse>(`${ORDERS}/quote`, {
         shippingAddressId,
+        ...(cartItemId ? { cartItemId } : {}),
         paymentMethod: 'COD',
     });
     return response.data;
