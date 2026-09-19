@@ -29,7 +29,7 @@ export function ShowcaseLanding() {
 
                     <div className="relative aspect-[16/9] w-full overflow-hidden border-y border-zinc-200 bg-white lg:aspect-auto lg:min-h-[19rem] lg:border-y-0 lg:border-x">
                         <Image
-                            src="/images/background-showcase/background.png"
+                            src="/images/feature/background-showcase/background.png"
                             alt="Minh họa Bin E-Commerce với hành trình mua sắm, gợi ý cá nhân hóa, AI, microservices và hạ tầng cloud."
                             fill
                             priority

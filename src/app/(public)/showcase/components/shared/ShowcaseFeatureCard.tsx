@@ -42,9 +42,8 @@ export function ShowcaseFeatureCard({
             { name: 'FastAPI', iconSrc: '/images/feature/tech-stack/fastapi.svg' },
             { name: 'Python', iconSrc: '/images/feature/tech-stack/python.svg' },
             { name: 'OpenAI', iconSrc: '/images/feature/tech-stack/openai.svg' },
-            { name: 'Amazon SQS', iconSrc: '/images/feature/tech-stack/amazon-sqs.svg' },
-            { name: 'AWS Lambda', iconSrc: '/images/feature/tech-stack/aws-lambda.svg' },
-            { name: 'Amazon S3', iconSrc: '/images/feature/tech-stack/amazon-s3.svg' },
+            { name: 'Kafka', iconSrc: '/images/feature/tech-stack/apache-kafka.svg' },
+            { name: 'Media Service', iconSrc: '/images/feature/tech-stack/amazon-s3.svg' },
         ],
         '/showcase/authorization-management': [
             { name: 'Next.js', iconSrc: '/images/feature/tech-stack/nextjs.svg' },
