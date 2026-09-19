@@ -124,6 +124,25 @@ export function AiOptimizationPreviewFlow() {
                                             <p className="mt-1.5 text-[10px] leading-4 text-zinc-500"><strong className="font-semibold text-zinc-800">Đánh đổi:</strong> đẹp và linh hoạt hơn nhưng tốn phí, lâu hơn, cần seller review.</p>
                                         </div>
                                     </div>
+                                    <div className="mt-2 rounded-xl border border-zinc-200 bg-white p-2.5">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <p className="font-mono text-[9px] font-medium uppercase tracking-[0.16em] text-zinc-500">Hồ sơ chất lượng</p>
+                                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] text-zinc-500">Lifestyle / OpenAI</span>
+                                        </div>
+                                        <div className="mt-2 grid gap-2 lg:grid-cols-2">
+                                            <div className="rounded-xl border border-zinc-200 bg-white p-2.5">
+                                                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-zinc-950">Preview</p><span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">Nhanh để duyệt</span></div>
+                                                <p className="mt-1 text-[11px] leading-5 text-zinc-600">Quality <code className="font-mono text-[10px] text-zinc-800">low</code>, kích thước provider <code className="font-mono text-[10px] text-zinc-800">1024×1024</code>, nén JPEG 65%, giới hạn cạnh 768px.</p>
+                                                <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">Mục tiêu là phản hồi nhanh và đủ rõ để seller kiểm tra bố cục, không phải bản dùng cuối.</p>
+                                            </div>
+                                            <div className="rounded-xl border border-zinc-200 bg-white p-2.5">
+                                                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-zinc-950">Final</p><span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">Dùng sau khi duyệt</span></div>
+                                                <p className="mt-1 text-[11px] leading-5 text-zinc-600">Quality <code className="font-mono text-[10px] text-zinc-800">medium</code>, kích thước provider <code className="font-mono text-[10px] text-zinc-800">1024×1024</code>, nén JPEG 85%, giới hạn cạnh 1024px.</p>
+                                                <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">Được tạo trong trạng thái FINALIZING sau khi seller xác nhận và trước khi Product Service apply.</p>
+                                            </div>
+                                        </div>
+                                        <p className="mt-2 text-[10px] leading-4 text-zinc-500">Nền trắng là pipeline local rembg/Pillow nên dùng giới hạn xử lý local riêng; bảng trên mô tả profile provider lifestyle.</p>
+                                    </div>
                                 </div>
                             )}
                             title="Chọn ảnh nguồn và kiểu hiển thị"

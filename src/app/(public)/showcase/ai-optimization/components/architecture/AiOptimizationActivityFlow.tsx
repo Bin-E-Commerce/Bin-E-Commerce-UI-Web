@@ -94,8 +94,8 @@ function AiOptimizationApprovalFlow() {
                         <ApprovalStep
                             number="01"
                             phase="Review"
-                            title="Seller chọn preview muốn dùng"
-                            action="Seller mở job REVIEW_REQUIRED, xem các preview và chọn đúng ảnh phù hợp với sản phẩm."
+                            title="Seller xác nhận preview muốn dùng"
+                            action="Seller mở job REVIEW_REQUIRED, xem preview và xác nhận bản phù hợp với sản phẩm trước khi yêu cầu tạo ảnh final."
                             reason="AI có thể tạo ảnh đẹp nhưng không hiểu đầy đủ chiến lược thương hiệu; quyết định cuối phải thuộc về seller."
                             tradeoff="Thêm một lần xác nhận, nhưng tránh việc output chưa phù hợp tự động thay đổi sản phẩm."
                         />
@@ -119,9 +119,9 @@ function AiOptimizationApprovalFlow() {
                             <ApprovalStep
                                 number="03A"
                                 phase="Apply"
-                                title="Ghi ảnh mới bằng transaction"
-                                action="Product Service lock sản phẩm, lưu snapshot, cập nhật đúng gallery row rồi chuyển job thành APPLIED."
-                                reason="Snapshot và gallery phải thành công cùng nhau; không để sản phẩm cập nhật nửa chừng."
+                                title="Tạo final rồi ghi ảnh bằng transaction"
+                                action="Lần xác nhận đầu chuyển job sang FINALIZING để worker tạo ảnh final; sau đó Product Service lock sản phẩm, lưu snapshot, cập nhật gallery row rồi chuyển job thành APPLIED."
+                                reason="Ảnh preview chỉ để duyệt; ảnh final và gallery phải thành công cùng nhau, không để sản phẩm cập nhật nửa chừng."
                                 tradeoff="Cần lock và transaction lâu hơn một lần update thường, nhưng có thể phục hồi nếu có lỗi."
                             />
                             <ApprovalStep

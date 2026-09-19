@@ -132,28 +132,15 @@ export function AiOptimizationTechnologyStack() {
                 <TechnologyCard
                     icon={
                         <Image
-                            src="/images/feature/tech-stack/amazon-sqs.svg"
+                            src="/images/feature/tech-stack/apache-kafka.svg"
                             alt=""
                             width={32}
                             height={32}
                             className="size-8 object-contain"
                         />
                     }
-                    name="Amazon SQS"
-                    role="Job queue"
-                />
-                <TechnologyCard
-                    icon={
-                        <Image
-                            src="/images/feature/tech-stack/aws-lambda.svg"
-                            alt=""
-                            width={32}
-                            height={32}
-                            className="size-8 object-contain"
-                        />
-                    }
-                    name="AWS Lambda"
-                    role="Job trigger"
+                    name="Apache Kafka"
+                    role="Job queue và DLQ"
                 />
                 <TechnologyCard
                     icon={
@@ -165,8 +152,8 @@ export function AiOptimizationTechnologyStack() {
                             className="size-8 object-contain"
                         />
                     }
-                    name="Amazon S3"
-                    role="Preview assets"
+                    name="Media Service"
+                    role="S3/CDN asset owner"
                 />
             </ul>
         </ShowcaseDisclosure>
