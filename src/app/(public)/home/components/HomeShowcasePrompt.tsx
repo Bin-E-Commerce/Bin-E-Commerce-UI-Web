@@ -96,13 +96,16 @@ export function HomeShowcasePrompt() {
                                 thống?
                             </AlertDialogTitle>
                             <AlertDialogDescription className="mt-3 max-w-lg text-sm leading-6 text-zinc-600">
-                                Một góc nhìn khác đang chờ bạn — nơi những trải
+                                Một góc nhìn khác đang chờ bạn, nơi những trải
                                 nghiệm quen thuộc được giải thích từ phía sau hệ
                                 thống.
                             </AlertDialogDescription>
                         </div>
                     </AlertDialogHeader>
-                    <div aria-hidden="true" className="mx-1 mt-3 h-px bg-zinc-200 sm:mt-4" />
+                    <div
+                        aria-hidden="true"
+                        className="mx-1 mt-3 h-px bg-zinc-200 sm:mt-4"
+                    />
                 </div>
 
                 <div className="px-5 pb-4 pt-1 sm:px-8 sm:pb-5 sm:pt-2">

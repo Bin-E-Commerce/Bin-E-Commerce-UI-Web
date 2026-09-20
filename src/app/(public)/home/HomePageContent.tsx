@@ -13,7 +13,6 @@ import { HomeShowcasePrompt } from './components/HomeShowcasePrompt';
 import {
     collectFeaturedShops,
     selectFeaturedProducts,
-    selectCampaignProducts,
 } from './utils/product-presentation';
 
 // Điều phối các section của homepage từ một nguồn dữ liệu chung để chỉ gọi API một lần.
@@ -25,8 +24,7 @@ export function HomePageContent() {
         return <HomeErrorState onRetry={() => void homeQuery.refetch()} />;
     }
 
-    const { products, categories, totalProducts } = homeQuery.data;
-    const campaignProducts = selectCampaignProducts(products, 3);
+    const { products, categories } = homeQuery.data;
     const featuredProducts = selectFeaturedProducts(products, 6);
     const featuredIds = new Set(featuredProducts.map((product) => product.id));
     const remainingProducts = products.filter(
@@ -39,17 +37,13 @@ export function HomePageContent() {
     return (
         <div className="bg-zinc-100 pb-10 text-zinc-950">
             <HomeShowcasePrompt />
-            <HomeCampaignSection
-                products={campaignProducts}
-                totalProducts={totalProducts}
-            />
+            <HomeCampaignSection />
             <HomeShortcutSection />
             {categories.length > 0 ? (
                 <HomeCategorySection categories={categories} />
             ) : null}
             <HomeProductSection
                 id="products"
-                eyebrow="Ưu đãi nổi bật"
                 title="Giá tốt hôm nay"
                 description="Sản phẩm đang hoạt động với mức giá cập nhật trực tiếp từ hệ thống."
                 products={featuredProducts}
@@ -58,7 +52,6 @@ export function HomePageContent() {
             {shops.length > 0 ? <HomeStoreSection shops={shops} /> : null}
             {topSearchProducts.length > 0 ? (
                 <HomeProductSection
-                    eyebrow="Xu hướng mua sắm"
                     title="Tìm kiếm hàng đầu"
                     description="Những lựa chọn đáng chú ý trong danh sách sản phẩm hiện tại."
                     products={topSearchProducts}
@@ -66,9 +59,7 @@ export function HomePageContent() {
                 />
             ) : null}
             {recommendationProducts.length > 0 ? (
-                <HomeRecommendationSection
-                    products={recommendationProducts}
-                />
+                <HomeRecommendationSection products={recommendationProducts} />
             ) : null}
         </div>
     );

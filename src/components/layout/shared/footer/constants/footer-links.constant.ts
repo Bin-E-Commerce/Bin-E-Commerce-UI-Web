@@ -1,19 +1,14 @@
-// Điều hướng footer công khai; showcase chỉ giới thiệu hệ thống, không yêu cầu tài khoản hay quyền quản trị.
+// Chỉ khai báo các đường dẫn public đang tồn tại trong web; không thêm route giả
+// để footer không dẫn người dùng tới trang 404 hoặc khu vực cần quyền nội bộ.
 export const FOOTER_LINKS = {
     'Mua sắm': [
-        { href: '/products', label: 'Tất cả sản phẩm' },
-        { href: '/categories', label: 'Danh mục' },
-        { href: '/promotions', label: 'Khuyến mãi' },
+        { href: '/', label: 'Trang chủ' },
+        { href: '/internal-shop', label: 'Gian hàng nội bộ' },
+        { href: '/goi-y-hom-nay', label: 'Gợi ý hôm nay' },
     ],
-    'Hỗ trợ': [
-        { href: '/help', label: 'Trung tâm hỗ trợ' },
-        { href: '/shipping', label: 'Chính sách vận chuyển' },
-        { href: '/returns', label: 'Đổi trả & Hoàn tiền' },
-    ],
-    'Công ty': [
-        { href: '/about', label: 'Về chúng tôi' },
-        { href: '/contact', label: 'Liên hệ' },
-        { href: '/privacy', label: 'Chính sách bảo mật' },
+    'Khám phá': [
         { href: '/showcase', label: 'Kiến trúc & công nghệ' },
+        { href: '/showcase/ai-optimization', label: 'Tối ưu hình ảnh AI' },
+        { href: '/showcase/recommendation', label: 'Gợi ý sản phẩm' },
     ],
 } as const;

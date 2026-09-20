@@ -52,6 +52,22 @@
         border: 1px solid oklch(1 0 0 / 15%);
     }
 
+    /* Glow nhiều lớp cho nút đen: ánh sáng nằm ngoài viền, lan ra nền và phản sáng bên trong. */
+    .button-default-glow {
+        --glow-color: rgb(39 39 42 / 62%);
+        --glow-spread-color: rgb(113 113 122 / 34%);
+        box-shadow:
+            0 0 1em 0.25em var(--glow-color),
+            0 0 4em 1em var(--glow-spread-color),
+            inset 0 0 0.75em 0.25em rgb(255 255 255 / 20%);
+        text-shadow: 0 0 0.5em rgb(255 255 255 / 65%);
+    }
+
+    .button-default-glow:hover {
+        --glow-color: rgb(24 24 27 / 78%);
+        --glow-spread-color: rgb(82 82 91 / 46%);
+    }
+
     /* Input focus ring animation */
     .input-focus {
         @apply transition-shadow duration-200;
@@ -75,7 +91,9 @@
         /* Cắt phần polygon vượt biên để hình loader luôn nằm gọn trong vòng tròn. */
         overflow: hidden;
         transform: scale(1);
-        box-shadow: 0 0 25px 0 var(--ai-loader-color-three), 0 20px 50px 0 var(--ai-loader-color-four);
+        box-shadow:
+            0 0 25px 0 var(--ai-loader-color-three),
+            0 20px 50px 0 var(--ai-loader-color-four);
         animation: ai-loader-colorize 6s ease-in-out infinite;
     }
 
@@ -95,8 +113,14 @@
         border-radius: 9999px;
         border-top: 1px solid var(--ai-loader-color-one);
         border-bottom: 1px solid var(--ai-loader-color-two);
-        background: linear-gradient(180deg, var(--ai-loader-color-five), var(--ai-loader-color-four));
-        box-shadow: inset 0 10px 10px 0 var(--ai-loader-color-three), inset 0 -10px 10px 0 var(--ai-loader-color-four);
+        background: linear-gradient(
+            180deg,
+            var(--ai-loader-color-five),
+            var(--ai-loader-color-four)
+        );
+        box-shadow:
+            inset 0 10px 10px 0 var(--ai-loader-color-three),
+            inset 0 -10px 10px 0 var(--ai-loader-color-four);
     }
 
     .ai-image-loader > svg {
@@ -149,32 +173,62 @@
     .ai-image-loader__box {
         width: 100%;
         height: 100%;
-        background: linear-gradient(180deg, var(--ai-loader-color-one) 30%, var(--ai-loader-color-two) 70%);
+        background: linear-gradient(
+            180deg,
+            var(--ai-loader-color-one) 30%,
+            var(--ai-loader-color-two) 70%
+        );
         mask: var(--ai-loader-mask);
         -webkit-mask: var(--ai-loader-mask);
     }
 
     @keyframes ai-loader-rotation {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     @keyframes ai-loader-roundness {
-        0%, 60%, 100% { filter: contrast(15); }
-        20%, 40% { filter: contrast(3); }
+        0%,
+        60%,
+        100% {
+            filter: contrast(15);
+        }
+        20%,
+        40% {
+            filter: contrast(3);
+        }
     }
 
     @keyframes ai-loader-colorize {
-        0%, 100% { filter: hue-rotate(0deg); }
-        20% { filter: hue-rotate(-15deg); }
-        40% { filter: hue-rotate(-35deg); }
-        60% { filter: hue-rotate(-55deg); }
-        80% { filter: hue-rotate(-20deg); }
+        0%,
+        100% {
+            filter: hue-rotate(0deg);
+        }
+        20% {
+            filter: hue-rotate(-15deg);
+        }
+        40% {
+            filter: hue-rotate(-35deg);
+        }
+        60% {
+            filter: hue-rotate(-55deg);
+        }
+        80% {
+            filter: hue-rotate(-20deg);
+        }
     }
 
     @keyframes apply-progress {
-        0% { transform: translateX(-160%); }
-        100% { transform: translateX(360%); }
+        0% {
+            transform: translateX(-160%);
+        }
+        100% {
+            transform: translateX(360%);
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {

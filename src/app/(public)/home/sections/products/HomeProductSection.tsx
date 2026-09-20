@@ -6,7 +6,6 @@ import type { ProductCardTrackingContext } from '@/app/(public)/products/compone
 
 interface HomeProductSectionProps {
     id?: string;
-    eyebrow: string;
     title: string;
     description: string;
     products: PublicProduct[];
@@ -19,7 +18,6 @@ interface HomeProductSectionProps {
 // Dùng chung bố cục danh sách sản phẩm để các section nhất quán mà không nhân đôi markup.
 export function HomeProductSection({
     id,
-    eyebrow,
     title,
     description,
     products,
@@ -31,18 +29,16 @@ export function HomeProductSection({
     if (products.length === 0) return null;
 
     return (
-        <section id={id} className="mt-3 border-y border-zinc-200 bg-white">
+        <section
+            id={id}
+            className="mt-3 scroll-mt-24 border-y border-zinc-200 bg-white"
+        >
             <div className="mx-auto max-w-7xl">
-                <div className="flex min-h-20 flex-col justify-center gap-1 border-b border-zinc-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div>
-                        <p className="text-xs font-semibold uppercase text-red-600">
-                            {eyebrow}
-                        </p>
-                        <h2 className="mt-1 text-xl font-bold text-zinc-950">
-                            {title}
-                        </h2>
-                    </div>
-                    <p className="max-w-xl text-xs leading-5 text-zinc-500 sm:text-right sm:text-sm">
+                <div className="flex min-h-14 flex-col items-start justify-center gap-1 border-b border-zinc-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <h2 className="text-lg font-bold tracking-tight text-zinc-950">
+                        {title}
+                    </h2>
+                    <p className="text-xs text-zinc-400 sm:text-right sm:text-sm">
                         {description}
                     </p>
                 </div>

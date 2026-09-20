@@ -20,7 +20,8 @@ export function HomeRecommendationSection({
     products,
 }: HomeRecommendationSectionProps) {
     const recommendationQuery = useHomeRecommendations();
-    const { initialized, getProtectedHref } = useCartAuthRedirect();
+    const { initialized, isAuthenticated, getProtectedHref } =
+        useCartAuthRedirect();
     const recommendedProducts =
         recommendationQuery.data?.items.map((item) => item.product) ?? [];
     const trackingContextByProductId = Object.fromEntries(
@@ -57,7 +58,6 @@ export function HomeRecommendationSection({
     return (
         <HomeProductSection
             id="recommendations"
-            eyebrow="Dành cho bạn"
             title="Gợi ý hôm nay"
             description="Khám phá những sản phẩm được chọn theo sở thích của bạn."
             products={displayedProducts}
@@ -79,7 +79,9 @@ export function HomeRecommendationSection({
                             }}
                             className="inline-flex items-center rounded-md border border-zinc-900 px-5 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100 aria-disabled:pointer-events-none aria-disabled:opacity-50"
                         >
-                            Xem thêm
+                            {isAuthenticated
+                                ? 'Xem thêm'
+                                : 'Đăng nhập để xem thêm'}
                         </Link>
                     </div>
                 ) : null
