@@ -4,6 +4,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Provider } from 'react-redux';
 import { makeStore } from '@/store';
 import type { AppStore } from '@/store';
@@ -11,11 +12,14 @@ import { initAuth } from '@/store/slices/authSlice';
 import { setAppStore } from '@/utils/authorizedAxios';
 import { mergeRecommendationSession } from '@/services/recommendation';
 
+const OAUTH_CALLBACK_PATHS = new Set(['/callback', '/auth/callback']);
+
 // Tạo store một lần bằng lazy state để giá trị truyền vào Provider an toàn với React Compiler.
 // Store được giữ ổn định trong suốt vòng đời provider, tránh mất state khi component re-render.
 export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [store] = useState<AppStore>(() => makeStore());
     const authRestoreStarted = useRef(false);
+    const pathname = usePathname();
 
     // Khi component được mount, inject store vào authorizedAxios và dispatch initAuth để restore session
     // Mục đích của useEffect này là để đảm bảo rằng khi ứng dụng khởi động,
@@ -28,6 +32,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // Dùng cùng instance store với Provider để interceptor và React đọc/ghi một nguồn state duy nhất.
         setAppStore(store);
+
+        // OAuth callback tự đổi authorization code lấy token và set cookie mới.
+        // Không gọi refresh song song tại đây vì request đó có thể dùng cookie cũ,
+        // khiến backend nhận diện nhầm token reuse và thu hồi luôn phiên vừa đăng nhập.
+        if (pathname && OAUTH_CALLBACK_PATHS.has(pathname)) return;
+
+        // Callback thành công đã ghi access token vào store; bỏ qua một vòng refresh ngay sau redirect.
+        // Nếu callback thất bại, initialized vẫn false nên lần chuyển về login vẫn được phép restore bình thường.
+        if (store.getState().auth.initialized) {
+            authRestoreStarted.current = true;
+            return;
+        }
 
         // Refresh token có cơ chế rotate nên hai request đồng thời sẽ làm request thứ hai dùng token cũ.
         // Guard này đặc biệt cần trong React Strict Mode, nơi effect có thể được chạy lại khi development.
@@ -45,7 +61,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 }
                 return undefined;
             });
-    }, [store]);
+    }, [pathname, store]);
 
     return <Provider store={store}>{children}</Provider>;
 }
