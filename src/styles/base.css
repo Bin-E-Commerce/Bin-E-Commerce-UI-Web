@@ -53,22 +53,7 @@
     }
 
     /* Glow nhiều lớp cho nút đen: ánh sáng nằm ngoài viền, lan ra nền và phản sáng bên trong. */
-    .button-default-glow {
-        --glow-color: rgb(39 39 42 / 62%);
-        --glow-spread-color: rgb(113 113 122 / 34%);
-        box-shadow:
-            0 0 1em 0.25em var(--glow-color),
-            0 0 4em 1em var(--glow-spread-color),
-            inset 0 0 0.75em 0.25em rgb(255 255 255 / 20%);
-        text-shadow: 0 0 0.5em rgb(255 255 255 / 65%);
-    }
 
-    .button-default-glow:hover {
-        --glow-color: rgb(24 24 27 / 78%);
-        --glow-spread-color: rgb(82 82 91 / 46%);
-    }
-
-    /* Input focus ring animation */
     .input-focus {
         @apply transition-shadow duration-200;
     }
