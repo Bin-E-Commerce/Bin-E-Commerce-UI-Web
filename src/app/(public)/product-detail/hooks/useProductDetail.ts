@@ -5,6 +5,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { useAppSelector } from '@/store/hooks';
+import { catalogService } from '@/services/catalog';
 import { productService } from '@/services/product';
 import { getRecommendations } from '@/services/recommendation';
 import { useRecommendationSessionId } from '@/services/recommendation/hooks/use-recommendation-session';
@@ -98,6 +99,26 @@ export function useProductDetail(productId: string) {
     });
 
     const currentProduct = productQuery.data;
+    const categoryAttributesQuery = useQuery({
+        queryKey: [
+            'catalog',
+            'category-attributes',
+            currentProduct?.categoryId,
+        ],
+        queryFn: () =>
+            catalogService.listCategoryAttributes(currentProduct!.categoryId),
+        // Tên thuộc tính là schema dùng chung; cache lâu hơn product detail để không gọi lại khi mở nhiều sản phẩm cùng ngành hàng.
+        staleTime: 5 * 60_000,
+        enabled: Boolean(currentProduct?.categoryId),
+        retry: 1,
+    });
+    const attributeLabels = Object.fromEntries(
+        (categoryAttributesQuery.data ?? []).map((attribute) => [
+            attribute.id,
+            attribute.displayName || attribute.name,
+        ]),
+    );
+
     const shopProductsQuery = useQuery({
         queryKey: [
             'products',
@@ -141,6 +162,7 @@ export function useProductDetail(productId: string) {
                       recommendationQuery.data,
                       productQuery.data,
                   ),
+                  attributeLabels,
               } satisfies ProductDetailData)
             : undefined,
         // Section liên quan có thể vẫn đang tải sau khi nội dung product đã hiển thị.

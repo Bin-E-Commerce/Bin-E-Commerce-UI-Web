@@ -51,6 +51,8 @@ interface ProductPurchasePanelProps {
 export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const purchase = useProductPurchase(product);
     const addCartItemMutation = useAddCartItem();
+    // Tách mutation của Mua ngay khỏi CTA thêm vào giỏ để loading của một thao tác không khóa nút còn lại.
+    const buyNowAddCartItemMutation = useAddCartItem();
     const cartQuery = useCart();
     const updateCartItemMutation = useUpdateCartItem();
     const pathname = usePathname();
@@ -72,8 +74,8 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         Boolean(purchase.selectedVariant) &&
         (isExternalProduct || purchase.availableStock > 0) &&
         (!isAuthenticated || !cartQuery.isLoading);
-    const isCartMutationPending =
-        addCartItemMutation.isPending || updateCartItemMutation.isPending;
+    const isBuyNowPending =
+        buyNowAddCartItemMutation.isPending || updateCartItemMutation.isPending;
 
     // Chỉ gửi product/variant/quantity; Cart Service sẽ kiểm tra lại toàn bộ snapshot và tồn kho trước khi lưu.
     function handleAddToCart(): void {
@@ -132,7 +134,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             return;
         }
 
-        addCartItemMutation.mutate(
+        buyNowAddCartItemMutation.mutate(
             {
                 productId: product.id,
                 variantId: purchase.selectedVariant.id,
@@ -258,7 +260,9 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                         type="button"
                         variant="outline"
                         size="lg"
-                        disabled={!canAddToCart || isCartMutationPending}
+                        disabled={
+                            !canAddToCart || addCartItemMutation.isPending
+                        }
                         onClick={handleAddToCart}
                         className="h-12 !border-2 !border-zinc-950 text-zinc-950 hover:bg-zinc-950 hover:text-white"
                     >
@@ -292,13 +296,11 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     <Button
                         type="button"
                         size="lg"
-                        disabled={!canAddToCart || isCartMutationPending}
+                        disabled={!canAddToCart || isBuyNowPending}
                         onClick={handleBuyNow}
                         className="h-12 bg-zinc-950 hover:bg-zinc-800"
                     >
-                        {isCartMutationPending
-                            ? 'Đang chuẩn bị...'
-                            : 'Mua ngay'}
+                        {isBuyNowPending ? 'Đang chuẩn bị...' : 'Mua ngay'}
                     </Button>
                 )}
             </div>

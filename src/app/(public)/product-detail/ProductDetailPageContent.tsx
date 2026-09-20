@@ -63,12 +63,13 @@ export function ProductDetailPageContent({
         );
     }
 
-    const { product, shopProducts, recommendations } = productQuery.data;
+    const { product, shopProducts, recommendations, attributeLabels } =
+        productQuery.data;
     const breadcrumbs = getProductBreadcrumbs(product);
 
     return (
         <div className="w-full overflow-x-hidden bg-zinc-100 pb-12 text-zinc-950">
-            <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
+            <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 md:px-0 lg:px-0">
                 <ProductBreadcrumbs
                     items={breadcrumbs}
                     productName={product.name}
@@ -91,15 +92,18 @@ export function ProductDetailPageContent({
                 <InternalProductShopPanel shopId={product.sellerShopId} />
             ) : null}
 
-            <div className="mx-auto grid max-w-7xl gap-3 px-3 py-3 sm:px-6 lg:px-8">
-                <ProductSpecificationsSection product={product} />
+            <div className="mx-auto grid max-w-7xl gap-3 px-3 py-3 sm:px-6 md:px-0 lg:px-0">
+                <ProductSpecificationsSection
+                    product={product}
+                    attributeLabels={attributeLabels}
+                />
                 <ProductDescriptionSection
                     description={product.description}
                     shortDescription={product.shortDescription}
                 />
             </div>
 
-            <div className="mx-auto max-w-7xl px-3 pb-3 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-7xl px-3 pb-3 sm:px-6 lg:px-0 md:px-0">
                 <ProductReviewsSection product={product} />
             </div>
 

@@ -1,3 +1,6 @@
+// File này chứa các hàm chuyển dữ liệu product thành view-model cho storefront.
+// File không gọi API và không sở hữu dữ liệu catalog; tên thuộc tính được truyền vào từ query của product detail.
+
 import type {
     ProductAttributeValue,
     ProductDetail,
@@ -9,7 +12,8 @@ import type {
     ProductSpecificationItem,
 } from '../types/product-detail.types';
 
-const DESCRIPTION_SECTION_HEADING = /^(Điểm nổi bật|Thông tin sản phẩm|Thông số kỹ thuật|Mô tả chi tiết|Hướng dẫn sử dụng và bảo quản|Nguồn gốc và bảo hành|Bộ sản phẩm gồm|Lưu ý khi sử dụng)\s*:/i;
+const DESCRIPTION_SECTION_HEADING =
+    /^(Điểm nổi bật|Thông tin sản phẩm|Thông số kỹ thuật|Mô tả chi tiết|Hướng dẫn sử dụng và bảo quản|Nguồn gốc và bảo hành|Bộ sản phẩm gồm|Lưu ý khi sử dụng)\s*:/i;
 
 // Escape text trước khi chuyển mô tả plain text thành HTML để DOMPurify có thể tiếp tục làm lớp bảo vệ cuối.
 function escapeDescriptionText(value: string): string {
@@ -25,7 +29,10 @@ function escapeDescriptionText(value: string): string {
 function normalizeDescriptionLines(description: string): string[] {
     return description
         .replace(/\r\n?/g, '\n')
-        .replace(/\s+(?=(?:Điểm nổi bật|Thông tin sản phẩm|Thông số kỹ thuật|Mô tả chi tiết|Hướng dẫn sử dụng và bảo quản|Nguồn gốc và bảo hành|Bộ sản phẩm gồm|Lưu ý khi sử dụng)\s*:)/gi, '\n')
+        .replace(
+            /\s+(?=(?:Điểm nổi bật|Thông tin sản phẩm|Thông số kỹ thuật|Mô tả chi tiết|Hướng dẫn sử dụng và bảo quản|Nguồn gốc và bảo hành|Bộ sản phẩm gồm|Lưu ý khi sử dụng)\s*:)/gi,
+            '\n',
+        )
         .replace(/\s+-\s+(?=[A-ZÀ-ỸĐ0-9])/g, '\n- ')
         .split('\n')
         .map((line) => line.trim())
@@ -33,7 +40,9 @@ function normalizeDescriptionLines(description: string): string[] {
 }
 
 // Chuyển plain text thành HTML có heading/list/paragraph, còn HTML có sẵn thì giữ nguyên để không phá nội dung cũ.
-export function formatProductDescriptionHtml(description: string | null | undefined): string {
+export function formatProductDescriptionHtml(
+    description: string | null | undefined,
+): string {
     const source = description?.trim() ?? '';
     if (!source || /<\/?[a-z][\s\S]*>/i.test(source)) return source;
 
@@ -45,11 +54,15 @@ export function formatProductDescriptionHtml(description: string | null | undefi
     // Đóng block hiện tại trước khi chuyển sang heading/list để HTML không dính các section vào cùng một dòng.
     const flushBlocks = () => {
         if (paragraph.length > 0) {
-            output.push(`<p>${paragraph.map(escapeDescriptionText).join(' ')}</p>`);
+            output.push(
+                `<p>${paragraph.map(escapeDescriptionText).join(' ')}</p>`,
+            );
             paragraph = [];
         }
         if (list.length > 0) {
-            output.push(`<ul>${list.map((item) => `<li>${escapeDescriptionText(item)}</li>`).join('')}</ul>`);
+            output.push(
+                `<ul>${list.map((item) => `<li>${escapeDescriptionText(item)}</li>`).join('')}</ul>`,
+            );
             list = [];
         }
     };
@@ -131,10 +144,12 @@ export function getProductBreadcrumbs(
         const record = item as Record<string, unknown>;
         if (typeof record.name !== 'string') return [];
 
-        return [{
-            name: record.name,
-            slug: typeof record.slug === 'string' ? record.slug : undefined,
-        }];
+        return [
+            {
+                name: record.name,
+                slug: typeof record.slug === 'string' ? record.slug : undefined,
+            },
+        ];
     });
 }
 
@@ -152,22 +167,35 @@ function formatAttributeValue(attribute: ProductAttributeValue): string | null {
 }
 
 // Map thuộc tính nguồn sang danh sách label-value ngắn gọn để admin hoặc người mua đọc được ngay.
+// Map giá trị thuộc tính sang nhãn catalog chuẩn, ưu tiên schema hiện tại rồi mới dùng metadata cũ để tương thích dữ liệu import.
 export function getProductSpecifications(
     product: ProductDetail,
+    attributeLabels: Record<string, string> = {},
 ): ProductSpecificationItem[] {
     return product.attributeValues.flatMap((attribute) => {
         const value = formatAttributeValue(attribute);
         if (!value) return [];
 
-        const sourceName = attribute.metadata?.sourceName;
-        return [{
-            id: attribute.id,
-            label:
-                typeof sourceName === 'string'
-                    ? sourceName
-                    : 'Thông tin sản phẩm',
-            value,
-        }];
+        const metadata = attribute.metadata ?? {};
+        const metadataLabel = [
+            metadata.displayName,
+            metadata.sourceName,
+            metadata.name,
+            metadata.label,
+        ].find(
+            (candidate): candidate is string =>
+                typeof candidate === 'string' && candidate.trim().length > 0,
+        );
+        return [
+            {
+                id: attribute.id,
+                label:
+                    attributeLabels[attribute.categoryAttributeId] ??
+                    metadataLabel ??
+                    'Thuộc tính',
+                value,
+            },
+        ];
     });
 }
 

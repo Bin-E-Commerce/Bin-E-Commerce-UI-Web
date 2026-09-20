@@ -22,7 +22,7 @@ export function ProductShopPanel({ shop }: ProductShopPanelProps) {
     const rating = Number(shop.ratingAvg ?? 0);
 
     return (
-        <section className="mx-auto mt-4 w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+        <section className="mx-auto mt-4 w-full max-w-7xl px-3 sm:px-6 md:px-0 lg:px-0">
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <div className="flex flex-col gap-6 p-5 sm:p-6 lg:flex-row lg:items-stretch">
                     <div className="flex min-w-0 items-center gap-4 lg:w-[36%] lg:border-r lg:border-zinc-100 lg:pr-8">

@@ -1,3 +1,6 @@
+// File này hiển thị bảng thông số kỹ thuật công khai của một product.
+// File chỉ trình bày view-model đã được chuẩn hóa, không tự suy luận tên thuộc tính từ giá trị.
+
 import { ClipboardList } from 'lucide-react';
 
 import type { ProductDetail } from '@/services/product';
@@ -5,13 +8,15 @@ import { getProductSpecifications } from '../../utils/product-detail-presentatio
 
 interface ProductSpecificationsSectionProps {
     product: ProductDetail;
+    attributeLabels: Record<string, string>;
 }
 
 // Trình bày thông số sản phẩm đã map từ nguồn dữ liệu, chỉ giữ các trường người mua cần xem.
 export function ProductSpecificationsSection({
     product,
+    attributeLabels,
 }: ProductSpecificationsSectionProps) {
-    const specifications = getProductSpecifications(product);
+    const specifications = getProductSpecifications(product, attributeLabels);
     const rows = [
         ...(product.brand?.name
             ? [{ id: 'brand', label: 'Thương hiệu', value: product.brand.name }]
@@ -20,7 +25,7 @@ export function ProductSpecificationsSection({
     ];
 
     return (
-        <section className="border border-zinc-200 bg-white">
+        <section className="border border-zinc-200 bg-white shadow-sm">
             <div className="flex items-center gap-3 border-b border-zinc-200 px-5 py-4 sm:px-7">
                 <span className="flex h-9 w-9 items-center justify-center rounded bg-zinc-950 text-white">
                     <ClipboardList className="h-4 w-4" />

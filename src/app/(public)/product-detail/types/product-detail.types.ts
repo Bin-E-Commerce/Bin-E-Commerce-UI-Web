@@ -11,6 +11,7 @@ export interface ProductDetailData {
     product: ProductDetail;
     shopProducts: PublicProduct[];
     recommendations: ProductDetailRecommendation[];
+    attributeLabels: Record<string, string>;
 }
 
 export interface ProductDetailRecommendation {

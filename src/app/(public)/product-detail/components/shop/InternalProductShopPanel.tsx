@@ -59,8 +59,8 @@ export function InternalProductShopPanel({ shopId }: { shopId: string }) {
           : 'Chưa cập nhật';
 
     return (
-        <section className="mx-auto mt-4 w-full max-w-7xl px-3 sm:px-6 lg:px-8">
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        <section className="mx-auto mt-4 w-full max-w-7xl px-3 sm:px-6 md:px-0 lg:px-0">
+            <div className="overflow-hidden border border-zinc-200 bg-white shadow-sm">
                 <div className="flex flex-col gap-6 p-5 sm:p-6 lg:flex-row lg:items-stretch">
                     <div className="flex min-w-0 items-center gap-4 lg:w-[36%] lg:border-r lg:border-zinc-100 lg:pr-8">
                         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 ring-4 ring-zinc-50">

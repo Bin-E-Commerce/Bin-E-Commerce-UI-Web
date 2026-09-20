@@ -47,9 +47,7 @@ export function ProductRecommendationCarousel({
     const isGridLayout = layout === 'grid';
     const isActionDisabled = requiresAuth && !initialized;
     const resolvedActionHref =
-        requiresAuth && initialized
-            ? getProtectedHref(actionHref)
-            : actionHref;
+        requiresAuth && initialized ? getProtectedHref(actionHref) : actionHref;
 
     // Cập nhật trạng thái nút theo scroll container để desktop/mobile đều có affordance khi danh sách vượt viewport.
     const updateScrollState = useCallback(() => {
@@ -57,7 +55,8 @@ export function ProductRecommendationCarousel({
         if (!viewport) return;
         setCanScrollLeft(viewport.scrollLeft > 0);
         setCanScrollRight(
-            viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1,
+            viewport.scrollLeft + viewport.clientWidth <
+                viewport.scrollWidth - 1,
         );
     }, []);
 
@@ -86,36 +85,36 @@ export function ProductRecommendationCarousel({
     if (products.length === 0) return null;
 
     return (
-        <section className="mx-auto max-w-7xl border-y border-zinc-200 bg-white">
+        <section className="mx-auto max-w-7xl  border border-zinc-200 bg-white shadow-sm">
             <div className="px-3 py-6 sm:px-6 lg:px-8">
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold uppercase tracking-[0.08em] text-zinc-800 sm:text-lg">
                         {title}
-                        </h2>
-                        {showNavigation || actionPlacement === 'header' ? (
-                            <div className="flex items-center gap-2">
-                                {showNavigation ? (
-                                    <>
-                                        <button
-                                            type="button"
-                                            aria-label={`Cuộn trái: ${title}`}
-                                            disabled={!canScrollLeft}
-                                            onClick={() => scrollByViewport(-1)}
-                                            className="hidden rounded-full border border-zinc-200 p-2 text-zinc-600 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-30 sm:inline-flex"
-                                        >
-                                            <ArrowLeft className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            aria-label={`Cuộn phải: ${title}`}
-                                            disabled={!canScrollRight}
-                                            onClick={() => scrollByViewport(1)}
-                                            className="hidden rounded-full border border-zinc-200 p-2 text-zinc-600 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-30 sm:inline-flex"
-                                        >
-                                            <ArrowRight className="h-4 w-4" />
-                                        </button>
-                                    </>
-                                ) : null}
+                    </h2>
+                    {showNavigation || actionPlacement === 'header' ? (
+                        <div className="flex items-center gap-2">
+                            {showNavigation ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        aria-label={`Cuộn trái: ${title}`}
+                                        disabled={!canScrollLeft}
+                                        onClick={() => scrollByViewport(-1)}
+                                        className="hidden rounded-full border border-zinc-200 p-2 text-zinc-600 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-30 sm:inline-flex"
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label={`Cuộn phải: ${title}`}
+                                        disabled={!canScrollRight}
+                                        onClick={() => scrollByViewport(1)}
+                                        className="hidden rounded-full border border-zinc-200 p-2 text-zinc-600 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-30 sm:inline-flex"
+                                    >
+                                        <ArrowRight className="h-4 w-4" />
+                                    </button>
+                                </>
+                            ) : null}
                             {actionPlacement === 'header' ? (
                                 <Link
                                     href={
@@ -189,9 +188,7 @@ export function ProductRecommendationCarousel({
                 {actionPlacement === 'footer' ? (
                     <div className="mt-5 flex justify-center">
                         <Link
-                            href={
-                                isActionDisabled ? '#' : resolvedActionHref
-                            }
+                            href={isActionDisabled ? '#' : resolvedActionHref}
                             aria-disabled={isActionDisabled}
                             onClick={(event) => {
                                 if (isActionDisabled) {

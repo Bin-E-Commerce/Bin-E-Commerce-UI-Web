@@ -18,15 +18,7 @@ export function ProductDescriptionSection({
     shortDescription,
 }: ProductDescriptionSectionProps) {
     return (
-        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 px-5 py-4 sm:px-7">
-                <p className="text-xs font-semibold uppercase text-zinc-500">
-                    Nội dung sản phẩm
-                </p>
-                <h2 className="mt-1 text-xl font-bold text-zinc-950">
-                    Mô tả sản phẩm
-                </h2>
-            </div>
+        <section className="overflow-hidden border border-zinc-200 bg-white shadow-sm">
             <div className="px-5 py-6 sm:px-7">
                 <ProductDescriptionBlocks
                     description={description}

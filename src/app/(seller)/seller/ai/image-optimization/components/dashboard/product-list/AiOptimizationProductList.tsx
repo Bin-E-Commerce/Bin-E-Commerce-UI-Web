@@ -14,6 +14,7 @@ import {
     Search,
 } from 'lucide-react';
 import type { ImageOptimizationProduct } from '@/services/ai/types/image-optimization.types';
+import { ProductImpactBadge } from '../impact/ProductImpactBadge';
 
 interface AiOptimizationProductListProps {
     visibleProducts: ImageOptimizationProduct[];
@@ -134,7 +135,7 @@ export function AiOptimizationProductList({
             <div className="divide-y divide-zinc-100">
                 {visibleProducts.map((product) => (
                     <div key={product.id}>
-                        <label className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-zinc-50 sm:px-6">
+                        <label className="flex cursor-pointer flex-wrap items-center gap-4 px-5 py-4 transition-colors hover:bg-zinc-50 sm:flex-nowrap sm:px-6">
                             <input
                                 type="radio"
                                 name="ai-optimization-product"
@@ -167,6 +168,9 @@ export function AiOptimizationProductList({
                                         product.updatedAt,
                                     ).toLocaleDateString('vi-VN')}
                                 </span>
+                            </span>
+                            <span className="ml-8 w-full shrink-0 sm:ml-auto sm:w-auto">
+                                <ProductImpactBadge impact={product.impact} />
                             </span>
                         </label>
                     </div>

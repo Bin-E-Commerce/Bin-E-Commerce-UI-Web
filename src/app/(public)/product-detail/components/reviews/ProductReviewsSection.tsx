@@ -26,7 +26,7 @@ export function ProductReviewsSection({ product }: ProductReviewsSectionProps) {
         : approvedReviews;
 
     return (
-        <section className="border border-zinc-200 bg-white">
+        <section className="border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-200 px-5 py-4 sm:px-7">
                 <p className="text-xs font-semibold uppercase text-zinc-500">
                     Trải nghiệm người mua
@@ -40,7 +40,10 @@ export function ProductReviewsSection({ product }: ProductReviewsSectionProps) {
                 <div>
                     <p className="text-3xl font-bold text-red-600">
                         {rating > 0 ? rating.toFixed(1) : '0.0'}
-                        <span className="text-base font-medium text-zinc-500"> / 5</span>
+                        <span className="text-base font-medium text-zinc-500">
+                            {' '}
+                            / 5
+                        </span>
                     </p>
                     <div className="mt-2 flex text-amber-400">
                         {Array.from({ length: 5 }).map((_, index) => (
@@ -79,7 +82,7 @@ export function ProductReviewsSection({ product }: ProductReviewsSectionProps) {
 
             <div className="px-5 sm:px-7">
                 {visibleReviews.length > 0 ? (
-                        visibleReviews.map((review) => (
+                    visibleReviews.map((review) => (
                         <ProductReviewCard
                             key={`${review.id}-${review.likedByCurrentUser ? 'liked' : 'unliked'}-${review.likeCount ?? 0}`}
                             review={review}
@@ -94,7 +97,8 @@ export function ProductReviewsSection({ product }: ProductReviewsSectionProps) {
                             Chưa có đánh giá phù hợp
                         </h3>
                         <p className="mt-1 max-w-sm text-xs leading-5 text-zinc-500">
-                            Đánh giá verified từ người mua sẽ được hiển thị ngay sau khi gửi thành công.
+                            Đánh giá verified từ người mua sẽ được hiển thị ngay
+                            sau khi gửi thành công.
                         </p>
                     </div>
                 )}
