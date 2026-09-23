@@ -28,13 +28,13 @@ export function AiUsageCard({ usage, className }: AiUsageCardProps) {
             )}
             aria-live="polite"
         >
-            <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-2.5">
+            <div className="flex items-start justify-between gap-2.5">
+                <div className="flex min-w-0 flex-1 items-start gap-2.5">
                     <span className="flex size-10 shrink-0 items-center justify-center text-zinc-950">
                         <Gauge className="size-5" aria-hidden="true" />
                     </span>
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    <div className="min-w-0">
+                        <p className="whitespace-nowrap text-[11px] font-semibold uppercase leading-4 tracking-[0.12em] text-zinc-500">
                             Lượt tối ưu AI
                         </p>
                         {usage ? (
@@ -56,7 +56,7 @@ export function AiUsageCard({ usage, className }: AiUsageCardProps) {
                 </div>
                 {isLimited ? (
                     <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${exhausted ? 'bg-red-50 text-red-700' : 'bg-zinc-100 text-zinc-700'}`}
+                        className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${exhausted ? 'bg-red-50 text-red-700' : 'bg-zinc-100 text-zinc-700'}`}
                     >
                         Còn {remaining} lượt
                     </span>
