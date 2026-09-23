@@ -42,9 +42,11 @@ function FailureMessage({
                       ? 'Provider AI trả về kết quả không hợp lệ. Hãy thử lại.'
                       : failureCode === 'PROVIDERUNAVAILABLEERROR'
                         ? 'Provider AI đang bận hoặc tạm thời không khả dụng. Hãy thử lại sau ít phút.'
-                        : failureCode?.includes('CLEANUP_PENDING')
-                          ? 'Kết quả chưa hoàn tất và đang chờ hệ thống dọn dữ liệu tạm thời.'
-                          : 'Không thể hoàn tất tối ưu ảnh. Hãy đóng cửa sổ và tạo yêu cầu mới.';
+                        : failureCode === 'CLIENT_POLLING_TIMEOUT'
+                          ? 'Job chờ quá lâu và đã được dừng tự động. Hãy kiểm tra worker AI hoặc thử lại sau.'
+                          : failureCode?.includes('CLEANUP_PENDING')
+                            ? 'Kết quả chưa hoàn tất và đang chờ hệ thống dọn dữ liệu tạm thời.'
+                            : 'Không thể hoàn tất tối ưu ảnh. Hãy đóng cửa sổ và tạo yêu cầu mới.';
     return <>{message}</>;
 }
 

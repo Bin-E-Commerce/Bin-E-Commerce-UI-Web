@@ -1,6 +1,73 @@
 // Kiểm tra mapping trạng thái job thành stepper UI, không gọi API hoặc phụ thuộc React.
 
-import { getOptimizationFlowState } from './optimization-flow.utils';
+import {
+    getOptimizationFlowState,
+    IMAGE_OPTIMIZATION_POLL_TIMEOUT_MS,
+    isImageOptimizationJobPollingActive,
+    isImageOptimizationJobPollingExpired,
+} from './optimization-flow.utils';
+
+describe('isImageOptimizationJobPollingExpired', () => {
+    const createdAt = '2026-09-23T00:00:00.000Z';
+    const createdTimestamp = Date.parse(createdAt);
+
+    it('should keep polling before the safety timeout', () => {
+        expect(
+            isImageOptimizationJobPollingExpired(
+                createdAt,
+                createdTimestamp + IMAGE_OPTIMIZATION_POLL_TIMEOUT_MS - 1,
+            ),
+        ).toBe(false);
+    });
+
+    it('should stop polling when the job reaches the safety timeout', () => {
+        expect(
+            isImageOptimizationJobPollingExpired(
+                createdAt,
+                createdTimestamp + IMAGE_OPTIMIZATION_POLL_TIMEOUT_MS,
+            ),
+        ).toBe(true);
+    });
+
+    it('should fail closed when the API returns an invalid creation time', () => {
+        expect(isImageOptimizationJobPollingExpired('invalid-date')).toBe(true);
+    });
+});
+
+describe('isImageOptimizationJobPollingActive', () => {
+    it('should mark only non-terminal statuses as active', () => {
+        // Arrange
+        const statuses = [
+            'PENDING',
+            'PROCESSING',
+            'FINALIZING',
+            'REVIEW_REQUIRED',
+            'SUCCEEDED',
+            'REJECTED',
+            'APPLIED',
+            'ROLLED_BACK',
+            'FAILED',
+        ] as const;
+
+        // Act
+        const result = statuses.map((status) =>
+            isImageOptimizationJobPollingActive(status),
+        );
+
+        // Assert
+        expect(result).toEqual([
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+        ]);
+    });
+});
 
 describe('getOptimizationFlowState', () => {
     const target = getOptimizationFlowState;

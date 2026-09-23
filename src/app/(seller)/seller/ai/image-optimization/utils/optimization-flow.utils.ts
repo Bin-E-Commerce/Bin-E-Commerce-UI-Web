@@ -10,6 +10,31 @@ import type {
     OptimizationStatus,
 } from '@/services/ai/types/image-optimization.types';
 
+// Giới hạn thời gian browser chờ job để worker hoặc broker lỗi không tạo polling vô hạn.
+export const IMAGE_OPTIMIZATION_POLL_TIMEOUT_MS = 10 * 60 * 1_000;
+
+// Đối chiếu thời điểm tạo từ server để timeout ổn định dù tab bị throttling hoặc mạng chậm.
+export function isImageOptimizationJobPollingExpired(
+    createdAt: string,
+    now = Date.now(),
+): boolean {
+    const createdTimestamp = Date.parse(createdAt);
+    // Snapshot thiếu timestamp phải fail closed để dữ liệu lỗi không giữ polling vô hạn.
+    if (!Number.isFinite(createdTimestamp)) return true;
+    return now - createdTimestamp >= IMAGE_OPTIMIZATION_POLL_TIMEOUT_MS;
+}
+
+// Chỉ ba trạng thái này còn cần browser theo dõi; trạng thái terminal phải giữ nguyên dù job đã tạo lâu.
+export function isImageOptimizationJobPollingActive(
+    status: OptimizationStatus | undefined,
+): boolean {
+    return (
+        status === 'PENDING' ||
+        status === 'PROCESSING' ||
+        status === 'FINALIZING'
+    );
+}
+
 const PREVIEW_STEP_IDS: OptimizationFlowStepId[] = [
     'SOURCE',
     'PREPARE_PREVIEW',

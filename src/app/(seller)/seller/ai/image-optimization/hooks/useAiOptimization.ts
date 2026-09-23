@@ -16,6 +16,10 @@ import type {
     LifestyleBackgroundInput,
     OptimizationMode,
 } from '@/services/ai/types/image-optimization.types';
+import {
+    isImageOptimizationJobPollingActive,
+    isImageOptimizationJobPollingExpired,
+} from '../utils/optimization-flow.utils';
 
 // Tai metric overview voi key on dinh de cac tab khac co the invalidate cung cache.
 export function useAiOptimizationOverview() {
@@ -45,19 +49,48 @@ export function useAiOptimizationProductImpacts(productIds: string[]) {
 }
 
 // Poll job đang chạy với nhịp nhanh ở giai đoạn đầu để seller thấy phản hồi sớm.
-// Query dừng hoàn toàn ở trạng thái terminal, chạy cả khi tab mất focus và không tạo request trùng.
+// Query dừng ở trạng thái terminal hoặc sau 10 phút để worker lỗi không biến thành vòng gọi API vô hạn.
 export function useAiOptimizationJob(jobId: string | null) {
     return useQuery({
         queryKey: ['seller-ai-image-optimization-job', jobId],
         queryFn: () => getImageOptimizationJob(jobId as string),
         enabled: Boolean(jobId),
         staleTime: 1_000,
-        refetchOnWindowFocus: true,
+        // Không kích hoạt lại request khi seller quay lại tab sau khi job đã quá hạn.
+        refetchOnWindowFocus: (query) =>
+            !query.state.data ||
+            !isImageOptimizationJobPollingActive(query.state.data.status) ||
+            !isImageOptimizationJobPollingExpired(query.state.data.createdAt),
+        refetchOnReconnect: (query) =>
+            !query.state.data ||
+            !isImageOptimizationJobPollingActive(query.state.data.status) ||
+            !isImageOptimizationJobPollingExpired(query.state.data.createdAt),
+        refetchOnMount: (query) =>
+            !query.state.data ||
+            !isImageOptimizationJobPollingActive(query.state.data.status) ||
+            !isImageOptimizationJobPollingExpired(query.state.data.createdAt),
         refetchIntervalInBackground: true,
+        select: (job) =>
+            isImageOptimizationJobPollingActive(job.status) &&
+            isImageOptimizationJobPollingExpired(job.createdAt)
+                ? {
+                      ...job,
+                      status: 'FAILED' as const,
+                      processingStage: 'FAILED' as const,
+                      failureCode: job.failureCode ?? 'CLIENT_POLLING_TIMEOUT',
+                  }
+                : job,
         refetchInterval: (query) => {
-            const status = query.state.data?.status;
-            if (status === 'PENDING') return 1_500;
-            if (status === 'PROCESSING' || status === 'FINALIZING')
+            const job = query.state.data;
+            if (
+                job &&
+                isImageOptimizationJobPollingActive(job.status) &&
+                isImageOptimizationJobPollingExpired(job.createdAt)
+            ) {
+                return false;
+            }
+            if (job?.status === 'PENDING') return 1_500;
+            if (job?.status === 'PROCESSING' || job?.status === 'FINALIZING')
                 return 1_000;
             return false;
         },
