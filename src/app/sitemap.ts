@@ -18,7 +18,11 @@ async function fetchProductPage(
     try {
         const response = await fetch(
             `${API_BASE_URL}${API_VERSION}/products?status=ACTIVE&page=${page}&pageSize=100`,
-            { next: { revalidate: 3600 } },
+            {
+                next: { revalidate: 3600 },
+                // Sitemap vẫn trả route tĩnh nếu catalog không phản hồi; không để build chờ vô hạn.
+                signal: AbortSignal.timeout(5000),
+            },
         );
 
         if (!response.ok) return null;
@@ -60,6 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticRoutes = [
         '',
         '/showcase',
+        '/showcase/platform-operations',
         '/internal-shop',
         '/goi-y-hom-nay',
     ].map((path) => ({

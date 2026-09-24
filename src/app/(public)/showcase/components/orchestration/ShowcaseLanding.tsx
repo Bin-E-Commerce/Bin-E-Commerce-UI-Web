@@ -106,7 +106,7 @@ export function ShowcaseLanding() {
                                 id="showcase-feature-title"
                                 className="mt-1 text-xl font-semibold leading-tight tracking-tight text-zinc-950 sm:text-2xl"
                             >
-                                Khám phá ba hệ thống nổi bật
+                                Khám phá các hệ thống nổi bật
                             </h2>
                         </div>
                         <div className="inline-flex items-center gap-2 self-start rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-[11px] font-medium text-zinc-600 sm:self-auto">
@@ -139,6 +139,13 @@ export function ShowcaseLanding() {
                             imageAlt="Minh họa hệ thống phân quyền với role, permission, scope, audit và navigation theo quyền hiệu lực."
                             title="Quản trị phân quyền"
                             description="RBAC kết hợp permission và scope để kiểm soát đúng người, đúng hành động, đúng shop; profile và navigation được backend lọc, thay đổi quyền có audit và cache invalidation."
+                        />
+                        <ShowcaseFeatureCard
+                            href="/showcase/platform-operations"
+                            imageSrc="/images/feature/platform-operations/image.png"
+                            imageAlt="Minh họa quy trình CI/CD từ Pull Request đến K3s, rollout, rollback và observability."
+                            title="CI/CD và vận hành production"
+                            description="Theo dõi hành trình từ commit, CI quality gate và image bất biến đến SSM, K3s rollout, rollback, metrics và logs tập trung."
                         />
                     </div>
                 </section>

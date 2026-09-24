@@ -5,8 +5,8 @@ import { ArrowRight } from 'lucide-react';
 
 interface ShowcaseFeatureCardProps {
     href: string;
-    imageSrc: string;
-    imageAlt: string;
+    imageSrc?: string;
+    imageAlt?: string;
     title: string;
     description: string;
     stack?: Array<{ name: string; iconSrc: string }>;
@@ -23,35 +23,122 @@ export function ShowcaseFeatureCard({
     stack,
 }: ShowcaseFeatureCardProps) {
     // Mặc định hiển thị đúng các stack chính theo route; caller vẫn có thể truyền stack riêng khi cần mở rộng card.
-    const defaultStackByRoute: Record<string, Array<{ name: string; iconSrc: string }>> = {
+    const defaultStackByRoute: Record<
+        string,
+        Array<{ name: string; iconSrc: string }>
+    > = {
         '/showcase/recommendation': [
-            { name: 'Next.js', iconSrc: '/images/feature/tech-stack/nextjs.svg' },
-            { name: 'NestJS', iconSrc: '/images/feature/tech-stack/nestjs.svg' },
-            { name: 'PostgreSQL', iconSrc: '/images/feature/tech-stack/postgresql.svg' },
+            {
+                name: 'Next.js',
+                iconSrc: '/images/feature/tech-stack/nextjs.svg',
+            },
+            {
+                name: 'NestJS',
+                iconSrc: '/images/feature/tech-stack/nestjs.svg',
+            },
+            {
+                name: 'PostgreSQL',
+                iconSrc: '/images/feature/tech-stack/postgresql.svg',
+            },
             { name: 'Redis', iconSrc: '/images/feature/tech-stack/redis.svg' },
-            { name: 'Kafka', iconSrc: '/images/feature/tech-stack/apache-kafka.svg' },
-            { name: 'Qdrant', iconSrc: '/images/feature/tech-stack/qdrant.svg' },
-            { name: 'FastAPI', iconSrc: '/images/feature/tech-stack/fastapi.svg' },
-            { name: 'Python', iconSrc: '/images/feature/tech-stack/python.svg' },
+            {
+                name: 'Kafka',
+                iconSrc: '/images/feature/tech-stack/apache-kafka.svg',
+            },
+            {
+                name: 'Qdrant',
+                iconSrc: '/images/feature/tech-stack/qdrant.svg',
+            },
+            {
+                name: 'FastAPI',
+                iconSrc: '/images/feature/tech-stack/fastapi.svg',
+            },
+            {
+                name: 'Python',
+                iconSrc: '/images/feature/tech-stack/python.svg',
+            },
         ],
         '/showcase/ai-optimization': [
-            { name: 'Next.js', iconSrc: '/images/feature/tech-stack/nextjs.svg' },
-            { name: 'NestJS', iconSrc: '/images/feature/tech-stack/nestjs.svg' },
-            { name: 'PostgreSQL', iconSrc: '/images/feature/tech-stack/postgresql.svg' },
+            {
+                name: 'Next.js',
+                iconSrc: '/images/feature/tech-stack/nextjs.svg',
+            },
+            {
+                name: 'NestJS',
+                iconSrc: '/images/feature/tech-stack/nestjs.svg',
+            },
+            {
+                name: 'PostgreSQL',
+                iconSrc: '/images/feature/tech-stack/postgresql.svg',
+            },
             { name: 'Redis', iconSrc: '/images/feature/tech-stack/redis.svg' },
-            { name: 'FastAPI', iconSrc: '/images/feature/tech-stack/fastapi.svg' },
-            { name: 'Python', iconSrc: '/images/feature/tech-stack/python.svg' },
-            { name: 'OpenAI', iconSrc: '/images/feature/tech-stack/openai.svg' },
-            { name: 'Kafka', iconSrc: '/images/feature/tech-stack/apache-kafka.svg' },
-            { name: 'Media Service', iconSrc: '/images/feature/tech-stack/amazon-s3.svg' },
+            {
+                name: 'FastAPI',
+                iconSrc: '/images/feature/tech-stack/fastapi.svg',
+            },
+            {
+                name: 'Python',
+                iconSrc: '/images/feature/tech-stack/python.svg',
+            },
+            {
+                name: 'OpenAI',
+                iconSrc: '/images/feature/tech-stack/openai.svg',
+            },
+            {
+                name: 'Kafka',
+                iconSrc: '/images/feature/tech-stack/apache-kafka.svg',
+            },
+            {
+                name: 'Media Service',
+                iconSrc: '/images/feature/tech-stack/amazon-s3.svg',
+            },
         ],
         '/showcase/authorization-management': [
-            { name: 'Next.js', iconSrc: '/images/feature/tech-stack/nextjs.svg' },
-            { name: 'NestJS', iconSrc: '/images/feature/tech-stack/nestjs.svg' },
-            { name: 'PostgreSQL', iconSrc: '/images/feature/tech-stack/postgresql.svg' },
+            {
+                name: 'Next.js',
+                iconSrc: '/images/feature/tech-stack/nextjs.svg',
+            },
+            {
+                name: 'NestJS',
+                iconSrc: '/images/feature/tech-stack/nestjs.svg',
+            },
+            {
+                name: 'PostgreSQL',
+                iconSrc: '/images/feature/tech-stack/postgresql.svg',
+            },
             { name: 'Redis', iconSrc: '/images/feature/tech-stack/redis.svg' },
-            { name: 'Keycloak', iconSrc: '/images/feature/tech-stack/keycloak.svg' },
-            { name: 'JWT + JWKS', iconSrc: '/images/feature/tech-stack/jwt.svg' },
+            {
+                name: 'Keycloak',
+                iconSrc: '/images/feature/tech-stack/keycloak.svg',
+            },
+            {
+                name: 'JWT + JWKS',
+                iconSrc: '/images/feature/tech-stack/jwt.svg',
+            },
+        ],
+        '/showcase/platform-operations': [
+            {
+                name: 'GitHub Actions',
+                iconSrc: '/images/feature/tech-stack/github-actions.svg',
+            },
+            {
+                name: 'Docker',
+                iconSrc: '/images/feature/tech-stack/docker.svg',
+            },
+            { name: 'AWS', iconSrc: '/images/feature/tech-stack/aws.svg' },
+            { name: 'K3s', iconSrc: '/images/feature/tech-stack/k3s.svg' },
+            {
+                name: 'Kubernetes',
+                iconSrc: '/images/feature/tech-stack/kubernetes.svg',
+            },
+            {
+                name: 'Prometheus',
+                iconSrc: '/images/feature/tech-stack/prometheus.svg',
+            },
+            {
+                name: 'Grafana',
+                iconSrc: '/images/feature/tech-stack/grafana.svg',
+            },
         ],
     };
     const displayedStack = stack ?? defaultStackByRoute[href] ?? [];
@@ -62,13 +149,23 @@ export function ShowcaseFeatureCard({
             className="group flex h-full flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white transition duration-200 hover:-translate-y-1 hover:border-zinc-400 hover:shadow-[0_20px_48px_-30px_rgba(24,24,27,0.4)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-zinc-950"
         >
             <div className="relative aspect-video w-full overflow-hidden border-b border-zinc-200 bg-white">
-                <Image
-                    src={imageSrc}
-                    alt={imageAlt}
-                    fill
-                    sizes="(min-width: 1024px) 33vw, 100vw"
-                    className="object-contain transition-transform duration-500 group-hover:scale-[1.025]"
-                />
+                {imageSrc ? (
+                    <Image
+                        src={imageSrc}
+                        alt={imageAlt ?? ''}
+                        fill
+                        sizes="(min-width: 1024px) 33vw, 100vw"
+                        className="object-contain transition-transform duration-500 group-hover:scale-[1.025]"
+                    />
+                ) : (
+                    <div
+                        aria-label="Ảnh minh họa sẽ được bổ sung"
+                        role="img"
+                        className="grid size-full place-items-center bg-[radial-gradient(circle_at_35%_35%,#fafafa_0,#f4f4f5_42%,#e4e4e7_100%)] px-6 text-center text-xs font-medium text-zinc-500"
+                    >
+                        Ảnh minh họa sẽ được bổ sung
+                    </div>
+                )}
             </div>
 
             <div className="flex flex-1 flex-col p-4 sm:p-5">
@@ -78,10 +175,22 @@ export function ShowcaseFeatureCard({
                 <p className="mt-1.5 min-h-[3.5rem] text-[13px] leading-5 text-zinc-600">
                     {description}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-1.5 pb-3" aria-label="Công nghệ sử dụng">
+                <div
+                    className="mt-4 flex flex-wrap gap-1.5 pb-3"
+                    aria-label="Công nghệ sử dụng"
+                >
                     {displayedStack.map((technology) => (
-                        <span key={technology.name} className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] font-medium text-zinc-600">
-                            <Image src={technology.iconSrc} alt="" width={14} height={14} className="size-3.5 object-contain" />
+                        <span
+                            key={technology.name}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] font-medium text-zinc-600"
+                        >
+                            <Image
+                                src={technology.iconSrc}
+                                alt=""
+                                width={14}
+                                height={14}
+                                className="size-3.5 object-contain"
+                            />
                             {technology.name}
                         </span>
                     ))}
