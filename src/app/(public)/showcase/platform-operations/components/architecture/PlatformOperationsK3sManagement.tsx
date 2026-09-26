@@ -9,6 +9,33 @@ interface PlatformOperationsK3sIssueCardProps {
     flow: string;
 }
 
+interface PlatformOperationsK3sConceptCardProps {
+    term: string;
+    title: string;
+    description: React.ReactNode;
+}
+
+// Giải thích các khái niệm K3s bằng vai trò và mối liên hệ thực tế với workload production.
+function PlatformOperationsK3sConceptCard({
+    term,
+    title,
+    description,
+}: PlatformOperationsK3sConceptCardProps) {
+    return (
+        <article className="rounded-xl border border-zinc-200 bg-white p-4">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                {term}
+            </p>
+            <h4 className="mt-1 text-sm font-semibold text-zinc-950">
+                {title}
+            </h4>
+            <p className="mt-2 text-xs leading-5 text-zinc-600">
+                {description}
+            </p>
+        </article>
+    );
+}
+
 // Hiển thị triệu chứng và hướng điều tra theo flow ngắn để người đọc không bắt đầu bằng lệnh xóa resource.
 function PlatformOperationsK3sIssueCard({
     title,
@@ -26,6 +53,114 @@ function PlatformOperationsK3sIssueCard({
 export function PlatformOperationsK3sManagement() {
     return (
         <div className="space-y-6">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+                <header className="border-b border-zinc-200 pb-3">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        Đọc trước khi quản trị
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold tracking-tight text-zinc-950">
+                        K3s là gì và hoạt động như thế nào?
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-zinc-600">
+                        K3s là bản Kubernetes gọn nhẹ dùng để điều phối
+                        container trên node EC2. Bạn khai báo trạng thái mong
+                        muốn bằng manifest; K3s liên tục so sánh trạng thái thật
+                        với trạng thái đó rồi tạo, thay thế hoặc route workload
+                        cho phù hợp.
+                    </p>
+                </header>
+
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                        <p className="text-sm font-semibold text-zinc-950">
+                            Hiểu đơn giản bằng một ví dụ
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-zinc-600">
+                            <strong>EC2 là máy chủ</strong>, K3s là người điều
+                            phối, Deployment là bản mô tả cần chạy bao nhiêu
+                            phiên bản, Pod là nơi chạy container và Service là
+                            địa chỉ ổn định để các workload gọi nhau.
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-zinc-200 bg-white p-3">
+                        <p className="text-sm font-semibold text-zinc-950">
+                            Vòng lặp tự phục hồi
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-zinc-600">
+                            Khi một container hoặc Pod lỗi, controller phát hiện
+                            desired state bị thiếu và yêu cầu tạo Pod thay thế.
+                            Pod mới chỉ nhận traffic sau khi{' '}
+                            <strong>readiness probe</strong> thành công.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <PlatformOperationsK3sConceptCard
+                        term="01 · Node"
+                        title="EC2 Ubuntu"
+                        description="Máy thật hoặc máy ảo cung cấp CPU, memory, disk và network. Với mô hình hiện tại, production chạy trên single-node nên node hỏng có thể ảnh hưởng toàn bộ workload."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="02 · Cluster"
+                        title="K3s control plane"
+                        description="Lớp điều phối nhận manifest, theo dõi resource và ra quyết định scheduling, rollout, restart hoặc thay thế Pod."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="03 · Runtime"
+                        title="containerd"
+                        description="Runtime thực sự pull image và chạy container trên node. Docker chủ yếu được dùng để build image ở CI/local, không phải lớp điều phối production."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="04 · Boundary"
+                        title="Namespace"
+                        description="Nhóm resource theo trách nhiệm như application, data và observability để lệnh kiểm tra, manifest và quyền quản trị dễ khoanh vùng hơn."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="05 · Desired state"
+                        title="Deployment và ReplicaSet"
+                        description="Deployment lưu image, replica và Pod template; ReplicaSet duy trì đúng số Pod theo cấu hình và tạo revision khi release thay đổi."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="06 · Workload"
+                        title="Pod và Container"
+                        description="Pod là đơn vị được schedule; container bên trong chạy API hoặc worker. Pod Running chỉ cho biết process đang chạy, chưa chắc đã sẵn sàng nhận traffic."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="07 · Networking"
+                        title="Service và Endpoint"
+                        description="Service cung cấp DNS nội bộ và selector đến Pod phù hợp, giúp workload gọi nhau qua tên ổn định thay vì lưu Pod IP."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="08 · Health gate"
+                        title="Readiness, liveness và startup"
+                        description="Readiness quyết định có nhận traffic hay không; liveness phát hiện process treo; startup cho ứng dụng cần thời gian khởi động lâu."
+                    />
+                    <PlatformOperationsK3sConceptCard
+                        term="09 · Change"
+                        title="Rollout và rollback"
+                        description="Rollout đưa revision mới vào theo từng bước; rollback quay về revision application trước khi release mới không đạt health hoặc smoke test."
+                    />
+                </div>
+
+                <ShowcaseNote
+                    title="Cách đọc một sự cố K3s"
+                    tone="white"
+                    className="mt-3"
+                    compact
+                >
+                    <p>
+                        Đi từ ngoài vào trong:{' '}
+                        <strong>
+                            node → namespace → Deployment → Pod → container →
+                            Service endpoint
+                        </strong>
+                        . Đừng chỉ nhìn trạng thái <code>Running</code>; hãy đọc
+                        thêm readiness, Events, logs và dependency.
+                    </p>
+                </ShowcaseNote>
+            </section>
+
             <ShowcaseDisclosure
                 id="platform-operations-k3s-runtime"
                 number="2.4.1"
