@@ -14,6 +14,17 @@ describe('isWithinSupportHours', () => {
         expect(result).toBe(true);
     });
 
+    it('should reject Saturday after the server operating window', () => {
+        // Arrange
+        const saturdayAfterNoonInVietnam = new Date('2026-10-03T05:01:00.000Z');
+
+        // Act
+        const result = isWithinSupportHours(saturdayAfterNoonInVietnam);
+
+        // Assert
+        expect(result).toBe(false);
+    });
+
     it('should reject weekday support hours at 18:00 Vietnam time', () => {
         // Arrange
         const mondayAtSixInVietnam = new Date('2026-09-28T11:00:00.000Z');

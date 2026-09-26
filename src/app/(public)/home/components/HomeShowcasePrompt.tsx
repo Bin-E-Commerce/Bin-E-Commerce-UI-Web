@@ -1,3 +1,6 @@
+// Popup giới thiệu tính năng được phép hiển thị khi EC2 đang hoạt động.
+// Component không tự kiểm tra server; trạng thái request và popup hạ tầng do common provider quản lý.
+
 'use client';
 
 import { ArrowRight } from 'lucide-react';
@@ -18,39 +21,6 @@ import {
 import { useInfrastructureStatus } from '@/common/infrastructure-status';
 import { canShowFeaturePopup } from '@/common/infrastructure-status/utils/popup-priority';
 
-const HOME_SHOWCASE_PROMPT_KEY = 'bin-home-showcase-prompt-date';
-
-// Lấy ngày theo múi giờ của trình duyệt để lời nhắc chỉ xuất hiện một lần trong mỗi ngày người dùng trải nghiệm homepage.
-function getTodayKey() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
-}
-
-// Đọc localStorage an toàn vì chế độ riêng tư hoặc chính sách trình duyệt có thể chặn storage mà không nên làm hỏng homepage.
-function shouldShowShowcasePrompt() {
-    try {
-        return (
-            window.localStorage.getItem(HOME_SHOWCASE_PROMPT_KEY) !==
-            getTodayKey()
-        );
-    } catch {
-        return false;
-    }
-}
-
-// Ghi nhận sau khi popup đã chuyển sang trạng thái mở để không đánh dấu đã xem khi bị cảnh báo chặn.
-function markShowcasePromptAsSeen() {
-    try {
-        window.localStorage.setItem(HOME_SHOWCASE_PROMPT_KEY, getTodayKey());
-    } catch {
-        // Không có storage thì vẫn giữ trải nghiệm hiện tại, không chặn người dùng vào homepage.
-    }
-}
-
 // Mời người dùng khám phá phần giới thiệu hệ thống mà không chen vào SSR; state chỉ tồn tại ở client và không gọi API.
 export function HomeShowcasePrompt() {
     const router = useRouter();
@@ -67,8 +37,6 @@ export function HomeShowcasePrompt() {
         ) {
             return;
         }
-        if (!shouldShowShowcasePrompt()) return;
-
         const openTimer = window.setTimeout(() => {
             if (
                 !canShowFeaturePopup({
@@ -83,10 +51,6 @@ export function HomeShowcasePrompt() {
 
         return () => window.clearTimeout(openTimer);
     }, [hasPendingRequests, isInfrastructureAlertOpen]);
-
-    useEffect(() => {
-        if (open) markShowcasePromptAsSeen();
-    }, [open]);
 
     useEffect(() => {
         // Popup hạ tầng có ưu tiên cao hơn; đóng prompt tính năng ngay khi sự cố xuất hiện.

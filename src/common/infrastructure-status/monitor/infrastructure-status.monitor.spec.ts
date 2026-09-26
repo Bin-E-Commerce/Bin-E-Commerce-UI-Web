@@ -9,7 +9,7 @@ import {
 describe('infrastructure status monitor', () => {
     beforeEach(() => {
         jest.useFakeTimers();
-        jest.setSystemTime(new Date('2026-09-28T02:00:00.000Z'));
+        jest.setSystemTime(new Date('2026-10-03T05:01:00.000Z'));
     });
 
     afterEach(() => {
@@ -59,6 +59,27 @@ describe('infrastructure status monitor', () => {
             type: 'warning-detected',
             reason: 'request-pending',
         });
+        unsubscribe();
+    });
+
+    it('should delay a pending warning during server operating hours', () => {
+        // Arrange
+        jest.setSystemTime(new Date('2026-10-03T04:00:00.000Z'));
+        const events: unknown[] = [];
+        const unsubscribe = subscribeInfrastructureStatus((event) =>
+            events.push(event),
+        );
+        const stopTracking = beginInfrastructureRequest();
+
+        // Act
+        jest.advanceTimersByTime(INFRASTRUCTURE_PENDING_THRESHOLD_MS);
+
+        // Assert
+        expect(events).not.toContainEqual({
+            type: 'warning-detected',
+            reason: 'request-pending',
+        });
+        stopTracking();
         unsubscribe();
     });
 

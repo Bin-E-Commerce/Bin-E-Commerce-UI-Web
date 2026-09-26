@@ -1,5 +1,5 @@
 // Theo dõi vòng đời request API và phát tín hiệu hạ tầng cho provider UI.
-// Monitor không render, không gọi health endpoint và chỉ cảnh báo trong giờ hỗ trợ.
+// Monitor không render, không gọi health endpoint và chỉ cảnh báo ngoài giờ vận hành.
 
 import { isWithinSupportHours } from '../utils/support-hours';
 import { isInfrastructureError } from '../utils/infrastructure-error';
@@ -51,13 +51,13 @@ function emitWarning(reason: InfrastructureNoticeReason): void {
     emit({ type: 'warning-detected', reason });
 }
 
-// Kiểm tra lại request còn treo sau mỗi phút nếu nó bắt đầu ngoài giờ hỗ trợ.
-// Cách này không mở cảnh báo sai giờ nhưng vẫn bắt được sự cố kéo dài qua 09:00.
+// Kiểm tra lại request còn treo sau mỗi phút nếu nó bắt đầu trong giờ vận hành.
+// Cách này trì hoãn cảnh báo đúng chính sách nhưng vẫn bắt được sự cố kéo dài qua giờ tắt máy chủ.
 function checkPendingRequest(requestId: number): void {
     const currentRequest = trackedRequests.get(requestId);
     if (!currentRequest) return;
 
-    if (!isWithinSupportHours()) {
+    if (isWithinSupportHours()) {
         currentRequest.timer = setTimeout(
             () => checkPendingRequest(requestId),
             60_000,
@@ -102,7 +102,7 @@ export function beginInfrastructureRequest(): (error?: unknown) => void {
             hasPendingRequests: trackedRequests.size > 0,
         });
 
-        if (error && isWithinSupportHours() && isInfrastructureError(error)) {
+        if (error && !isWithinSupportHours() && isInfrastructureError(error)) {
             emitWarning('server-unavailable');
         }
 

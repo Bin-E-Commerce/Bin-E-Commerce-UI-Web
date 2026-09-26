@@ -37,7 +37,8 @@ export function InfrastructureStatusProvider({
                 return;
             }
 
-            if (!isWithinSupportHours()) return;
+            // Trong giờ vận hành, lỗi API được xử lý bởi feature tương ứng; popup này chỉ dành cho lúc EC2 ngoài lịch bật.
+            if (isWithinSupportHours()) return;
 
             setReason(event.reason);
             setIsOpen(true);
@@ -51,7 +52,8 @@ export function InfrastructureStatusProvider({
 
         // Health check riêng biệt giúp popup không đóng nhầm ngay sau khi request gốc timeout.
         const verifyRecovery = async () => {
-            if (!isWithinSupportHours()) {
+            // Khi bước vào giờ vận hành, không giữ lại cảnh báo ngoài giờ dù health check chưa chạy lại.
+            if (isWithinSupportHours()) {
                 setIsOpen(false);
                 setReason(null);
                 return;
