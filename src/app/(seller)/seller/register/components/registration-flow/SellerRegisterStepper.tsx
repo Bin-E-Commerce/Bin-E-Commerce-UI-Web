@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Check, CircleAlert } from 'lucide-react';
 
@@ -62,8 +63,8 @@ export function SellerRegisterStepper({
                         index,
                     );
                     const requiresCorrection = stepCorrectionTargets.length > 0;
-                    const correctionCompleted = stepCorrectionTargets.every((target) =>
-                        changedCorrectionTargets.includes(target),
+                    const correctionCompleted = stepCorrectionTargets.every(
+                        (target) => changedCorrectionTargets.includes(target),
                     );
                     const completed =
                         currentStep > index &&
@@ -71,7 +72,8 @@ export function SellerRegisterStepper({
                     const disabled = index > maxReachableStep;
 
                     return (
-                        <button
+                        <Button
+                            variant="ghost"
                             key={step.id}
                             type="button"
                             disabled={disabled}
@@ -83,7 +85,7 @@ export function SellerRegisterStepper({
                                     ? 'border-zinc-950 bg-zinc-950 text-white'
                                     : requiresCorrection && !correctionCompleted
                                       ? 'border-red-200 bg-red-50 text-red-950 hover:border-red-300 hover:bg-red-50'
-                                    : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50',
+                                      : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50',
                                 disabled
                                     ? 'cursor-not-allowed opacity-50 hover:border-zinc-200 hover:bg-white'
                                     : '',
@@ -118,20 +120,24 @@ export function SellerRegisterStepper({
                                                       : 'text-red-600',
                                             )}
                                         >
-                                            {correctionCompleted ? 'Đã sửa' : 'Cần sửa'}
+                                            {correctionCompleted
+                                                ? 'Đã sửa'
+                                                : 'Cần sửa'}
                                         </span>
                                     ) : null}
                                 </span>
                                 <span
                                     className={cn(
                                         'mt-0.5 block text-xs leading-5',
-                                        active ? 'text-zinc-300' : 'text-zinc-500',
+                                        active
+                                            ? 'text-zinc-300'
+                                            : 'text-zinc-500',
                                     )}
                                 >
                                     {step.description}
                                 </span>
                             </span>
-                        </button>
+                        </Button>
                     );
                 })}
             </div>

@@ -39,7 +39,7 @@ export function SellerRegisterForm() {
         handleEditSubmittedApplication,
         handleAcceptedTermsChange,
     } = useSellerRegisterFlow();
-    const { syncingSellerAccess, enterSellerCenter } =
+    const { sellerAccessUnavailable, syncingSellerAccess, enterSellerCenter } =
         useApprovedSellerAccess(applicationStatus);
     const activeStep =
         SELLER_REGISTER_STEPS[currentStep] ?? SELLER_REGISTER_STEPS[0];
@@ -100,6 +100,9 @@ export function SellerRegisterForm() {
                             {submitted ? (
                                 <SubmissionSuccess
                                     status={applicationStatus}
+                                    sellerAccessUnavailable={
+                                        sellerAccessUnavailable
+                                    }
                                     syncingSellerAccess={syncingSellerAccess}
                                     onEnterSellerCenter={enterSellerCenter}
                                     onEdit={handleEditSubmittedApplication}
@@ -110,9 +113,15 @@ export function SellerRegisterForm() {
                                     formValues={formValues}
                                     fieldErrors={currentStepErrors}
                                     updateFormSection={updateFormSection}
-                                    onAcceptedTermsChange={handleAcceptedTermsChange}
-                                    correctionTargets={applicationCorrectionTargets}
-                                    changedCorrectionTargets={changedCorrectionTargets}
+                                    onAcceptedTermsChange={
+                                        handleAcceptedTermsChange
+                                    }
+                                    correctionTargets={
+                                        applicationCorrectionTargets
+                                    }
+                                    changedCorrectionTargets={
+                                        changedCorrectionTargets
+                                    }
                                     verificationDocumentProgress={
                                         verificationDocumentProgress
                                     }
@@ -137,7 +146,10 @@ function SellerRegisterLoadingState() {
                 <Skeleton className="h-2 w-full" />
                 <div className="space-y-3">
                     {Array.from({ length: 5 }).map((_, index) => (
-                        <Skeleton key={index} className="h-16 w-full rounded-lg" />
+                        <Skeleton
+                            key={index}
+                            className="h-16 w-full rounded-lg"
+                        />
                     ))}
                 </div>
             </aside>

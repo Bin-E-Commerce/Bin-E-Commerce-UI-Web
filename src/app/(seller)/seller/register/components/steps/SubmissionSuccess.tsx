@@ -1,4 +1,10 @@
-import { CheckCircle2, Clock3, FilePenLine, PencilLine, Store } from 'lucide-react';
+import {
+    CheckCircle2,
+    Clock3,
+    FilePenLine,
+    PencilLine,
+    Store,
+} from 'lucide-react';
 
 import {
     AlertDialog,
@@ -16,6 +22,7 @@ import type { SellerApplicationStatus } from '@/services/seller';
 
 interface SubmissionSuccessProps {
     status: SellerApplicationStatus | null;
+    sellerAccessUnavailable: boolean;
     syncingSellerAccess: boolean;
     onEnterSellerCenter: () => void;
     onEdit: () => void;
@@ -24,11 +31,13 @@ interface SubmissionSuccessProps {
 // Màn hình trạng thái dùng cả sau submit và sau refresh, đồng thời chờ quyền Seller Center sẵn sàng trước khi chuyển trang.
 export function SubmissionSuccess({
     status,
+    sellerAccessUnavailable,
     syncingSellerAccess,
     onEnterSellerCenter,
     onEdit,
 }: SubmissionSuccessProps) {
     const approved = status === 'approved';
+    const sellerAccessRevoked = approved && sellerAccessUnavailable;
     const Icon = approved ? CheckCircle2 : Clock3;
 
     return (
@@ -37,12 +46,18 @@ export function SubmissionSuccess({
                 <Icon className="size-7" />
             </span>
             <h3 className="mt-4 text-xl font-semibold text-zinc-950">
-                {approved ? 'Hồ sơ đã được duyệt' : 'Hồ sơ đang chờ duyệt'}
+                {sellerAccessRevoked
+                    ? 'Tài khoản không có quyền Seller Center'
+                    : approved
+                      ? 'Hồ sơ đã được duyệt'
+                      : 'Hồ sơ đang chờ duyệt'}
             </h3>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-600">
-                {approved
-                    ? 'Shop của bạn đã được kích hoạt. Bạn có thể vào Seller Center để tiếp tục thiết lập vận hành.'
-                    : 'Bin đã nhận hồ sơ đăng ký người bán của bạn. Chúng tôi sẽ gửi email xác nhận và thông báo tiếp khi hồ sơ được duyệt hoặc cần bổ sung thông tin.'}
+                {sellerAccessRevoked
+                    ? 'Hồ sơ seller vẫn được duyệt, nhưng tài khoản hiện không còn quyền SELLER. Vui lòng liên hệ quản trị viên nếu bạn cần được cấp lại quyền.'
+                    : approved
+                      ? 'Shop của bạn đã được kích hoạt. Bạn có thể vào Seller Center để tiếp tục thiết lập vận hành.'
+                      : 'Bin đã nhận hồ sơ đăng ký người bán của bạn. Chúng tôi sẽ gửi email xác nhận và thông báo tiếp khi hồ sơ được duyệt hoặc cần bổ sung thông tin.'}
             </p>
 
             <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
@@ -55,8 +70,10 @@ export function SubmissionSuccess({
                     >
                         <Store className="size-4" />
                         {syncingSellerAccess
-                            ? 'Đang mở Seller Center...'
-                            : 'Vào Seller Center'}
+                            ? 'Đang kiểm tra quyền...'
+                            : sellerAccessRevoked
+                              ? 'Kiểm tra lại quyền'
+                              : 'Vào Seller Center'}
                     </Button>
                 ) : (
                     <AlertDialog>
@@ -79,13 +96,15 @@ export function SubmissionSuccess({
                                     Mở lại hồ sơ để chỉnh sửa?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription className="leading-6">
-                                    Bản đang chờ duyệt vẫn được giữ nguyên cho đến
-                                    khi bạn gửi lại. Nếu tải lại trang trước đó, mọi
-                                    thay đổi tạm thời sẽ bị hủy.
+                                    Bản đang chờ duyệt vẫn được giữ nguyên cho
+                                    đến khi bạn gửi lại. Nếu tải lại trang trước
+                                    đó, mọi thay đổi tạm thời sẽ bị hủy.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Tiếp tục chờ duyệt</AlertDialogCancel>
+                                <AlertDialogCancel>
+                                    Tiếp tục chờ duyệt
+                                </AlertDialogCancel>
                                 <AlertDialogAction onClick={onEdit}>
                                     Chỉnh sửa hồ sơ
                                 </AlertDialogAction>
@@ -97,7 +116,8 @@ export function SubmissionSuccess({
 
             {!approved ? (
                 <p className="mx-auto mt-3 max-w-lg text-xs leading-5 text-zinc-500">
-                    Thay đổi chỉ được lưu khi bạn hoàn tất và bấm “Gửi lại hồ sơ”.
+                    Thay đổi chỉ được lưu khi bạn hoàn tất và bấm “Gửi lại hồ
+                    sơ”.
                 </p>
             ) : null}
         </div>

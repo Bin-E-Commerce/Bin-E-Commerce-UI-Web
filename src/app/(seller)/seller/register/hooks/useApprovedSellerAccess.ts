@@ -21,6 +21,8 @@ export function useApprovedSellerAccess(
         canAccessSellerCenter(state.auth.user),
     );
     const [syncingSellerAccess, setSyncingSellerAccess] = useState(false);
+    const [sellerAccessUnavailable, setSellerAccessUnavailable] =
+        useState(false);
     const automaticSyncStartedRef = useRef(false);
 
     // Retry có giới hạn để che khoảng trễ rất ngắn giữa event duyệt hồ sơ và consumer cấp role SELLER.
@@ -53,9 +55,11 @@ export function useApprovedSellerAccess(
         setSyncingSellerAccess(true);
 
         // Hồ sơ và quyền nằm ở hai service khác nhau; đồng bộ nền giúp người dùng không phải reload hoặc đăng nhập lại.
-        void synchronizeSellerAccess().finally(() => {
-            setSyncingSellerAccess(false);
-        });
+        void synchronizeSellerAccess()
+            .then((synchronized) => {
+                setSellerAccessUnavailable(!synchronized);
+            })
+            .finally(() => setSyncingSellerAccess(false));
     }, [applicationStatus, canEnterSellerCenter, synchronizeSellerAccess]);
 
     // Nút vào Seller Center kiểm tra lại quyền lần cuối để không điều hướng bằng access profile đã cũ.
@@ -70,17 +74,20 @@ export function useApprovedSellerAccess(
         setSyncingSellerAccess(false);
 
         if (synchronized) {
+            setSellerAccessUnavailable(false);
             router.push('/seller');
             return;
         }
 
+        setSellerAccessUnavailable(true);
         toast.error(
-            'Quyền Seller Center đang được đồng bộ. Vui lòng thử lại sau ít giây.',
+            'Tài khoản hiện không có quyền Seller Center. Quyền có thể đã bị thu hồi hoặc chưa được cấp lại; vui lòng liên hệ quản trị viên.',
         );
     }, [canEnterSellerCenter, router, synchronizeSellerAccess]);
 
     return {
         canEnterSellerCenter,
+        sellerAccessUnavailable,
         syncingSellerAccess,
         enterSellerCenter,
     };

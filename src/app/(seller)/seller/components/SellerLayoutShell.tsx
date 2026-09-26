@@ -58,7 +58,11 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
         if (!canEnterSellerCenter) {
             // Nhân sự nội bộ đi nhầm Seller Center sẽ thấy màn deny để không hiểu nhầm là cần đăng ký shop.
             // Customer thường được đưa sang đăng ký bán hàng vì họ là đối tượng hợp lệ để bắt đầu onboarding.
-            router.replace(canAccessAdmin(user) ? SELLER_ACCESS_DENIED_PATH : '/seller/register');
+            router.replace(
+                canAccessAdmin(user)
+                    ? SELLER_ACCESS_DENIED_PATH
+                    : '/seller/register',
+            );
             return;
         }
 
@@ -94,7 +98,10 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
             <div className="min-h-screen bg-zinc-50 text-zinc-950">
                 <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
                     <div className="mx-auto flex min-h-18 max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-                        <Link href="/" className="flex min-w-0 items-center gap-3">
+                        <Link
+                            href="/"
+                            className="flex min-w-0 items-center gap-3"
+                        >
                             <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
                                 <Store className="size-5" />
                             </span>
@@ -115,12 +122,17 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                             <Link
                                 href="/"
                                 className={cn(
-                                    buttonVariants({ variant: 'outline', size: 'sm' }),
+                                    buttonVariants({
+                                        variant: 'outline',
+                                        size: 'sm',
+                                    }),
                                     'h-9 gap-2 rounded-full px-3 shadow-sm',
                                 )}
                             >
                                 <ArrowLeft className="size-4" />
-                                <span className="hidden sm:inline">Về trang mua sắm</span>
+                                <span className="hidden sm:inline">
+                                    Về trang mua sắm
+                                </span>
                                 <span className="sm:hidden">Quay lại</span>
                             </Link>
                         </div>
@@ -156,7 +168,8 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
 
             {sidebarOpen ? (
                 <div className="fixed inset-0 z-50 lg:hidden">
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         className="absolute inset-0 bg-zinc-950/45"
                         aria-label="Đóng menu người bán"
@@ -173,7 +186,9 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                         >
                             <X className="size-5" />
                         </Button>
-                        <SellerSidebar onNavigate={() => setSidebarOpen(false)} />
+                        <SellerSidebar
+                            onNavigate={() => setSidebarOpen(false)}
+                        />
                     </div>
                 </div>
             ) : null}
@@ -183,6 +198,7 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                     shopName={shopName}
                     userName={user.name}
                     avatarUrl={user.avatarUrl}
+                    shopLogoUrl={user.shopLogoUrl}
                     onOpenSidebar={() => setSidebarOpen(true)}
                 />
                 <main className="mx-auto w-full min-w-0 max-w-[1500px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
