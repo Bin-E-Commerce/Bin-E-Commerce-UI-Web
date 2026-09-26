@@ -38,14 +38,19 @@ export function AdminRecommendationDateRange({
                         <CalendarRange className="size-4" />
                     </span>
                     <div>
-                        <p className="text-sm font-semibold text-zinc-950">Khoảng thời gian phân tích</p>
+                        <p className="text-sm font-semibold text-zinc-950">
+                            Khoảng thời gian phân tích
+                        </p>
                         <p className="mt-1 text-xs text-zinc-500">
-                            Chọn tối đa 31 ngày để xem đầy đủ event và hiệu quả recommendation.
+                            Chọn tối đa 31 ngày để xem đầy đủ event và hiệu quả
+                            recommendation.
                         </p>
                     </div>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-zinc-500">
-                    {appliedValue ? `${appliedValue.from} → ${appliedValue.to}` : 'Mặc định: 7 ngày gần nhất'}
+                    {appliedValue
+                        ? `${appliedValue.from} → ${appliedValue.to}`
+                        : 'Mặc định: 7 ngày gần nhất'}
                 </span>
             </div>
 
@@ -55,7 +60,9 @@ export function AdminRecommendationDateRange({
                     <input
                         type="date"
                         value={value.from}
-                        onChange={(event) => onChange({ ...value, from: event.target.value })}
+                        onChange={(event) =>
+                            onChange({ ...value, from: event.target.value })
+                        }
                         className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-950 focus:ring-2 focus:ring-zinc-950/10"
                     />
                 </label>
@@ -64,30 +71,57 @@ export function AdminRecommendationDateRange({
                     <input
                         type="date"
                         value={value.to}
-                        onChange={(event) => onChange({ ...value, to: event.target.value })}
+                        onChange={(event) =>
+                            onChange({ ...value, to: event.target.value })
+                        }
                         className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-normal text-zinc-900 outline-none transition focus:border-zinc-950 focus:ring-2 focus:ring-zinc-950/10"
                     />
                 </label>
 
                 <div className="flex flex-wrap gap-2">
-                    <Button className="h-10" type="button" variant="outline" onClick={() => onPreset(7)} disabled={loading}>
+                    <Button
+                        className="h-10"
+                        type="button"
+                        variant="outline"
+                        onClick={() => onPreset(7)}
+                        disabled={loading}
+                    >
                         7 ngày
                     </Button>
-                    <Button className="h-10" type="button" variant="outline" onClick={() => onPreset(30)} disabled={loading}>
+                    <Button
+                        className="h-10"
+                        type="button"
+                        variant="outline"
+                        onClick={() => onPreset(30)}
+                        disabled={loading}
+                    >
                         30 ngày
                     </Button>
-                    <Button className="h-10" type="button" onClick={onApply} disabled={loading}>
+                    <Button
+                        className="h-10"
+                        type="button"
+                        onClick={onApply}
+                        disabled={loading}
+                    >
                         <Search className="size-4" />
                         Áp dụng
                     </Button>
-                    <Button className="h-10" type="button" variant="outline" onClick={onReset} disabled={loading}>
+                    <Button
+                        className="h-10"
+                        type="button"
+                        variant="outline"
+                        onClick={onReset}
+                        disabled={loading}
+                    >
                         <RotateCcw className="size-4" />
                         Mặc định
                     </Button>
                 </div>
             </div>
 
-            {error ? <p className="mt-2 text-xs font-medium text-red-600">{error}</p> : null}
+            {error ? (
+                <p className="mt-2 text-xs font-medium text-red-600">{error}</p>
+            ) : null}
         </div>
     );
 }

@@ -4,7 +4,8 @@ import { AuthorizationShowcase } from './components/orchestration/AuthorizationS
 
 export const metadata: Metadata = {
     title: 'Authorization Management | Bin E-Commerce',
-    description: 'Tìm hiểu hệ thống phân quyền RBAC, scope, access profile, audit và navigation backend-driven của Bin E-Commerce.',
+    description:
+        'Tìm hiểu hệ thống phân quyền RBAC, scope, access profile, audit và navigation backend-driven của Bin E-Commerce.',
 };
 
 // Giữ route mỏng để toàn bộ layout và nội dung tài liệu nằm trong các component có boundary rõ ràng.

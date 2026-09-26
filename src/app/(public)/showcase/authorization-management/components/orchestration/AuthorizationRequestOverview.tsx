@@ -24,7 +24,8 @@ const authorizationRequestSteps: ShowcaseFlowStep[] = [
     {
         id: 'profile',
         title: 'Resolve policy',
-        summary: 'Auth Service tạo access profile từ role và assignment hiệu lực.',
+        summary:
+            'Auth Service tạo access profile từ role và assignment hiệu lực.',
         detail: 'Access Control Service hợp nhất role legacy, role trong token và user_role_assignments đang active/trong thời hạn. Nó loại permission inactive, merge scope, gắn permissionVersion và lọc area/navigation theo quyền thực tế. Profile được cache theo userId + version.',
         output: 'PermissionGrant, scope, area access, defaultRoute và navigation đã lọc.',
         implementation: 'AccessControlService.getAccessProfile',
@@ -59,8 +60,20 @@ export function AuthorizationRequestOverview() {
                 detailId="authorization-request-step-detail"
             />
             <div className="grid gap-3 sm:grid-cols-2">
-                <ShowcaseNote title="403 có nhiều điểm dừng"><p>Gateway chặn thiếu route permission; downstream chặn sai owner/scope. Hai lớp bổ sung cho nhau vì một lớp không đủ hiểu toàn bộ business context.</p></ShowcaseNote>
-                <ShowcaseNote title="Role không phải quyết định cuối"><p>Role chỉ là đầu vào. Quyết định thực tế là permission + scope sau khi assignment, trạng thái active và thời hạn được resolve.</p></ShowcaseNote>
+                <ShowcaseNote title="403 có nhiều điểm dừng">
+                    <p>
+                        Gateway chặn thiếu route permission; downstream chặn sai
+                        owner/scope. Hai lớp bổ sung cho nhau vì một lớp không
+                        đủ hiểu toàn bộ business context.
+                    </p>
+                </ShowcaseNote>
+                <ShowcaseNote title="Role không phải quyết định cuối">
+                    <p>
+                        Role chỉ là đầu vào. Quyết định thực tế là permission +
+                        scope sau khi assignment, trạng thái active và thời hạn
+                        được resolve.
+                    </p>
+                </ShowcaseNote>
             </div>
         </div>
     );

@@ -32,9 +32,12 @@ export function AdminModulePlaceholder({
                         <Clock3 className="size-4" aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
-                        <p className="text-sm font-semibold text-zinc-900">Đang hoàn thiện</p>
+                        <p className="text-sm font-semibold text-zinc-900">
+                            Đang hoàn thiện
+                        </p>
                         <p className="mt-1 text-xs leading-5 text-zinc-500">
-                            Chức năng sẽ được cập nhật trong giai đoạn tiếp theo.
+                            Chức năng sẽ được cập nhật trong giai đoạn tiếp
+                            theo.
                         </p>
                     </div>
                 </div>
@@ -42,7 +45,8 @@ export function AdminModulePlaceholder({
 
             <div className="border-t border-zinc-100 bg-zinc-50/70 px-4 py-3 sm:px-6 lg:px-8">
                 <p className="text-xs leading-5 text-zinc-500 sm:text-sm">
-                    Dữ liệu và thao tác của module sẽ xuất hiện tại đây khi chức năng sẵn sàng.
+                    Dữ liệu và thao tác của module sẽ xuất hiện tại đây khi chức
+                    năng sẵn sàng.
                 </p>
             </div>
         </section>

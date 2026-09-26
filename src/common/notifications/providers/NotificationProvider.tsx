@@ -44,23 +44,26 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         });
 
         // Socket chỉ báo có thay đổi; REST cache được invalidate để MongoDB tiếp tục là nguồn dữ liệu chuẩn.
-        socket.on('notification.created', (notification: NotificationRealtimeItem) => {
-            void queryClient.invalidateQueries({
-                queryKey: notificationQueryKeys.all,
-            });
+        socket.on(
+            'notification.created',
+            (notification: NotificationRealtimeItem) => {
+                void queryClient.invalidateQueries({
+                    queryKey: notificationQueryKeys.all,
+                });
 
-            const actionUrl = notification.actionUrl;
-            toast(notification.title, {
-                description: notification.message,
-                duration: 7_000,
-                action: actionUrl
-                    ? {
-                          label: 'Xem',
-                          onClick: () => router.push(actionUrl),
-                      }
-                    : undefined,
-            });
-        });
+                const actionUrl = notification.actionUrl;
+                toast(notification.title, {
+                    description: notification.message,
+                    duration: 7_000,
+                    action: actionUrl
+                        ? {
+                              label: 'Xem',
+                              onClick: () => router.push(actionUrl),
+                          }
+                        : undefined,
+                });
+            },
+        );
 
         return () => {
             socket.removeAllListeners();

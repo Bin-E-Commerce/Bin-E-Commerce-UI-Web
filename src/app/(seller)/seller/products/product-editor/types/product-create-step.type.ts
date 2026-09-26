@@ -1,9 +1,5 @@
 export type ProductCreateStepId =
-    | 'basic'
-    | 'details'
-    | 'sales'
-    | 'shipping'
-    | 'other';
+    'basic' | 'details' | 'sales' | 'shipping' | 'other';
 
 export interface ProductCreateStepDefinition {
     id: ProductCreateStepId;

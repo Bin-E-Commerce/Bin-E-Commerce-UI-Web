@@ -29,9 +29,10 @@ export const adminRecommendationService = {
     // Lấy aggregate theo ranking mode thực tế trên toàn bộ traffic.
     getRankingPerformance: (range?: RecommendationAnalyticsRange) =>
         authorizedAxios
-            .get<
-                RecommendationAdminRankingPerformance[]
-            >(`${API_VERSION}/admin/recommendation/ranking-performance`, { params: range })
+            .get<RecommendationAdminRankingPerformance[]>(
+                `${API_VERSION}/admin/recommendation/ranking-performance`,
+                { params: range },
+            )
             .then((response) => response.data),
 
     // Lấy danh sách user/session có activity, phục vụ màn hình điều tra theo tài khoản.
@@ -85,9 +86,9 @@ export const adminRecommendationService = {
     // Đọc lịch sử policy để hiển thị rollback có kiểm soát.
     getPolicyHistory: () =>
         authorizedAxios
-            .get<
-                RecommendationAdminPolicy[]
-            >(`${API_VERSION}/admin/recommendation/config/history`)
+            .get<RecommendationAdminPolicy[]>(
+                `${API_VERSION}/admin/recommendation/config/history`,
+            )
             .then((response) => response.data),
 
     // Rollback theo version, vẫn tạo active version mới để audit không bị mất lịch sử.

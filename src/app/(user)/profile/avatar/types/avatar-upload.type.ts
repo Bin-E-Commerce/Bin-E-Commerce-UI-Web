@@ -1,10 +1,5 @@
 export type AvatarUploadPhase =
-    | 'idle'
-    | 'presigning'
-    | 'uploading'
-    | 'processing'
-    | 'saving'
-    | 'cleaning';
+    'idle' | 'presigning' | 'uploading' | 'processing' | 'saving' | 'cleaning';
 
 export interface AvatarVariantUrls {
     thumb: string;

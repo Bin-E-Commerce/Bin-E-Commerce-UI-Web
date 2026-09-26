@@ -94,7 +94,12 @@ export function useSellerRegisterFlow() {
                 touchedFields,
                 attemptedSteps.has(currentStep),
             ),
-        [attemptedSteps, currentStep, currentStepValidation.errors, touchedFields],
+        [
+            attemptedSteps,
+            currentStep,
+            currentStepValidation.errors,
+            touchedFields,
+        ],
     );
     // So sánh với đúng bản hồ sơ vừa hydrate để trạng thái sửa không phụ thuộc object proxy của React Hook Form.
     const changedCorrectionTargets = getChangedCorrectionTargets(
@@ -135,7 +140,9 @@ export function useSellerRegisterFlow() {
                 correctionBaselineRef.current = hydratedValues;
                 setApplicationStatus(application.status);
                 setApplicationReviewNote(application.reviewNote);
-                setApplicationCorrectionTargets(application.correctionTargets ?? []);
+                setApplicationCorrectionTargets(
+                    application.correctionTargets ?? [],
+                );
 
                 // Hồ sơ đã gửi hoặc đã duyệt phải hiện màn hình trạng thái sau refresh, không mở lại form nhập từ đầu.
                 if (isSubmittedSellerApplication(application)) {
@@ -148,11 +155,15 @@ export function useSellerRegisterFlow() {
                 setSubmitted(false);
                 setCurrentStep(
                     application.status === 'rejected'
-                        ? getFirstCorrectionStep(application.correctionTargets ?? [])
+                        ? getFirstCorrectionStep(
+                              application.correctionTargets ?? [],
+                          )
                         : 0,
                 );
             } catch {
-                toast.error('Không tải được hồ sơ người bán. Vui lòng thử lại.');
+                toast.error(
+                    'Không tải được hồ sơ người bán. Vui lòng thử lại.',
+                );
             } finally {
                 setLoadingApplication(false);
             }
@@ -190,7 +201,9 @@ export function useSellerRegisterFlow() {
 
         const firstInvalid = getFirstInvalidStepBefore(values, targetStep);
         if (firstInvalid) {
-            setAttemptedSteps((current) => new Set(current).add(firstInvalid.step));
+            setAttemptedSteps((current) =>
+                new Set(current).add(firstInvalid.step),
+            );
             void triggerStepFields(form, firstInvalid.step);
             toast.error(firstInvalid.message);
             setCurrentStep(firstInvalid.step);
@@ -210,7 +223,9 @@ export function useSellerRegisterFlow() {
             );
             setApplicationStatus(application.status);
             setApplicationReviewNote(application.reviewNote);
-            setApplicationCorrectionTargets(application.correctionTargets ?? []);
+            setApplicationCorrectionTargets(
+                application.correctionTargets ?? [],
+            );
             toast.success('Đã lưu nháp hồ sơ người bán.');
         } catch (err) {
             toast.error(getErrorMessage(err));
@@ -260,7 +275,9 @@ export function useSellerRegisterFlow() {
                 : await sellerService.submit(payload);
             setApplicationStatus(application.status);
             setApplicationReviewNote(application.reviewNote);
-            setApplicationCorrectionTargets(application.correctionTargets ?? []);
+            setApplicationCorrectionTargets(
+                application.correctionTargets ?? [],
+            );
             setEditingSubmittedApplication(false);
             setSubmitted(true);
             toast.success(
@@ -371,10 +388,12 @@ function filterVisibleErrors(
 
 // Đọc touchedFields dạng nested object của React Hook Form bằng dot-path như "shop.name".
 function isFieldTouched(touchedFields: unknown, path: string): boolean {
-    return path.split('.').reduce<unknown>((current, key) => {
-        if (!current || typeof current !== 'object') return undefined;
-        return (current as Record<string, unknown>)[key];
-    }, touchedFields) === true;
+    return (
+        path.split('.').reduce<unknown>((current, key) => {
+            if (!current || typeof current !== 'object') return undefined;
+            return (current as Record<string, unknown>)[key];
+        }, touchedFields) === true
+    );
 }
 
 // Trigger đúng các field thuộc step hiện tại để React Hook Form đồng bộ touched/error với Zod resolver.

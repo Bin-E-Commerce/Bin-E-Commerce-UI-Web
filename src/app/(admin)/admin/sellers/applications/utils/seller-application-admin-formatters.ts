@@ -6,7 +6,9 @@ import type {
 } from '@/services/seller';
 
 // Chuyển trạng thái kỹ thuật thành nhãn ngắn để bảng admin dễ đọc.
-export function formatSellerApplicationStatus(status: SellerApplicationStatus): string {
+export function formatSellerApplicationStatus(
+    status: SellerApplicationStatus,
+): string {
     switch (status) {
         case 'draft':
             return 'Bản nháp';
@@ -32,12 +34,18 @@ export function formatAdminDateTime(value: string | null): string {
 }
 
 // Ưu tiên tên shop, nếu hồ sơ chưa nhập tên thì hiển thị slug hoặc nhãn fallback cho admin.
-export function getApplicationShopDisplayName(application: SellerApplicationDto): string {
-    return application.shop.name ?? application.shop.slug ?? 'Chưa đặt tên shop';
+export function getApplicationShopDisplayName(
+    application: SellerApplicationDto,
+): string {
+    return (
+        application.shop.name ?? application.shop.slug ?? 'Chưa đặt tên shop'
+    );
 }
 
 // Tạo mô tả ngắn về người bán để admin nhận diện hồ sơ trong danh sách.
-export function getApplicationOwnerSummary(application: SellerApplicationDto): string {
+export function getApplicationOwnerSummary(
+    application: SellerApplicationDto,
+): string {
     return (
         application.seller.legalName ??
         application.seller.representativeName ??

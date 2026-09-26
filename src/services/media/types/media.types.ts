@@ -15,11 +15,7 @@ export type MediaUploadPurpose =
     | 'chat_image';
 
 export type MediaUploadMimeType =
-    | 'image/jpeg'
-    | 'image/png'
-    | 'image/webp'
-    | 'video/mp4'
-    | 'video/webm';
+    'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm';
 
 export interface CreatePresignedUploadPayload {
     fileName: string;
@@ -57,7 +53,8 @@ export interface CleanupProductAssetsResponse {
     deletedCount: number;
 }
 
-export type ReviewMediaCleanupPurpose = 'review_image' | 'review_video' | 'return_image' | 'return_video';
+export type ReviewMediaCleanupPurpose =
+    'review_image' | 'review_video' | 'return_image' | 'return_video';
 
 export interface ReviewMediaCleanupAsset {
     assetId: string;

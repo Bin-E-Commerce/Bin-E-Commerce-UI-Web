@@ -11,9 +11,7 @@ export function formatImpactNumber(value: number | null | undefined): string {
 }
 
 // Hiển thị phần trăm an toàn, không biến mẫu số bằng 0 thành Infinity hoặc phần trăm giả.
-export function formatImpactPercent(
-    value: number | null | undefined,
-): string {
+export function formatImpactPercent(value: number | null | undefined): string {
     if (value === null || value === undefined) return '—';
     const prefix = value > 0 ? '+' : '';
     return `${prefix}${new Intl.NumberFormat('vi-VN', {

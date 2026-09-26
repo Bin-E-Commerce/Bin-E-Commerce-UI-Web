@@ -55,4 +55,3 @@ export function logoutAllSessions() {
         )
         .then((response) => response.data);
 }
-

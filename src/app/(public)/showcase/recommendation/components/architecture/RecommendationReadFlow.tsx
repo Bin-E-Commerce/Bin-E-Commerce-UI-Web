@@ -314,7 +314,8 @@ export function RecommendationReadFlow() {
                                     <dd className="mt-1 text-xs leading-5 text-zinc-600">
                                         <code>mlBlend</code> mặc định 0,3, giới
                                         hạn tối đa 0,5. Analytics nhóm theo
-                                        ranking mode thực tế để đo hiệu quả có attribution.
+                                        ranking mode thực tế để đo hiệu quả có
+                                        attribution.
                                     </dd>
                                 </div>
                                 <div>
@@ -511,7 +512,8 @@ export function RecommendationReadFlow() {
                                     </dt>
                                     <dd className="text-zinc-600">
                                         ID và nhánh đang được so sánh; nếu
-                                        request dùng mode nào thì ghi nhận đúng mode đó; khi fallback là{' '}
+                                        request dùng mode nào thì ghi nhận đúng
+                                        mode đó; khi fallback là{' '}
                                         <code>null</code>.
                                     </dd>
                                 </div>

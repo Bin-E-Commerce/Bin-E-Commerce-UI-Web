@@ -7,9 +7,7 @@ interface SellerProductsSummaryProps {
 }
 
 // Tóm tắt các chỉ số người bán cần kiểm tra trước khi đi vào từng dòng sản phẩm.
-export function SellerProductsSummary({
-    summary,
-}: SellerProductsSummaryProps) {
+export function SellerProductsSummary({ summary }: SellerProductsSummaryProps) {
     return (
         <section className="grid grid-cols-2 border-b border-zinc-200 bg-white lg:grid-cols-4">
             <div className="flex min-h-24 items-center gap-3 border-b border-r border-zinc-200 px-4 py-4 lg:border-b-0 sm:px-6">

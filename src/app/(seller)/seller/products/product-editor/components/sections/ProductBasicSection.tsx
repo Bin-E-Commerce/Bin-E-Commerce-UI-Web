@@ -36,7 +36,10 @@ export function ProductBasicSection({
     const images = form.watch('images');
     const video = form.watch('video');
     const errors = form.formState.errors;
-    const imageError = typeof errors.images?.message === 'string' ? errors.images.message : undefined;
+    const imageError =
+        typeof errors.images?.message === 'string'
+            ? errors.images.message
+            : undefined;
 
     return (
         <ProductCreateSection
@@ -51,7 +54,11 @@ export function ProductBasicSection({
                     error={imageError}
                     hint="Tải tối thiểu 2 ảnh, tối đa 9 ảnh. Ảnh đầu tiên là ảnh bìa."
                 >
-                    <ProductImageUploader form={form} images={images} error={imageError} />
+                    <ProductImageUploader
+                        form={form}
+                        images={images}
+                        error={imageError}
+                    />
                 </ProductFormField>
 
                 <ProductFormField
@@ -67,7 +74,12 @@ export function ProductBasicSection({
                         htmlFor="product-name"
                         required
                         error={errors.name?.message}
-                        labelExtra={<ProductContentAssistant form={form} references={references} />}
+                        labelExtra={
+                            <ProductContentAssistant
+                                form={form}
+                                references={references}
+                            />
+                        }
                         hint={`${name.length}/200 ký tự; tối thiểu 20 ký tự.`}
                     >
                         <Input
@@ -80,7 +92,11 @@ export function ProductBasicSection({
                         />
                     </ProductFormField>
 
-                    <ProductFormField label="Ngành hàng" required error={errors.categoryId?.message}>
+                    <ProductFormField
+                        label="Ngành hàng"
+                        required
+                        error={errors.categoryId?.message}
+                    >
                         <ProductCategoryPicker
                             value={references.category}
                             error={errors.categoryId?.message}

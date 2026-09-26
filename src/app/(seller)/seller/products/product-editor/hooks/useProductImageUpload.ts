@@ -58,7 +58,9 @@ export function useProductImageUpload({
                 file.size > MAX_IMAGE_SIZE_BYTES,
         );
         if (invalidFile) {
-            toast.error('Ảnh phải là JPG, PNG hoặc WebP và không vượt quá 5 MB.');
+            toast.error(
+                'Ảnh phải là JPG, PNG hoặc WebP và không vượt quá 5 MB.',
+            );
             return;
         }
 
@@ -99,7 +101,8 @@ export function useProductImageUpload({
                     });
                 } catch (error) {
                     URL.revokeObjectURL(previewUrl);
-                    if (uploadedAssetId) void cleanupTemporaryImage(uploadedAssetId);
+                    if (uploadedAssetId)
+                        void cleanupTemporaryImage(uploadedAssetId);
                     throw error;
                 }
             }
@@ -108,7 +111,9 @@ export function useProductImageUpload({
                 shouldDirty: true,
                 shouldValidate: true,
             });
-            toast.success(`${uploadedImages.length} ảnh đã được tải lên thành công.`);
+            toast.success(
+                `${uploadedImages.length} ảnh đã được tải lên thành công.`,
+            );
         } catch (error) {
             // Chỉ giữ ảnh đã hoàn tất upload; ảnh lỗi sẽ không tạo dữ liệu form sai hoặc preview mồ côi.
             if (uploadedImages.length > 0) {
@@ -140,7 +145,9 @@ export function useProductImageUpload({
                     { assetId: removed.assetId, purpose: 'product_image' },
                 ]);
             } catch {
-                toast.warning('Đã xóa ảnh khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.');
+                toast.warning(
+                    'Đã xóa ảnh khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.',
+                );
             }
         }
     };

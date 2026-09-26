@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import {
-    catalogService,
-    type CatalogCategory,
-} from '@/services/catalog';
+import { catalogService, type CatalogCategory } from '@/services/catalog';
 
 interface UseRootCategoriesResult {
     categories: CatalogCategory[];
@@ -36,7 +33,9 @@ export function useRootCategories(): UseRootCategoriesResult {
                 }
             } catch {
                 if (!cancelled) {
-                    setError('Không tải được ngành hàng. Vui lòng kiểm tra catalog-service.');
+                    setError(
+                        'Không tải được ngành hàng. Vui lòng kiểm tra catalog-service.',
+                    );
                 }
             } finally {
                 if (!cancelled) {
@@ -54,4 +53,3 @@ export function useRootCategories(): UseRootCategoriesResult {
 
     return { categories, loading, error };
 }
-

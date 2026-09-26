@@ -10,9 +10,7 @@ import type {
 
 // Chuyển menu backend đã lọc permission thành nhóm sidebar và giữ nguyên thứ tự nghiệp vụ do manifest quy định.
 // Frontend không tự bổ sung menu fallback để tránh hiển thị chức năng mà tài khoản không được phép dùng.
-export function mapSellerNavigation(
-    user: AuthUser | null,
-): SellerNavGroup[] {
+export function mapSellerNavigation(user: AuthUser | null): SellerNavGroup[] {
     const navigation = user?.accessProfile?.areas.seller.navigation ?? [];
     const groupMap = new Map<
         string,

@@ -13,8 +13,8 @@ export default function ForgotPasswordPage() {
             </div>
 
             <div className="rounded-xl border border-zinc-200 bg-white p-5 text-sm leading-6 text-zinc-600 shadow-sm">
-                Tính năng đặt lại mật khẩu sẽ được mở trong bước hoàn thiện
-                xác thực tài khoản.
+                Tính năng đặt lại mật khẩu sẽ được mở trong bước hoàn thiện xác
+                thực tài khoản.
             </div>
 
             <Link

@@ -23,12 +23,16 @@ export function ProductDetailErrorState({
                     Chưa tải được sản phẩm
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                    Sản phẩm có thể không còn tồn tại hoặc dữ liệu đang tạm thời gián đoạn.
+                    Sản phẩm có thể không còn tồn tại hoặc dữ liệu đang tạm thời
+                    gián đoạn.
                 </p>
                 <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
                     <Link
                         href="/"
-                        className={buttonVariants({ variant: 'outline', size: 'lg' })}
+                        className={buttonVariants({
+                            variant: 'outline',
+                            size: 'lg',
+                        })}
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Về trang chủ

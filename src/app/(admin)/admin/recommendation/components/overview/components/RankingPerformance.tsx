@@ -18,7 +18,8 @@ export function RankingPerformance({ rankingPerformance }: Props) {
                         Hiệu quả ranking thực tế
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">
-                        Theo dõi toàn bộ impression, click và add-to-cart theo mode đã phục vụ.
+                        Theo dõi toàn bộ impression, click và add-to-cart theo
+                        mode đã phục vụ.
                     </p>
                 </div>
                 <span className="text-xs text-zinc-400">
@@ -30,11 +31,17 @@ export function RankingPerformance({ rankingPerformance }: Props) {
                 <table className="w-full min-w-[680px] text-left text-sm">
                     <thead className="border-b border-zinc-100 text-xs uppercase tracking-wide text-zinc-400">
                         <tr>
-                            <th className="px-2 py-3 font-medium">Ranking mode</th>
-                            <th className="px-2 py-3 font-medium">Impression</th>
+                            <th className="px-2 py-3 font-medium">
+                                Ranking mode
+                            </th>
+                            <th className="px-2 py-3 font-medium">
+                                Impression
+                            </th>
                             <th className="px-2 py-3 font-medium">Click</th>
                             <th className="px-2 py-3 font-medium">CTR</th>
-                            <th className="px-2 py-3 font-medium">Click → giỏ</th>
+                            <th className="px-2 py-3 font-medium">
+                                Click → giỏ
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100">

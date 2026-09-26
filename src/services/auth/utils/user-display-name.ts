@@ -8,8 +8,6 @@ function isUnreadableDisplayName(name: string): boolean {
 }
 
 // Trả về tên có thể đọc được để header và menu tài khoản luôn hiển thị nhất quán.
-export function getUserDisplayName(
-    user: Pick<AuthUser, 'name'>,
-): string {
+export function getUserDisplayName(user: Pick<AuthUser, 'name'>): string {
     return isUnreadableDisplayName(user.name) ? 'Người dùng' : user.name.trim();
 }

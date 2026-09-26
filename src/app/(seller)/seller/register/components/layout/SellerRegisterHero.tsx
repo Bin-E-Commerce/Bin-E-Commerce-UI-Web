@@ -17,7 +17,10 @@ export function SellerRegisterHero({
     totalSteps,
     applicationStatus,
 }: SellerRegisterHeroProps) {
-    const status = getSellerApplicationStatusView(applicationStatus, isLastStep);
+    const status = getSellerApplicationStatusView(
+        applicationStatus,
+        isLastStep,
+    );
 
     return (
         <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
@@ -31,8 +34,9 @@ export function SellerRegisterHero({
                         Hoàn thiện hồ sơ shop để bắt đầu bán hàng trên Bin.
                     </h1>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-                        Điền thông tin theo từng bước ngay bên dưới. Hồ sơ đầy đủ
-                        giúp quá trình duyệt nhanh hơn và hạn chế phải bổ sung lại.
+                        Điền thông tin theo từng bước ngay bên dưới. Hồ sơ đầy
+                        đủ giúp quá trình duyệt nhanh hơn và hạn chế phải bổ
+                        sung lại.
                     </p>
                 </div>
 

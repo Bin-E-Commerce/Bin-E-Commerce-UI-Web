@@ -63,7 +63,9 @@ export function ShowcaseFeatureHeader({
             >
                 <div>
                     {category ? (
-                        <p className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                        <p
+                            className={`mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] ${isLight ? 'text-zinc-500' : 'text-zinc-400'}`}
+                        >
                             {category}
                         </p>
                     ) : null}

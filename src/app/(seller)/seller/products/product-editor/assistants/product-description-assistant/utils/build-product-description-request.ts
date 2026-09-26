@@ -19,9 +19,15 @@ export function buildProductDescriptionRequest(
         ...request,
         sellerInput: sellerInput
             ? {
-                  ...(sellerInput.draftName ? { draftName: sellerInput.draftName } : {}),
-                  ...(sellerInput.description ? { description: sellerInput.description } : {}),
-                  ...(sellerInput.attributes?.length ? { attributes: sellerInput.attributes } : {}),
+                  ...(sellerInput.draftName
+                      ? { draftName: sellerInput.draftName }
+                      : {}),
+                  ...(sellerInput.description
+                      ? { description: sellerInput.description }
+                      : {}),
+                  ...(sellerInput.attributes?.length
+                      ? { attributes: sellerInput.attributes }
+                      : {}),
               }
             : undefined,
     };

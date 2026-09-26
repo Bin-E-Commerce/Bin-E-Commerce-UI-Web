@@ -23,8 +23,7 @@ export interface SellerOrderListItem {
     id: string;
     orderNumber: string;
     status: SellerOrderStatus;
-    paymentStatus?:
-        'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
+    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
     fulfillmentStatus?: SellerOrderStage;
     paymentMethod: 'COD';
     shopItemTotal: string;
@@ -72,8 +71,7 @@ export interface SellerOrderResponse {
     orderNumber: string;
     status: SellerOrderStatus;
     fulfillmentStatus?: SellerOrderStage;
-    paymentStatus?:
-        'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
+    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
     paymentMethod: 'COD';
     shopItemTotal: string;
     shippingFee: string;

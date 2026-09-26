@@ -27,10 +27,7 @@ import { CancelOrderDialog } from '../components/cancel-order-dialog';
 import { CustomerShipmentPanel } from '@/common/shipping';
 import { OrderLifecycleStepper } from '@/common/orders';
 import { useCustomerTracking } from '@/hooks/shipping/use-shipment';
-import type {
-    ShipmentResponse,
-    ShipmentStatus,
-} from '@/services/shipping';
+import type { ShipmentResponse, ShipmentStatus } from '@/services/shipping';
 import {
     listOrderReturns,
     type OrderReturnStatus,

@@ -100,7 +100,9 @@ export function ShopHeader({
                             type="button"
                             disabled={followPending || !isAvailable}
                             onClick={onFollow}
-                            variant={profile.isFollowing ? 'outline' : 'default'}
+                            variant={
+                                profile.isFollowing ? 'outline' : 'default'
+                            }
                         >
                             {profile.isFollowing
                                 ? 'Đang theo dõi'

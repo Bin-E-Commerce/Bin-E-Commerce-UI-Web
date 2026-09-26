@@ -52,7 +52,8 @@ export interface ProductNameSuggestionsResponse {
 }
 
 // Contract mô tả dùng chung context với tên nhưng trả một bản nội dung duy nhất để seller xem trước.
-export type ProductDescriptionSuggestionsRequest = ProductNameSuggestionsRequest;
+export type ProductDescriptionSuggestionsRequest =
+    ProductNameSuggestionsRequest;
 
 export interface ProductDescriptionSuggestionsResponse {
     description: string;

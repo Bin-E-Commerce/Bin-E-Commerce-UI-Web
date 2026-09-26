@@ -80,31 +80,44 @@ export function SellerStepCorrectionGuidance({
                     <div className="mt-3 space-y-3">
                         {targets.includes('shop_information') ? (
                             <CorrectionInstruction
-                                changed={changedCorrectionTargets.includes('shop_information')}
+                                changed={changedCorrectionTargets.includes(
+                                    'shop_information',
+                                )}
                                 title="Thông tin shop"
                             >
-                                Chỉnh ít nhất một thông tin chưa chính xác trong tên shop, đường dẫn, ngành hàng, mô hình bán hoặc mô tả.
+                                Chỉnh ít nhất một thông tin chưa chính xác trong
+                                tên shop, đường dẫn, ngành hàng, mô hình bán
+                                hoặc mô tả.
                             </CorrectionInstruction>
                         ) : null}
                         {targets.includes('shop_logo') ? (
                             <CorrectionInstruction
-                                changed={changedCorrectionTargets.includes('shop_logo')}
+                                changed={changedCorrectionTargets.includes(
+                                    'shop_logo',
+                                )}
                                 title="Logo shop"
                             >
-                                Chọn và tải lại logo vuông, rõ nét, không bị vỡ hoặc chứa thông tin liên hệ ngoài nền tảng.
+                                Chọn và tải lại logo vuông, rõ nét, không bị vỡ
+                                hoặc chứa thông tin liên hệ ngoài nền tảng.
                             </CorrectionInstruction>
                         ) : null}
                         {targets.includes('seller_identity') ? (
                             <CorrectionInstruction
-                                changed={changedCorrectionTargets.includes('seller_identity')}
+                                changed={changedCorrectionTargets.includes(
+                                    'seller_identity',
+                                )}
                                 title="Thông tin định danh"
                             >
-                                Đối chiếu và chỉnh lại họ tên pháp lý, số CCCD hoặc mã số thuế, người đại diện, số điện thoại và email theo giấy tờ.
+                                Đối chiếu và chỉnh lại họ tên pháp lý, số CCCD
+                                hoặc mã số thuế, người đại diện, số điện thoại
+                                và email theo giấy tờ.
                             </CorrectionInstruction>
                         ) : null}
                         {targets.includes('verification_documents') ? (
                             <CorrectionInstruction
-                                changed={changedCorrectionTargets.includes('verification_documents')}
+                                changed={changedCorrectionTargets.includes(
+                                    'verification_documents',
+                                )}
                                 title={`Giấy tờ xác minh (${verificationDocumentProgress.replaced}/${verificationDocumentProgress.required})`}
                             >
                                 {verificationDocumentProgress.complete
@@ -114,18 +127,26 @@ export function SellerStepCorrectionGuidance({
                         ) : null}
                         {targets.includes('pickup_address') ? (
                             <CorrectionInstruction
-                                changed={changedCorrectionTargets.includes('pickup_address')}
+                                changed={changedCorrectionTargets.includes(
+                                    'pickup_address',
+                                )}
                                 title="Địa chỉ lấy hàng"
                             >
-                                Chỉnh người phụ trách, số điện thoại, tỉnh thành, phường xã hoặc địa chỉ chi tiết để đơn vị vận chuyển có thể lấy hàng.
+                                Chỉnh người phụ trách, số điện thoại, tỉnh
+                                thành, phường xã hoặc địa chỉ chi tiết để đơn vị
+                                vận chuyển có thể lấy hàng.
                             </CorrectionInstruction>
                         ) : null}
                         {targets.includes('payout_information') ? (
                             <CorrectionInstruction
-                                changed={changedCorrectionTargets.includes('payout_information')}
+                                changed={changedCorrectionTargets.includes(
+                                    'payout_information',
+                                )}
                                 title="Thông tin thanh toán"
                             >
-                                Chỉnh ngân hàng, số tài khoản, tên chủ tài khoản, loại tài khoản hoặc chi nhánh để khớp hồ sơ người bán.
+                                Chỉnh ngân hàng, số tài khoản, tên chủ tài
+                                khoản, loại tài khoản hoặc chi nhánh để khớp hồ
+                                sơ người bán.
                             </CorrectionInstruction>
                         ) : null}
                     </div>

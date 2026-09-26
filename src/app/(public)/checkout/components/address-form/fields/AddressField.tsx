@@ -32,21 +32,34 @@ export function AddressField({
             control={control}
             name={name}
             render={({ field }) => (
-                <FormItem className={`content-start ${wide ? 'sm:col-span-2' : ''}`}>
+                <FormItem
+                    className={`content-start ${wide ? 'sm:col-span-2' : ''}`}
+                >
                     <FormLabel>
                         {label} <RequiredMark />
                     </FormLabel>
                     <FormControl>
                         {select ? (
-                            <Select value={field.value} onValueChange={field.onChange}>
+                            <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                            >
                                 <SelectTrigger className="!h-11 w-full rounded-xl border-zinc-200 bg-white">
                                     <SelectValue placeholder="Chọn nhãn địa chỉ" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Nhà riêng">Nhà riêng</SelectItem>
-                                    <SelectItem value="Cơ quan">Cơ quan</SelectItem>
-                                    <SelectItem value="Nhà bố mẹ">Nhà bố mẹ</SelectItem>
-                                    <SelectItem value="Nhà trọ">Nhà trọ</SelectItem>
+                                    <SelectItem value="Nhà riêng">
+                                        Nhà riêng
+                                    </SelectItem>
+                                    <SelectItem value="Cơ quan">
+                                        Cơ quan
+                                    </SelectItem>
+                                    <SelectItem value="Nhà bố mẹ">
+                                        Nhà bố mẹ
+                                    </SelectItem>
+                                    <SelectItem value="Nhà trọ">
+                                        Nhà trọ
+                                    </SelectItem>
                                     <SelectItem value="Khác">Khác</SelectItem>
                                 </SelectContent>
                             </Select>

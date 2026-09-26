@@ -1,14 +1,14 @@
-import type { ProductBrand, ProductDetail, ProductImage } from './product.types';
+import type {
+    ProductBrand,
+    ProductDetail,
+    ProductImage,
+} from './product.types';
 
 export type SellerProductStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'DELETED';
 export type SellerProductPublicationStatus = 'ACTIVE' | 'INACTIVE';
 
 export type SellerProductSortBy =
-    | 'updatedAt'
-    | 'createdAt'
-    | 'name'
-    | 'minPrice'
-    | 'totalSold';
+    'updatedAt' | 'createdAt' | 'name' | 'minPrice' | 'totalSold';
 
 export type SellerProductSortOrder = 'ASC' | 'DESC';
 
@@ -151,7 +151,10 @@ export interface CreateSellerProductPayload {
     };
 }
 
-export interface UpdateSellerProductPayload extends Omit<CreateSellerProductPayload, 'variants' | 'status' | 'images'> {
+export interface UpdateSellerProductPayload extends Omit<
+    CreateSellerProductPayload,
+    'variants' | 'status' | 'images'
+> {
     status: SellerProductStatus;
     images: Array<{
         id?: string;

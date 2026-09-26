@@ -5,7 +5,10 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { CatalogCategory } from '@/services/catalog';
 import type { ProductBrand } from '@/services/product';
 import type { ProductCreateStepId } from '../types/product-create-step.type';
-import type { SellerProductCreateFormValues, SellerProductCreateReferences } from '../types/seller-product-create-form.type';
+import type {
+    SellerProductCreateFormValues,
+    SellerProductCreateReferences,
+} from '../types/seller-product-create-form.type';
 import { ProductBasicSection } from './sections/ProductBasicSection';
 import { ProductDetailsSection } from './sections/ProductDetailsSection';
 import { ProductOtherSection } from './sections/ProductOtherSection';

@@ -15,13 +15,19 @@ import type {
 
 // Gọi một lần theo thao tác chủ động của seller; mutation không retry để tránh phát sinh chi phí LLM ngoài ý muốn.
 export function useProductNameSuggestions() {
-    const mutation = useMutation<ProductNameSuggestionsResponse, unknown, ProductNameSuggestionsRequest>({
+    const mutation = useMutation<
+        ProductNameSuggestionsResponse,
+        unknown,
+        ProductNameSuggestionsRequest
+    >({
         mutationFn: productContentAiService.generateProductNameSuggestions,
         retry: false,
         onSuccess: (result) => {
             toast.success('AI đã tạo 3 tên sản phẩm để bạn lựa chọn.');
             if (result.warnings.length > 0) {
-                toast.warning('AI đã loại bỏ một số thông tin nhạy cảm khỏi đề xuất.');
+                toast.warning(
+                    'AI đã loại bỏ một số thông tin nhạy cảm khỏi đề xuất.',
+                );
             }
         },
         onError: (error) => {
@@ -41,6 +47,8 @@ export function useProductNameSuggestions() {
         warnings: mutation.data?.warnings ?? [],
         isLoading: mutation.isPending,
         error: mutation.error,
-        errorMessage: mutation.error ? getErrorMessage(mutation.error) : undefined,
+        errorMessage: mutation.error
+            ? getErrorMessage(mutation.error)
+            : undefined,
     };
 }

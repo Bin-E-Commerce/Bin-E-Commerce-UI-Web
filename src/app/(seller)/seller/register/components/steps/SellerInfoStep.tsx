@@ -256,9 +256,14 @@ export function SellerInfoStep({
                                 title="Giấy đăng ký kinh doanh"
                                 description="Đối chiếu tên pháp lý và mã số thuế."
                                 value={documents.businessLicense}
-                                error={errors['seller.documents.businessLicense']}
+                                error={
+                                    errors['seller.documents.businessLicense']
+                                }
                                 onChange={(document) =>
-                                    handleDocumentChange('businessLicense', document)
+                                    handleDocumentChange(
+                                        'businessLicense',
+                                        document,
+                                    )
                                 }
                             />
                             <VerificationUploadCard
@@ -266,9 +271,16 @@ export function SellerInfoStep({
                                 title="Giấy tờ người đại diện"
                                 description="CCCD hoặc giấy ủy quyền của người vận hành."
                                 value={documents.representativeDocument}
-                                error={errors['seller.documents.representativeDocument']}
+                                error={
+                                    errors[
+                                        'seller.documents.representativeDocument'
+                                    ]
+                                }
                                 onChange={(document) =>
-                                    handleDocumentChange('representativeDocument', document)
+                                    handleDocumentChange(
+                                        'representativeDocument',
+                                        document,
+                                    )
                                 }
                             />
                         </>
@@ -279,9 +291,14 @@ export function SellerInfoStep({
                                 title="CCCD mặt trước"
                                 description="Đối chiếu họ tên và số CCCD."
                                 value={documents.citizenIdFront}
-                                error={errors['seller.documents.citizenIdFront']}
+                                error={
+                                    errors['seller.documents.citizenIdFront']
+                                }
                                 onChange={(document) =>
-                                    handleDocumentChange('citizenIdFront', document)
+                                    handleDocumentChange(
+                                        'citizenIdFront',
+                                        document,
+                                    )
                                 }
                             />
                             <VerificationUploadCard
@@ -291,7 +308,10 @@ export function SellerInfoStep({
                                 value={documents.citizenIdBack}
                                 error={errors['seller.documents.citizenIdBack']}
                                 onChange={(document) =>
-                                    handleDocumentChange('citizenIdBack', document)
+                                    handleDocumentChange(
+                                        'citizenIdBack',
+                                        document,
+                                    )
                                 }
                             />
                         </>

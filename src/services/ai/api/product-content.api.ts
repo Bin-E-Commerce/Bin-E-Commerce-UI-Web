@@ -26,10 +26,11 @@ async function generateProductNameSuggestions(
 async function generateProductDescriptionSuggestions(
     payload: ProductDescriptionSuggestionsRequest,
 ): Promise<ProductDescriptionSuggestionsResponse> {
-    const response = await authorizedAxios.post<ProductDescriptionSuggestionsResponse>(
-        `${API_VERSION}/seller/ai/product-content/description-suggestions`,
-        payload,
-    );
+    const response =
+        await authorizedAxios.post<ProductDescriptionSuggestionsResponse>(
+            `${API_VERSION}/seller/ai/product-content/description-suggestions`,
+            payload,
+        );
     return response.data;
 }
 

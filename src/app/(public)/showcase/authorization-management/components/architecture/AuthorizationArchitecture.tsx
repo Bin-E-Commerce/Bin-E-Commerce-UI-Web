@@ -8,7 +8,12 @@ import { AuthorizationTechnologyStack } from './AuthorizationTechnologyStack';
 export function AuthorizationArchitecture() {
     return (
         <section className="space-y-4">
-            <ShowcaseDisclosure id="authorization-architecture-flow" number="1.1" title="Luồng hoạt động của hệ thống" description="Một request được phép phải đúng identity, action và scope; một thay đổi policy phải được audit và làm mới access profile.">
+            <ShowcaseDisclosure
+                id="authorization-architecture-flow"
+                number="1.1"
+                title="Luồng hoạt động của hệ thống"
+                description="Một request được phép phải đúng identity, action và scope; một thay đổi policy phải được audit và làm mới access profile."
+            >
                 <AuthorizationActivityFlow />
             </ShowcaseDisclosure>
             <AuthorizationTechnologyStack />

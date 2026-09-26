@@ -31,13 +31,12 @@ function pickSellerDocuments(values: SellerRegisterFormValues) {
 function compactDocuments(
     documents: Record<string, SellerVerificationDocumentDto | undefined>,
 ) {
-    return Object.entries(documents).reduce<Record<string, SellerVerificationDocumentDto>>(
-        (result, [key, document]) => {
-            if (document) result[key] = document;
-            return result;
-        },
-        {},
-    );
+    return Object.entries(documents).reduce<
+        Record<string, SellerVerificationDocumentDto>
+    >((result, [key, document]) => {
+        if (document) result[key] = document;
+        return result;
+    }, {});
 }
 
 // Chỉ gửi đúng giấy tờ theo loại hồ sơ để backend không validate nhầm CCCD và mã số thuế cùng lúc.
@@ -47,7 +46,9 @@ function buildSellerIdentityPayload(values: SellerRegisterFormValues) {
     return {
         profileType: values.seller.profileType,
         legalName: optionalTrim(values.seller.legalName),
-        citizenId: isBusiness ? undefined : optionalTrim(values.seller.citizenId),
+        citizenId: isBusiness
+            ? undefined
+            : optionalTrim(values.seller.citizenId),
         taxCode: isBusiness ? optionalTrim(values.seller.taxCode) : undefined,
         representativeName: optionalTrim(values.seller.representativeName),
         representativeRole: optionalTrim(values.seller.representativeRole),
@@ -72,9 +73,13 @@ export function toSellerApplicationPayload(values: SellerRegisterFormValues) {
         pickupAddress: {
             contactName: optionalTrim(values.pickupAddress.contactName),
             phone: optionalTrim(values.pickupAddress.phone),
-            provinceId: values.pickupAddress.provinceId ? Number(values.pickupAddress.provinceId) : undefined,
+            provinceId: values.pickupAddress.provinceId
+                ? Number(values.pickupAddress.provinceId)
+                : undefined,
             provinceName: optionalTrim(values.pickupAddress.provinceName),
-            districtId: values.pickupAddress.districtId ? Number(values.pickupAddress.districtId) : undefined,
+            districtId: values.pickupAddress.districtId
+                ? Number(values.pickupAddress.districtId)
+                : undefined,
             districtName: optionalTrim(values.pickupAddress.districtName),
             wardCode: optionalTrim(values.pickupAddress.wardCode),
             wardName: optionalTrim(values.pickupAddress.wardName),

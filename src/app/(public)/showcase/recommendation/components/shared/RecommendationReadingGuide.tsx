@@ -1,5 +1,5 @@
 // Điều hướng người đọc qua request, kiến trúc rồi logic xếp hạng; không sao chép nội dung của các phần tài liệu.
-"use client";
+'use client';
 
 import { ArrowRight } from 'lucide-react';
 import { handleShowcaseAnchorNavigation } from '../../../utils/handleShowcaseAnchorNavigation';
@@ -12,7 +12,9 @@ export function RecommendationReadingGuide() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                     Lộ trình đọc
                 </p>
-                <span className="text-[10px] text-zinc-400">3 phần · theo thứ tự xử lý</span>
+                <span className="text-[10px] text-zinc-400">
+                    3 phần · theo thứ tự xử lý
+                </span>
             </div>
 
             <ol className="mt-2 divide-y divide-zinc-100 border-t border-zinc-200">
@@ -27,10 +29,17 @@ export function RecommendationReadingGuide() {
                             01
                         </span>
                         <span className="min-w-0 flex-1">
-                            <span className="block text-xs font-semibold text-zinc-900">Luồng gợi ý</span>
-                            <span className="mt-0.5 block text-[10px] leading-4 text-zinc-500">Từ ngữ cảnh đến danh sách kết quả</span>
+                            <span className="block text-xs font-semibold text-zinc-900">
+                                Luồng gợi ý
+                            </span>
+                            <span className="mt-0.5 block text-[10px] leading-4 text-zinc-500">
+                                Từ ngữ cảnh đến danh sách kết quả
+                            </span>
                         </span>
-                        <ArrowRight aria-hidden="true" className="size-3.5 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5" />
+                        <ArrowRight
+                            aria-hidden="true"
+                            className="size-3.5 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5"
+                        />
                     </a>
                 </li>
                 <li>
@@ -44,10 +53,17 @@ export function RecommendationReadingGuide() {
                             02
                         </span>
                         <span className="min-w-0 flex-1">
-                            <span className="block text-xs font-semibold text-zinc-900">Kiến trúc hệ thống</span>
-                            <span className="mt-0.5 block text-[10px] leading-4 text-zinc-500">Service và event đảm nhiệm bước nào?</span>
+                            <span className="block text-xs font-semibold text-zinc-900">
+                                Kiến trúc hệ thống
+                            </span>
+                            <span className="mt-0.5 block text-[10px] leading-4 text-zinc-500">
+                                Service và event đảm nhiệm bước nào?
+                            </span>
                         </span>
-                        <ArrowRight aria-hidden="true" className="size-3.5 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5" />
+                        <ArrowRight
+                            aria-hidden="true"
+                            className="size-3.5 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5"
+                        />
                     </a>
                 </li>
                 <li>
@@ -61,10 +77,17 @@ export function RecommendationReadingGuide() {
                             03
                         </span>
                         <span className="min-w-0 flex-1">
-                            <span className="block text-xs font-semibold text-zinc-900">Logic xếp hạng</span>
-                            <span className="mt-0.5 block text-[10px] leading-4 text-zinc-500">Nguồn ứng viên, điểm số và dự phòng</span>
+                            <span className="block text-xs font-semibold text-zinc-900">
+                                Logic xếp hạng
+                            </span>
+                            <span className="mt-0.5 block text-[10px] leading-4 text-zinc-500">
+                                Nguồn ứng viên, điểm số và dự phòng
+                            </span>
                         </span>
-                        <ArrowRight aria-hidden="true" className="size-3.5 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5" />
+                        <ArrowRight
+                            aria-hidden="true"
+                            className="size-3.5 shrink-0 text-zinc-400 transition-transform group-hover:translate-x-0.5"
+                        />
                     </a>
                 </li>
             </ol>

@@ -15,7 +15,9 @@ const shopEndpoint = (identifier: string) =>
 // Adapter giữ toàn bộ URL và HTTP method của public shop ở một boundary duy nhất.
 export const publicShopService = {
     // Đọc danh sách shop active cho trang khám phá; backend đã phân trang và chỉ trả dữ liệu public.
-    list: (params: { page?: number; pageSize?: number; search?: string } = {}) =>
+    list: (
+        params: { page?: number; pageSize?: number; search?: string } = {},
+    ) =>
         authorizedAxios
             .get<PublicShopListResponse>(`${API_VERSION}/shops`, { params })
             .then((response) => response.data),

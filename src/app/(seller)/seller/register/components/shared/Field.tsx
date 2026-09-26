@@ -22,9 +22,7 @@ export function Field({
         <div className="space-y-2">
             <Label htmlFor={htmlFor}>
                 {label}
-                {required ? (
-                    <span className="ml-1 text-red-500">*</span>
-                ) : null}
+                {required ? <span className="ml-1 text-red-500">*</span> : null}
             </Label>
             {children}
             {error ? <p className="text-xs text-red-600">{error}</p> : null}

@@ -73,11 +73,16 @@ export function AdminSellerApplicationsTable({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100">
-                        {loading ? <AdminSellerApplicationsTableSkeleton /> : null}
+                        {loading ? (
+                            <AdminSellerApplicationsTableSkeleton />
+                        ) : null}
 
                         {!loading && items.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-4 py-14 text-center">
+                                <td
+                                    colSpan={6}
+                                    className="px-4 py-14 text-center"
+                                >
                                     <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-zinc-100">
                                         <Store className="size-5 text-zinc-500" />
                                     </div>
@@ -85,7 +90,8 @@ export function AdminSellerApplicationsTable({
                                         Chưa có hồ sơ phù hợp
                                     </p>
                                     <p className="mt-1 text-sm text-zinc-500">
-                                        Thử đổi trạng thái hoặc từ khóa tìm kiếm.
+                                        Thử đổi trạng thái hoặc từ khóa tìm
+                                        kiếm.
                                     </p>
                                 </td>
                             </tr>
@@ -102,7 +108,10 @@ export function AdminSellerApplicationsTable({
                                               <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100">
                                                   {application.shop.logoUrl ? (
                                                       <img
-                                                          src={application.shop.logoUrl}
+                                                          src={
+                                                              application.shop
+                                                                  .logoUrl
+                                                          }
                                                           alt="Logo shop"
                                                           className="h-full w-full object-cover"
                                                       />
@@ -112,20 +121,26 @@ export function AdminSellerApplicationsTable({
                                               </div>
                                               <div className="min-w-0">
                                                   <p className="max-w-64 truncate font-semibold text-zinc-950">
-                                                      {getApplicationShopDisplayName(application)}
+                                                      {getApplicationShopDisplayName(
+                                                          application,
+                                                      )}
                                                   </p>
                                                   <p className="mt-1 max-w-64 truncate text-xs text-zinc-500">
-                                                      {application.shop.slug ?? 'Chưa có đường dẫn shop'}
+                                                      {application.shop.slug ??
+                                                          'Chưa có đường dẫn shop'}
                                                   </p>
                                               </div>
                                           </div>
                                       </td>
                                       <td className="px-4 py-4">
                                           <p className="max-w-56 truncate font-medium text-zinc-900">
-                                              {getApplicationOwnerSummary(application)}
+                                              {getApplicationOwnerSummary(
+                                                  application,
+                                              )}
                                           </p>
                                           <p className="mt-1 text-xs text-zinc-500">
-                                              {application.seller.profileType === 'business'
+                                              {application.seller
+                                                  .profileType === 'business'
                                                   ? 'Doanh nghiệp'
                                                   : 'Cá nhân / Hộ kinh doanh'}
                                           </p>
@@ -137,25 +152,36 @@ export function AdminSellerApplicationsTable({
                                       </td>
                                       <td className="px-4 py-4">
                                           <p className="max-w-52 truncate text-zinc-900">
-                                              {application.seller.email ?? application.userEmail}
+                                              {application.seller.email ??
+                                                  application.userEmail}
                                           </p>
                                           <p className="mt-1 text-xs text-zinc-500">
-                                              {application.seller.phone ?? 'Chưa có số điện thoại'}
+                                              {application.seller.phone ??
+                                                  'Chưa có số điện thoại'}
                                           </p>
                                       </td>
                                       <td className="px-4 py-4">
                                           <p className="text-zinc-900">
-                                              Gửi: {formatAdminDateTime(application.submittedAt)}
+                                              Gửi:{' '}
+                                              {formatAdminDateTime(
+                                                  application.submittedAt,
+                                              )}
                                           </p>
                                           <p className="mt-1 text-xs text-zinc-500">
-                                              Cập nhật: {formatAdminDateTime(application.updatedAt)}
+                                              Cập nhật:{' '}
+                                              {formatAdminDateTime(
+                                                  application.updatedAt,
+                                              )}
                                           </p>
                                       </td>
                                       <td className="px-4 py-4 text-right">
                                           <Link
                                               href={`/admin/sellers/applications/${application.id}`}
                                               className={cn(
-                                                  buttonVariants({ variant: 'outline', size: 'sm' }),
+                                                  buttonVariants({
+                                                      variant: 'outline',
+                                                      size: 'sm',
+                                                  }),
                                                   'rounded-lg',
                                               )}
                                           >

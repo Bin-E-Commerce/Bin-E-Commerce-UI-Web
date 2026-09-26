@@ -17,9 +17,10 @@ export const productService = {
     // Homepage dùng endpoint public qua API Gateway để không phụ thuộc trực tiếp URL nội bộ của product-service.
     listProducts: (params: ListProductsParams = {}) =>
         publicAxios
-            .get<
-                PaginatedProductResponse<PublicProduct>
-            >(`${API_VERSION}/products`, { params })
+            .get<PaginatedProductResponse<PublicProduct>>(
+                `${API_VERSION}/products`,
+                { params },
+            )
             .then((response) => response.data),
 
     // Lấy đầy đủ quan hệ của một sản phẩm; authorizedAxios vẫn cho phép anonymous nhưng gửi identity nếu customer đã đăng nhập để biết like của mình.

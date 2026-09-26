@@ -14,7 +14,10 @@ export function useRecommendationSessionId(): string | null {
     useEffect(() => {
         const syncSessionId = () => setSessionId(getRecommendationSessionId());
         syncSessionId();
-        window.addEventListener(RECOMMENDATION_SESSION_CHANGED_EVENT, syncSessionId);
+        window.addEventListener(
+            RECOMMENDATION_SESSION_CHANGED_EVENT,
+            syncSessionId,
+        );
         return () =>
             window.removeEventListener(
                 RECOMMENDATION_SESSION_CHANGED_EVENT,

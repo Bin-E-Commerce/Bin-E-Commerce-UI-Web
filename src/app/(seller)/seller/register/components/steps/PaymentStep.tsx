@@ -22,7 +22,9 @@ interface PaymentStepProps {
 export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
     // Lưu cả code và tên ngân hàng để backend không phải phụ thuộc label FE ở các lần đọc sau.
     const handleBankChange = (bankCode: string) => {
-        const selectedBank = BANK_OPTIONS.find((bank) => bank.value === bankCode);
+        const selectedBank = BANK_OPTIONS.find(
+            (bank) => bank.value === bankCode,
+        );
         onChange({
             bankCode,
             bankName: selectedBank?.label ?? '',
@@ -84,7 +86,10 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                     <Field
                         label="Ngân hàng"
                         htmlFor="bankName"
-                        error={errors['payout.bankCode'] ?? errors['payout.bankName']}
+                        error={
+                            errors['payout.bankCode'] ??
+                            errors['payout.bankName']
+                        }
                         required
                     >
                         <SellerCombobox

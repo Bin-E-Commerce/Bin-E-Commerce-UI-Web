@@ -43,7 +43,9 @@ export function GhnField<T extends GhnLocationOption>({
                             placeholder={`Chọn ${label.toLowerCase()}`}
                             disabled={disabled || Boolean(error)}
                             loading={loading}
-                            onChange={(value) => onChange(value, field.onChange)}
+                            onChange={(value) =>
+                                onChange(value, field.onChange)
+                            }
                         />
                     </FormControl>
                     <FormMessage />

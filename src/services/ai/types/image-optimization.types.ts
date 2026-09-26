@@ -4,10 +4,7 @@
 export type OptimizationMode = 'WHITE_BACKGROUND' | 'LIFESTYLE_BACKGROUND';
 export type ImageGenerationProfile = 'PREVIEW' | 'FINAL';
 export type LifestyleBackgroundPreset =
-    | 'MINIMAL_STUDIO'
-    | 'WARM_HOME'
-    | 'NATURAL_OUTDOOR'
-    | 'PREMIUM_DISPLAY';
+    'MINIMAL_STUDIO' | 'WARM_HOME' | 'NATURAL_OUTDOOR' | 'PREMIUM_DISPLAY';
 export type ImageOptimizationProcessingStage =
     | 'QUEUED'
     | 'FETCHING_SOURCE'
@@ -28,10 +25,7 @@ export type OptimizationFlowStepId =
     | 'UPDATE_PRODUCT'
     | 'APPLIED';
 export type OptimizationFlowStepState =
-    | 'PENDING'
-    | 'ACTIVE'
-    | 'COMPLETED'
-    | 'ERROR';
+    'PENDING' | 'ACTIVE' | 'COMPLETED' | 'ERROR';
 
 export interface OptimizationFlowStep {
     id: OptimizationFlowStepId;
@@ -94,11 +88,7 @@ export interface ImageOptimizationOverview {
 }
 
 export type ImageOptimizationImpactStatus =
-    | 'COLLECTING'
-    | 'READY'
-    | 'NO_BASELINE'
-    | 'ROLLED_BACK'
-    | 'UNAVAILABLE';
+    'COLLECTING' | 'READY' | 'NO_BASELINE' | 'ROLLED_BACK' | 'UNAVAILABLE';
 
 export interface ImageOptimizationImpactMetric {
     before: number;

@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
-import { ArrowLeft, LayoutDashboard, LogIn, ShieldAlert, Store } from 'lucide-react';
+import {
+    ArrowLeft,
+    LayoutDashboard,
+    LogIn,
+    ShieldAlert,
+    Store,
+} from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

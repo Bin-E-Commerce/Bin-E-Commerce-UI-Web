@@ -27,7 +27,8 @@ const DEFAULT_FILTERS: AccessControlFilters = {
 export function useAdminAccessControl() {
     const queryClient = useQueryClient();
     const [actionKey, setActionKey] = useState<string | null>(null);
-    const [filters, setFilters] = useState<AccessControlFilters>(DEFAULT_FILTERS);
+    const [filters, setFilters] =
+        useState<AccessControlFilters>(DEFAULT_FILTERS);
 
     const overviewQuery = useQuery({
         queryKey: ACCESS_CONTROL_OVERVIEW_QUERY_KEY,
@@ -101,9 +102,7 @@ export function useAdminAccessControl() {
             );
         },
         onSuccess: async (_response, variables) => {
-            toast.success(
-                variables.enabled ? 'Đã cấp quyền.' : 'Đã gỡ quyền.',
-            );
+            toast.success(variables.enabled ? 'Đã cấp quyền.' : 'Đã gỡ quyền.');
             await queryClient.invalidateQueries({
                 queryKey: ACCESS_CONTROL_OVERVIEW_QUERY_KEY,
             });

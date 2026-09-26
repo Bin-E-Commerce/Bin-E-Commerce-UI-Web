@@ -82,7 +82,9 @@ export function SellerRegisterStepContent({
                 <PickupAddressStep
                     values={formValues.pickupAddress}
                     errors={fieldErrors}
-                    onChange={(patch) => updateFormSection('pickupAddress', patch)}
+                    onChange={(patch) =>
+                        updateFormSection('pickupAddress', patch)
+                    }
                 />
             </div>
         );

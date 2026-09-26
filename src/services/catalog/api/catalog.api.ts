@@ -12,9 +12,10 @@ export const catalogService = {
     // Lấy danh mục từ catalog-service thông qua API Gateway để FE không cần biết URL nội bộ của service.
     listCategories: (params: ListCategoriesParams = {}) =>
         publicAxios
-            .get<
-                PaginatedCatalogResponse<CatalogCategory>
-            >(`${API_VERSION}/categories`, { params })
+            .get<PaginatedCatalogResponse<CatalogCategory>>(
+                `${API_VERSION}/categories`,
+                { params },
+            )
             .then((response) => response.data),
 
     // Lấy một category đã chọn để hiển thị đầy đủ đường dẫn và xác nhận đây là category lá.
@@ -32,8 +33,9 @@ export const catalogService = {
         },
     ) =>
         publicAxios
-            .get<
-                CatalogCategoryAttribute[]
-            >(`${API_VERSION}/categories/${categoryId}/attributes`, { params })
+            .get<CatalogCategoryAttribute[]>(
+                `${API_VERSION}/categories/${categoryId}/attributes`,
+                { params },
+            )
             .then((response) => response.data),
 };

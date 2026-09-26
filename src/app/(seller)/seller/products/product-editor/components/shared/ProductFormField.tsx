@@ -30,7 +30,9 @@ export function ProductFormField({
             <div className="flex items-center justify-between gap-3">
                 <Label htmlFor={htmlFor} className="text-sm text-zinc-900">
                     {label}
-                    {required ? <span className="ml-1 text-red-600">*</span> : null}
+                    {required ? (
+                        <span className="ml-1 text-red-600">*</span>
+                    ) : null}
                 </Label>
                 {labelExtra}
             </div>

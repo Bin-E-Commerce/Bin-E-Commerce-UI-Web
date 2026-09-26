@@ -153,7 +153,8 @@ export function AvatarUploadPanel() {
                     disabled={isUploading || !file}
                     onClick={() => {
                         resetSelection();
-                        if (fileInputRef.current) fileInputRef.current.value = '';
+                        if (fileInputRef.current)
+                            fileInputRef.current.value = '';
                     }}
                 >
                     <RotateCcw className="h-4 w-4" />
@@ -170,9 +171,7 @@ export function AvatarUploadPanel() {
                     ) : (
                         <Upload className="h-4 w-4" />
                     )}
-                    {isUploading
-                        ? 'Đang cập nhật...'
-                        : 'Lưu ảnh đại diện'}
+                    {isUploading ? 'Đang cập nhật...' : 'Lưu ảnh đại diện'}
                 </Button>
             </CardFooter>
         </Card>

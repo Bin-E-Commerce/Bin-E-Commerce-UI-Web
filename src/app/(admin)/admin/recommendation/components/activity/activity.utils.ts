@@ -1,6 +1,11 @@
 // Các hàm thuần chuyển dữ liệu activity thành nhãn dễ đọc; không sửa event hay account gốc.
 
-import { Eye, MousePointerClick, ShoppingCart, type LucideIcon } from 'lucide-react';
+import {
+    Eye,
+    MousePointerClick,
+    ShoppingCart,
+    type LucideIcon,
+} from 'lucide-react';
 
 // Định dạng timestamp theo locale Admin và trả dấu gạch ngang nếu event cũ chứa ngày không hợp lệ.
 export function formatActivityDate(value: string): string {
@@ -14,7 +19,10 @@ export function formatActivityDate(value: string): string {
 }
 
 // Chuyển mã event recommendation sang nhãn và icon để bảng không phải hiển thị enum backend.
-export function getInteractionMeta(interactionType: string): { label: string; icon: LucideIcon } {
+export function getInteractionMeta(interactionType: string): {
+    label: string;
+    icon: LucideIcon;
+} {
     if (interactionType === 'PRODUCT_CLICKED') {
         return { label: 'Đã xem chi tiết', icon: MousePointerClick };
     }
@@ -35,7 +43,10 @@ const readableLabels: Record<string, string> = {
 };
 
 // Đổi source/surface thành ngữ cảnh nghiệp vụ và vẫn có fallback cho enum mới từ backend.
-export function getReadableValue(value: string | null, fallback: string): string {
+export function getReadableValue(
+    value: string | null,
+    fallback: string,
+): string {
     if (!value) return fallback;
 
     return (

@@ -4,7 +4,10 @@ import type {
     AdminAccessRole,
     AdminRolePermission,
 } from '@/services/admin';
-import { GLOBAL_SCOPE, OWN_SHOP_SCOPE } from '../constants/access-control.constant';
+import {
+    GLOBAL_SCOPE,
+    OWN_SHOP_SCOPE,
+} from '../constants/access-control.constant';
 import type {
     AccessControlFilters,
     FilteredRolePermissionGroup,
@@ -209,7 +212,11 @@ export function filterRolePermissionGroups({
                     rolePermissions,
                 );
                 const { active, scope } = permissionState;
-                const locked = isCriticalAdminPermission(role, permission, scope);
+                const locked = isCriticalAdminPermission(
+                    role,
+                    permission,
+                    scope,
+                );
 
                 if (
                     filters.resource !== 'all' &&
@@ -238,7 +245,11 @@ export function getPermissionResourceOptions(
     permissions: AdminAccessPermission[] = [],
 ): string[] {
     return Array.from(
-        new Set(permissions.map((permission) => permission.resource).filter(Boolean)),
+        new Set(
+            permissions
+                .map((permission) => permission.resource)
+                .filter(Boolean),
+        ),
     ).sort((first, second) => first.localeCompare(second));
 }
 

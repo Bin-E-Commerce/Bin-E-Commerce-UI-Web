@@ -37,8 +37,12 @@ export function AdminRecommendationActivity({
     onActivityPageChange,
     onSelect,
 }: Props) {
-    const users: ActivityActor[] = actors.filter((actor) => actor.actorType === 'USER');
-    const selectedActor = users.find((actor) => actor.actorId === selectedUserId);
+    const users: ActivityActor[] = actors.filter(
+        (actor) => actor.actorType === 'USER',
+    );
+    const selectedActor = users.find(
+        (actor) => actor.actorId === selectedUserId,
+    );
 
     return (
         <div className="grid min-w-0 gap-4">

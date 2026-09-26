@@ -38,7 +38,9 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-md shadow-zinc-950/5">
                 <div className="border-b border-zinc-100 px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
-                        <p className="text-base font-semibold text-zinc-950">Xem trước</p>
+                        <p className="text-base font-semibold text-zinc-950">
+                            Xem trước
+                        </p>
                         <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
                             Storefront
                         </span>
@@ -54,7 +56,9 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                             // Hiển thị Object URL trước để người bán không phải chờ CDN phản hồi sau khi chọn ảnh.
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                                src={thumbnail.previewUrl || thumbnail.publicUrl}
+                                src={
+                                    thumbnail.previewUrl || thumbnail.publicUrl
+                                }
                                 alt={values.name || 'Ảnh xem trước sản phẩm'}
                                 className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
                             />
@@ -63,7 +67,9 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                                 <span className="flex size-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-zinc-200">
                                     <ImageOff className="size-7" />
                                 </span>
-                                <span className="text-sm font-medium">Chưa có ảnh sản phẩm</span>
+                                <span className="text-sm font-medium">
+                                    Chưa có ảnh sản phẩm
+                                </span>
                             </div>
                         )}
                         {thumbnail ? (
@@ -83,9 +89,12 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                         ) : null}
                     </div>
                     <p className="mt-4 line-clamp-2 min-h-12 text-base font-semibold leading-6 text-zinc-950">
-                        {values.name?.trim() || 'Tên sản phẩm sẽ hiển thị tại đây'}
+                        {values.name?.trim() ||
+                            'Tên sản phẩm sẽ hiển thị tại đây'}
                     </p>
-                    <p className="mt-3 text-2xl font-bold tracking-tight text-zinc-950">{formatPrice(lowestPrice)}</p>
+                    <p className="mt-3 text-2xl font-bold tracking-tight text-zinc-950">
+                        {formatPrice(lowestPrice)}
+                    </p>
 
                     <div className="mt-5 space-y-2.5 border-t border-zinc-100 pt-4 text-sm text-zinc-600">
                         <div className="flex items-center gap-3">
@@ -98,7 +107,9 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                             <span className="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
                                 <Package className="size-4" />
                             </span>
-                            <span>{values.variants?.length ?? 0} phân loại có sẵn</span>
+                            <span>
+                                {values.variants?.length ?? 0} phân loại có sẵn
+                            </span>
                         </div>
                     </div>
                 </div>

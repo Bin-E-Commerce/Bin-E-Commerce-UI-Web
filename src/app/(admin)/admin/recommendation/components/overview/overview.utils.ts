@@ -35,29 +35,43 @@ export function createDailyTimeline(
     const dailyByDate = new Map(daily.map((item) => [item.day, item]));
     const start = new Date(range.from);
     const end = new Date(range.to);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+    if (
+        Number.isNaN(start.getTime()) ||
+        Number.isNaN(end.getTime()) ||
+        start > end
+    ) {
         return sortDailyNewestFirst(daily);
     }
 
-    const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
-    const endDate = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()));
+    const cursor = new Date(
+        Date.UTC(
+            start.getUTCFullYear(),
+            start.getUTCMonth(),
+            start.getUTCDate(),
+        ),
+    );
+    const endDate = new Date(
+        Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()),
+    );
     const timeline: DailyActivity[] = [];
 
     // Duyệt theo ngày UTC để giữ khớp với trường day ISO mà Recommendation Service trả về.
     while (cursor <= endDate) {
         const day = cursor.toISOString().slice(0, 10);
-        timeline.push(dailyByDate.get(day) ?? {
-            day,
-            events: 0,
-            productViews: 0,
-            impressions: 0,
-            clicks: 0,
-            searches: 0,
-            cartAdds: 0,
-            cartRemovals: 0,
-            purchaseCompleted: 0,
-            purchaseReturned: 0,
-        });
+        timeline.push(
+            dailyByDate.get(day) ?? {
+                day,
+                events: 0,
+                productViews: 0,
+                impressions: 0,
+                clicks: 0,
+                searches: 0,
+                cartAdds: 0,
+                cartRemovals: 0,
+                purchaseCompleted: 0,
+                purchaseReturned: 0,
+            },
+        );
         cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
 

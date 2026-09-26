@@ -7,8 +7,13 @@ function text(value: string | null | undefined): string {
 }
 
 // Backend không lưu checkbox điều khoản như dữ liệu hồ sơ lâu dài, nên FE tự bật lại khi hồ sơ đã từng được gửi duyệt.
-function shouldRestoreAcceptedTerms(application: SellerApplicationDto): boolean {
-    return application.status === 'pending_review' || application.status === 'approved';
+function shouldRestoreAcceptedTerms(
+    application: SellerApplicationDto,
+): boolean {
+    return (
+        application.status === 'pending_review' ||
+        application.status === 'approved'
+    );
 }
 
 // Map hồ sơ seller đã lưu trong DB về đúng shape form để refresh trang vẫn thấy dữ liệu cũ.
@@ -62,5 +67,8 @@ export function toSellerRegisterFormValues(
 export function isSubmittedSellerApplication(
     application: SellerApplicationDto,
 ): boolean {
-    return application.status === 'pending_review' || application.status === 'approved';
+    return (
+        application.status === 'pending_review' ||
+        application.status === 'approved'
+    );
 }

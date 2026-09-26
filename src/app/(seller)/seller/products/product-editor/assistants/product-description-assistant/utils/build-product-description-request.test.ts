@@ -19,7 +19,14 @@ function createValues(): SellerProductCreateFormValues {
         sellerSku: '',
         condition: 'new',
         countryOfOrigin: '',
-        images: [{ assetId: 'asset-1', publicUrl: 'https://cdn.example.com/shoe.jpg', previewUrl: '', fileName: 'shoe.jpg' }],
+        images: [
+            {
+                assetId: 'asset-1',
+                publicUrl: 'https://cdn.example.com/shoe.jpg',
+                previewUrl: '',
+                fileName: 'shoe.jpg',
+            },
+        ],
         video: null,
         attributes: {},
         options: [],
@@ -31,7 +38,11 @@ function createValues(): SellerProductCreateFormValues {
 // Dùng category không có thuộc tính động để mapper không phụ thuộc Catalog Service trong unit test.
 function createReferences(): SellerProductCreateReferences {
     return {
-        category: { id: 'category-1', name: 'Giày dép', path: 'Thời trang > Giày dép' },
+        category: {
+            id: 'category-1',
+            name: 'Giày dép',
+            path: 'Thời trang > Giày dép',
+        },
         brand: null,
         attributes: [],
     };

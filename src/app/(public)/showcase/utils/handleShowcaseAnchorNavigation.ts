@@ -1,11 +1,16 @@
 // Điều hướng đến anchor trong tài liệu showcase; helper này không sở hữu nội dung, state hay dữ liệu runtime.
 import type { MouseEvent } from 'react';
 
-const highlightTimers = new WeakMap<HTMLElement, { fade: number; cleanup: number }>();
+const highlightTimers = new WeakMap<
+    HTMLElement,
+    { fade: number; cleanup: number }
+>();
 
 // Mở disclosure cha trước khi cuộn, giữ URL hash mặc định và nhấn viền đích trong thời gian ngắn để người đọc nhận biết vị trí.
 // Nếu anchor không tồn tại thì giữ nguyên hành vi link mặc định, tránh làm hỏng điều hướng khi một section bị thay đổi.
-export function handleShowcaseAnchorNavigation(event: MouseEvent<HTMLAnchorElement>) {
+export function handleShowcaseAnchorNavigation(
+    event: MouseEvent<HTMLAnchorElement>,
+) {
     const targetId = event.currentTarget.hash.slice(1);
     const target = document.getElementById(targetId);
 
@@ -19,7 +24,10 @@ export function handleShowcaseAnchorNavigation(event: MouseEvent<HTMLAnchorEleme
 
     window.requestAnimationFrame(() => {
         target.scrollIntoView({
-            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
+                .matches
+                ? 'auto'
+                : 'smooth',
             block: 'start',
         });
         target.focus({ preventScroll: true });
@@ -46,7 +54,10 @@ export function handleShowcaseAnchorNavigation(event: MouseEvent<HTMLAnchorEleme
         const fade = window.setTimeout(() => {
             target.classList.replace('outline-zinc-500', 'outline-transparent');
             const cleanup = window.setTimeout(() => {
-                target.classList.remove(...highlightClasses, 'outline-transparent');
+                target.classList.remove(
+                    ...highlightClasses,
+                    'outline-transparent',
+                );
                 highlightTimers.delete(target);
             }, 350);
             highlightTimers.set(target, { fade, cleanup });

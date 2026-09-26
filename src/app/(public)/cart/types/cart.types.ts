@@ -1,8 +1,8 @@
 // Type này mô tả response Cart Service mà frontend dùng cho active cart và các item đã thêm.
 // Snapshot chỉ phục vụ hiển thị; checkout sau này phải xác thực lại giá và tồn kho từ nguồn chính thức.
 
-export type CartOwnerType = "CUSTOMER" | "GUEST";
-export type CartStatus = "ACTIVE" | "CHECKED_OUT" | "ABANDONED";
+export type CartOwnerType = 'CUSTOMER' | 'GUEST';
+export type CartStatus = 'ACTIVE' | 'CHECKED_OUT' | 'ABANDONED';
 
 // Input gửi tới Add Item API; frontend không được gửi snapshot giá hoặc tồn kho.
 export interface AddCartItemInput {

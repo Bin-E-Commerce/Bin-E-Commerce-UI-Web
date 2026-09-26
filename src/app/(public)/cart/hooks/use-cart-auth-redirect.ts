@@ -18,9 +18,7 @@ export function useCartAuthRedirect() {
     const { initialized, accessToken, user } = useAppSelector(
         (state) => state.auth,
     );
-    const isAuthenticated = Boolean(
-        initialized && accessToken && user?.id,
-    );
+    const isAuthenticated = Boolean(initialized && accessToken && user?.id);
 
     // Chỉ quyết định đưa Guest sang login sau khi auth hydrate xong; trong lúc chờ, giữ route để tránh redirect sai khi refresh.
     function getProtectedHref(returnPath: string): string {

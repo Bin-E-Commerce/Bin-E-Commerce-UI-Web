@@ -24,7 +24,9 @@ export function AdminSellerApplicationDetailSection({
             )}
         >
             <div className="border-b border-zinc-100 px-5 py-4">
-                <h2 className="text-base font-semibold text-zinc-950">{title}</h2>
+                <h2 className="text-base font-semibold text-zinc-950">
+                    {title}
+                </h2>
                 {description ? (
                     <p className="mt-1 text-sm leading-6 text-zinc-500">
                         {description}

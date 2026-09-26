@@ -65,53 +65,47 @@ export function AvatarUploadStatus({
                         `Đang tải ảnh lên... ${uploadProgress}%`}
                     {phase === 'processing' &&
                         'Đang tối ưu ảnh để hiển thị nhanh hơn...'}
-                    {phase === 'saving' &&
-                        'Đang cập nhật ảnh đại diện...'}
+                    {phase === 'saving' && 'Đang cập nhật ảnh đại diện...'}
                     {phase === 'cleaning' && 'Đang hoàn tất...'}
                 </ProgressLabel>
-                <ProgressValue>
-                    {() => `${overallProgress}%`}
-                </ProgressValue>
+                <ProgressValue>{() => `${overallProgress}%`}</ProgressValue>
             </Progress>
 
             <ol className="grid grid-cols-3 gap-2">
-                {['Tải ảnh', 'Xử lý ảnh', 'Hoàn tất'].map(
-                    (label, index) => {
-                        const step = index + 1;
-                        const isComplete = currentStep > step;
-                        const isCurrent = currentStep === step;
+                {['Tải ảnh', 'Xử lý ảnh', 'Hoàn tất'].map((label, index) => {
+                    const step = index + 1;
+                    const isComplete = currentStep > step;
+                    const isCurrent = currentStep === step;
 
-                        return (
-                            <li
-                                key={label}
+                    return (
+                        <li
+                            key={label}
+                            className={cn(
+                                'flex min-w-0 items-center gap-2 text-xs text-zinc-400',
+                                (isComplete || isCurrent) && 'text-zinc-900',
+                            )}
+                        >
+                            <span
                                 className={cn(
-                                    'flex min-w-0 items-center gap-2 text-xs text-zinc-400',
-                                    (isComplete || isCurrent) &&
-                                        'text-zinc-900',
+                                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white',
+                                    isComplete &&
+                                        'border-zinc-950 bg-zinc-950 text-white',
+                                    isCurrent &&
+                                        'border-zinc-950 text-zinc-950',
                                 )}
                             >
-                                <span
-                                    className={cn(
-                                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white',
-                                        isComplete &&
-                                            'border-zinc-950 bg-zinc-950 text-white',
-                                        isCurrent &&
-                                            'border-zinc-950 text-zinc-950',
-                                    )}
-                                >
-                                    {isComplete ? (
-                                        <Check className="h-3.5 w-3.5" />
-                                    ) : isCurrent ? (
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                        step
-                                    )}
-                                </span>
-                                <span className="truncate">{label}</span>
-                            </li>
-                        );
-                    },
-                )}
+                                {isComplete ? (
+                                    <Check className="h-3.5 w-3.5" />
+                                ) : isCurrent ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    step
+                                )}
+                            </span>
+                            <span className="truncate">{label}</span>
+                        </li>
+                    );
+                })}
             </ol>
         </div>
     );

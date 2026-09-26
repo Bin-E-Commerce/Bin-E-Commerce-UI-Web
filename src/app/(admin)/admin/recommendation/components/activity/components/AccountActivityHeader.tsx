@@ -11,7 +11,10 @@ interface Props {
 }
 
 // Hiển thị tên/email/điện thoại và metrics của account đang xem; UUID không được đưa lên làm tiêu đề.
-export function AccountActivityHeader({ selectedActor, selectedUserId }: Props) {
+export function AccountActivityHeader({
+    selectedActor,
+    selectedUserId,
+}: Props) {
     const selectedAccount = selectedActor?.account;
 
     return (
@@ -48,7 +51,9 @@ export function AccountActivityHeader({ selectedActor, selectedUserId }: Props) 
                             {selectedAccount?.phone ? (
                                 <>
                                     <span className="text-zinc-300">·</span>
-                                    <span className="shrink-0">{selectedAccount.phone}</span>
+                                    <span className="shrink-0">
+                                        {selectedAccount.phone}
+                                    </span>
                                 </>
                             ) : null}
                         </p>
@@ -57,9 +62,21 @@ export function AccountActivityHeader({ selectedActor, selectedUserId }: Props) 
 
                 {selectedActor ? (
                     <div className="flex flex-wrap gap-2">
-                        <ActivityStat label="Tổng event" value={selectedActor.events} icon={Activity} />
-                        <ActivityStat label="Lượt click" value={selectedActor.clicks} icon={MousePointerClick} />
-                        <ActivityStat label="Thêm giỏ" value={selectedActor.cartAdds} icon={ShoppingCart} />
+                        <ActivityStat
+                            label="Tổng event"
+                            value={selectedActor.events}
+                            icon={Activity}
+                        />
+                        <ActivityStat
+                            label="Lượt click"
+                            value={selectedActor.clicks}
+                            icon={MousePointerClick}
+                        />
+                        <ActivityStat
+                            label="Thêm giỏ"
+                            value={selectedActor.cartAdds}
+                            icon={ShoppingCart}
+                        />
                     </div>
                 ) : null}
             </div>

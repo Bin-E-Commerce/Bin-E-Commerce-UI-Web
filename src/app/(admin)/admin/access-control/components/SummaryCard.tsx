@@ -13,9 +13,7 @@ export function SummaryCard({ label, value }: SummaryCardProps) {
                 <p className="text-sm text-zinc-500">{label}</p>
                 <ShieldCheck className="size-4 text-zinc-300" />
             </div>
-            <p className="mt-3 text-2xl font-semibold text-zinc-950">
-                {value}
-            </p>
+            <p className="mt-3 text-2xl font-semibold text-zinc-950">{value}</p>
         </div>
     );
 }

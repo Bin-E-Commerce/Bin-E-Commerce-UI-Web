@@ -15,4 +15,3 @@ export interface RankingWeightDetailsProps {
     signal: RankingWeightKey;
     weightPercent: number;
 }
-

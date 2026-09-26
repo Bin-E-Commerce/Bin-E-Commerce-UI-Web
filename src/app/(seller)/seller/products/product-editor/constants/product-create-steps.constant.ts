@@ -4,7 +4,8 @@ export const PRODUCT_CREATE_STEPS = [
     {
         id: 'basic',
         label: 'Thông tin cơ bản',
-        description: 'Ảnh, video, tên và ngành hàng giúp khách nhận diện sản phẩm.',
+        description:
+            'Ảnh, video, tên và ngành hàng giúp khách nhận diện sản phẩm.',
     },
     {
         id: 'details',
@@ -19,7 +20,8 @@ export const PRODUCT_CREATE_STEPS = [
     {
         id: 'shipping',
         label: 'Vận chuyển',
-        description: 'Kích thước và cân nặng đóng gói để tính phương án giao hàng.',
+        description:
+            'Kích thước và cân nặng đóng gói để tính phương án giao hàng.',
     },
     {
         id: 'other',

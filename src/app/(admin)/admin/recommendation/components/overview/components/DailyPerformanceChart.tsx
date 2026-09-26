@@ -32,7 +32,8 @@ export function DailyPerformanceChart({ daily, activeDays }: Props) {
                     Chưa có event recommendation trong khoảng thời gian này.
                 </p>
                 <p className="mt-1 text-xs text-zinc-500">
-                    Khi có impression hoặc click đủ attribution, biểu đồ sẽ tự cập nhật.
+                    Khi có impression hoặc click đủ attribution, biểu đồ sẽ tự
+                    cập nhật.
                 </p>
             </div>
         );

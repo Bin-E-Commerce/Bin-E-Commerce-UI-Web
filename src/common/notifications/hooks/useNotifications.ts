@@ -1,6 +1,10 @@
 'use client';
 
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+    useInfiniteQuery,
+    useMutation,
+    useQueryClient,
+} from '@tanstack/react-query';
 
 import { notificationService } from '@/services/notifications';
 import type {
@@ -11,7 +15,10 @@ import { useAppSelector } from '@/store/hooks';
 import { notificationQueryKeys } from '../constants/notification-query-keys.constant';
 
 // Feed chỉ tải khi popup mở; cursor giúp tải tiếp mà không làm thay đổi thứ tự notification đang hiển thị.
-export function useNotifications(status: NotificationReadStatus, enabled: boolean) {
+export function useNotifications(
+    status: NotificationReadStatus,
+    enabled: boolean,
+) {
     const { accessToken, user } = useAppSelector((state) => state.auth);
     const userId = user?.id ?? '';
 

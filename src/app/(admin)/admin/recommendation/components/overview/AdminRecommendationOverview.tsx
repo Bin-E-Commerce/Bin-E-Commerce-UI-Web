@@ -17,7 +17,11 @@ interface Props {
 }
 
 // Hiển thị trạng thái tải ban đầu hoặc ghép các panel từ cùng snapshot dữ liệu overview.
-export function AdminRecommendationOverview({ overview, rankingPerformance, loading }: Props) {
+export function AdminRecommendationOverview({
+    overview,
+    rankingPerformance,
+    loading,
+}: Props) {
     if (loading && !overview) {
         return (
             <div className="rounded-xl border border-zinc-200 bg-white p-8 text-sm text-zinc-500">

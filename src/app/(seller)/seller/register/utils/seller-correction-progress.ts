@@ -2,7 +2,10 @@ import type { SellerApplicationCorrectionTarget } from '@/services/seller';
 import type { SellerRegisterFormValues } from '../types/seller-register-form.type';
 
 // Mỗi target thuộc đúng một bước form; map tập trung giúp hook, stepper và nội dung step không tự suy luận khác nhau.
-const CORRECTION_TARGET_STEP: Record<SellerApplicationCorrectionTarget, number> = {
+const CORRECTION_TARGET_STEP: Record<
+    SellerApplicationCorrectionTarget,
+    number
+> = {
     shop_information: 0,
     shop_logo: 0,
     seller_identity: 1,
@@ -36,12 +39,16 @@ export function getChangedCorrectionTargets(
         changedTargets.push('seller_identity');
     }
     if (
-        getVerificationDocumentReplacementProgress(currentValues, rejectedValues)
-            .complete
+        getVerificationDocumentReplacementProgress(
+            currentValues,
+            rejectedValues,
+        ).complete
     ) {
         changedTargets.push('verification_documents');
     }
-    if (!isSameValue(currentValues.pickupAddress, rejectedValues.pickupAddress)) {
+    if (
+        !isSameValue(currentValues.pickupAddress, rejectedValues.pickupAddress)
+    ) {
         changedTargets.push('pickup_address');
     }
     if (!isSameValue(currentValues.payout, rejectedValues.payout)) {

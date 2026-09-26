@@ -77,13 +77,11 @@ export default function ProfileOrdersPage() {
     const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
     const ordersQuery = useCustomerOrders(filter, page);
     const images = useLegacyOrderPreviewImages(ordersQuery.data?.items ?? []);
-    const isOrdersLoading = ordersQuery.isPending || ordersQuery.isPlaceholderData;
+    const isOrdersLoading =
+        ordersQuery.isPending || ordersQuery.isPlaceholderData;
 
     // Đổi tab hoặc trang qua URL để browser back/refresh giữ đúng ngữ cảnh.
-    function navigate(
-        nextFilter: CustomerOrderFilter,
-        nextPage = 1,
-    ): void {
+    function navigate(nextFilter: CustomerOrderFilter, nextPage = 1): void {
         const next = new URLSearchParams();
         if (nextFilter.status) next.set('status', nextFilter.status);
         if (nextFilter.stage) next.set('stage', nextFilter.stage);
@@ -105,11 +103,15 @@ export default function ProfileOrdersPage() {
                                 Đơn hàng của tôi
                             </h1>
                             <p className="mt-2 text-sm text-zinc-500">
-                                Theo dõi đơn hàng từ lúc xác nhận đến khi hoàn tất.
+                                Theo dõi đơn hàng từ lúc xác nhận đến khi hoàn
+                                tất.
                             </p>
                         </div>
                         <div className="hidden size-12 items-center justify-center rounded-2xl bg-zinc-950 text-white sm:flex">
-                            <ClipboardList className="size-5" aria-hidden="true" />
+                            <ClipboardList
+                                className="size-5"
+                                aria-hidden="true"
+                            />
                         </div>
                     </header>
 
@@ -168,7 +170,8 @@ export default function ProfileOrdersPage() {
                                     item?.imageUrl ??
                                     images.get(item?.productId ?? '');
                                 // Đơn đã giao đang chờ khách xác nhận; CTA đưa thẳng đến detail để hoàn tất xác nhận và đánh giá.
-                                const needsCustomerConfirmation = order.fulfillmentStatus === 'DELIVERED';
+                                const needsCustomerConfirmation =
+                                    order.fulfillmentStatus === 'DELIVERED';
                                 const orderDetailHref = `/profile/orders/${order.id}`;
 
                                 return (
@@ -181,71 +184,95 @@ export default function ProfileOrdersPage() {
                                             className="group block p-5"
                                         >
                                             <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-                                            <div className="flex items-center gap-3">
-                                                <span className="flex size-9 items-center justify-center rounded-xl bg-zinc-950 text-white">
-                                                    <PackageSearch
-                                                        className="size-4"
-                                                        aria-hidden="true"
-                                                    />
-                                                </span>
-                                                <div>
-                                                    <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">
-                                                        Đơn hàng
-                                                    </p>
-                                                    <p className="font-bold text-zinc-950">
-                                                        {order.orderNumber}
-                                                    </p>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex size-9 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                                                        <PackageSearch
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
+                                                    </span>
+                                                    <div>
+                                                        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">
+                                                            Đơn hàng
+                                                        </p>
+                                                        <p className="font-bold text-zinc-950">
+                                                            {order.orderNumber}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <span className="text-sm text-zinc-500">COD</span>
+                                                <span className="text-sm text-zinc-500">
+                                                    COD
+                                                </span>
                                             </div>
 
                                             <div className="flex items-center gap-4 py-5">
-                                            <div className="size-20 shrink-0 overflow-hidden rounded-2xl bg-zinc-100">
-                                                {image ? (
-                                                    <img
-                                                        src={image}
-                                                        alt={item?.productName ?? ''}
-                                                        className="size-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <PackageSearch className="m-6 size-8 text-zinc-300" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h2 className="truncate font-semibold text-zinc-950">
-                                                    {item?.productName ?? 'Sản phẩm trong đơn hàng'}
-                                                </h2>
-                                                <p className="mt-1 truncate text-sm text-zinc-500">
-                                                    {item?.variantName ?? 'Sản phẩm chính hãng từ Bin E-Commerce'}
-                                                </p>
-                                                <p className="mt-2 text-xs text-zinc-400">
-                                                    {order.itemCount} sản phẩm · Số lượng {item?.quantity ?? order.itemCount}
-                                                </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-xs text-zinc-400">Tổng thanh toán</p>
-                                                <p className="mt-1 font-bold text-zinc-950">
-                                                    {formatPrice(order.totalAmount)}
-                                                </p>
-                                            </div>
+                                                <div className="size-20 shrink-0 overflow-hidden rounded-2xl bg-zinc-100">
+                                                    {image ? (
+                                                        <img
+                                                            src={image}
+                                                            alt={
+                                                                item?.productName ??
+                                                                ''
+                                                            }
+                                                            className="size-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <PackageSearch className="m-6 size-8 text-zinc-300" />
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <h2 className="truncate font-semibold text-zinc-950">
+                                                        {item?.productName ??
+                                                            'Sản phẩm trong đơn hàng'}
+                                                    </h2>
+                                                    <p className="mt-1 truncate text-sm text-zinc-500">
+                                                        {item?.variantName ??
+                                                            'Sản phẩm chính hãng từ Bin E-Commerce'}
+                                                    </p>
+                                                    <p className="mt-2 text-xs text-zinc-400">
+                                                        {order.itemCount} sản
+                                                        phẩm · Số lượng{' '}
+                                                        {item?.quantity ??
+                                                            order.itemCount}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs text-zinc-400">
+                                                        Tổng thanh toán
+                                                    </p>
+                                                    <p className="mt-1 font-bold text-zinc-950">
+                                                        {formatPrice(
+                                                            order.totalAmount,
+                                                        )}
+                                                    </p>
+                                                </div>
                                             </div>
 
                                             <div className="flex items-center justify-between border-t border-zinc-100 pt-4 text-xs text-zinc-500">
-                                            <span className="inline-flex items-center gap-2">
-                                                <CalendarDays className="size-3.5" aria-hidden="true" />
-                                                {formatDate(order.createdAt)}
-                                            </span>
-                                            <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap font-semibold text-zinc-950">
-                                                Xem chi tiết
-                                                <ChevronRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
-                                            </span>
+                                                <span className="inline-flex items-center gap-2">
+                                                    <CalendarDays
+                                                        className="size-3.5"
+                                                        aria-hidden="true"
+                                                    />
+                                                    {formatDate(
+                                                        order.createdAt,
+                                                    )}
+                                                </span>
+                                                <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap font-semibold text-zinc-950">
+                                                    Xem chi tiết
+                                                    <ChevronRight
+                                                        className="size-4 transition group-hover:translate-x-0.5"
+                                                        aria-hidden="true"
+                                                    />
+                                                </span>
                                             </div>
                                         </Link>
                                         {needsCustomerConfirmation ? (
                                             <CustomerOrderActions
                                                 orderId={order.id}
-                                                orderDetailHref={orderDetailHref}
+                                                orderDetailHref={
+                                                    orderDetailHref
+                                                }
                                             />
                                         ) : null}
                                     </article>
@@ -254,7 +281,8 @@ export default function ProfileOrdersPage() {
 
                             <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm">
                                 <span className="text-zinc-500">
-                                    Trang {ordersQuery.data.page} / {ordersQuery.data.totalPages || 1}
+                                    Trang {ordersQuery.data.page} /{' '}
+                                    {ordersQuery.data.totalPages || 1}
                                 </span>
                                 <div className="flex gap-2">
                                     <Button
@@ -262,7 +290,9 @@ export default function ProfileOrdersPage() {
                                         size="sm"
                                         className="cursor-pointer"
                                         disabled={page <= 1}
-                                        onClick={() => navigate(filter, page - 1)}
+                                        onClick={() =>
+                                            navigate(filter, page - 1)
+                                        }
                                     >
                                         Trước
                                     </Button>
@@ -270,8 +300,12 @@ export default function ProfileOrdersPage() {
                                         variant="outline"
                                         size="sm"
                                         className="cursor-pointer"
-                                        disabled={page >= ordersQuery.data.totalPages}
-                                        onClick={() => navigate(filter, page + 1)}
+                                        disabled={
+                                            page >= ordersQuery.data.totalPages
+                                        }
+                                        onClick={() =>
+                                            navigate(filter, page + 1)
+                                        }
                                     >
                                         Sau
                                     </Button>

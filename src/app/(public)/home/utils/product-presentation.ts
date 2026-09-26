@@ -13,7 +13,8 @@ export function selectCampaignProducts(
     const productsWithImage = products.filter((product) =>
         Boolean(getProductThumbnail(product)),
     );
-    const source = productsWithImage.length >= limit ? productsWithImage : products;
+    const source =
+        productsWithImage.length >= limit ? productsWithImage : products;
     const seenNames = new Set<string>();
     const seenImages = new Set<string>();
 

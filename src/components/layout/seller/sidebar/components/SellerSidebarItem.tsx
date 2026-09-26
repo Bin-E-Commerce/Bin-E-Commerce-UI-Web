@@ -71,18 +71,19 @@ export function SellerSidebarItem({
                     <span
                         className={cn(
                             'flex size-8 shrink-0 items-center justify-center rounded-md',
-                            active ? 'bg-white' : 'bg-zinc-100 group-hover:bg-white',
+                            active
+                                ? 'bg-white'
+                                : 'bg-zinc-100 group-hover:bg-white',
                         )}
                     >
                         <Icon
-                            className={cn(
-                                'size-4',
-                                active && 'text-zinc-950',
-                            )}
+                            className={cn('size-4', active && 'text-zinc-950')}
                         />
                     </span>
                     <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">{item.label}</span>
+                        <span className="block truncate font-medium">
+                            {item.label}
+                        </span>
                         <span
                             className={cn(
                                 'block truncate text-xs',
@@ -97,7 +98,9 @@ export function SellerSidebarItem({
                             className="ml-auto flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-5 text-white"
                             aria-label={`${item.badgeCount} thông báo chưa đọc`}
                         >
-                            {(item.badgeCount ?? 0) > 99 ? '99+' : item.badgeCount}
+                            {(item.badgeCount ?? 0) > 99
+                                ? '99+'
+                                : item.badgeCount}
                         </span>
                     ) : null}
                 </Link>

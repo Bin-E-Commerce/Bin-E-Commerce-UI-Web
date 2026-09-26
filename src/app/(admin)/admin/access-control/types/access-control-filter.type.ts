@@ -1,7 +1,4 @@
-import type {
-    AdminAccessPermission,
-    AdminAccessRole,
-} from '@/services/admin';
+import type { AdminAccessPermission, AdminAccessRole } from '@/services/admin';
 
 export type PermissionStatusFilter = 'all' | 'active' | 'inactive' | 'locked';
 

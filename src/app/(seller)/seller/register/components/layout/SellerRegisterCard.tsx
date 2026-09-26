@@ -43,9 +43,7 @@ export function SellerRegisterCard({
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-950">
                     {step.title}
                 </h2>
-                <p className="mt-1 text-sm text-zinc-600">
-                    {step.description}
-                </p>
+                <p className="mt-1 text-sm text-zinc-600">{step.description}</p>
             </div>
 
             <div className="p-5 sm:p-6">{children}</div>

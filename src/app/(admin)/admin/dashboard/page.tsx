@@ -1,5 +1,11 @@
 import Link from 'next/link';
-import { ArrowRight, ClipboardCheck, ShieldCheck, Store, UsersRound } from 'lucide-react';
+import {
+    ArrowRight,
+    ClipboardCheck,
+    ShieldCheck,
+    Store,
+    UsersRound,
+} from 'lucide-react';
 
 // Dashboard admin ưu tiên lối vào các nghiệp vụ cần xử lý trước, chưa hiển thị biểu đồ khi chưa có dữ liệu thật.
 export default function DashboardPage() {
@@ -13,8 +19,8 @@ export default function DashboardPage() {
                     Bảng điều khiển vận hành
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-                    Theo dõi các hàng chờ quan trọng, duyệt hồ sơ người bán và điều phối
-                    các module vận hành của sàn Bin E-Commerce.
+                    Theo dõi các hàng chờ quan trọng, duyệt hồ sơ người bán và
+                    điều phối các module vận hành của sàn Bin E-Commerce.
                 </p>
             </section>
 
@@ -33,7 +39,8 @@ export default function DashboardPage() {
                         Hồ sơ seller
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-500">
-                        Duyệt người bán mới, kiểm tra định danh và trạng thái shop.
+                        Duyệt người bán mới, kiểm tra định danh và trạng thái
+                        shop.
                     </p>
                 </Link>
 

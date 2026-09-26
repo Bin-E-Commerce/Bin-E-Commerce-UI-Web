@@ -32,7 +32,10 @@ export function RecommendationShowcase() {
                             asideContent={<RecommendationReadingGuide />}
                         />
 
-                        <ShowcaseTableOfContents variant="mobile" items={recommendationTableOfContents} />
+                        <ShowcaseTableOfContents
+                            variant="mobile"
+                            items={recommendationTableOfContents}
+                        />
 
                         <RecommendationRequestOverview />
 
@@ -105,7 +108,10 @@ export function RecommendationShowcase() {
                         </section>
                     </main>
 
-                    <ShowcaseTableOfContents variant="desktop" items={recommendationTableOfContents} />
+                    <ShowcaseTableOfContents
+                        variant="desktop"
+                        items={recommendationTableOfContents}
+                    />
                 </div>
             </div>
         </div>

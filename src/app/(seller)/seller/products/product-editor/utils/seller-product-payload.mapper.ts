@@ -40,7 +40,8 @@ export function toCreateSellerProductPayload(
                 categoryAttributeId: attribute.id,
                 // Lọc lần cuối ở boundary API để dữ liệu cũ hoặc option lỗi không thể gây 400 từ backend.
                 selectedOptionIds: value.selectedOptionIds.filter(
-                    (optionId) => isUuid(optionId) && validOptionIds.has(optionId),
+                    (optionId) =>
+                        isUuid(optionId) && validOptionIds.has(optionId),
                 ),
             });
             continue;

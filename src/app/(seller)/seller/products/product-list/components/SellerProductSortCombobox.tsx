@@ -76,8 +76,7 @@ export function SellerProductSortCombobox({
     const selectedOption =
         SORT_OPTIONS.find(
             (option) =>
-                option.sortBy === sortBy &&
-                option.sortOrder === sortOrder,
+                option.sortBy === sortBy && option.sortOrder === sortOrder,
         ) ?? SORT_OPTIONS[0];
 
     return (
@@ -89,9 +88,7 @@ export function SellerProductSortCombobox({
             }}
             itemToStringLabel={(option) => option?.label ?? ''}
             itemToStringValue={(option) => option?.id ?? ''}
-            isItemEqualToValue={(item, selected) =>
-                item.id === selected.id
-            }
+            isItemEqualToValue={(item, selected) => item.id === selected.id}
         >
             <ComboboxInput
                 aria-label="Sắp xếp sản phẩm"

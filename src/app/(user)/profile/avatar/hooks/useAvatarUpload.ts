@@ -43,7 +43,7 @@ export function useAvatarUpload() {
             .map((word) => word[0])
             .slice(-2)
             .join('')
-        .toUpperCase();
+            .toUpperCase();
     }, [user?.name]);
 
     // Thu hồi object URL tạm để trình duyệt không giữ bộ nhớ của ảnh preview sau khi đổi hoặc rời trang.

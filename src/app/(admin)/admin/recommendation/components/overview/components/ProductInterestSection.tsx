@@ -19,12 +19,18 @@ export function ProductInterestSection({ products }: Props) {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
                         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
-                            <PackageOpen className="size-5" aria-hidden="true" />
+                            <PackageOpen
+                                className="size-5"
+                                aria-hidden="true"
+                            />
                         </div>
                         <div>
-                            <h2 className="text-base font-semibold text-zinc-950">Sản phẩm được quan tâm</h2>
+                            <h2 className="text-base font-semibold text-zinc-950">
+                                Sản phẩm được quan tâm
+                            </h2>
                             <p className="mt-1 max-w-2xl text-sm leading-5 text-zinc-500">
-                                Xếp hạng theo tổng số lần người dùng tương tác với sản phẩm được gợi ý.
+                                Xếp hạng theo tổng số lần người dùng tương tác
+                                với sản phẩm được gợi ý.
                             </p>
                         </div>
                     </div>
@@ -57,9 +63,12 @@ export function ProductInterestSection({ products }: Props) {
             {products.length === 0 ? (
                 <div className="px-4 py-12 text-center">
                     <PackageOpen className="mx-auto size-9 text-zinc-300" />
-                    <p className="mt-3 text-sm font-semibold text-zinc-700">Chưa có dữ liệu sản phẩm</p>
+                    <p className="mt-3 text-sm font-semibold text-zinc-700">
+                        Chưa có dữ liệu sản phẩm
+                    </p>
                     <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-zinc-500">
-                        Khi recommendation phát sinh impression hoặc click, sản phẩm nổi bật sẽ xuất hiện ở đây.
+                        Khi recommendation phát sinh impression hoặc click, sản
+                        phẩm nổi bật sẽ xuất hiện ở đây.
                     </p>
                 </div>
             ) : null}
@@ -74,15 +83,22 @@ interface ProductInterestRowProps {
 }
 
 // Trình bày một sản phẩm kèm vị trí xếp hạng, volume tương tác, click và thêm giỏ.
-function ProductInterestRow({ product, rank, maxEvents }: ProductInterestRowProps) {
-    const clickRate = product.events > 0 ? (product.clicks / product.events) * 100 : 0;
+function ProductInterestRow({
+    product,
+    rank,
+    maxEvents,
+}: ProductInterestRowProps) {
+    const clickRate =
+        product.events > 0 ? (product.clicks / product.events) * 100 : 0;
     const activityWidth = `${Math.max(6, (product.events / maxEvents) * 100)}%`;
     const productName = product.productName ?? 'Chưa đồng bộ tên sản phẩm';
 
     return (
         <div className="grid min-w-0 gap-4 px-5 py-4 transition-colors hover:bg-zinc-50/70 xl:grid-cols-[minmax(0,1fr)_12rem_5rem] xl:items-center xl:gap-3 sm:px-6">
             <div className="flex min-w-0 items-center gap-4">
-                <span className={`flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${rank <= 3 ? 'bg-zinc-950 text-white' : 'bg-zinc-100 text-zinc-500'}`}>
+                <span
+                    className={`flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${rank <= 3 ? 'bg-zinc-950 text-white' : 'bg-zinc-100 text-zinc-500'}`}
+                >
                     {rank}
                 </span>
                 <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm">
@@ -113,7 +129,9 @@ function ProductInterestRow({ product, rank, maxEvents }: ProductInterestRowProp
                 <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-semibold text-zinc-800">
                         {product.events.toLocaleString('vi-VN')}{' '}
-                        <span className="font-normal text-zinc-500">tương tác</span>
+                        <span className="font-normal text-zinc-500">
+                            tương tác
+                        </span>
                     </span>
                     <span className="text-xs text-zinc-500">
                         {product.clicks.toLocaleString('vi-VN')} click{' '}
@@ -122,12 +140,17 @@ function ProductInterestRow({ product, rank, maxEvents }: ProductInterestRowProp
                     </span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-100">
-                    <div className="h-full rounded-full bg-zinc-950 transition-[width]" style={{ width: activityWidth }} />
+                    <div
+                        className="h-full rounded-full bg-zinc-950 transition-[width]"
+                        style={{ width: activityWidth }}
+                    />
                 </div>
             </div>
 
             <div className="ml-10 flex items-center justify-between gap-3 xl:ml-0 xl:block xl:text-right">
-                <span className="text-xs text-zinc-500 xl:hidden">Tỷ lệ click</span>
+                <span className="text-xs text-zinc-500 xl:hidden">
+                    Tỷ lệ click
+                </span>
                 <span className="inline-flex rounded-full bg-zinc-100 px-2.5 py-1 text-sm font-bold text-zinc-900">
                     {clickRate.toFixed(1)}%
                 </span>

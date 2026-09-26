@@ -10,9 +10,7 @@ import type {
 import type { CheckoutAddressFormState } from '@/app/(public)/checkout/schemas/checkout-address.schema';
 
 export type GhnLocationOption =
-    | GhnProvinceOption
-    | GhnDistrictOption
-    | GhnWardOption;
+    GhnProvinceOption | GhnDistrictOption | GhnWardOption;
 
 export interface AddressFormProps {
     pending: boolean;

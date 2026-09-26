@@ -95,7 +95,10 @@ export function useProductVideoUpload({
                 { shouldDirty: true, shouldValidate: true },
             );
             previewUrl = undefined;
-            if (previousVideo && isTemporaryPreviewUrl(previousVideo.previewUrl)) {
+            if (
+                previousVideo &&
+                isTemporaryPreviewUrl(previousVideo.previewUrl)
+            ) {
                 URL.revokeObjectURL(previousVideo.previewUrl);
                 void cleanupTemporaryVideo(previousVideo.assetId);
             }
@@ -120,7 +123,9 @@ export function useProductVideoUpload({
                     { assetId: video.assetId, purpose: 'product_video' },
                 ]);
             } catch {
-                toast.warning('Đã xóa video khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.');
+                toast.warning(
+                    'Đã xóa video khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.',
+                );
             }
         }
     };
@@ -179,6 +184,8 @@ async function cleanupTemporaryVideo(assetId: string): Promise<void> {
             { assetId, purpose: 'product_video' },
         ]);
     } catch {
-        toast.warning('Video cũ đã được thay khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.');
+        toast.warning(
+            'Video cũ đã được thay khỏi biểu mẫu nhưng chưa thể dọn file lưu trữ.',
+        );
     }
 }

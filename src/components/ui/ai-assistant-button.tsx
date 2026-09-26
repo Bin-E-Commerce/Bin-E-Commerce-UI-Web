@@ -36,7 +36,10 @@ interface AiAssistantButtonProps {
 }
 
 // Hiển thị đúng asset AI dùng chung, không chứa hành vi hoặc trạng thái nghiệp vụ.
-export function AiAssistantIcon({ className, size = 18 }: AiAssistantIconProps) {
+export function AiAssistantIcon({
+    className,
+    size = 18,
+}: AiAssistantIconProps) {
     return (
         <Image
             src="/images/icon/ai-icon.svg"
@@ -137,7 +140,9 @@ export function AiAssistantButton({
                 aria-hidden={!tooltipVisible}
                 className={cn(
                     'pointer-events-none absolute bottom-full right-0 z-40 mb-2 w-64 rounded-lg bg-zinc-950 px-3 py-2 text-left text-xs leading-5 text-white shadow-lg transition-[opacity,visibility] duration-200',
-                    tooltipVisible ? 'visible opacity-100' : 'invisible opacity-0',
+                    tooltipVisible
+                        ? 'visible opacity-100'
+                        : 'invisible opacity-0',
                 )}
             >
                 <span

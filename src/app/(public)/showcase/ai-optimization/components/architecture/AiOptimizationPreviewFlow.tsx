@@ -21,22 +21,46 @@ interface PreviewFlowStepProps {
 function StepBadge({ number }: { number: string }) {
     return (
         <span className="flex size-10 shrink-0 flex-col items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-800 shadow-sm shadow-zinc-950/5">
-            <span aria-hidden="true" className="text-[7px] font-semibold uppercase tracking-[0.12em] text-zinc-500">Bước</span>
-            <span aria-hidden="true" className="text-xs font-semibold leading-4 tabular-nums">{number}</span>
+            <span
+                aria-hidden="true"
+                className="text-[7px] font-semibold uppercase tracking-[0.12em] text-zinc-500"
+            >
+                Bước
+            </span>
+            <span
+                aria-hidden="true"
+                className="text-xs font-semibold leading-4 tabular-nums"
+            >
+                {number}
+            </span>
             <span className="sr-only">Bước {number}</span>
         </span>
     );
 }
 
 // Render một bước với cùng contract “làm gì, vì sao, đánh đổi” để người đọc hiểu cả UX lẫn lý do kiến trúc phía sau.
-function PreviewFlowStep({ number, phase, title, action, reason, tradeoff, technology, logicHref, logicLabel }: PreviewFlowStepProps) {
+function PreviewFlowStep({
+    number,
+    phase,
+    title,
+    action,
+    reason,
+    tradeoff,
+    technology,
+    logicHref,
+    logicLabel,
+}: PreviewFlowStepProps) {
     return (
         <article className="h-full rounded-2xl border border-zinc-200 bg-white p-3">
             <div className="flex items-start gap-3">
                 <StepBadge number={number} />
                 <div className="min-w-0 flex-1 pt-0.5">
-                    <p className="font-mono text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">{phase}</p>
-                    <h4 className="mt-1 text-sm font-semibold text-zinc-950">{title}</h4>
+                    <p className="font-mono text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+                        {phase}
+                    </p>
+                    <h4 className="mt-1 text-sm font-semibold text-zinc-950">
+                        {title}
+                    </h4>
                 </div>
                 {logicHref && logicLabel ? (
                     <a
@@ -54,22 +78,35 @@ function PreviewFlowStep({ number, phase, title, action, reason, tradeoff, techn
 
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 <div className="rounded-xl border border-zinc-100 bg-white p-3">
-                    <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-500">Làm gì?</p>
-                    <p className="mt-1 text-xs leading-5 text-zinc-700">{action}</p>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+                        Làm gì?
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-700">
+                        {action}
+                    </p>
                 </div>
                 <div className="rounded-xl border border-zinc-100 bg-white p-3">
-                    <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-500">Tại sao?</p>
-                    <p className="mt-1 text-xs leading-5 text-zinc-700">{reason}</p>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-500">
+                        Tại sao?
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-700">
+                        {reason}
+                    </p>
                 </div>
             </div>
 
             <div className="mt-2 flex items-start gap-2 text-[11px] leading-5 text-zinc-600">
-                <span className="shrink-0 font-semibold text-zinc-900">Đánh đổi</span>
+                <span className="shrink-0 font-semibold text-zinc-900">
+                    Đánh đổi
+                </span>
                 <span>{tradeoff}</span>
             </div>
 
-            {technology ? <div className="mt-3 border-t border-zinc-100 pt-3">{technology}</div> : null}
-
+            {technology ? (
+                <div className="mt-3 border-t border-zinc-100 pt-3">
+                    {technology}
+                </div>
+            ) : null}
         </article>
     );
 }
@@ -77,7 +114,10 @@ function PreviewFlowStep({ number, phase, title, action, reason, tradeoff, techn
 // Tạo điểm nối giữa các hàng để người đọc luôn biết flow tiếp tục xuống bước nào.
 function FlowConnector() {
     return (
-        <div className="flex justify-center py-2 text-zinc-400" aria-hidden="true">
+        <div
+            className="flex justify-center py-2 text-zinc-400"
+            aria-hidden="true"
+        >
             <ArrowDown className="size-4" />
         </div>
     );
@@ -95,10 +135,16 @@ export function AiOptimizationPreviewFlow() {
             <div className="rounded-2xl border border-zinc-200 bg-white p-2.5 sm:p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 px-1 pb-3">
                     <div>
-                        <p className="font-mono text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">Request → kiểm tra → worker → review</p>
-                        <p className="mt-1 text-xs font-medium text-zinc-800">Đọc theo mũi tên từ bước 01 đến bước 06</p>
+                        <p className="font-mono text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+                            Request → kiểm tra → worker → review
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-zinc-800">
+                            Đọc theo mũi tên từ bước 01 đến bước 06
+                        </p>
                     </div>
-                    <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 font-mono text-[10px] text-zinc-500">6 bước</span>
+                    <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 font-mono text-[10px] text-zinc-500">
+                        6 bước
+                    </span>
                 </div>
 
                 <ol className="mt-3">
@@ -106,45 +152,148 @@ export function AiOptimizationPreviewFlow() {
                         <PreviewFlowStep
                             number="01"
                             phase="Input"
-                            technology={(
+                            technology={
                                 <div>
                                     <div className="flex flex-wrap items-center justify-between gap-2">
-                                        <p className="font-mono text-[9px] font-medium uppercase tracking-[0.16em] text-zinc-500">Công nghệ phía sau bước này</p>
-                                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] text-zinc-500">Chọn 1 pipeline</span>
+                                        <p className="font-mono text-[9px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+                                            Công nghệ phía sau bước này
+                                        </p>
+                                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] text-zinc-500">
+                                            Chọn 1 pipeline
+                                        </span>
                                     </div>
                                     <div className="mt-2 grid gap-2 lg:grid-cols-2">
                                         <div className="rounded-xl border border-zinc-200 bg-white p-2.5">
-                                            <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-zinc-950">Nền trắng</p><span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">Local</span></div>
-                                            <p className="mt-1 text-[11px] leading-5 text-zinc-600"><code className="font-mono text-[10px] text-zinc-800">rembg/u2net</code> tách chủ thể, Pillow ghép nền trắng và xuất WebP. Không gọi OpenAI nên không phát sinh token/phí theo request.</p>
-                                            <p className="mt-1.5 text-[10px] leading-4 text-zinc-500"><strong className="font-semibold text-zinc-800">Chọn khi:</strong> cần nhanh, ổn định, tiết kiệm cho ảnh catalog.</p>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="text-xs font-semibold text-zinc-950">
+                                                    Nền trắng
+                                                </p>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">
+                                                    Local
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-[11px] leading-5 text-zinc-600">
+                                                <code className="font-mono text-[10px] text-zinc-800">
+                                                    rembg/u2net
+                                                </code>{' '}
+                                                tách chủ thể, Pillow ghép nền
+                                                trắng và xuất WebP. Không gọi
+                                                OpenAI nên không phát sinh
+                                                token/phí theo request.
+                                            </p>
+                                            <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">
+                                                <strong className="font-semibold text-zinc-800">
+                                                    Chọn khi:
+                                                </strong>{' '}
+                                                cần nhanh, ổn định, tiết kiệm
+                                                cho ảnh catalog.
+                                            </p>
                                         </div>
                                         <div className="rounded-xl border border-zinc-200 bg-white p-2.5">
-                                            <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-zinc-950">Lifestyle</p><span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">OpenAI</span></div>
-                                            <p className="mt-1 text-[11px] leading-5 text-zinc-600"><code className="font-mono text-[10px] text-zinc-800">OpenAILifestyleImageProvider</code> gọi <code className="font-mono text-[10px] text-zinc-800">gpt-image-2</code> để đổi bối cảnh, ánh sáng và mặt phẳng xung quanh sản phẩm.</p>
-                                            <p className="mt-1.5 text-[10px] leading-4 text-zinc-500"><strong className="font-semibold text-zinc-800">Đánh đổi:</strong> đẹp và linh hoạt hơn nhưng tốn phí, lâu hơn, cần seller review.</p>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="text-xs font-semibold text-zinc-950">
+                                                    Lifestyle
+                                                </p>
+                                                <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">
+                                                    OpenAI
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-[11px] leading-5 text-zinc-600">
+                                                <code className="font-mono text-[10px] text-zinc-800">
+                                                    OpenAILifestyleImageProvider
+                                                </code>{' '}
+                                                gọi{' '}
+                                                <code className="font-mono text-[10px] text-zinc-800">
+                                                    gpt-image-2
+                                                </code>{' '}
+                                                để đổi bối cảnh, ánh sáng và mặt
+                                                phẳng xung quanh sản phẩm.
+                                            </p>
+                                            <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">
+                                                <strong className="font-semibold text-zinc-800">
+                                                    Đánh đổi:
+                                                </strong>{' '}
+                                                đẹp và linh hoạt hơn nhưng tốn
+                                                phí, lâu hơn, cần seller review.
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="mt-2 rounded-xl border border-zinc-200 bg-white p-2.5">
                                         <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <p className="font-mono text-[9px] font-medium uppercase tracking-[0.16em] text-zinc-500">Hồ sơ chất lượng</p>
-                                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] text-zinc-500">Lifestyle / OpenAI</span>
+                                            <p className="font-mono text-[9px] font-medium uppercase tracking-[0.16em] text-zinc-500">
+                                                Hồ sơ chất lượng
+                                            </p>
+                                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[10px] text-zinc-500">
+                                                Lifestyle / OpenAI
+                                            </span>
                                         </div>
                                         <div className="mt-2 grid gap-2 lg:grid-cols-2">
                                             <div className="rounded-xl border border-zinc-200 bg-white p-2.5">
-                                                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-zinc-950">Preview</p><span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">Nhanh để duyệt</span></div>
-                                                <p className="mt-1 text-[11px] leading-5 text-zinc-600">Quality <code className="font-mono text-[10px] text-zinc-800">low</code>, kích thước provider <code className="font-mono text-[10px] text-zinc-800">1024×1024</code>, nén JPEG 65%, giới hạn cạnh 768px.</p>
-                                                <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">Mục tiêu là phản hồi nhanh và đủ rõ để seller kiểm tra bố cục, không phải bản dùng cuối.</p>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="text-xs font-semibold text-zinc-950">
+                                                        Preview
+                                                    </p>
+                                                    <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">
+                                                        Nhanh để duyệt
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 text-[11px] leading-5 text-zinc-600">
+                                                    Quality{' '}
+                                                    <code className="font-mono text-[10px] text-zinc-800">
+                                                        low
+                                                    </code>
+                                                    , kích thước provider{' '}
+                                                    <code className="font-mono text-[10px] text-zinc-800">
+                                                        1024×1024
+                                                    </code>
+                                                    , nén JPEG 65%, giới hạn
+                                                    cạnh 768px.
+                                                </p>
+                                                <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">
+                                                    Mục tiêu là phản hồi nhanh
+                                                    và đủ rõ để seller kiểm tra
+                                                    bố cục, không phải bản dùng
+                                                    cuối.
+                                                </p>
                                             </div>
                                             <div className="rounded-xl border border-zinc-200 bg-white p-2.5">
-                                                <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-zinc-950">Final</p><span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">Dùng sau khi duyệt</span></div>
-                                                <p className="mt-1 text-[11px] leading-5 text-zinc-600">Quality <code className="font-mono text-[10px] text-zinc-800">medium</code>, kích thước provider <code className="font-mono text-[10px] text-zinc-800">1024×1024</code>, nén JPEG 85%, giới hạn cạnh 1024px.</p>
-                                                <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">Được tạo trong trạng thái FINALIZING sau khi seller xác nhận và trước khi Product Service apply.</p>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="text-xs font-semibold text-zinc-950">
+                                                        Final
+                                                    </p>
+                                                    <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">
+                                                        Dùng sau khi duyệt
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 text-[11px] leading-5 text-zinc-600">
+                                                    Quality{' '}
+                                                    <code className="font-mono text-[10px] text-zinc-800">
+                                                        medium
+                                                    </code>
+                                                    , kích thước provider{' '}
+                                                    <code className="font-mono text-[10px] text-zinc-800">
+                                                        1024×1024
+                                                    </code>
+                                                    , nén JPEG 85%, giới hạn
+                                                    cạnh 1024px.
+                                                </p>
+                                                <p className="mt-1.5 text-[10px] leading-4 text-zinc-500">
+                                                    Được tạo trong trạng thái
+                                                    FINALIZING sau khi seller
+                                                    xác nhận và trước khi
+                                                    Product Service apply.
+                                                </p>
                                             </div>
                                         </div>
-                                        <p className="mt-2 text-[10px] leading-4 text-zinc-500">Nền trắng là pipeline local rembg/Pillow nên dùng giới hạn xử lý local riêng; bảng trên mô tả profile provider lifestyle.</p>
+                                        <p className="mt-2 text-[10px] leading-4 text-zinc-500">
+                                            Nền trắng là pipeline local
+                                            rembg/Pillow nên dùng giới hạn xử lý
+                                            local riêng; bảng trên mô tả profile
+                                            provider lifestyle.
+                                        </p>
                                     </div>
                                 </div>
-                            )}
+                            }
                             title="Chọn ảnh nguồn và kiểu hiển thị"
                             action="Seller chọn sản phẩm cần làm ảnh, ảnh nguồn đang dùng và kiểu nền trắng hoặc lifestyle."
                             reason="Nếu chọn nhầm sản phẩm hoặc ảnh nguồn, AI có thể tạo một ảnh đẹp nhưng không đúng hàng thật."

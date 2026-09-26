@@ -1,9 +1,7 @@
 // Trình bày luồng chấm điểm candidate và công thức Standard/AI-Enhanced trong trang showcase.
 // Component chỉ giải thích, không tự tính ranking; trọng số và quy tắc hiển thị phải khớp Recommendation Service.
 // Các số trong ví dụ là dữ liệu giả định, không được diễn giải thành xác suất mua hàng.
-import {
-    RankingWeightDetails,
-} from './RankingWeightDetails';
+import { RankingWeightDetails } from './RankingWeightDetails';
 import type { RankingWeightKey } from './RankingWeightDetails.types';
 import { RecommendationDisclosure } from '../shared/RecommendationDisclosure';
 import { RecommendationNumberedHeading } from '../shared/RecommendationNumberedHeading';
@@ -67,45 +65,141 @@ const scoreFeatures: ScoreFeature[] = [
 ];
 
 const workedExample = [
-    { name: 'Sở thích hồ sơ', meaning: 'Mức hợp với sở thích dài hạn theo sản phẩm, danh mục và thương hiệu.', score: '0,80', weight: '25%', contribution: '0,200' },
-    { name: 'Phiên hiện tại', meaning: 'Mức khớp với danh mục, thương hiệu và sản phẩm người dùng vừa xem.', score: '0,60', weight: '18%', contribution: '0,108' },
-    { name: 'Tương tự nội dung', meaning: 'Độ gần nội dung hoặc embedding giữa candidate và ngữ cảnh hiện tại.', score: '0,90', weight: '15%', contribution: '0,135' },
-    { name: 'Hành vi đi cùng', meaning: 'Mức candidate thường được xem, thêm giỏ hoặc mua cùng sản phẩm khác.', score: '0,50', weight: '10%', contribution: '0,050' },
-    { name: 'Phổ biến', meaning: 'Tín hiệu nhu cầu chung từ tổng đã bán và thứ hạng trending/best-selling.', score: '0,70', weight: '12%', contribution: '0,084' },
-    { name: 'Độ mới', meaning: 'Mức ưu tiên dành cho sản phẩm mới dựa trên tuổi trong catalog.', score: '0,55', weight: '8%', contribution: '0,044' },
-    { name: 'Chất lượng', meaning: 'Kết hợp rating, số review và khả năng còn hàng để phục vụ.', score: '0,90', weight: '8%', contribution: '0,072' },
-    { name: 'Khám phá', meaning: 'Cơ hội thử sản phẩm mới từ EXPLORE/NEWEST khi sở thích chưa rõ.', score: '0,00', weight: '4%', contribution: '0,000' },
+    {
+        name: 'Sở thích hồ sơ',
+        meaning:
+            'Mức hợp với sở thích dài hạn theo sản phẩm, danh mục và thương hiệu.',
+        score: '0,80',
+        weight: '25%',
+        contribution: '0,200',
+    },
+    {
+        name: 'Phiên hiện tại',
+        meaning:
+            'Mức khớp với danh mục, thương hiệu và sản phẩm người dùng vừa xem.',
+        score: '0,60',
+        weight: '18%',
+        contribution: '0,108',
+    },
+    {
+        name: 'Tương tự nội dung',
+        meaning:
+            'Độ gần nội dung hoặc embedding giữa candidate và ngữ cảnh hiện tại.',
+        score: '0,90',
+        weight: '15%',
+        contribution: '0,135',
+    },
+    {
+        name: 'Hành vi đi cùng',
+        meaning:
+            'Mức candidate thường được xem, thêm giỏ hoặc mua cùng sản phẩm khác.',
+        score: '0,50',
+        weight: '10%',
+        contribution: '0,050',
+    },
+    {
+        name: 'Phổ biến',
+        meaning:
+            'Tín hiệu nhu cầu chung từ tổng đã bán và thứ hạng trending/best-selling.',
+        score: '0,70',
+        weight: '12%',
+        contribution: '0,084',
+    },
+    {
+        name: 'Độ mới',
+        meaning:
+            'Mức ưu tiên dành cho sản phẩm mới dựa trên tuổi trong catalog.',
+        score: '0,55',
+        weight: '8%',
+        contribution: '0,044',
+    },
+    {
+        name: 'Chất lượng',
+        meaning: 'Kết hợp rating, số review và khả năng còn hàng để phục vụ.',
+        score: '0,90',
+        weight: '8%',
+        contribution: '0,072',
+    },
+    {
+        name: 'Khám phá',
+        meaning:
+            'Cơ hội thử sản phẩm mới từ EXPLORE/NEWEST khi sở thích chưa rõ.',
+        score: '0,00',
+        weight: '4%',
+        contribution: '0,000',
+    },
 ];
 
 // Giải thích dữ liệu đầu vào, phép tính từng bước và phần AI chỉ bổ sung vào baseline Standard.
 export function RecommendationScoring() {
     return (
         <section className="space-y-5">
-            <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white" aria-label="Luồng xếp hạng sản phẩm">
+            <section
+                className="overflow-hidden rounded-3xl border border-zinc-200 bg-white"
+                aria-label="Luồng xếp hạng sản phẩm"
+            >
                 <div className="border-b border-zinc-200 bg-zinc-50 px-5 py-4 sm:px-6">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-zinc-500">Luồng xếp hạng candidate</p>
-                    <p className="mt-1 text-sm leading-6 text-zinc-700">Hệ thống tính điểm theo chế độ Standard hoặc AI-Enhanced, sắp candidate theo điểm rồi áp dụng trộn nguồn cold-start (nếu có) và diversity trước khi trả danh sách.</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-zinc-500">
+                        Luồng xếp hạng candidate
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-zinc-700">
+                        Hệ thống tính điểm theo chế độ Standard hoặc
+                        AI-Enhanced, sắp candidate theo điểm rồi áp dụng trộn
+                        nguồn cold-start (nếu có) và diversity trước khi trả
+                        danh sách.
+                    </p>
                 </div>
                 <div className="grid gap-px bg-zinc-200 sm:grid-cols-2 xl:grid-cols-4">
                     <article className="bg-white p-4 sm:p-5">
-                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">01 · ĐẦU VÀO</p>
-                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">Candidate từ pool đã hợp nhất</h4>
-                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">Mỗi sản phẩm đi kèm dữ liệu sản phẩm, ngữ cảnh hồ sơ/phiên và thông tin nguồn đã tìm thấy.</p>
+                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">
+                            01 · ĐẦU VÀO
+                        </p>
+                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">
+                            Candidate từ pool đã hợp nhất
+                        </h4>
+                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">
+                            Mỗi sản phẩm đi kèm dữ liệu sản phẩm, ngữ cảnh hồ
+                            sơ/phiên và thông tin nguồn đã tìm thấy.
+                        </p>
                     </article>
                     <article className="bg-white p-4 sm:p-5">
-                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">02 · TẠO FEATURE</p>
-                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">Tạo 8 feature cho candidate</h4>
-                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">Feature đo mức phù hợp trong khoảng 0–1; tín hiệu không có dữ liệu hỗ trợ được tính bằng 0.</p>
+                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">
+                            02 · TẠO FEATURE
+                        </p>
+                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">
+                            Tạo 8 feature cho candidate
+                        </h4>
+                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">
+                            Feature đo mức phù hợp trong khoảng 0–1; tín hiệu
+                            không có dữ liệu hỗ trợ được tính bằng 0.
+                        </p>
                     </article>
                     <article className="bg-white p-4 sm:p-5">
-                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">03 · TÍNH ĐIỂM</p>
-                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">Standard hoặc AI-Enhanced</h4>
-                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">Standard cộng feature theo trọng số rồi trừ penalty (tối đa 0,15). AI-Enhanced pha điểm Standard với dự đoán AI; thiếu điểm AI hợp lệ thì giữ Standard.</p>
+                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">
+                            03 · TÍNH ĐIỂM
+                        </p>
+                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">
+                            Standard hoặc AI-Enhanced
+                        </h4>
+                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">
+                            Standard cộng feature theo trọng số rồi trừ penalty
+                            (tối đa 0,15). AI-Enhanced pha điểm Standard với dự
+                            đoán AI; thiếu điểm AI hợp lệ thì giữ Standard.
+                        </p>
                     </article>
                     <article className="bg-white p-4 sm:p-5">
-                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">04 · SẮP XẾP</p>
-                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">Sắp thứ tự và làm đa dạng</h4>
-                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">Sắp điểm giảm dần; nếu là COLD_START thì trộn theo quota nguồn, sau đó diversity giới hạn lặp danh mục, thương hiệu và shop. Các bước này có thể đổi thứ tự trả về.</p>
+                        <p className="font-mono text-[10px] font-semibold tracking-widest text-zinc-400">
+                            04 · SẮP XẾP
+                        </p>
+                        <h4 className="mt-2 text-sm font-semibold text-zinc-950">
+                            Sắp thứ tự và làm đa dạng
+                        </h4>
+                        <p className="mt-1.5 text-xs leading-5 text-zinc-600">
+                            Sắp điểm giảm dần; nếu là COLD_START thì trộn theo
+                            quota nguồn, sau đó diversity giới hạn lặp danh mục,
+                            thương hiệu và shop. Các bước này có thể đổi thứ tự
+                            trả về.
+                        </p>
                     </article>
                 </div>
             </section>
@@ -119,113 +213,298 @@ export function RecommendationScoring() {
                 variant="flow"
             >
                 <div className="min-w-0 space-y-4">
-                <section className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5" aria-label="Các bước tính điểm Standard">
-                    <header className="mb-3 border-b border-zinc-200 pb-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Cách đọc công thức</p>
-                        <h5 className="mt-1 text-sm font-semibold text-zinc-950">Mỗi ứng viên đi qua bốn bước tính điểm</h5>
-                    </header>
-                    <ol className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
-                            <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">Bước<span className="mt-1 font-mono text-xs font-semibold text-zinc-900">01</span></span>
-                            <h6 className="mt-2 text-xs font-semibold text-zinc-950">Tính 8 tín hiệu</h6>
-                            <p className="mt-1 text-[11px] leading-4 text-zinc-600">Mỗi tín hiệu của sản phẩm được chuẩn hóa về khoảng 0–1.</p>
-                        </li>
-                        <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
-                            <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">Bước<span className="mt-1 font-mono text-xs font-semibold text-zinc-900">02</span></span>
-                            <h6 className="mt-2 text-xs font-semibold text-zinc-950">Nhân trọng số</h6>
-                            <p className="mt-1 text-[11px] leading-4 text-zinc-600">Mặc định tổng trọng số là 100%; policy có thể đổi tỷ lệ và hệ thống chuẩn hóa lại.</p>
-                        </li>
-                        <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
-                            <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">Bước<span className="mt-1 font-mono text-xs font-semibold text-zinc-900">03</span></span>
-                            <h6 className="mt-2 text-xs font-semibold text-zinc-950">Trừ điểm không thích</h6>
-                            <p className="mt-1 text-[11px] leading-4 text-zinc-600">Preference âm ở sản phẩm, danh mục hoặc thương hiệu giảm theo thời gian (mặc định còn nửa sau 7 ngày); penalty tối đa 0,15.</p>
-                        </li>
-                        <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
-                            <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">Bước<span className="mt-1 font-mono text-xs font-semibold text-zinc-900">04</span></span>
-                            <h6 className="mt-2 text-xs font-semibold text-zinc-950">Giới hạn và xếp thứ tự</h6>
-                            <p className="mt-1 text-[11px] leading-4 text-zinc-600">Clamp về 0–1 rồi sắp điểm giảm dần; hòa điểm xét số đóng góp rồi productId. Cold-start và diversity có thể đổi thứ tự trả về.</p>
-                        </li>
-                    </ol>
-                    <div className="mt-3 flex flex-wrap gap-1.5 border-t border-zinc-100 pt-3" aria-label="Trọng số Standard mặc định">
-                        <span className="mr-1 self-center text-[10px] font-semibold text-zinc-500">Trọng số mặc định:</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Hồ sơ 25%</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Phiên 18%</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Ngữ nghĩa 15%</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Hành vi 10%</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Phổ biến 12%</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Độ mới 8%</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Chất lượng 8%</span>
-                        <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">Khám phá 4%</span>
-                    </div>
-                </section>
-
-                <div className="space-y-3">
-                    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Bước 1 · Tính điểm Standard</p>
-                        <code className="mt-3 block overflow-x-auto rounded-xl border border-zinc-200 bg-white px-4 py-3 font-mono text-xs leading-6 text-zinc-900 sm:text-sm">
-                            S_standard = clamp(Σ(featureᵢ × weightᵢ) − negativePenalty, 0, 1)
-                            <br />Σ weightᵢ = 1 &nbsp;·&nbsp; 0 ≤ negativePenalty ≤ 0,15
-                        </code>
-                        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                            <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Feature:</strong> độ phù hợp theo một tín hiệu; mỗi tín hiệu nằm trong khoảng 0–1.</p>
-                            <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Weight:</strong> mức ảnh hưởng của tín hiệu. Tám trọng số được chuẩn hóa để tổng bằng 100%.</p>
-                            <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Điểm phạt:</strong> trừ phần sở thích tiêu cực đã ghi nhận; giới hạn tối đa 0,15.</p>
-                            <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Clamp:</strong> chặn điểm cuối trong khoảng 0–1, không âm hoặc vượt trần.</p>
+                    <section
+                        className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5"
+                        aria-label="Các bước tính điểm Standard"
+                    >
+                        <header className="mb-3 border-b border-zinc-200 pb-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                Cách đọc công thức
+                            </p>
+                            <h5 className="mt-1 text-sm font-semibold text-zinc-950">
+                                Mỗi ứng viên đi qua bốn bước tính điểm
+                            </h5>
+                        </header>
+                        <ol className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
+                                <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">
+                                    Bước
+                                    <span className="mt-1 font-mono text-xs font-semibold text-zinc-900">
+                                        01
+                                    </span>
+                                </span>
+                                <h6 className="mt-2 text-xs font-semibold text-zinc-950">
+                                    Tính 8 tín hiệu
+                                </h6>
+                                <p className="mt-1 text-[11px] leading-4 text-zinc-600">
+                                    Mỗi tín hiệu của sản phẩm được chuẩn hóa về
+                                    khoảng 0–1.
+                                </p>
+                            </li>
+                            <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
+                                <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">
+                                    Bước
+                                    <span className="mt-1 font-mono text-xs font-semibold text-zinc-900">
+                                        02
+                                    </span>
+                                </span>
+                                <h6 className="mt-2 text-xs font-semibold text-zinc-950">
+                                    Nhân trọng số
+                                </h6>
+                                <p className="mt-1 text-[11px] leading-4 text-zinc-600">
+                                    Mặc định tổng trọng số là 100%; policy có
+                                    thể đổi tỷ lệ và hệ thống chuẩn hóa lại.
+                                </p>
+                            </li>
+                            <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
+                                <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">
+                                    Bước
+                                    <span className="mt-1 font-mono text-xs font-semibold text-zinc-900">
+                                        03
+                                    </span>
+                                </span>
+                                <h6 className="mt-2 text-xs font-semibold text-zinc-950">
+                                    Trừ điểm không thích
+                                </h6>
+                                <p className="mt-1 text-[11px] leading-4 text-zinc-600">
+                                    Preference âm ở sản phẩm, danh mục hoặc
+                                    thương hiệu giảm theo thời gian (mặc định
+                                    còn nửa sau 7 ngày); penalty tối đa 0,15.
+                                </p>
+                            </li>
+                            <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
+                                <span className="flex size-9 flex-col items-center justify-center rounded-lg border border-zinc-200 bg-white text-[8px] font-medium uppercase leading-none text-zinc-500">
+                                    Bước
+                                    <span className="mt-1 font-mono text-xs font-semibold text-zinc-900">
+                                        04
+                                    </span>
+                                </span>
+                                <h6 className="mt-2 text-xs font-semibold text-zinc-950">
+                                    Giới hạn và xếp thứ tự
+                                </h6>
+                                <p className="mt-1 text-[11px] leading-4 text-zinc-600">
+                                    Clamp về 0–1 rồi sắp điểm giảm dần; hòa điểm
+                                    xét số đóng góp rồi productId. Cold-start và
+                                    diversity có thể đổi thứ tự trả về.
+                                </p>
+                            </li>
+                        </ol>
+                        <div
+                            className="mt-3 flex flex-wrap gap-1.5 border-t border-zinc-100 pt-3"
+                            aria-label="Trọng số Standard mặc định"
+                        >
+                            <span className="mr-1 self-center text-[10px] font-semibold text-zinc-500">
+                                Trọng số mặc định:
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Hồ sơ 25%
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Phiên 18%
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Ngữ nghĩa 15%
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Hành vi 10%
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Phổ biến 12%
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Độ mới 8%
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Chất lượng 8%
+                            </span>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] text-zinc-600">
+                                Khám phá 4%
+                            </span>
                         </div>
                     </section>
 
                     <div className="space-y-3">
-                      <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-                        <div className="flex flex-wrap items-end justify-between gap-2">
-                            <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Bước 2 · Nhân từng tín hiệu với trọng số</p>
-                                <p className="mt-1 text-xs leading-5 text-zinc-600">Bảng này giải thích đúng vai trò của Standard: mỗi tín hiệu có ý nghĩa và nguồn điểm riêng, sau đó mới nhân với weight để tạo phần đóng góp. Đây là phép tính xác định, không phải prediction từ model AI.</p>
+                        <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                Bước 1 · Tính điểm Standard
+                            </p>
+                            <code className="mt-3 block overflow-x-auto rounded-xl border border-zinc-200 bg-white px-4 py-3 font-mono text-xs leading-6 text-zinc-900 sm:text-sm">
+                                S_standard = clamp(Σ(featureᵢ × weightᵢ) −
+                                negativePenalty, 0, 1)
+                                <br />Σ weightᵢ = 1 &nbsp;·&nbsp; 0 ≤
+                                negativePenalty ≤ 0,15
+                            </code>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                                <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
+                                    <strong className="text-zinc-900">
+                                        Feature:
+                                    </strong>{' '}
+                                    độ phù hợp theo một tín hiệu; mỗi tín hiệu
+                                    nằm trong khoảng 0–1.
+                                </p>
+                                <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
+                                    <strong className="text-zinc-900">
+                                        Weight:
+                                    </strong>{' '}
+                                    mức ảnh hưởng của tín hiệu. Tám trọng số
+                                    được chuẩn hóa để tổng bằng 100%.
+                                </p>
+                                <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
+                                    <strong className="text-zinc-900">
+                                        Điểm phạt:
+                                    </strong>{' '}
+                                    trừ phần sở thích tiêu cực đã ghi nhận; giới
+                                    hạn tối đa 0,15.
+                                </p>
+                                <p className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
+                                    <strong className="text-zinc-900">
+                                        Clamp:
+                                    </strong>{' '}
+                                    chặn điểm cuối trong khoảng 0–1, không âm
+                                    hoặc vượt trần.
+                                </p>
                             </div>
-                            <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[10px] font-medium text-zinc-600">8 tín hiệu · tổng trọng số 100%</span>
-                        </div>
-                         <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200">
-                             <table className="min-w-[760px] w-full table-fixed border-collapse text-left text-[11px] leading-5">
-                                 <caption className="sr-only">Ý nghĩa, điểm đầu vào, trọng số và phần đóng góp của từng tín hiệu Standard</caption>
-                                 <colgroup>
-                                     <col className="w-[24%]" />
-                                     <col className="w-[44%]" />
-                                     <col className="w-[16%]" />
-                                     <col className="w-[16%]" />
-                                 </colgroup>
-                                 <thead className="bg-zinc-50 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
-                                      <tr><th className="px-3 py-2.5">Tín hiệu</th><th className="px-3 py-2.5">Ý nghĩa / nguồn điểm</th><th className="px-3 py-2.5 text-right">Điểm · weight</th><th className="px-3 py-2.5 text-right">Đóng góp</th></tr>
-                                 </thead>
-                                 <tbody className="divide-y divide-zinc-100 text-zinc-600">
-                                     {workedExample.map((row) => (
-                                         <tr key={row.name}>
-                                             <td className="px-3 py-2.5 font-mono text-zinc-900">{row.name}</td>
-                                             <td className="px-3 py-2.5 text-zinc-600">{row.meaning}</td>
-                                             <td className="px-3 py-2.5 text-right font-mono text-zinc-700">{row.score}<span className="mx-1 text-zinc-300">·</span>{row.weight}</td>
-                                             <td className="px-3 py-2.5 text-right font-mono font-semibold text-zinc-900">{row.score} × {row.weight.replace('%', '')}% = {row.contribution}</td>
-                                         </tr>
-                                     ))}
-                                 </tbody>
-                             </table>
-                         </div>
-                         <p className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-[11px] leading-5 text-zinc-600"><strong className="text-zinc-900">Cách đọc:</strong> ví dụ “Sở thích hồ sơ” có điểm 0,80 và trọng số 25%, nên đóng góp <span className="font-mono">0,80 × 0,25 = 0,200</span>. Cộng tám đóng góp được 0,693 trước khi trừ penalty.</p>
-                      </section>
+                        </section>
 
-                        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                            <div className="rounded-2xl border border-zinc-200 bg-white p-3">
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Bước 3 · Cộng đóng góp</p>
-                                <p className="mt-1 text-sm text-zinc-700">Tổng có trọng số <strong className="font-mono text-zinc-950">0,693</strong></p>
-                            </div>
-                            <span aria-hidden="true" className="hidden text-zinc-400 sm:block">−</span>
-                            <div className="rounded-2xl border border-zinc-200 bg-white p-3">
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Bước 4 · Trừ phạt, rồi giới hạn</p>
-                                <p className="mt-1 text-sm text-zinc-700"><span className="font-mono">0,693 − 0,040</span> phạt giả định = <strong className="font-mono text-zinc-950">0,653</strong> Standard</p>
+                        <div className="space-y-3">
+                            <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
+                                <div className="flex flex-wrap items-end justify-between gap-2">
+                                    <div>
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                            Bước 2 · Nhân từng tín hiệu với
+                                            trọng số
+                                        </p>
+                                        <p className="mt-1 text-xs leading-5 text-zinc-600">
+                                            Bảng này giải thích đúng vai trò của
+                                            Standard: mỗi tín hiệu có ý nghĩa và
+                                            nguồn điểm riêng, sau đó mới nhân
+                                            với weight để tạo phần đóng góp. Đây
+                                            là phép tính xác định, không phải
+                                            prediction từ model AI.
+                                        </p>
+                                    </div>
+                                    <span className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[10px] font-medium text-zinc-600">
+                                        8 tín hiệu · tổng trọng số 100%
+                                    </span>
+                                </div>
+                                <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200">
+                                    <table className="min-w-[760px] w-full table-fixed border-collapse text-left text-[11px] leading-5">
+                                        <caption className="sr-only">
+                                            Ý nghĩa, điểm đầu vào, trọng số và
+                                            phần đóng góp của từng tín hiệu
+                                            Standard
+                                        </caption>
+                                        <colgroup>
+                                            <col className="w-[24%]" />
+                                            <col className="w-[44%]" />
+                                            <col className="w-[16%]" />
+                                            <col className="w-[16%]" />
+                                        </colgroup>
+                                        <thead className="bg-zinc-50 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                                            <tr>
+                                                <th className="px-3 py-2.5">
+                                                    Tín hiệu
+                                                </th>
+                                                <th className="px-3 py-2.5">
+                                                    Ý nghĩa / nguồn điểm
+                                                </th>
+                                                <th className="px-3 py-2.5 text-right">
+                                                    Điểm · weight
+                                                </th>
+                                                <th className="px-3 py-2.5 text-right">
+                                                    Đóng góp
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-100 text-zinc-600">
+                                            {workedExample.map((row) => (
+                                                <tr key={row.name}>
+                                                    <td className="px-3 py-2.5 font-mono text-zinc-900">
+                                                        {row.name}
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-zinc-600">
+                                                        {row.meaning}
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-right font-mono text-zinc-700">
+                                                        {row.score}
+                                                        <span className="mx-1 text-zinc-300">
+                                                            ·
+                                                        </span>
+                                                        {row.weight}
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-right font-mono font-semibold text-zinc-900">
+                                                        {row.score} ×{' '}
+                                                        {row.weight.replace(
+                                                            '%',
+                                                            '',
+                                                        )}
+                                                        % = {row.contribution}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 text-[11px] leading-5 text-zinc-600">
+                                    <strong className="text-zinc-900">
+                                        Cách đọc:
+                                    </strong>{' '}
+                                    ví dụ “Sở thích hồ sơ” có điểm 0,80 và trọng
+                                    số 25%, nên đóng góp{' '}
+                                    <span className="font-mono">
+                                        0,80 × 0,25 = 0,200
+                                    </span>
+                                    . Cộng tám đóng góp được 0,693 trước khi trừ
+                                    penalty.
+                                </p>
+                            </section>
+
+                            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                                <div className="rounded-2xl border border-zinc-200 bg-white p-3">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                                        Bước 3 · Cộng đóng góp
+                                    </p>
+                                    <p className="mt-1 text-sm text-zinc-700">
+                                        Tổng có trọng số{' '}
+                                        <strong className="font-mono text-zinc-950">
+                                            0,693
+                                        </strong>
+                                    </p>
+                                </div>
+                                <span
+                                    aria-hidden="true"
+                                    className="hidden text-zinc-400 sm:block"
+                                >
+                                    −
+                                </span>
+                                <div className="rounded-2xl border border-zinc-200 bg-white p-3">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                                        Bước 4 · Trừ phạt, rồi giới hạn
+                                    </p>
+                                    <p className="mt-1 text-sm text-zinc-700">
+                                        <span className="font-mono">
+                                            0,693 − 0,040
+                                        </span>{' '}
+                                        phạt giả định ={' '}
+                                        <strong className="font-mono text-zinc-950">
+                                            0,653
+                                        </strong>{' '}
+                                        Standard
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
+                        <p className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-xs leading-5 text-zinc-600">
+                            <strong className="text-zinc-900">
+                                Cách đọc kết quả:
+                            </strong>{' '}
+                            0,653 là điểm dùng để so thứ tự các ứng viên trong
+                            lần gợi ý này,{' '}
+                            <strong>không phải xác suất mua 65,3%</strong>. Ví
+                            dụ là số giả định để minh họa.
+                        </p>
                     </div>
-
-                <p className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-xs leading-5 text-zinc-600"><strong className="text-zinc-900">Cách đọc kết quả:</strong> 0,653 là điểm dùng để so thứ tự các ứng viên trong lần gợi ý này, <strong>không phải xác suất mua 65,3%</strong>. Ví dụ là số giả định để minh họa.</p>
-                </div>
                 </div>
             </RecommendationDisclosure>
 
@@ -237,39 +516,80 @@ export function RecommendationScoring() {
                 level={4}
                 variant="flow"
             >
-                    <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white" aria-label="Hướng dẫn đọc điểm tiêu chí">
-                        <header className="relative flex flex-wrap items-center justify-between gap-4 bg-white px-4 py-4 after:absolute after:inset-x-5 after:bottom-0 after:h-px after:bg-zinc-200 after:content-[''] sm:px-5 sm:after:inset-x-6">
-                            <div className="min-w-0">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Hướng dẫn</p>
-                                <h5 className="mt-1 text-sm font-semibold text-zinc-950">Cách đọc một tiêu chí</h5>
-                                <p className="mt-1 max-w-3xl text-xs leading-5 text-zinc-600">Mỗi tiêu chí tạo một phần đóng góp vào điểm Standard; điểm feature và trọng số là hai giá trị khác nhau.</p>
-                            </div>
-                            <div className="flex shrink-0 flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white px-3 py-2">
-                                <span className="text-[9px] font-semibold uppercase tracking-wide text-zinc-500">Cách tính đóng góp</span>
-                                <span className="font-mono text-xs font-medium text-zinc-900">điểm feature × trọng số</span>
-                            </div>
-                        </header>
-                        <div className="bg-white p-4 sm:p-5">
-                            <div className="grid gap-3 md:grid-cols-3">
-                                <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
-                                    <p className="font-semibold text-zinc-900">1. Điểm feature · 0–1</p>
-                                    <p className="mt-1">Đo mức phù hợp của sản phẩm theo riêng tiêu chí này: 0 là không có tín hiệu phù hợp, 1 là mức tối đa của công thức.</p>
-                                </div>
-                                <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
-                                    <p className="font-semibold text-zinc-900">2. Trọng số · %</p>
-                                    <p className="mt-1">Cho biết tiêu chí ảnh hưởng nhiều hay ít đến tổng điểm. Đây là cấu hình của policy, không phải mức phù hợp của sản phẩm.</p>
-                                </div>
-                                <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
-                                    <p className="font-semibold text-zinc-900">3. Phần đóng góp</p>
-                                    <p className="mt-1">Ví dụ: 0,8 × 25% = 0,20 điểm. Hệ thống cộng đóng góp của tám tiêu chí rồi trừ penalty riêng.</p>
-                                </div>
-                            </div>
-                            <p className="mt-4 border-t border-zinc-200 pt-3 text-[11px] leading-5 text-zinc-500">Các trọng số hiển thị bên dưới là mặc định trong code, chưa phải cấu hình tối ưu theo dữ liệu thực tế. Mỗi tiêu chí được tách thành một hàng để dễ xem công thức, ví dụ và đánh đổi.</p>
+                <section
+                    className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+                    aria-label="Hướng dẫn đọc điểm tiêu chí"
+                >
+                    <header className="relative flex flex-wrap items-center justify-between gap-4 bg-white px-4 py-4 after:absolute after:inset-x-5 after:bottom-0 after:h-px after:bg-zinc-200 after:content-[''] sm:px-5 sm:after:inset-x-6">
+                        <div className="min-w-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                Hướng dẫn
+                            </p>
+                            <h5 className="mt-1 text-sm font-semibold text-zinc-950">
+                                Cách đọc một tiêu chí
+                            </h5>
+                            <p className="mt-1 max-w-3xl text-xs leading-5 text-zinc-600">
+                                Mỗi tiêu chí tạo một phần đóng góp vào điểm
+                                Standard; điểm feature và trọng số là hai giá
+                                trị khác nhau.
+                            </p>
                         </div>
-                    </section>
+                        <div className="flex shrink-0 flex-col gap-0.5 rounded-xl border border-zinc-200 bg-white px-3 py-2">
+                            <span className="text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+                                Cách tính đóng góp
+                            </span>
+                            <span className="font-mono text-xs font-medium text-zinc-900">
+                                điểm feature × trọng số
+                            </span>
+                        </div>
+                    </header>
+                    <div className="bg-white p-4 sm:p-5">
+                        <div className="grid gap-3 md:grid-cols-3">
+                            <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
+                                <p className="font-semibold text-zinc-900">
+                                    1. Điểm feature · 0–1
+                                </p>
+                                <p className="mt-1">
+                                    Đo mức phù hợp của sản phẩm theo riêng tiêu
+                                    chí này: 0 là không có tín hiệu phù hợp, 1
+                                    là mức tối đa của công thức.
+                                </p>
+                            </div>
+                            <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
+                                <p className="font-semibold text-zinc-900">
+                                    2. Trọng số · %
+                                </p>
+                                <p className="mt-1">
+                                    Cho biết tiêu chí ảnh hưởng nhiều hay ít đến
+                                    tổng điểm. Đây là cấu hình của policy, không
+                                    phải mức phù hợp của sản phẩm.
+                                </p>
+                            </div>
+                            <div className="rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-5 text-zinc-600">
+                                <p className="font-semibold text-zinc-900">
+                                    3. Phần đóng góp
+                                </p>
+                                <p className="mt-1">
+                                    Ví dụ: 0,8 × 25% = 0,20 điểm. Hệ thống cộng
+                                    đóng góp của tám tiêu chí rồi trừ penalty
+                                    riêng.
+                                </p>
+                            </div>
+                        </div>
+                        <p className="mt-4 border-t border-zinc-200 pt-3 text-[11px] leading-5 text-zinc-500">
+                            Các trọng số hiển thị bên dưới là mặc định trong
+                            code, chưa phải cấu hình tối ưu theo dữ liệu thực
+                            tế. Mỗi tiêu chí được tách thành một hàng để dễ xem
+                            công thức, ví dụ và đánh đổi.
+                        </p>
+                    </div>
+                </section>
                 <div className="mt-3 grid grid-cols-1 items-start gap-2.5">
                     {scoreFeatures.map((feature, index) => (
-                        <details key={feature.key} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+                        <details
+                            key={feature.key}
+                            className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+                        >
                             <RecommendationNumberedHeading
                                 number={`2.2.2.${index + 1}`}
                                 title={feature.name}
@@ -282,10 +602,25 @@ export function RecommendationScoring() {
                                 summaryAside={
                                     <span className="flex w-full flex-col items-end gap-1">
                                         <span className="flex w-full items-center gap-2">
-                                            <span aria-hidden="true" className="block h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-zinc-100"><span className="block h-full rounded-full bg-zinc-700" style={{ width: feature.weight }} /></span>
-                                            <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-zinc-700">{feature.weight} · mặc định</span>
+                                            <span
+                                                aria-hidden="true"
+                                                className="block h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-zinc-100"
+                                            >
+                                                <span
+                                                    className="block h-full rounded-full bg-zinc-700"
+                                                    style={{
+                                                        width: feature.weight,
+                                                    }}
+                                                />
+                                            </span>
+                                            <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold text-zinc-700">
+                                                {feature.weight} · mặc định
+                                            </span>
                                         </span>
-                                        <span className="max-w-full text-right text-[9px] leading-3 text-zinc-500 md:whitespace-nowrap">Mở “Cách tính” để xem công thức, dữ liệu và ví dụ chi tiết</span>
+                                        <span className="max-w-full text-right text-[9px] leading-3 text-zinc-500 md:whitespace-nowrap">
+                                            Mở “Cách tính” để xem công thức, dữ
+                                            liệu và ví dụ chi tiết
+                                        </span>
                                     </span>
                                 }
                                 disclosureContentId={`ranking-feature-details-${feature.key}`}
@@ -294,7 +629,9 @@ export function RecommendationScoring() {
                             <RankingWeightDetails
                                 id={`ranking-feature-details-${feature.key}`}
                                 signal={feature.key}
-                                weightPercent={Number(feature.weight.replace('%', ''))}
+                                weightPercent={Number(
+                                    feature.weight.replace('%', ''),
+                                )}
                             />
                         </details>
                     ))}

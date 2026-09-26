@@ -24,4 +24,3 @@ export function ReviewBlock({ title, items }: ReviewBlockProps) {
         </div>
     );
 }
-

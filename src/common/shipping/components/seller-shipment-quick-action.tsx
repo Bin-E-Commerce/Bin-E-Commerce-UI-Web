@@ -12,7 +12,9 @@ interface SellerShipmentQuickActionProps {
 }
 
 // Tạo vận đơn ngay tại bước đang cần xử lý để seller hoàn tất luồng bằng một lần bấm.
-export function SellerShipmentQuickAction({ orderId }: SellerShipmentQuickActionProps) {
+export function SellerShipmentQuickAction({
+    orderId,
+}: SellerShipmentQuickActionProps) {
     const createMutation = useCreateSellerShipment(orderId);
 
     return (

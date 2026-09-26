@@ -32,11 +32,7 @@ interface UserMenuDropdownProps {
 
 // Dropdown tài khoản ưu tiên Admin Center cho ADMIN/SUPPORT_AGENT, sau đó mới xét Seller Center.
 // Cách này giữ đúng điểm vào sau đăng nhập khi một tài khoản nội bộ đồng thời có quyền seller.
-export function UserMenuDropdown({
-    name,
-    email,
-    user,
-}: UserMenuDropdownProps) {
+export function UserMenuDropdown({ name, email, user }: UserMenuDropdownProps) {
     const dispatch = useDispatch<AppDispatch>();
     const isSeller = canAccessSellerCenter(user);
     const isAdmin = canAccessAdmin(user);

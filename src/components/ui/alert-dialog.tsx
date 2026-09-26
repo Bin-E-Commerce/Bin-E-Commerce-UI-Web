@@ -6,7 +6,9 @@ import * as React from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const AlertDialogDismissContext = React.createContext<(() => void) | null>(null);
+const AlertDialogDismissContext = React.createContext<(() => void) | null>(
+    null,
+);
 
 // File này bọc Radix AlertDialog và giữ vòng đời overlay/pointer-events dùng chung cho toàn bộ popup trong web.
 // Trigger luôn phải được render khi dialog đang đóng; chỉ content của Radix mới được ẩn theo trạng thái open.
@@ -16,7 +18,9 @@ function AlertDialog({
     onOpenChange,
     ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-    const [internalOpen, setInternalOpen] = React.useState(defaultOpen ?? false);
+    const [internalOpen, setInternalOpen] = React.useState(
+        defaultOpen ?? false,
+    );
     const isControlled = open !== undefined;
     const resolvedOpen = isControlled ? open : internalOpen;
 
@@ -146,7 +150,10 @@ function AlertDialogHeader({
     return (
         <div
             data-slot="alert-dialog-header"
-            className={cn('flex flex-col gap-2 text-center sm:text-left', className)}
+            className={cn(
+                'flex flex-col gap-2 text-center sm:text-left',
+                className,
+            )}
             {...props}
         />
     );

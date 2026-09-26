@@ -25,4 +25,3 @@ export function registerVerify(payload: RegisterVerifyPayload) {
         .post<ApiResponse<AuthData>>(`${BASE}/register/verify`, payload)
         .then((response) => response.data);
 }
-

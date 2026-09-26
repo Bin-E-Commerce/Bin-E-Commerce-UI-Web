@@ -11,7 +11,10 @@ export function ProductDetailSkeleton() {
                         <Skeleton className="aspect-square w-full rounded-lg" />
                         <div className="mt-3 flex gap-2">
                             {Array.from({ length: 5 }).map((_, index) => (
-                                <Skeleton key={index} className="h-16 w-16 rounded" />
+                                <Skeleton
+                                    key={index}
+                                    className="h-16 w-16 rounded"
+                                />
                             ))}
                         </div>
                     </div>

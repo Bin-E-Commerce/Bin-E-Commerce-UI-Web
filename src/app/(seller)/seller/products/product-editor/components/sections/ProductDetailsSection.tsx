@@ -67,7 +67,8 @@ export function ProductDetailsSection({
                         Thuộc tính ngành hàng
                     </h3>
                     <p className="mb-4 text-sm text-zinc-500">
-                        Chọn giá trị phù hợp để khách hàng dễ tìm và lọc sản phẩm.
+                        Chọn giá trị phù hợp để khách hàng dễ tìm và lọc sản
+                        phẩm.
                     </p>
                     <ProductAttributeFields
                         form={form}

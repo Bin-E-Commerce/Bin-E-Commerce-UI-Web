@@ -20,12 +20,15 @@ export function useProductDescriptionSuggestions() {
         unknown,
         ProductDescriptionSuggestionsRequest
     >({
-        mutationFn: productContentAiService.generateProductDescriptionSuggestions,
+        mutationFn:
+            productContentAiService.generateProductDescriptionSuggestions,
         retry: false,
         onSuccess: (result) => {
             toast.success('AI đã tạo bản mô tả để bạn kiểm tra.');
             if (result.warnings.length > 0) {
-                toast.warning('AI đã loại bỏ một số thông tin không phù hợp khỏi mô tả.');
+                toast.warning(
+                    'AI đã loại bỏ một số thông tin không phù hợp khỏi mô tả.',
+                );
             }
         },
         onError: (error) => toast.error(getErrorMessage(error)),
@@ -42,6 +45,8 @@ export function useProductDescriptionSuggestions() {
         description: mutation.data?.description ?? '',
         warnings: mutation.data?.warnings ?? [],
         isLoading: mutation.isPending,
-        errorMessage: mutation.error ? getErrorMessage(mutation.error) : undefined,
+        errorMessage: mutation.error
+            ? getErrorMessage(mutation.error)
+            : undefined,
     };
 }

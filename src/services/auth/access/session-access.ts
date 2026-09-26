@@ -18,7 +18,7 @@ export function hasPermission(
 ): boolean {
     return Boolean(
         user?.permissions?.includes(permission) ||
-            user?.permissionGrants?.some((grant) => grant.code === permission),
+        user?.permissionGrants?.some((grant) => grant.code === permission),
     );
 }
 
@@ -85,7 +85,8 @@ export function getDefaultAuthenticatedPath(
     const roles = [user?.role, ...(user?.roles ?? [])]
         .filter((role): role is string => Boolean(role))
         .map((role) => role.toUpperCase());
-    const isBackOfficeRole = roles.includes('ADMIN') || roles.includes('SUPPORT_AGENT');
+    const isBackOfficeRole =
+        roles.includes('ADMIN') || roles.includes('SUPPORT_AGENT');
     const isSellerRole = roles.includes('SELLER');
 
     if (isBackOfficeRole) {
@@ -165,11 +166,10 @@ export function canAccessSellerPath(
         return hasPermission(user, SELLER_PRODUCT_UPDATE_PERMISSION);
     }
     return (
-        isSellerProductDetail &&
-        navigation.some((item) => item.href === '/seller/products')
-    ) || (
-        isSellerOrderDetail &&
-        navigation.some((item) => item.href === '/seller/orders')
+        (isSellerProductDetail &&
+            navigation.some((item) => item.href === '/seller/products')) ||
+        (isSellerOrderDetail &&
+            navigation.some((item) => item.href === '/seller/orders'))
     );
 }
 

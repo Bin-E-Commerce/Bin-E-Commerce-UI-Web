@@ -28,9 +28,24 @@ export function AiOptimizationShowcase() {
                                 <ShowcaseReadingGuide
                                     ariaLabel="Lộ trình đọc tài liệu AI Image Optimization"
                                     items={[
-                                        { href: '#ai-optimization-request-overview', title: 'Luồng request', summary: 'Từ chọn ảnh đến preview được duyệt' },
-                                        { href: '#ai-optimization-architecture', title: 'Kiến trúc hệ thống', summary: 'Service, worker và catalog' },
-                                        { href: '#ai-optimization-logic', title: 'Logic xử lý ảnh', summary: 'Quyền, trạng thái và rollback' },
+                                        {
+                                            href: '#ai-optimization-request-overview',
+                                            title: 'Luồng request',
+                                            summary:
+                                                'Từ chọn ảnh đến preview được duyệt',
+                                        },
+                                        {
+                                            href: '#ai-optimization-architecture',
+                                            title: 'Kiến trúc hệ thống',
+                                            summary:
+                                                'Service, worker và catalog',
+                                        },
+                                        {
+                                            href: '#ai-optimization-logic',
+                                            title: 'Logic xử lý ảnh',
+                                            summary:
+                                                'Quyền, trạng thái và rollback',
+                                        },
                                     ]}
                                 />
                             }

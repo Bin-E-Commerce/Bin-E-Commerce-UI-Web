@@ -499,15 +499,21 @@ function PickupAddressSection({ application }: ApplicationSectionProps) {
                 />
                 <AdminSellerApplicationDetailField
                     label="Tỉnh / Thành phố"
-                    value={formatNullableText(application.pickupAddress.provinceName)}
+                    value={formatNullableText(
+                        application.pickupAddress.provinceName,
+                    )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Quận / Huyện"
-                    value={formatNullableText(application.pickupAddress.districtName)}
+                    value={formatNullableText(
+                        application.pickupAddress.districtName,
+                    )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Phường / Xã"
-                    value={formatNullableText(application.pickupAddress.wardName)}
+                    value={formatNullableText(
+                        application.pickupAddress.wardName,
+                    )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Địa chỉ chi tiết"

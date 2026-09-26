@@ -2,7 +2,14 @@
 // Thanh hành động của wizard sản phẩm, phân biệt rõ lưu bản nháp và đăng bán.
 //
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, EyeOff, LoaderCircle, Send, Warehouse } from 'lucide-react';
+import {
+    ArrowLeft,
+    ArrowRight,
+    EyeOff,
+    LoaderCircle,
+    Send,
+    Warehouse,
+} from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import type { ProductSubmitAction } from '../../hooks/useSellerProductEditor';
@@ -51,7 +58,7 @@ export function ProductCreateActions({
                         : 'Hoàn thiện các bước bắt buộc trước khi đăng bán.'
                     : canContinue
                       ? 'Bước này đã hợp lệ, bạn có thể tiếp tục.'
-                    : 'Hoàn thiện bước này để tiếp tục.'}
+                      : 'Hoàn thiện bước này để tiếp tục.'}
             </p>
             {isLastStep && mode === 'create' ? (
                 <Link
@@ -65,7 +72,14 @@ export function ProductCreateActions({
             ) : null}
             <div className="flex flex-wrap items-center justify-end gap-2">
                 {isFirstStep ? (
-                    <Link href={cancelHref} className={buttonVariants({ variant: 'outline', size: 'lg' })} onClick={onCancel}>
+                    <Link
+                        href={cancelHref}
+                        className={buttonVariants({
+                            variant: 'outline',
+                            size: 'lg',
+                        })}
+                        onClick={onCancel}
+                    >
                         Hủy
                     </Link>
                 ) : mode === 'edit' ? (
@@ -84,14 +98,25 @@ export function ProductCreateActions({
                         Lưu thay đổi
                     </Button>
                 ) : (
-                    <Button type="button" size="lg" variant="outline" disabled={submitting} onClick={onBack}>
+                    <Button
+                        type="button"
+                        size="lg"
+                        variant="outline"
+                        disabled={submitting}
+                        onClick={onBack}
+                    >
                         <ArrowLeft className="size-4" />
                         Quay lại
                     </Button>
                 )}
 
                 {!isLastStep ? (
-                    <Button type="button" size="lg" disabled={!canContinue || submitting} onClick={onNext}>
+                    <Button
+                        type="button"
+                        size="lg"
+                        disabled={!canContinue || submitting}
+                        onClick={onNext}
+                    >
                         Tiếp tục
                         <ArrowRight className="size-4" />
                     </Button>

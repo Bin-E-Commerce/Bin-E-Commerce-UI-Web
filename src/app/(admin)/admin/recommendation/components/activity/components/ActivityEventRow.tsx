@@ -4,7 +4,11 @@ import { PackageOpen } from 'lucide-react';
 import Image from 'next/image';
 
 import type { ActivityItem } from '../types';
-import { formatActivityDate, getInteractionMeta, getReadableValue } from '../activity.utils';
+import {
+    formatActivityDate,
+    getInteractionMeta,
+    getReadableValue,
+} from '../activity.utils';
 
 interface Props {
     item: ActivityItem;
@@ -48,9 +52,16 @@ export function ActivityEventRow({ item }: Props) {
                 </div>
             </td>
             <td className="whitespace-nowrap px-3 py-3.5 text-xs text-zinc-600">
-                <span>{getReadableValue(item.recommendationSource, 'Không xác định')}</span>
+                <span>
+                    {getReadableValue(
+                        item.recommendationSource,
+                        'Không xác định',
+                    )}
+                </span>
                 {item.recommendationRank ? (
-                    <span className="ml-1 text-zinc-400">#{item.recommendationRank}</span>
+                    <span className="ml-1 text-zinc-400">
+                        #{item.recommendationRank}
+                    </span>
                 ) : null}
             </td>
             <td className="whitespace-nowrap px-3 py-3.5 text-xs text-zinc-600">

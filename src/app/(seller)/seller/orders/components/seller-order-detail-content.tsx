@@ -67,7 +67,8 @@ export function SellerOrderDetailContent({
                     Không thể tải đơn hàng
                 </h1>
                 <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600">
-                    Đơn hàng không tồn tại, không thuộc shop hoặc Seller Service đang tạm thời không sẵn sàng.
+                    Đơn hàng không tồn tại, không thuộc shop hoặc Seller Service
+                    đang tạm thời không sẵn sàng.
                 </p>
                 <Link
                     href="/seller/orders"
@@ -94,7 +95,9 @@ export function SellerOrderDetailContent({
         order.fulfillmentStatus === 'DELIVERED' ||
         order.fulfillmentStatus === 'COMPLETED' ||
         shipmentQuery.data?.status === 'DELIVERED';
-    const reviewProductId = order.items.find((item) => Boolean(item.productId))?.productId;
+    const reviewProductId = order.items.find((item) =>
+        Boolean(item.productId),
+    )?.productId;
 
     return (
         <div className="space-y-5">
@@ -108,7 +111,9 @@ export function SellerOrderDetailContent({
                 </Link>
                 <div className="flex items-center gap-2 text-sm text-zinc-500">
                     <span>Mã đơn hàng</span>
-                    <span className="font-semibold text-zinc-950">#{order.orderNumber}</span>
+                    <span className="font-semibold text-zinc-950">
+                        #{order.orderNumber}
+                    </span>
                 </div>
             </div>
 
@@ -174,31 +179,53 @@ export function SellerOrderDetailContent({
                                     <Package className="size-4" />
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold text-zinc-950">Sản phẩm của shop</h2>
-                                    <p className="text-xs text-zinc-500">Các sản phẩm thuộc shop trong đơn hàng</p>
+                                    <h2 className="font-semibold text-zinc-950">
+                                        Sản phẩm của shop
+                                    </h2>
+                                    <p className="text-xs text-zinc-500">
+                                        Các sản phẩm thuộc shop trong đơn hàng
+                                    </p>
                                 </div>
                             </div>
-                            <span className="text-xs text-zinc-400">{order.items.length} mặt hàng</span>
+                            <span className="text-xs text-zinc-400">
+                                {order.items.length} mặt hàng
+                            </span>
                         </div>
                         <div className="divide-y divide-zinc-100 px-5 sm:px-6">
                             {order.items.map((item) => (
-                                <div key={item.id} className="flex gap-4 py-5 sm:gap-5">
+                                <div
+                                    key={item.id}
+                                    className="flex gap-4 py-5 sm:gap-5"
+                                >
                                     <SellerOrderProductImage
-                                        src={item.imageUrl ?? legacyImages.get(item.productId) ?? null}
+                                        src={
+                                            item.imageUrl ??
+                                            legacyImages.get(item.productId) ??
+                                            null
+                                        }
                                         alt={item.productName}
                                         large
                                     />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex flex-col justify-between gap-2 sm:flex-row">
                                             <div className="min-w-0">
-                                                <h3 className="font-semibold text-zinc-950">{item.productName}</h3>
-                                                <p className="mt-1 text-sm text-zinc-500">{item.variantName}</p>
+                                                <h3 className="font-semibold text-zinc-950">
+                                                    {item.productName}
+                                                </h3>
+                                                <p className="mt-1 text-sm text-zinc-500">
+                                                    {item.variantName}
+                                                </p>
                                                 <p className="mt-2 text-sm text-zinc-500">
-                                                    {formatSellerMoney(item.unitPrice)} × {item.quantity}
+                                                    {formatSellerMoney(
+                                                        item.unitPrice,
+                                                    )}{' '}
+                                                    × {item.quantity}
                                                 </p>
                                             </div>
                                             <p className="shrink-0 text-base font-bold tabular-nums text-zinc-950">
-                                                {formatSellerMoney(item.lineTotal)}
+                                                {formatSellerMoney(
+                                                    item.lineTotal,
+                                                )}
                                             </p>
                                         </div>
                                     </div>
@@ -213,17 +240,25 @@ export function SellerOrderDetailContent({
                                 <MapPin className="size-4" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-zinc-950">Địa chỉ nhận hàng</h2>
-                                <p className="text-xs text-zinc-500">Snapshot tại thời điểm đặt hàng</p>
+                                <h2 className="font-semibold text-zinc-950">
+                                    Địa chỉ nhận hàng
+                                </h2>
+                                <p className="text-xs text-zinc-500">
+                                    Snapshot tại thời điểm đặt hàng
+                                </p>
                             </div>
                         </div>
                         <div className="mt-5 rounded-lg bg-zinc-50 p-4">
-                            <p className="font-semibold text-zinc-950">{address.fullName || 'Chưa có tên người nhận'}</p>
+                            <p className="font-semibold text-zinc-950">
+                                {address.fullName || 'Chưa có tên người nhận'}
+                            </p>
                             <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600">
                                 <Phone className="size-4 shrink-0" />
                                 {address.phone || 'Chưa có số điện thoại'}
                             </p>
-                            <p className="mt-3 text-sm leading-6 text-zinc-600">{formatShippingAddress(address)}</p>
+                            <p className="mt-3 text-sm leading-6 text-zinc-600">
+                                {formatShippingAddress(address)}
+                            </p>
                         </div>
                     </section>
                 </div>
@@ -233,22 +268,31 @@ export function SellerOrderDetailContent({
                         <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                             <ReceiptText className="size-4" />
                         </div>
-                        <h2 className="font-semibold text-zinc-950">Tổng tiền shop</h2>
+                        <h2 className="font-semibold text-zinc-950">
+                            Tổng tiền shop
+                        </h2>
                     </div>
                     <div className="mt-6 space-y-4 text-sm">
                         <div className="flex items-center justify-between gap-4 text-zinc-500">
                             <span>Tạm tính sản phẩm</span>
-                            <span className="font-medium tabular-nums text-zinc-950">{formatSellerMoney(order.shopItemTotal)}</span>
+                            <span className="font-medium tabular-nums text-zinc-950">
+                                {formatSellerMoney(order.shopItemTotal)}
+                            </span>
                         </div>
                         <div className="border-t border-zinc-100 pt-4">
                             <div className="flex items-center justify-between gap-4">
-                                <span className="font-semibold text-zinc-950">Doanh thu shop</span>
-                                <span className="text-xl font-bold tabular-nums text-zinc-950">{formatSellerMoney(order.shopItemTotal)}</span>
+                                <span className="font-semibold text-zinc-950">
+                                    Doanh thu shop
+                                </span>
+                                <span className="text-xl font-bold tabular-nums text-zinc-950">
+                                    {formatSellerMoney(order.shopItemTotal)}
+                                </span>
                             </div>
                         </div>
                     </div>
                     <div className="mt-5 rounded-lg bg-zinc-50 px-3 py-2.5 text-xs leading-5 text-zinc-500">
-                        Số tiền trên chỉ bao gồm các sản phẩm thuộc shop của bạn.
+                        Số tiền trên chỉ bao gồm các sản phẩm thuộc shop của
+                        bạn.
                     </div>
                 </aside>
             </div>

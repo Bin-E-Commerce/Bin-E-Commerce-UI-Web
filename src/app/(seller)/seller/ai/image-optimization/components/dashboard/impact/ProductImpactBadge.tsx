@@ -2,9 +2,19 @@
 
 'use client';
 
-import { Activity, ArrowDownRight, ArrowUpRight, Clock3, Info } from 'lucide-react';
+import {
+    Activity,
+    ArrowDownRight,
+    ArrowUpRight,
+    Clock3,
+    Info,
+} from 'lucide-react';
 import type { ImageOptimizationProductImpact } from '@/services/ai/types/image-optimization.types';
-import { formatImpactNumber, formatImpactPercent, getImpactStatusTone } from './impact.utils';
+import {
+    formatImpactNumber,
+    formatImpactPercent,
+    getImpactStatusTone,
+} from './impact.utils';
 
 interface ProductImpactBadgeProps {
     impact?: ImageOptimizationProductImpact;
@@ -24,19 +34,21 @@ export function ProductImpactBadge({ impact }: ProductImpactBadgeProps) {
     const tone = getImpactStatusTone(impact.status);
     const hasMetric = Boolean(impact.views && impact.sales);
     const viewChange = impact.views?.changePercent;
-    const isDeclining = viewChange !== null && viewChange !== undefined && viewChange < 0;
-    const toneClass =
-        isDeclining
-            ? 'bg-rose-50 text-rose-700'
-            : tone === 'positive'
-              ? 'bg-emerald-50 text-emerald-700'
-              : tone === 'warning'
-                ? 'bg-amber-50 text-amber-700'
-                : 'bg-zinc-100 text-zinc-600';
+    const isDeclining =
+        viewChange !== null && viewChange !== undefined && viewChange < 0;
+    const toneClass = isDeclining
+        ? 'bg-rose-50 text-rose-700'
+        : tone === 'positive'
+          ? 'bg-emerald-50 text-emerald-700'
+          : tone === 'warning'
+            ? 'bg-amber-50 text-amber-700'
+            : 'bg-zinc-100 text-zinc-600';
 
     if (hasMetric) {
         return (
-            <span className={`inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full px-3 py-1.5 text-xs font-semibold ${toneClass}`}>
+            <span
+                className={`inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full px-3 py-1.5 text-xs font-semibold ${toneClass}`}
+            >
                 {isDeclining ? (
                     <ArrowDownRight className="size-3.5" aria-hidden="true" />
                 ) : (
@@ -44,9 +56,12 @@ export function ProductImpactBadge({ impact }: ProductImpactBadgeProps) {
                 )}
                 {formatImpactPercent(viewChange)} lượt xem
                 <span className="text-current/30">•</span>
-                {impact.sales && impact.sales.delta >= 0 ? '+' : ''}{formatImpactNumber(impact.sales?.delta)} lượt bán
+                {impact.sales && impact.sales.delta >= 0 ? '+' : ''}
+                {formatImpactNumber(impact.sales?.delta)} lượt bán
                 {impact.status === 'COLLECTING' ? (
-                    <span className="text-current/60">· {formatElapsedSeconds(impact.elapsedSeconds)}</span>
+                    <span className="text-current/60">
+                        · {formatElapsedSeconds(impact.elapsedSeconds)}
+                    </span>
                 ) : null}
             </span>
         );
@@ -54,7 +69,9 @@ export function ProductImpactBadge({ impact }: ProductImpactBadgeProps) {
 
     if (impact.status === 'COLLECTING') {
         return (
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${toneClass}`}>
+            <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${toneClass}`}
+            >
                 <Clock3 className="size-3.5" aria-hidden="true" />
                 Đang theo dõi {formatElapsedSeconds(impact.elapsedSeconds)}
             </span>
@@ -62,7 +79,9 @@ export function ProductImpactBadge({ impact }: ProductImpactBadgeProps) {
     }
 
     return (
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${toneClass}`}>
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${toneClass}`}
+        >
             <Activity className="size-3.5" aria-hidden="true" />
             {impact.status === 'NO_BASELINE'
                 ? 'Chưa đủ dữ liệu lịch sử'

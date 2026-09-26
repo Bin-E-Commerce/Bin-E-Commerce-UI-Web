@@ -20,10 +20,7 @@ export function ChangePasswordForm() {
 
     return (
         <Form {...form}>
-            <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-5"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 {form.formState.errors.root && (
                     <div className="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
                         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />

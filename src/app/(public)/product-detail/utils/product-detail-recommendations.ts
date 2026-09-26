@@ -73,7 +73,8 @@ export function filterRecommendationProducts(
         .filter((product) => {
             const isAllowed =
                 product.id !== currentProduct.id &&
-                (!currentShopId || getShopIdentity(product) !== currentShopId) &&
+                (!currentShopId ||
+                    getShopIdentity(product) !== currentShopId) &&
                 !seenProductIds.has(product.id);
             if (isAllowed) seenProductIds.add(product.id);
             return isAllowed;

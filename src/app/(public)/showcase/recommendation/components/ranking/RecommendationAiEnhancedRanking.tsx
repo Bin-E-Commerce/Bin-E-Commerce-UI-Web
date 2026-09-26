@@ -929,86 +929,90 @@ export function RecommendationAiEnhancedRanking() {
                         </div>
                         <div className="grid gap-3 lg:grid-cols-2">
                             <div className="rounded-xl border border-zinc-200 bg-white p-4 text-[11px] leading-5 text-zinc-600">
-                            <p className="font-semibold text-zinc-900">
-                                Model cải thiện điểm nào?
-                            </p>
-                            <ul className="mt-1.5 space-y-1.5">
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Standard:
-                                    </strong>{' '}
-                                    dễ hiểu nhưng cộng các tín hiệu theo weight
-                                    cố định.
-                                </li>
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        LightGBM:
-                                    </strong>{' '}
-                                    học được ngưỡng và tương tác phi tuyến từ dữ
-                                    liệu lịch sử.
-                                </li>
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Kết quả:
-                                    </strong>{' '}
-                                    các candidate có cùng Standard score vẫn có
-                                    thể được phân biệt tốt hơn theo pattern từng
-                                    xuất hiện trong hành vi người dùng.
-                                </li>
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Giới hạn:
-                                    </strong>{' '}
-                                    model chỉ cải thiện thứ tự trong candidate
-                                    pool; candidate bị thiếu từ bước tạo nguồn
-                                    sẽ không thể được AI “tìm lại”.
-                                </li>
-                            </ul>
+                                <p className="font-semibold text-zinc-900">
+                                    Model cải thiện điểm nào?
+                                </p>
+                                <ul className="mt-1.5 space-y-1.5">
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Standard:
+                                        </strong>{' '}
+                                        dễ hiểu nhưng cộng các tín hiệu theo
+                                        weight cố định.
+                                    </li>
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            LightGBM:
+                                        </strong>{' '}
+                                        học được ngưỡng và tương tác phi tuyến
+                                        từ dữ liệu lịch sử.
+                                    </li>
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Kết quả:
+                                        </strong>{' '}
+                                        các candidate có cùng Standard score vẫn
+                                        có thể được phân biệt tốt hơn theo
+                                        pattern từng xuất hiện trong hành vi
+                                        người dùng.
+                                    </li>
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Giới hạn:
+                                        </strong>{' '}
+                                        model chỉ cải thiện thứ tự trong
+                                        candidate pool; candidate bị thiếu từ
+                                        bước tạo nguồn sẽ không thể được AI “tìm
+                                        lại”.
+                                    </li>
+                                </ul>
                             </div>
                             <div className="rounded-xl border border-zinc-200 bg-white p-4 text-[11px] leading-5 text-zinc-600">
-                            <p className="font-semibold text-zinc-900">
-                                Model chỉ tốt khi nào?
-                            </p>
-                            <ul className="mt-1.5 space-y-1.5">
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Dữ liệu đủ:
-                                    </strong>{' '}
-                                    có đủ lượt hiển thị và tương tác đại diện cho
-                                    nhiều nhóm người dùng, không chỉ một vài sản
-                                    phẩm phổ biến.
-                                </li>
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Label đúng:
-                                    </strong>{' '}
-                                    click, thêm giỏ hoặc purchase phải phản ánh
-                                    đúng mục tiêu muốn tối ưu; label nhiễu sẽ
-                                    khiến model học sai.
-                                </li>
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Feature nhất quán:
-                                    </strong>{' '}
-                                    9 feature lúc train phải có cùng ý nghĩa,
-                                    thứ tự và cách chuẩn hóa khi inference.
-                                </li>
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Được đo lường:
-                                    </strong>{' '}
-                                    cần validation offline, theo dõi CTR,
-                                    conversion, latency và data drift sau khi
-                                    rollout.
-                                </li>
-                                <li>
-                                    <strong className="text-zinc-900">
-                                        Không bị lệch dữ liệu:
-                                    </strong>{' '}
-                                    nếu chỉ train từ sản phẩm đã được ưu tiên
-                                    trước đó, model có thể lặp lại bias cũ.
-                                </li>
-                            </ul>
+                                <p className="font-semibold text-zinc-900">
+                                    Model chỉ tốt khi nào?
+                                </p>
+                                <ul className="mt-1.5 space-y-1.5">
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Dữ liệu đủ:
+                                        </strong>{' '}
+                                        có đủ lượt hiển thị và tương tác đại
+                                        diện cho nhiều nhóm người dùng, không
+                                        chỉ một vài sản phẩm phổ biến.
+                                    </li>
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Label đúng:
+                                        </strong>{' '}
+                                        click, thêm giỏ hoặc purchase phải phản
+                                        ánh đúng mục tiêu muốn tối ưu; label
+                                        nhiễu sẽ khiến model học sai.
+                                    </li>
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Feature nhất quán:
+                                        </strong>{' '}
+                                        9 feature lúc train phải có cùng ý
+                                        nghĩa, thứ tự và cách chuẩn hóa khi
+                                        inference.
+                                    </li>
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Được đo lường:
+                                        </strong>{' '}
+                                        cần validation offline, theo dõi CTR,
+                                        conversion, latency và data drift sau
+                                        khi rollout.
+                                    </li>
+                                    <li>
+                                        <strong className="text-zinc-900">
+                                            Không bị lệch dữ liệu:
+                                        </strong>{' '}
+                                        nếu chỉ train từ sản phẩm đã được ưu
+                                        tiên trước đó, model có thể lặp lại bias
+                                        cũ.
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -1057,9 +1061,9 @@ export function RecommendationAiEnhancedRanking() {
                                 <strong className="text-zinc-900">
                                     Rollout:
                                 </strong>{' '}
-                                    AI chỉ bổ sung score; Standard vẫn là baseline,
-                                    nên có thể bật cho toàn bộ request và tắt ngay
-                                    khi model không ổn định.
+                                AI chỉ bổ sung score; Standard vẫn là baseline,
+                                nên có thể bật cho toàn bộ request và tắt ngay
+                                khi model không ổn định.
                             </div>
                         </div>
                         <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-[11px] leading-5 text-zinc-600">
@@ -1796,7 +1800,8 @@ export function RecommendationAiEnhancedRanking() {
                                             100% Standard
                                         </td>
                                         <td className="px-3 py-2.5 font-mono">
-                                            HYBRID · modelVersion=null · rankingMode=HYBRID
+                                            HYBRID · modelVersion=null ·
+                                            rankingMode=HYBRID
                                         </td>
                                     </tr>
                                     <tr>
@@ -1820,7 +1825,8 @@ export function RecommendationAiEnhancedRanking() {
                                             100% Standard
                                         </td>
                                         <td className="px-3 py-2.5 font-mono">
-                                            HYBRID · modelVersion=null · rankingMode=HYBRID
+                                            HYBRID · modelVersion=null ·
+                                            rankingMode=HYBRID
                                         </td>
                                     </tr>
                                     <tr>
@@ -1831,7 +1837,8 @@ export function RecommendationAiEnhancedRanking() {
                                             Blend theo λ
                                         </td>
                                         <td className="px-3 py-2.5 font-mono">
-                                            ML_HYBRID · modelVersion · rankingMode=ML_HYBRID
+                                            ML_HYBRID · modelVersion ·
+                                            rankingMode=ML_HYBRID
                                         </td>
                                     </tr>
                                 </tbody>

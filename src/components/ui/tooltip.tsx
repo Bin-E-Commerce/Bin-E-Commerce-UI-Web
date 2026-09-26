@@ -35,7 +35,9 @@ function TooltipTrigger(
 }
 
 // Hiển thị nội dung đầy đủ trong portal để tooltip không bị cắt bởi card hoặc lưới sản phẩm.
-type TooltipContentProps = React.ComponentProps<typeof TooltipPrimitive.Content> & {
+type TooltipContentProps = React.ComponentProps<
+    typeof TooltipPrimitive.Content
+> & {
     arrowClassName?: string;
 };
 

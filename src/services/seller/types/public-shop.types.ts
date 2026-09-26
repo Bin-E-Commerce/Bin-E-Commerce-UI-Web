@@ -34,7 +34,10 @@ export interface PublicShopListItem {
     shop: Omit<PublicShopResponse['shop'], 'status'> & {
         status: PublicShopStatus;
     };
-    stats: Pick<PublicShopResponse['stats'], 'followerCount' | 'followingCount'>;
+    stats: Pick<
+        PublicShopResponse['stats'],
+        'followerCount' | 'followingCount'
+    >;
 }
 
 export interface PublicShopListResponse {

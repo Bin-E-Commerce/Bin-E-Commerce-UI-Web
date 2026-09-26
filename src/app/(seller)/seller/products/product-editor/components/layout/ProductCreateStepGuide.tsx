@@ -7,7 +7,10 @@ import { CheckCircle2, CircleAlert, Lightbulb } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { PRODUCT_CREATE_STEPS } from '../../constants/product-create-steps.constant';
-import type { ProductCreateStepId, ProductCreateStepValidation } from '../../types/product-create-step.type';
+import type {
+    ProductCreateStepId,
+    ProductCreateStepValidation,
+} from '../../types/product-create-step.type';
 
 interface ProductCreateStepGuideProps {
     activeStep: ProductCreateStepId;
@@ -21,7 +24,10 @@ interface ProductCreateStepGuideProps {
 //
 
 // Tìm metadata của bước đang chọn; route luôn truyền id hợp lệ nhưng vẫn trả null để UI an toàn khi cấu hình thay đổi.
-export function ProductCreateStepGuide({ activeStep, validation }: ProductCreateStepGuideProps) {
+export function ProductCreateStepGuide({
+    activeStep,
+    validation,
+}: ProductCreateStepGuideProps) {
     const step = PRODUCT_CREATE_STEPS.find((item) => item.id === activeStep);
 
     if (!step) return null;
@@ -61,7 +67,11 @@ export function ProductCreateStepGuide({ activeStep, validation }: ProductCreate
                             <CircleAlert className="mt-0.5 size-7 shrink-0 rounded-full bg-amber-100 p-1.5 text-amber-700" />
                         )}
                         <span className="min-w-0 break-words">
-                            <span className="block">{validation.valid ? 'Bước đã hoàn tất' : 'Cần hoàn thiện bước này'}</span>
+                            <span className="block">
+                                {validation.valid
+                                    ? 'Bước đã hoàn tất'
+                                    : 'Cần hoàn thiện bước này'}
+                            </span>
                             {validation.valid ? (
                                 <span className="mt-0.5 block text-xs font-normal text-zinc-500">
                                     Thông tin đã sẵn sàng để tiếp tục.
@@ -89,32 +99,62 @@ export function ProductCreateStepGuide({ activeStep, validation }: ProductCreate
                 <ul className="mt-3 grid gap-x-6 gap-y-2 text-xs leading-4.5 text-zinc-600 sm:grid-cols-2">
                     {activeStep === 'basic' ? (
                         <>
-                            <li className="list-disc break-words pl-1">Tải tối thiểu 2 ảnh rõ nét và chọn ảnh đầu tiên làm ảnh bìa.</li>
-                            <li className="list-disc break-words pl-1">Tên sản phẩm nên có thương hiệu, loại sản phẩm và đặc điểm chính.</li>
+                            <li className="list-disc break-words pl-1">
+                                Tải tối thiểu 2 ảnh rõ nét và chọn ảnh đầu tiên
+                                làm ảnh bìa.
+                            </li>
+                            <li className="list-disc break-words pl-1">
+                                Tên sản phẩm nên có thương hiệu, loại sản phẩm
+                                và đặc điểm chính.
+                            </li>
                         </>
                     ) : null}
                     {activeStep === 'details' ? (
                         <>
-                            <li className="list-disc break-words pl-1">Chọn đúng thương hiệu và các thuộc tính do ngành hàng cung cấp.</li>
-                            <li className="list-disc break-words pl-1">Mô tả càng đầy đủ càng giúp khách hàng hiểu sản phẩm trước khi mua.</li>
+                            <li className="list-disc break-words pl-1">
+                                Chọn đúng thương hiệu và các thuộc tính do ngành
+                                hàng cung cấp.
+                            </li>
+                            <li className="list-disc break-words pl-1">
+                                Mô tả càng đầy đủ càng giúp khách hàng hiểu sản
+                                phẩm trước khi mua.
+                            </li>
                         </>
                     ) : null}
                     {activeStep === 'sales' ? (
                         <>
-                            <li className="list-disc break-words pl-1">Mỗi SKU cần có giá bán hợp lệ và số lượng tồn kho không âm.</li>
-                            <li className="list-disc break-words pl-1">Nếu sản phẩm có màu hoặc kích thước, hãy tạo phân loại trước khi nhập SKU.</li>
+                            <li className="list-disc break-words pl-1">
+                                Mỗi SKU cần có giá bán hợp lệ và số lượng tồn
+                                kho không âm.
+                            </li>
+                            <li className="list-disc break-words pl-1">
+                                Nếu sản phẩm có màu hoặc kích thước, hãy tạo
+                                phân loại trước khi nhập SKU.
+                            </li>
                         </>
                     ) : null}
                     {activeStep === 'shipping' ? (
                         <>
-                            <li className="list-disc break-words pl-1">Khai báo kích thước và khối lượng sau khi đóng gói.</li>
-                            <li className="list-disc break-words pl-1">Thông tin này dùng để tính phí và chọn phương án giao hàng phù hợp.</li>
+                            <li className="list-disc break-words pl-1">
+                                Khai báo kích thước và khối lượng sau khi đóng
+                                gói.
+                            </li>
+                            <li className="list-disc break-words pl-1">
+                                Thông tin này dùng để tính phí và chọn phương án
+                                giao hàng phù hợp.
+                            </li>
                         </>
                     ) : null}
                     {activeStep === 'other' ? (
                         <>
-                            <li className="list-disc break-words pl-1">Chọn tình trạng sản phẩm và bổ sung xuất xứ để hoàn thiện thông tin công khai.</li>
-                            <li className="list-disc break-words pl-1">Kiểm tra preview trước khi lưu nháp hoặc đăng bán.</li>
+                            <li className="list-disc break-words pl-1">
+                                Chọn tình trạng sản phẩm và bổ sung xuất xứ để
+                                hoàn thiện thông tin công khai.
+                            </li>
+                            <li className="list-disc break-words pl-1">
+                                Kiểm tra preview trước khi lưu nháp hoặc đăng
+                                bán.
+                            </li>
                         </>
                     ) : null}
                 </ul>

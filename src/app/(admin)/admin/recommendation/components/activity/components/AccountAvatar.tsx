@@ -23,7 +23,9 @@ export function AccountAvatar({ name, avatarUrl, size = 'size-10' }: Props) {
                     className="object-cover"
                 />
             ) : (
-                <span className="text-xs font-semibold text-zinc-500">{getInitials(name)}</span>
+                <span className="text-xs font-semibold text-zinc-500">
+                    {getInitials(name)}
+                </span>
             )}
         </div>
     );

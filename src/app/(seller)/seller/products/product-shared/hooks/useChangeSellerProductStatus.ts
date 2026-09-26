@@ -12,12 +12,19 @@ export function useChangeSellerProductStatus() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ productId, status }: { productId: string; status: SellerProductPublicationStatus }) =>
-            sellerProductService.changeStatus(productId, status),
+        mutationFn: ({
+            productId,
+            status,
+        }: {
+            productId: string;
+            status: SellerProductPublicationStatus;
+        }) => sellerProductService.changeStatus(productId, status),
         onSuccess: (response) => {
             // Làm mới cache ở nền để mutation kết thúc ngay sau PATCH, tránh giữ modal và khóa tương tác nếu query đọc bị chậm.
             void Promise.all([
-                queryClient.invalidateQueries({ queryKey: ['seller-products'] }),
+                queryClient.invalidateQueries({
+                    queryKey: ['seller-products'],
+                }),
                 queryClient.invalidateQueries({
                     queryKey: ['seller', 'product-detail', response.id],
                 }),

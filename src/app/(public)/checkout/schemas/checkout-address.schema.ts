@@ -26,7 +26,9 @@ export const checkoutAddressSchema = z.object({
         .max(100, 'Tên người nhận tối đa 100 ký tự.'),
     phone: vietnamPhoneSchema,
     provinceId: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố từ danh sách.'),
-    provinceName: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố từ danh sách.'),
+    provinceName: z
+        .string()
+        .min(1, 'Vui lòng chọn tỉnh/thành phố từ danh sách.'),
     districtId: z.string().min(1, 'Vui lòng chọn quận/huyện từ danh sách.'),
     districtName: z.string().min(1, 'Vui lòng chọn quận/huyện từ danh sách.'),
     wardCode: z.string().min(1, 'Vui lòng chọn phường/xã từ danh sách.'),

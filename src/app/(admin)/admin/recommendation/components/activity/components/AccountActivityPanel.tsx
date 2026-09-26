@@ -37,13 +37,17 @@ export function AccountActivityPanel({
             />
 
             {loading ? (
-                <p className="p-6 text-sm text-zinc-500">Đang tải hành trình recommendation...</p>
+                <p className="p-6 text-sm text-zinc-500">
+                    Đang tải hành trình recommendation...
+                </p>
             ) : null}
 
             {!loading && !selectedUserId ? (
                 <div className="px-6 py-14 text-center">
                     <UserRound className="mx-auto size-7 text-zinc-300" />
-                    <p className="mt-3 text-sm font-medium text-zinc-600">Chưa chọn tài khoản</p>
+                    <p className="mt-3 text-sm font-medium text-zinc-600">
+                        Chưa chọn tài khoản
+                    </p>
                 </div>
             ) : null}
 

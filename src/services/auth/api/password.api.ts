@@ -15,8 +15,9 @@ export function changePassword(
 ) {
     return authorizedAxios
         .post<ApiResponse<AuthData>>(`${BASE}/change-password`, payload, {
-            headers: currentSessionId ? { 'X-Session-Id': currentSessionId } : {},
+            headers: currentSessionId
+                ? { 'X-Session-Id': currentSessionId }
+                : {},
         })
         .then((response) => response.data);
 }
-

@@ -41,16 +41,17 @@ export function RecommendationNumberedHeading({
     const descriptionSize = compact
         ? 'text-[11px] leading-4'
         : variant === 'section'
-            ? 'text-sm leading-6'
-            : variant === 'flow'
-              ? 'text-xs leading-5 sm:text-sm'
-              : 'text-xs leading-5';
+          ? 'text-sm leading-6'
+          : variant === 'flow'
+            ? 'text-xs leading-5 sm:text-sm'
+            : 'text-xs leading-5';
     const numberBadgeSize = compact
         ? 'min-h-8 min-w-9 rounded-lg px-2 text-xs'
         : 'min-h-9 min-w-10 rounded-xl px-2.5 text-sm sm:min-h-10 sm:px-3';
-    const summaryGridColumns = compact && summaryAside
-        ? 'grid-cols-[max-content_minmax(0,1fr)_max-content] md:grid-cols-[max-content_minmax(0,1fr)_minmax(16rem,18rem)_max-content]'
-        : 'grid-cols-[max-content_minmax(0,1fr)_max-content]';
+    const summaryGridColumns =
+        compact && summaryAside
+            ? 'grid-cols-[max-content_minmax(0,1fr)_max-content] md:grid-cols-[max-content_minmax(0,1fr)_minmax(16rem,18rem)_max-content]'
+            : 'grid-cols-[max-content_minmax(0,1fr)_max-content]';
 
     if (asSummary) {
         return (
@@ -58,7 +59,9 @@ export function RecommendationNumberedHeading({
                 aria-controls={disclosureContentId}
                 className={`grid cursor-pointer list-none ${summaryGridColumns} items-start ${compact ? 'gap-2.5 md:gap-3' : 'gap-3.5 sm:gap-4'} marker:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400 ${className}`}
             >
-                <span className={`inline-flex items-center justify-center border border-zinc-200 bg-white py-1 font-mono font-semibold leading-none tabular-nums tracking-tight text-zinc-950 ${numberBadgeSize}`}>
+                <span
+                    className={`inline-flex items-center justify-center border border-zinc-200 bg-white py-1 font-mono font-semibold leading-none tabular-nums tracking-tight text-zinc-950 ${numberBadgeSize}`}
+                >
                     {number}
                 </span>
                 <span className={`min-w-0 ${compact ? '' : 'pt-0.5'}`}>
@@ -97,7 +100,9 @@ export function RecommendationNumberedHeading({
         <div
             className={`grid grid-cols-[max-content_minmax(0,1fr)] items-start gap-3.5 sm:gap-4 ${className}`}
         >
-            <span className={`inline-flex items-center justify-center border border-zinc-200 bg-white py-1 font-mono font-semibold leading-none tabular-nums tracking-tight text-zinc-950 ${numberBadgeSize}`}>
+            <span
+                className={`inline-flex items-center justify-center border border-zinc-200 bg-white py-1 font-mono font-semibold leading-none tabular-nums tracking-tight text-zinc-950 ${numberBadgeSize}`}
+            >
                 {number}
             </span>
             <div className="min-w-0 pt-0.5">

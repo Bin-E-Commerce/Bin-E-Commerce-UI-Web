@@ -27,7 +27,8 @@ export function usePublicShopProfile(slug: string) {
                 return { ...response, shopType: 'INTERNAL' as const };
             } catch {
                 // Seller shop không tồn tại thì thử read model external; cả hai loại shop đều chạy trên route public nội bộ.
-                const response = await productService.getExternalShopBySlug(slug);
+                const response =
+                    await productService.getExternalShopBySlug(slug);
                 return { ...response, shopType: 'EXTERNAL' as const };
             }
         },

@@ -27,13 +27,16 @@ export function GhnSelect<T extends GhnLocationOption>({
     onChange,
 }: GhnSelectProps<T>) {
     const [search, setSearch] = useState('');
-    const selected = options.find((option) => optionValue(option) === value) ?? null;
+    const selected =
+        options.find((option) => optionValue(option) === value) ?? null;
     const visibleOptions = useMemo(() => {
         const normalizedSearch = search.trim().toLocaleLowerCase('vi-VN');
 
         return options
             .filter((option) =>
-                optionName(option).toLocaleLowerCase('vi-VN').includes(normalizedSearch),
+                optionName(option)
+                    .toLocaleLowerCase('vi-VN')
+                    .includes(normalizedSearch),
             )
             .slice(0, 80);
     }, [options, search]);
@@ -49,7 +52,9 @@ export function GhnSelect<T extends GhnLocationOption>({
             onInputValueChange={setSearch}
             itemToStringLabel={(option) => (option ? optionName(option) : '')}
             itemToStringValue={(option) => (option ? optionValue(option) : '')}
-            isItemEqualToValue={(left, right) => optionValue(left) === optionValue(right)}
+            isItemEqualToValue={(left, right) =>
+                optionValue(left) === optionValue(right)
+            }
             disabled={disabled || loading}
             autoHighlight
         >

@@ -15,7 +15,6 @@ export const BUSINESS_MODEL_OPTIONS: SellerComboboxOption[] = [
     {
         value: 'distributor',
         label: 'Nhà phân phối',
-        description:
-            'Phân phối hàng từ nhiều thương hiệu hoặc nhà sản xuất.',
+        description: 'Phân phối hàng từ nhiều thương hiệu hoặc nhà sản xuất.',
     },
 ];

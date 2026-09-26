@@ -26,7 +26,10 @@ export function ProductBreadcrumbs({
                     </Link>
                 </li>
                 {items.map((item) => (
-                    <li key={`${item.slug ?? item.name}-${item.name}`} className="flex items-center gap-1.5">
+                    <li
+                        key={`${item.slug ?? item.name}-${item.name}`}
+                        className="flex items-center gap-1.5"
+                    >
                         <ChevronRight className="h-3 w-3 shrink-0 text-zinc-300" />
                         <span className="max-w-40 truncate">{item.name}</span>
                     </li>

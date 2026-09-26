@@ -1,5 +1,5 @@
 // Liên kết từ phần tóm tắt tới đúng mục giải thích kỹ thuật trong tài liệu.
-"use client";
+'use client';
 
 import { ArrowDownRight } from 'lucide-react';
 import { handleShowcaseAnchorNavigation } from '../../../utils/handleShowcaseAnchorNavigation';

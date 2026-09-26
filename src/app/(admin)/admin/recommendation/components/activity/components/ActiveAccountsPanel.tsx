@@ -33,7 +33,9 @@ export function ActiveAccountsPanel({
                         <span className="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
                             <UserRound className="size-4" />
                         </span>
-                        <h2 className="text-base font-semibold text-zinc-950">Tài khoản có hoạt động</h2>
+                        <h2 className="text-base font-semibold text-zinc-950">
+                            Tài khoản có hoạt động
+                        </h2>
                     </div>
                     <p className="mt-1 text-xs leading-5 text-zinc-500">
                         Chọn tài khoản để xem hành trình gợi ý.
@@ -56,34 +58,37 @@ export function ActiveAccountsPanel({
             </label>
 
             <div className="mt-3 space-y-1.5">
-                {loading && users.length === 0 ? (
-                    [1, 2, 3].map((item) => (
-                        <div key={item} className="rounded-lg border border-zinc-100 p-2.5">
-                            <div className="flex items-center gap-3">
-                                <div className="size-10 animate-pulse rounded-full bg-zinc-100" />
-                                <div className="min-w-0 flex-1 space-y-2">
-                                    <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
-                                    <div className="h-2.5 w-1/2 animate-pulse rounded bg-zinc-100" />
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    users.map((actor) => (
-                        <ActiveAccountOption
-                            key={actor.actorId}
-                            actor={actor}
-                            selected={actor.actorId === selectedUserId}
-                            onSelect={onSelect}
-                        />
-                    ))
-                )}
+                {loading && users.length === 0
+                    ? [1, 2, 3].map((item) => (
+                          <div
+                              key={item}
+                              className="rounded-lg border border-zinc-100 p-2.5"
+                          >
+                              <div className="flex items-center gap-3">
+                                  <div className="size-10 animate-pulse rounded-full bg-zinc-100" />
+                                  <div className="min-w-0 flex-1 space-y-2">
+                                      <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-100" />
+                                      <div className="h-2.5 w-1/2 animate-pulse rounded bg-zinc-100" />
+                                  </div>
+                              </div>
+                          </div>
+                      ))
+                    : users.map((actor) => (
+                          <ActiveAccountOption
+                              key={actor.actorId}
+                              actor={actor}
+                              selected={actor.actorId === selectedUserId}
+                              onSelect={onSelect}
+                          />
+                      ))}
 
                 {!loading && users.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center">
                         <Search className="mx-auto size-5 text-zinc-300" />
                         <p className="mt-2 text-sm font-medium text-zinc-600">
-                            {search ? 'Không tìm thấy tài khoản phù hợp' : 'Chưa có tài khoản có hoạt động'}
+                            {search
+                                ? 'Không tìm thấy tài khoản phù hợp'
+                                : 'Chưa có tài khoản có hoạt động'}
                         </p>
                         <p className="mt-1 text-xs text-zinc-400">
                             {search

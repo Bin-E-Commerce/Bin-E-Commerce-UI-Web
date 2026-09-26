@@ -20,9 +20,16 @@ function getAttributeText(
     if (!value) return '';
 
     const selectedOptionValues = value.selectedOptionIds
-        .map((optionId) => attribute.options.find((option) => option.id === optionId)?.displayValue)
+        .map(
+            (optionId) =>
+                attribute.options.find((option) => option.id === optionId)
+                    ?.displayValue,
+        )
         .filter((optionValue): optionValue is string => Boolean(optionValue));
-    const scalarValue = value.valueText || value.valueNumber || (value.valueBoolean === null ? '' : String(value.valueBoolean));
+    const scalarValue =
+        value.valueText ||
+        value.valueNumber ||
+        (value.valueBoolean === null ? '' : String(value.valueBoolean));
 
     return [...selectedOptionValues, scalarValue].filter(Boolean).join(', ');
 }
@@ -59,7 +66,9 @@ export function buildProductNameSuggestionRequest(
     return {
         category: {
             name: references.category?.name ?? '',
-            ...(references.category?.path ? { path: references.category.path } : {}),
+            ...(references.category?.path
+                ? { path: references.category.path }
+                : {}),
         },
         ...(references.brand?.name ? { brand: references.brand.name } : {}),
         sellerInput: {
@@ -67,7 +76,9 @@ export function buildProductNameSuggestionRequest(
             ...(values.shortDescription.trim()
                 ? { shortDescription: values.shortDescription.trim() }
                 : {}),
-            ...(values.description.trim() ? { description: values.description.trim() } : {}),
+            ...(values.description.trim()
+                ? { description: values.description.trim() }
+                : {}),
             ...(attributes.length > 0 ? { attributes } : {}),
         },
         images: getReadyProductImages(values.images),

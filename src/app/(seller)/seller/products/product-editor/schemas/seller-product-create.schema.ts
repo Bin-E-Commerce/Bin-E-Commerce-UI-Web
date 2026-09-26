@@ -6,10 +6,15 @@ import {
 } from '@/lib/validation/common-validation.schema';
 
 // Kiểm tra GTIN khi người bán thật sự khai báo mã nhận diện sản phẩm.
-const optionalGtinSchema = z.string().trim().refine(
-    (value) => value.length === 0 || /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(value),
-    'GTIN phải gồm 8, 12, 13 hoặc 14 chữ số.',
-);
+const optionalGtinSchema = z
+    .string()
+    .trim()
+    .refine(
+        (value) =>
+            value.length === 0 ||
+            /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(value),
+        'GTIN phải gồm 8, 12, 13 hoặc 14 chữ số.',
+    );
 
 // Giữ số ở dạng chuỗi trong form để người dùng có thể nhập dở và hiển thị lỗi đúng vị trí.
 const positiveNumberText = (label: string) =>
@@ -41,11 +46,20 @@ export const sellerProductCreateSchema = z
             .trim()
             .min(20, 'Mô tả sản phẩm cần có ít nhất 20 ký tự.')
             .max(30_000, 'Mô tả sản phẩm không được vượt quá 30.000 ký tự.'),
-        shortDescription: z.string().trim().max(500, 'Mô tả ngắn không được vượt quá 500 ký tự.'),
+        shortDescription: z
+            .string()
+            .trim()
+            .max(500, 'Mô tả ngắn không được vượt quá 500 ký tự.'),
         gtin: optionalGtinSchema,
-        sellerSku: z.string().trim().max(160, 'SKU sản phẩm không được vượt quá 160 ký tự.'),
+        sellerSku: z
+            .string()
+            .trim()
+            .max(160, 'SKU sản phẩm không được vượt quá 160 ký tự.'),
         condition: z.enum(['new', 'used_like_new', 'used_good']),
-        countryOfOrigin: z.string().trim().max(120, 'Xuất xứ không được vượt quá 120 ký tự.'),
+        countryOfOrigin: z
+            .string()
+            .trim()
+            .max(120, 'Xuất xứ không được vượt quá 120 ký tự.'),
         images: z
             .array(
                 z.object({
@@ -84,12 +98,21 @@ export const sellerProductCreateSchema = z
             .array(
                 z.object({
                     clientId: z.string().min(1),
-                    name: z.string().trim().min(1, 'Tên nhóm phân loại là bắt buộc.'),
+                    name: z
+                        .string()
+                        .trim()
+                        .min(1, 'Tên nhóm phân loại là bắt buộc.'),
                     values: z
                         .array(
                             z.object({
                                 clientId: z.string().min(1),
-                                value: z.string().trim().min(1, 'Giá trị phân loại không được để trống.'),
+                                value: z
+                                    .string()
+                                    .trim()
+                                    .min(
+                                        1,
+                                        'Giá trị phân loại không được để trống.',
+                                    ),
                             }),
                         )
                         .min(1, 'Mỗi nhóm cần ít nhất một giá trị.')
@@ -106,15 +129,25 @@ export const sellerProductCreateSchema = z
                     sku: z.string().trim().max(160),
                     gtin: optionalGtinSchema,
                     withoutGtin: z.boolean(),
-                    price: z.string().trim().refine(
-                        (value) => Number.isFinite(Number(value)) && Number(value) >= 100,
-                        'Giá bán phải từ 100 đồng.',
-                    ),
+                    price: z
+                        .string()
+                        .trim()
+                        .refine(
+                            (value) =>
+                                Number.isFinite(Number(value)) &&
+                                Number(value) >= 100,
+                            'Giá bán phải từ 100 đồng.',
+                        ),
                     originalPrice: z.string().trim(),
-                    stockQuantity: z.string().trim().refine(
-                        (value) => Number.isInteger(Number(value)) && Number(value) >= 0,
-                        'Tồn kho phải là số nguyên không âm.',
-                    ),
+                    stockQuantity: z
+                        .string()
+                        .trim()
+                        .refine(
+                            (value) =>
+                                Number.isInteger(Number(value)) &&
+                                Number(value) >= 0,
+                            'Tồn kho phải là số nguyên không âm.',
+                        ),
                     imageUrl: z.string(),
                 }),
             )
@@ -132,7 +165,10 @@ export const sellerProductCreateSchema = z
             const originalPrice = Number(variant.originalPrice);
 
             // Giá gốc chỉ hợp lệ khi không thấp hơn giá bán để tránh hiển thị giảm giá sai.
-            if (variant.originalPrice && (!Number.isFinite(originalPrice) || originalPrice < price)) {
+            if (
+                variant.originalPrice &&
+                (!Number.isFinite(originalPrice) || originalPrice < price)
+            ) {
                 context.addIssue({
                     code: 'custom',
                     path: ['variants', index, 'originalPrice'],
@@ -166,17 +202,19 @@ export const initialSellerProductCreateValues = {
     video: null,
     attributes: {},
     options: [],
-    variants: [{
-        key: 'default',
-        label: 'Sản phẩm mặc định',
-        optionValueClientIds: [],
-        sku: '',
-        gtin: '',
-        withoutGtin: true,
-        price: '',
-        originalPrice: '',
-        stockQuantity: '0',
-        imageUrl: '',
-    }],
+    variants: [
+        {
+            key: 'default',
+            label: 'Sản phẩm mặc định',
+            optionValueClientIds: [],
+            sku: '',
+            gtin: '',
+            withoutGtin: true,
+            price: '',
+            originalPrice: '',
+            stockQuantity: '0',
+            imageUrl: '',
+        },
+    ],
     package: { weightGrams: '', lengthCm: '', widthCm: '', heightCm: '' },
 };

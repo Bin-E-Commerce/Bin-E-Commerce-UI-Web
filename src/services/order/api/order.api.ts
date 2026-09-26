@@ -10,7 +10,8 @@ import type {
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
 
-export type DeliveryIssueReason = 'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
+export type DeliveryIssueReason =
+    'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
 
 export interface DeliveryConfirmationInput {
     decision: 'RECEIVED' | 'ISSUE';
@@ -21,8 +22,14 @@ export interface DeliveryConfirmationInput {
 }
 
 // Gửi quyết định nhận hàng; backend giữ ownership, idempotency và trạng thái cuối cùng của order.
-export async function confirmOrderDelivery(orderId: string, input: DeliveryConfirmationInput): Promise<OrderResponse> {
-    const response = await authorizedAxios.post<OrderResponse>(`${ORDERS}/${orderId}/delivery-confirmation`, input);
+export async function confirmOrderDelivery(
+    orderId: string,
+    input: DeliveryConfirmationInput,
+): Promise<OrderResponse> {
+    const response = await authorizedAxios.post<OrderResponse>(
+        `${ORDERS}/${orderId}/delivery-confirmation`,
+        input,
+    );
     return response.data;
 }
 
@@ -51,7 +58,12 @@ export interface OrderQuoteResponse {
     shippingFee: string;
     totalAmount: string;
     paymentMethod: 'COD';
-    shippingFeeBreakdown: Array<{ shopId: string; provider: string; fee: string; serviceName: string }>;
+    shippingFeeBreakdown: Array<{
+        shopId: string;
+        provider: string;
+        fee: string;
+        serviceName: string;
+    }>;
 }
 
 // Quote chỉ truyền addressId; item, shop và số tiền authoritative được đọc ở backend.
@@ -59,11 +71,14 @@ export async function getOrderQuote(
     shippingAddressId: string,
     cartItemId?: string,
 ): Promise<OrderQuoteResponse> {
-    const response = await authorizedAxios.post<OrderQuoteResponse>(`${ORDERS}/quote`, {
-        shippingAddressId,
-        ...(cartItemId ? { cartItemId } : {}),
-        paymentMethod: 'COD',
-    });
+    const response = await authorizedAxios.post<OrderQuoteResponse>(
+        `${ORDERS}/quote`,
+        {
+            shippingAddressId,
+            ...(cartItemId ? { cartItemId } : {}),
+            paymentMethod: 'COD',
+        },
+    );
     return response.data;
 }
 
@@ -76,7 +91,9 @@ export async function getOrder(orderId: string): Promise<OrderResponse> {
 }
 
 export type CustomerOrderStatus = OrderResponse['status'];
-export type CustomerOrderStage = NonNullable<OrderResponse['fulfillmentStatus']>;
+export type CustomerOrderStage = NonNullable<
+    OrderResponse['fulfillmentStatus']
+>;
 
 export interface CustomerOrderListItem {
     id: string;
@@ -158,8 +175,24 @@ export async function cancelOrder(
     return response.data;
 }
 
-export type OrderReturnStatus = 'REQUESTED' | 'CUSTOMER_CANCELLED' | 'APPROVED' | 'REJECTED' | 'AWAITING_SHIPMENT' | 'IN_TRANSIT' | 'SHIPMENT_FAILED' | 'RECEIVED' | 'INSPECTION_FAILED' | 'REFUND_PENDING';
-export type OrderReturnReason = 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'NOT_AS_DESCRIBED' | 'CHANGE_OF_MIND' | 'OTHER';
+export type OrderReturnStatus =
+    | 'REQUESTED'
+    | 'CUSTOMER_CANCELLED'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'AWAITING_SHIPMENT'
+    | 'IN_TRANSIT'
+    | 'SHIPMENT_FAILED'
+    | 'RECEIVED'
+    | 'INSPECTION_FAILED'
+    | 'REFUND_PENDING';
+export type OrderReturnReason =
+    | 'DAMAGED'
+    | 'WRONG_ITEM'
+    | 'MISSING_ITEM'
+    | 'NOT_AS_DESCRIBED'
+    | 'CHANGE_OF_MIND'
+    | 'OTHER';
 
 export interface OrderReturnResponse {
     id: string;
@@ -185,19 +218,38 @@ export interface OrderReturnResponse {
 }
 
 // Tạo return request theo một shop; UI phải tách item nhiều shop thành nhiều request.
-export async function createOrderReturn(orderId: string, input: { itemIds: string[]; reason: OrderReturnReason; description?: string; evidence?: OrderReturnResponse['evidence'] }): Promise<OrderReturnResponse> {
-    const response = await authorizedAxios.post<OrderReturnResponse>(`${ORDERS}/${orderId}/returns`, input);
+export async function createOrderReturn(
+    orderId: string,
+    input: {
+        itemIds: string[];
+        reason: OrderReturnReason;
+        description?: string;
+        evidence?: OrderReturnResponse['evidence'];
+    },
+): Promise<OrderReturnResponse> {
+    const response = await authorizedAxios.post<OrderReturnResponse>(
+        `${ORDERS}/${orderId}/returns`,
+        input,
+    );
     return response.data;
 }
 
 // Đọc các request return thuộc order hiện tại.
-export async function listOrderReturns(orderId: string): Promise<OrderReturnResponse[]> {
-    const response = await authorizedAxios.get<OrderReturnResponse[]>(`${ORDERS}/${orderId}/returns`);
+export async function listOrderReturns(
+    orderId: string,
+): Promise<OrderReturnResponse[]> {
+    const response = await authorizedAxios.get<OrderReturnResponse[]>(
+        `${ORDERS}/${orderId}/returns`,
+    );
     return response.data;
 }
 
 // Hủy request đang chờ seller xử lý.
-export async function cancelOrderReturn(returnId: string): Promise<OrderReturnResponse> {
-    const response = await authorizedAxios.post<OrderReturnResponse>(`${API_BASE_URL}${API_VERSION}/orders/returns/${returnId}/cancellation`);
+export async function cancelOrderReturn(
+    returnId: string,
+): Promise<OrderReturnResponse> {
+    const response = await authorizedAxios.post<OrderReturnResponse>(
+        `${API_BASE_URL}${API_VERSION}/orders/returns/${returnId}/cancellation`,
+    );
     return response.data;
 }

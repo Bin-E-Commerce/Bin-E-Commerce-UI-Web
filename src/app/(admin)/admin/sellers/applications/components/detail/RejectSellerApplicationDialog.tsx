@@ -108,22 +108,30 @@ export function RejectSellerApplicationDialog({
                     <div className="mb-1 flex size-11 items-center justify-center rounded-xl bg-red-50 text-red-700">
                         <Ban className="size-5" />
                     </div>
-                    <AlertDialogTitle>Từ chối hồ sơ {shopName}?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                        Từ chối hồ sơ {shopName}?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                        Hồ sơ sẽ được trả lại cho người bán. Hãy ghi rõ nội dung cần sửa để họ có thể bổ sung và gửi lại.
+                        Hồ sơ sẽ được trả lại cho người bán. Hãy ghi rõ nội dung
+                        cần sửa để họ có thể bổ sung và gửi lại.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
 
                 <fieldset className="space-y-2">
                     <legend className="text-sm font-medium text-zinc-900">
-                        Nội dung cần chỉnh sửa <span className="text-red-600">*</span>
+                        Nội dung cần chỉnh sửa{' '}
+                        <span className="text-red-600">*</span>
                     </legend>
                     <div className="grid gap-2 sm:grid-cols-2">
                         <CorrectionTargetOption
                             label="Thông tin shop"
                             description="Tên, đường dẫn, ngành hàng hoặc mô tả"
-                            checked={correctionTargets.includes('shop_information')}
-                            onChange={() => toggleCorrectionTarget('shop_information')}
+                            checked={correctionTargets.includes(
+                                'shop_information',
+                            )}
+                            onChange={() =>
+                                toggleCorrectionTarget('shop_information')
+                            }
                         />
                         <CorrectionTargetOption
                             label="Logo shop"
@@ -134,26 +142,42 @@ export function RejectSellerApplicationDialog({
                         <CorrectionTargetOption
                             label="Thông tin định danh"
                             description="Họ tên, CCCD, mã số thuế hoặc liên hệ"
-                            checked={correctionTargets.includes('seller_identity')}
-                            onChange={() => toggleCorrectionTarget('seller_identity')}
+                            checked={correctionTargets.includes(
+                                'seller_identity',
+                            )}
+                            onChange={() =>
+                                toggleCorrectionTarget('seller_identity')
+                            }
                         />
                         <CorrectionTargetOption
                             label="Giấy tờ xác minh"
                             description="Ảnh CCCD hoặc giấy phép kinh doanh"
-                            checked={correctionTargets.includes('verification_documents')}
-                            onChange={() => toggleCorrectionTarget('verification_documents')}
+                            checked={correctionTargets.includes(
+                                'verification_documents',
+                            )}
+                            onChange={() =>
+                                toggleCorrectionTarget('verification_documents')
+                            }
                         />
                         <CorrectionTargetOption
                             label="Địa chỉ lấy hàng"
                             description="Người liên hệ và địa chỉ kho"
-                            checked={correctionTargets.includes('pickup_address')}
-                            onChange={() => toggleCorrectionTarget('pickup_address')}
+                            checked={correctionTargets.includes(
+                                'pickup_address',
+                            )}
+                            onChange={() =>
+                                toggleCorrectionTarget('pickup_address')
+                            }
                         />
                         <CorrectionTargetOption
                             label="Thông tin thanh toán"
                             description="Ngân hàng và tài khoản nhận tiền"
-                            checked={correctionTargets.includes('payout_information')}
-                            onChange={() => toggleCorrectionTarget('payout_information')}
+                            checked={correctionTargets.includes(
+                                'payout_information',
+                            )}
+                            onChange={() =>
+                                toggleCorrectionTarget('payout_information')
+                            }
                         />
                     </div>
                     {touched && correctionTargets.length === 0 ? (
@@ -164,7 +188,10 @@ export function RejectSellerApplicationDialog({
                 </fieldset>
 
                 <div className="space-y-2">
-                    <label htmlFor="seller-rejection-reason" className="text-sm font-medium text-zinc-900">
+                    <label
+                        htmlFor="seller-rejection-reason"
+                        className="text-sm font-medium text-zinc-900"
+                    >
                         Lý do từ chối <span className="text-red-600">*</span>
                     </label>
                     <Textarea
@@ -180,7 +207,8 @@ export function RejectSellerApplicationDialog({
                     />
                     <div className="flex items-start justify-between gap-4 text-xs">
                         <p className="text-red-600">
-                            {touched && normalizedReason.length < MIN_REASON_LENGTH
+                            {touched &&
+                            normalizedReason.length < MIN_REASON_LENGTH
                                 ? `Vui lòng nhập ít nhất ${MIN_REASON_LENGTH} ký tự.`
                                 : null}
                         </p>

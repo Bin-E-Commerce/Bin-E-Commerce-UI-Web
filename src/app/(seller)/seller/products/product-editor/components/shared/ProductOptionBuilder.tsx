@@ -179,7 +179,8 @@ export function ProductOptionBuilder({
                 </Button>
             ) : null}
             <p className="text-xs leading-5 text-zinc-500">
-                Tối đa 2 nhóm. Hệ thống tự tạo đầy đủ tổ hợp SKU từ các giá trị đã nhập.
+                Tối đa 2 nhóm. Hệ thống tự tạo đầy đủ tổ hợp SKU từ các giá trị
+                đã nhập.
             </p>
         </div>
     );

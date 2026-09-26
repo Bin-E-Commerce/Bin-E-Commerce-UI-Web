@@ -1,5 +1,5 @@
 // Mục lục phân cấp dùng chung cho mọi showcase; component chỉ quản lý hiển thị, active anchor và menu mobile.
-"use client";
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent, ReactNode, RefObject } from 'react';
@@ -35,7 +35,11 @@ function getLevelClassName(level: number) {
 }
 
 // Giữ mỗi mục thành anchor thật để bàn phím, URL hash và thao tác cuộn đều dùng cùng một contract.
-function TableOfContentsLink({ item, level, activeId }: TableOfContentsLinkProps) {
+function TableOfContentsLink({
+    item,
+    level,
+    activeId,
+}: TableOfContentsLinkProps) {
     const isActive = activeId === item.id;
 
     return (
@@ -52,13 +56,29 @@ function TableOfContentsLink({ item, level, activeId }: TableOfContentsLinkProps
 }
 
 // Render đệ quy cây mục lục thành các nhánh có đường kẻ; dữ liệu của từng feature được truyền từ trang sở hữu nội dung.
-function TableOfContentsItems({ items, activeId, level }: { items: ShowcaseTocItem[]; activeId: string; level: number }): ReactNode {
+function TableOfContentsItems({
+    items,
+    activeId,
+    level,
+}: {
+    items: ShowcaseTocItem[];
+    activeId: string;
+    level: number;
+}): ReactNode {
     return items.map((item) => (
         <li key={item.id} className={level === 0 ? 'pt-1' : undefined}>
-            <TableOfContentsLink item={item} level={level} activeId={activeId} />
+            <TableOfContentsLink
+                item={item}
+                level={level}
+                activeId={activeId}
+            />
             {item.children?.length ? (
                 <ul className="ml-3 mt-1 space-y-0.5 border-l border-zinc-200 pl-2">
-                    <TableOfContentsItems items={item.children} activeId={activeId} level={level + 1} />
+                    <TableOfContentsItems
+                        items={item.children}
+                        activeId={activeId}
+                        level={level + 1}
+                    />
                 </ul>
             ) : null}
         </li>
@@ -66,7 +86,12 @@ function TableOfContentsItems({ items, activeId, level }: { items: ShowcaseTocIt
 }
 
 // Render cùng một cây phân cấp cho desktop/mobile; anchor ID luôn được feature truyền vào và không bị component tự suy đoán.
-function TableOfContentsNavigation({ items, activeId, navRef, variant }: TableOfContentsNavigationProps) {
+function TableOfContentsNavigation({
+    items,
+    activeId,
+    navRef,
+    variant,
+}: TableOfContentsNavigationProps) {
     return (
         <nav
             ref={navRef}
@@ -74,7 +99,11 @@ function TableOfContentsNavigation({ items, activeId, navRef, variant }: TableOf
             className={`mt-3 overflow-y-auto overscroll-contain pr-2 [scrollbar-color:#a1a1aa_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-thumb:hover]:bg-zinc-400 ${variant === 'desktop' ? 'max-h-[calc(100vh-13rem)]' : 'max-h-[calc(100vh-11rem)]'}`}
         >
             <ul className="space-y-1">
-                <TableOfContentsItems items={items} activeId={activeId} level={0} />
+                <TableOfContentsItems
+                    items={items}
+                    activeId={activeId}
+                    level={0}
+                />
             </ul>
         </nav>
     );
@@ -94,7 +123,10 @@ function ShowcaseBackLink() {
     );
 }
 
-export function ShowcaseTableOfContents({ variant, items }: ShowcaseTableOfContentsProps) {
+export function ShowcaseTableOfContents({
+    variant,
+    items,
+}: ShowcaseTableOfContentsProps) {
     const firstItemId = items[0]?.id ?? '';
     const [activeId, setActiveId] = useState(firstItemId);
     const navRef = useRef<HTMLElement>(null);
@@ -105,20 +137,34 @@ export function ShowcaseTableOfContents({ variant, items }: ShowcaseTableOfConte
         const nav = navRef.current;
         if (!nav) return;
 
-        const links = Array.from(nav.querySelectorAll<HTMLAnchorElement>('[data-toc-target]'));
+        const links = Array.from(
+            nav.querySelectorAll<HTMLAnchorElement>('[data-toc-target]'),
+        );
         let animationFrame = 0;
         const updateActiveItem = () => {
             animationFrame = 0;
             const visibleTargets = links.flatMap((link) => {
                 const targetId = link.dataset.tocTarget;
-                const target = targetId ? document.getElementById(targetId) : null;
+                const target = targetId
+                    ? document.getElementById(targetId)
+                    : null;
                 if (!target || target.getClientRects().length === 0) return [];
-                return [{ id: targetId!, top: target.getBoundingClientRect().top }];
+                return [
+                    { id: targetId!, top: target.getBoundingClientRect().top },
+                ];
             });
-            const activationLine = Math.min(200, Math.max(112, window.innerHeight * 0.22));
-            const passedTarget = visibleTargets.filter((target) => target.top <= activationLine).at(-1);
+            const activationLine = Math.min(
+                200,
+                Math.max(112, window.innerHeight * 0.22),
+            );
+            const passedTarget = visibleTargets
+                .filter((target) => target.top <= activationLine)
+                .at(-1);
             const nextActiveId = passedTarget?.id ?? visibleTargets[0]?.id;
-            if (nextActiveId) setActiveId((currentId) => currentId === nextActiveId ? currentId : nextActiveId);
+            if (nextActiveId)
+                setActiveId((currentId) =>
+                    currentId === nextActiveId ? currentId : nextActiveId,
+                );
         };
 
         // Một frame cho nhiều sự kiện giúp TOC mượt hơn khi người đọc cuộn nhanh hoặc mở nhiều disclosure liên tiếp.
@@ -142,22 +188,41 @@ export function ShowcaseTableOfContents({ variant, items }: ShowcaseTableOfConte
     // Cập nhật active state ngay lập tức và đóng menu mobile sau khi người dùng chọn anchor để giữ lại không gian đọc.
     const handleTableOfContentsClick = (event: MouseEvent<HTMLDivElement>) => {
         const clickedElement = event.target;
-        const link = clickedElement instanceof Element ? clickedElement.closest<HTMLAnchorElement>('[data-toc-target]') : null;
+        const link =
+            clickedElement instanceof Element
+                ? clickedElement.closest<HTMLAnchorElement>('[data-toc-target]')
+                : null;
         if (!link) return;
         const targetId = link.dataset.tocTarget;
         if (targetId) setActiveId(targetId);
         mobileDetailsRef.current?.removeAttribute('open');
     };
 
-    const navigation = <TableOfContentsNavigation items={items} activeId={activeId} navRef={navRef} variant={variant} />;
+    const navigation = (
+        <TableOfContentsNavigation
+            items={items}
+            activeId={activeId}
+            navRef={navRef}
+            variant={variant}
+        />
+    );
 
     if (variant === 'mobile') {
         return (
-                <details ref={mobileDetailsRef} className="group rounded-2xl border border-zinc-200 bg-white p-4 xl:hidden">
+            <details
+                ref={mobileDetailsRef}
+                className="group rounded-2xl border border-zinc-200 bg-white p-4 xl:hidden"
+            >
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-zinc-800 [&::-webkit-details-marker]:hidden">
-                    <ListTree aria-hidden="true" className="size-4 text-zinc-500" />
+                    <ListTree
+                        aria-hidden="true"
+                        className="size-4 text-zinc-500"
+                    />
                     Mục lục trang
-                    <ChevronDown aria-hidden="true" className="ml-auto size-4 text-zinc-500 transition-transform group-open:rotate-180" />
+                    <ChevronDown
+                        aria-hidden="true"
+                        className="ml-auto size-4 text-zinc-500 transition-transform group-open:rotate-180"
+                    />
                 </summary>
                 <div onClick={handleTableOfContentsClick}>
                     <ShowcaseBackLink />
@@ -168,10 +233,15 @@ export function ShowcaseTableOfContents({ variant, items }: ShowcaseTableOfConte
     }
 
     return (
-        <aside className="sticky top-24 hidden min-w-0 self-start xl:block" aria-label="Mục lục trang">
+        <aside
+            className="sticky top-24 hidden min-w-0 self-start xl:block"
+            aria-label="Mục lục trang"
+        >
             <div className="max-h-[calc(100vh-7rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
                 <ShowcaseBackLink />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Trên trang này</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    Trên trang này
+                </p>
                 {navigation}
             </div>
         </aside>

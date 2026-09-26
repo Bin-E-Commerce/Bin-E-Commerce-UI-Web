@@ -11,7 +11,9 @@ function Popover(props: React.ComponentProps<typeof PopoverPrimitive.Root>) {
 }
 
 // Trigger hỗ trợ asChild để Button không bị lồng thêm button, tránh HTML không hợp lệ và lỗi bàn phím.
-function PopoverTrigger(props: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+function PopoverTrigger(
+    props: React.ComponentProps<typeof PopoverPrimitive.Trigger>,
+) {
     return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 

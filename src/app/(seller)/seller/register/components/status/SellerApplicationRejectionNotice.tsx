@@ -24,7 +24,9 @@ export function SellerApplicationRejectionNotice({
                 <CircleAlert className="size-5" />
             </span>
             <div>
-                <h2 className="text-sm font-semibold">Hồ sơ cần được cập nhật</h2>
+                <h2 className="text-sm font-semibold">
+                    Hồ sơ cần được cập nhật
+                </h2>
                 <p className="mt-1 whitespace-pre-line text-sm leading-6 text-red-800">
                     {reviewNote}
                 </p>
@@ -32,7 +34,9 @@ export function SellerApplicationRejectionNotice({
                     <ul className="mt-4 grid gap-2 md:grid-cols-2">
                         {correctionTargets.includes('shop_information') ? (
                             <CorrectionStatus
-                                changed={changedCorrectionTargets.includes('shop_information')}
+                                changed={changedCorrectionTargets.includes(
+                                    'shop_information',
+                                )}
                                 description="Kiểm tra lại tên shop, đường dẫn, ngành hàng, mô hình bán và phần mô tả."
                             >
                                 Thông tin shop
@@ -40,7 +44,9 @@ export function SellerApplicationRejectionNotice({
                         ) : null}
                         {correctionTargets.includes('shop_logo') ? (
                             <CorrectionStatus
-                                changed={changedCorrectionTargets.includes('shop_logo')}
+                                changed={changedCorrectionTargets.includes(
+                                    'shop_logo',
+                                )}
                                 description="Tải logo vuông, rõ nét, không bị vỡ và không chứa thông tin liên hệ bên ngoài."
                             >
                                 Logo shop
@@ -48,15 +54,21 @@ export function SellerApplicationRejectionNotice({
                         ) : null}
                         {correctionTargets.includes('seller_identity') ? (
                             <CorrectionStatus
-                                changed={changedCorrectionTargets.includes('seller_identity')}
+                                changed={changedCorrectionTargets.includes(
+                                    'seller_identity',
+                                )}
                                 description="Đối chiếu họ tên pháp lý, số CCCD hoặc mã số thuế, người đại diện và thông tin liên hệ."
                             >
                                 Thông tin định danh
                             </CorrectionStatus>
                         ) : null}
-                        {correctionTargets.includes('verification_documents') ? (
+                        {correctionTargets.includes(
+                            'verification_documents',
+                        ) ? (
                             <CorrectionStatus
-                                changed={changedCorrectionTargets.includes('verification_documents')}
+                                changed={changedCorrectionTargets.includes(
+                                    'verification_documents',
+                                )}
                                 description="Tải lại đầy đủ ảnh mặt trước, mặt sau CCCD hoặc giấy phép kinh doanh; ảnh phải rõ và đủ bốn góc."
                             >
                                 Giấy tờ xác minh
@@ -64,7 +76,9 @@ export function SellerApplicationRejectionNotice({
                         ) : null}
                         {correctionTargets.includes('pickup_address') ? (
                             <CorrectionStatus
-                                changed={changedCorrectionTargets.includes('pickup_address')}
+                                changed={changedCorrectionTargets.includes(
+                                    'pickup_address',
+                                )}
                                 description="Kiểm tra người phụ trách, số điện thoại, tỉnh thành, phường xã và địa chỉ lấy hàng chi tiết."
                             >
                                 Địa chỉ lấy hàng
@@ -72,7 +86,9 @@ export function SellerApplicationRejectionNotice({
                         ) : null}
                         {correctionTargets.includes('payout_information') ? (
                             <CorrectionStatus
-                                changed={changedCorrectionTargets.includes('payout_information')}
+                                changed={changedCorrectionTargets.includes(
+                                    'payout_information',
+                                )}
                                 description="Kiểm tra ngân hàng, số tài khoản, tên chủ tài khoản, loại tài khoản và chi nhánh."
                             >
                                 Thông tin thanh toán

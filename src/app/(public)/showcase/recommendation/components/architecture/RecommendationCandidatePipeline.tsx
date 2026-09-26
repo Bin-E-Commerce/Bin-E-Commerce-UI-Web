@@ -131,10 +131,7 @@ export function RecommendationCandidatePipeline() {
                 className="after:inset-x-0"
             />
 
-            <ol
-                className="min-w-0"
-                aria-label="Ba bước tạo danh sách ứng viên"
-            >
+            <ol className="min-w-0" aria-label="Ba bước tạo danh sách ứng viên">
                 <CandidatePipelineStep
                     number="5.1"
                     title="Dựng ngữ cảnh"

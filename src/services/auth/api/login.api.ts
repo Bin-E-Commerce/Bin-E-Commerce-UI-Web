@@ -1,14 +1,21 @@
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 import publicAxios from '@/utils/publicAxios';
-import type { ApiResponse, AuthData, AuthUser, LoginPayload } from '../types/auth.types';
+import type {
+    ApiResponse,
+    AuthData,
+    AuthUser,
+    LoginPayload,
+} from '../types/auth.types';
 
 const BASE = `${API_BASE_URL}${API_VERSION}/auth`;
 
 // Refresh token được rotate sau mỗi lần dùng nên mọi caller trong cùng một tab
 // phải dùng chung một request. Nếu không, StoreProvider và interceptor có thể
 // gửi đồng thời hai token giống nhau; request đến sau sẽ bị backend từ chối.
-let refreshPromise: ReturnType<typeof publicAxios.post<ApiResponse<AuthData>>> | null = null;
+let refreshPromise: ReturnType<
+    typeof publicAxios.post<ApiResponse<AuthData>>
+> | null = null;
 
 // Gọi API đăng nhập bằng email/password và trả về token cùng thông tin người dùng.
 export function login(payload: LoginPayload) {

@@ -18,7 +18,10 @@ interface SellerProductsTableProps {
     products: SellerProductListItem[];
     onDelete: (product: SellerProductListItem) => void;
     onRestore: (product: SellerProductListItem) => void;
-    onChangeStatus: (product: SellerProductListItem, status: SellerProductPublicationStatus) => void;
+    onChangeStatus: (
+        product: SellerProductListItem,
+        status: SellerProductPublicationStatus,
+    ) => void;
 }
 
 interface ProductThumbnailProps {
@@ -58,7 +61,13 @@ function ProductThumbnail({
 }
 
 // Hiển thị giá desktop theo cấu trúc rõ ràng; khoảng giá được tách thành hai dòng để seller quét nhanh mà không bị text wrap ngẫu nhiên.
-function ProductPrice({ minPrice, maxPrice }: { minPrice: string; maxPrice: string }) {
+function ProductPrice({
+    minPrice,
+    maxPrice,
+}: {
+    minPrice: string;
+    maxPrice: string;
+}) {
     const isRange = Number(minPrice) !== Number(maxPrice);
 
     if (!isRange) {
@@ -72,12 +81,20 @@ function ProductPrice({ minPrice, maxPrice }: { minPrice: string; maxPrice: stri
     return (
         <div className="relative space-y-1 border-l border-zinc-200 pl-3">
             <p className="flex items-baseline gap-1.5 whitespace-nowrap leading-5">
-                <span className="w-6 shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-400">Từ</span>
-                <span className="text-[15px] font-semibold tracking-tight tabular-nums text-zinc-950">{formatSellerProductPrice(minPrice)}</span>
+                <span className="w-6 shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-400">
+                    Từ
+                </span>
+                <span className="text-[15px] font-semibold tracking-tight tabular-nums text-zinc-950">
+                    {formatSellerProductPrice(minPrice)}
+                </span>
             </p>
             <p className="flex items-baseline gap-1.5 whitespace-nowrap leading-5">
-                <span className="w-6 shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-400">Đến</span>
-                <span className="text-[15px] font-semibold tracking-tight tabular-nums text-zinc-950">{formatSellerProductPrice(maxPrice)}</span>
+                <span className="w-6 shrink-0 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-400">
+                    Đến
+                </span>
+                <span className="text-[15px] font-semibold tracking-tight tabular-nums text-zinc-950">
+                    {formatSellerProductPrice(maxPrice)}
+                </span>
             </p>
         </div>
     );
@@ -143,7 +160,10 @@ function DesktopProductsTable({
                                 </div>
                             </td>
                             <td className="px-4 py-4 align-top">
-                                <ProductPrice minPrice={product.minPrice} maxPrice={product.maxPrice} />
+                                <ProductPrice
+                                    minPrice={product.minPrice}
+                                    maxPrice={product.maxPrice}
+                                />
                             </td>
                             <td className="px-4 py-4 align-top">
                                 <p
@@ -208,7 +228,12 @@ function DesktopProductsTable({
 }
 
 // Chuyển mỗi dòng bảng thành khối thông tin dọc trên mobile để không bắt người dùng cuộn ngang.
-function MobileProductsList({ products, onDelete, onRestore, onChangeStatus }: SellerProductsTableProps) {
+function MobileProductsList({
+    products,
+    onDelete,
+    onRestore,
+    onChangeStatus,
+}: SellerProductsTableProps) {
     return (
         <div className="divide-y divide-zinc-100 lg:hidden">
             {products.map((product) => (
@@ -244,23 +269,15 @@ function MobileProductsList({ products, onDelete, onRestore, onChangeStatus }: S
 
                     <div className="grid grid-cols-3 gap-2 rounded-md bg-zinc-50 p-3">
                         <div>
-                            <p className="text-[11px] text-zinc-500">
-                                Tồn kho
-                            </p>
+                            <p className="text-[11px] text-zinc-500">Tồn kho</p>
                             <p className="mt-1 text-sm font-semibold">
-                                {formatSellerProductMetric(
-                                    product.totalStock,
-                                )}
+                                {formatSellerProductMetric(product.totalStock)}
                             </p>
                         </div>
                         <div>
-                            <p className="text-[11px] text-zinc-500">
-                                Đã bán
-                            </p>
+                            <p className="text-[11px] text-zinc-500">Đã bán</p>
                             <p className="mt-1 text-sm font-semibold">
-                                {formatSellerProductMetric(
-                                    product.totalSold,
-                                )}
+                                {formatSellerProductMetric(product.totalSold)}
                             </p>
                         </div>
                         <div>

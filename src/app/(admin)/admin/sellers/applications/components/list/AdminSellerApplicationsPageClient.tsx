@@ -13,7 +13,8 @@ type AdminSellerApplicationStatusFilter = SellerApplicationStatus | 'all';
 
 // Trang client gom state filter/pagination, còn bảng và filter được tách riêng để dễ mở rộng nghiệp vụ duyệt sau.
 export function AdminSellerApplicationsPageClient() {
-    const [status, setStatus] = useState<AdminSellerApplicationStatusFilter>('pending_review');
+    const [status, setStatus] =
+        useState<AdminSellerApplicationStatusFilter>('pending_review');
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
     const deferredSearch = useDeferredValue(search);
@@ -40,7 +41,9 @@ export function AdminSellerApplicationsPageClient() {
     );
 
     // Khi đổi trạng thái, quay về trang đầu để tránh rơi vào trang rỗng của filter mới.
-    function handleStatusChange(nextStatus: AdminSellerApplicationStatusFilter) {
+    function handleStatusChange(
+        nextStatus: AdminSellerApplicationStatusFilter,
+    ) {
         setStatus(nextStatus);
         setPage(1);
     }
@@ -63,8 +66,8 @@ export function AdminSellerApplicationsPageClient() {
                             Hồ sơ đăng ký seller
                         </h1>
                         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-                            Kiểm tra danh sách hồ sơ người bán trước khi duyệt và kích hoạt
-                            quyền vận hành shop.
+                            Kiểm tra danh sách hồ sơ người bán trước khi duyệt
+                            và kích hoạt quyền vận hành shop.
                         </p>
                     </div>
                     <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
@@ -89,7 +92,8 @@ export function AdminSellerApplicationsPageClient() {
 
             {query.isError ? (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    Không tải được danh sách hồ sơ. Vui lòng kiểm tra quyền truy cập hoặc thử lại.
+                    Không tải được danh sách hồ sơ. Vui lòng kiểm tra quyền truy
+                    cập hoặc thử lại.
                 </div>
             ) : null}
 

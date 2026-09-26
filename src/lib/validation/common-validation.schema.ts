@@ -32,16 +32,22 @@ export function uuidSelectionSchema(message: string) {
 // Dùng cho các combobox không bắt buộc: chuỗi rỗng hợp lệ khi người dùng chưa chọn,
 // nhưng giá trị khác rỗng vẫn phải là UUID thật trước khi mapper đưa vào request.
 export function optionalUuidSelectionSchema(message: string) {
-    return z.string().trim().refine((value) => !value || UUID_PATTERN.test(value), {
-        message,
-    });
+    return z
+        .string()
+        .trim()
+        .refine((value) => !value || UUID_PATTERN.test(value), {
+            message,
+        });
 }
 
 // Cho phép bỏ trống URL tùy chọn, nhưng nếu đã nhập thì phải là URL tuyệt đối có protocol.
 export function optionalAbsoluteUrlSchema(message: string) {
-    return z.string().trim().refine((value) => !value || isAbsoluteUrl(value), {
-        message,
-    });
+    return z
+        .string()
+        .trim()
+        .refine((value) => !value || isAbsoluteUrl(value), {
+            message,
+        });
 }
 
 // Dùng cho các field bắt buộc lưu URL tài nguyên đã upload, ví dụ logo shop sau khi lên media-service.

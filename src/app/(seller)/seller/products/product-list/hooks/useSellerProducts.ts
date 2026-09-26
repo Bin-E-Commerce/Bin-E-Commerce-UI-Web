@@ -14,10 +14,8 @@ import type {
 export function useSellerProducts() {
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState<SellerProductStatus | undefined>();
-    const [sortBy, setSortBy] =
-        useState<SellerProductSortBy>('updatedAt');
-    const [sortOrder, setSortOrder] =
-        useState<SellerProductSortOrder>('DESC');
+    const [sortBy, setSortBy] = useState<SellerProductSortBy>('updatedAt');
+    const [sortOrder, setSortOrder] = useState<SellerProductSortOrder>('DESC');
     const [page, setPage] = useState(1);
     const deferredSearch = useDeferredValue(search.trim());
 

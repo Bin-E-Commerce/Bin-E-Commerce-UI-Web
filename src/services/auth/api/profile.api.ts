@@ -21,4 +21,3 @@ export function updateProfile(payload: UpdateProfilePayload) {
         .put<ApiResponse<AuthUser>>(`${USERS}/me`, payload)
         .then((response) => response.data);
 }
-

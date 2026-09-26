@@ -24,14 +24,18 @@ export default function NotFound() {
                     Không tìm thấy trang
                 </h1>
                 <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-zinc-600 sm:text-base">
-                    Đường dẫn này không tồn tại hoặc nội dung đã được chuyển sang vị trí khác.
+                    Đường dẫn này không tồn tại hoặc nội dung đã được chuyển
+                    sang vị trí khác.
                 </p>
 
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                     <Link
                         href="/"
                         className={cn(
-                            buttonVariants({ variant: 'secondary', size: 'lg' }),
+                            buttonVariants({
+                                variant: 'secondary',
+                                size: 'lg',
+                            }),
                             'gap-2 rounded-full px-5',
                         )}
                     >

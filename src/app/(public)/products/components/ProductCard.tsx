@@ -118,8 +118,7 @@ export function ProductCard({
                 rememberRecommendationAttribution(
                     product.id,
                     trackingContext as
-                        | RecommendationAttributionContext
-                        | undefined,
+                        RecommendationAttributionContext | undefined,
                 );
                 void trackRecommendationInteraction({
                     interactionType: 'PRODUCT_CLICKED',

@@ -34,7 +34,9 @@ function isProductEditorDraft(value: unknown): value is ProductEditorDraft {
         draft.values !== null &&
         typeof draft.references === 'object' &&
         draft.references !== null &&
-        PRODUCT_CREATE_STEP_IDS.includes(draft.activeStep as ProductCreateStepId)
+        PRODUCT_CREATE_STEP_IDS.includes(
+            draft.activeStep as ProductCreateStepId,
+        )
     );
 }
 
@@ -53,7 +55,10 @@ export function saveProductEditorDraft(
             references,
             activeStep,
         };
-        window.sessionStorage.setItem(PRODUCT_EDITOR_DRAFT_KEY, JSON.stringify(draft));
+        window.sessionStorage.setItem(
+            PRODUCT_EDITOR_DRAFT_KEY,
+            JSON.stringify(draft),
+        );
     } catch {
         // Không chặn Seller sang trang giao nhận nếu trình duyệt từ chối sessionStorage.
     }
@@ -64,7 +69,9 @@ export function readProductEditorDraft(): ProductEditorDraft | null {
     if (typeof window === 'undefined') return null;
 
     try {
-        const rawDraft = window.sessionStorage.getItem(PRODUCT_EDITOR_DRAFT_KEY);
+        const rawDraft = window.sessionStorage.getItem(
+            PRODUCT_EDITOR_DRAFT_KEY,
+        );
         if (!rawDraft) return null;
 
         const parsedDraft: unknown = JSON.parse(rawDraft);

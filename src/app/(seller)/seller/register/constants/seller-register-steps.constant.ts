@@ -41,4 +41,3 @@ export const SELLER_REGISTER_STEPS: SellerRegisterStep[] = [
         icon: ClipboardCheck,
     },
 ];
-

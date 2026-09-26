@@ -681,10 +681,10 @@ function AiOptimizationCostLogic() {
                         title="03 · Đúng phạm vi"
                     >
                         <p>
-                            Preview chỉ xử lý source đầu tiên ở quality low để seller
-                            duyệt; final dùng quality medium và chỉ chạy sau khi seller
-                            xác nhận. Nền trắng dùng rembg/Pillow local, lifestyle mới
-                            gọi OpenAI.
+                            Preview chỉ xử lý source đầu tiên ở quality low để
+                            seller duyệt; final dùng quality medium và chỉ chạy
+                            sau khi seller xác nhận. Nền trắng dùng rembg/Pillow
+                            local, lifestyle mới gọi OpenAI.
                         </p>
                     </ShowcaseNote>
                     <ShowcaseNote tone="white" compact title="04 · Prompt gọn">

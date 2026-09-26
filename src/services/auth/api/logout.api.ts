@@ -10,4 +10,3 @@ export function logout() {
         .post<ApiResponse<null>>(`${BASE}/logout`, {})
         .then((response) => response.data);
 }
-

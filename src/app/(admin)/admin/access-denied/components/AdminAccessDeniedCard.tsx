@@ -34,7 +34,8 @@ export function AdminAccessDeniedCard() {
                     Tài khoản chưa có quyền quản trị
                 </h1>
                 <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-zinc-500">
-                    Hãy đăng nhập bằng tài khoản admin hoặc liên hệ quản trị viên để được cấp quyền phù hợp.
+                    Hãy đăng nhập bằng tài khoản admin hoặc liên hệ quản trị
+                    viên để được cấp quyền phù hợp.
                 </p>
 
                 <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
