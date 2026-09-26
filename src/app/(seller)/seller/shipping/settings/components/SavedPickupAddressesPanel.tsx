@@ -53,7 +53,8 @@ export function SavedPickupAddressesPanel({
     onDelete,
     onSetDefault,
 }: SavedPickupAddressesPanelProps) {
-    const [pendingDeleteAddress, setPendingDeleteAddress] = useState<PickupAddress | null>(null);
+    const [pendingDeleteAddress, setPendingDeleteAddress] =
+        useState<PickupAddress | null>(null);
     const orderedAddresses = [...addresses].sort((first, second) => {
         if (first.id === defaultAddressId) return -1;
         if (second.id === defaultAddressId) return 1;
@@ -102,7 +103,11 @@ export function SavedPickupAddressesPanel({
                         const isDefault =
                             address.id === defaultAddressId ||
                             address.isDefault;
-                        const areaNames = [address.ghnWardName, address.ghnDistrictName, address.ghnProvinceName].filter((name): name is string => Boolean(name));
+                        const areaNames = [
+                            address.ghnWardName,
+                            address.ghnDistrictName,
+                            address.ghnProvinceName,
+                        ].filter((name): name is string => Boolean(name));
 
                         return (
                             <article
@@ -137,7 +142,8 @@ export function SavedPickupAddressesPanel({
 
                                         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                                             {!isDefault ? (
-                                                <button
+                                                <Button
+                                                    variant="ghost"
                                                     type="button"
                                                     className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:border-zinc-950 hover:text-zinc-950 disabled:pointer-events-none disabled:opacity-50"
                                                     disabled={isSettingDefault}
@@ -147,25 +153,31 @@ export function SavedPickupAddressesPanel({
                                                 >
                                                     <Star className="size-3.5" />{' '}
                                                     Đặt làm mặc định
-                                                </button>
+                                                </Button>
                                             ) : null}
-                                            <button
+                                            <Button
+                                                variant="ghost"
                                                 type="button"
                                                 className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:border-zinc-950 hover:text-zinc-950"
                                                 aria-label="Chỉnh sửa địa chỉ"
                                                 onClick={() => onEdit(address)}
                                             >
                                                 <Pencil className="size-4" />
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
                                                 type="button"
                                                 className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition hover:border-red-300 hover:text-red-600 disabled:pointer-events-none disabled:opacity-40"
                                                 aria-label="Xóa địa chỉ"
                                                 disabled={isDeleting}
-                                                onClick={() => setPendingDeleteAddress(address)}
+                                                onClick={() =>
+                                                    setPendingDeleteAddress(
+                                                        address,
+                                                    )
+                                                }
                                             >
                                                 <Trash2 className="size-4" />
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
 
@@ -212,14 +224,18 @@ export function SavedPickupAddressesPanel({
                     <AlertDialogHeader className="border-b border-zinc-100 px-6 py-6 text-left sm:px-7 sm:py-7">
                         <div className="flex items-start gap-4">
                             <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-inset ring-red-100">
-                                <AlertTriangle className="size-5" strokeWidth={2.2} />
+                                <AlertTriangle
+                                    className="size-5"
+                                    strokeWidth={2.2}
+                                />
                             </div>
                             <div className="min-w-0">
                                 <AlertDialogTitle className="text-xl tracking-tight">
                                     Xóa địa chỉ lấy hàng?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription className="mt-2 max-w-[390px] leading-6">
-                                    Địa chỉ này sẽ được gỡ khỏi danh sách lấy hàng của shop.
+                                    Địa chỉ này sẽ được gỡ khỏi danh sách lấy
+                                    hàng của shop.
                                 </AlertDialogDescription>
                             </div>
                         </div>
@@ -237,22 +253,32 @@ export function SavedPickupAddressesPanel({
                                             {pendingDeleteAddress.contactName}
                                         </p>
                                     </div>
-                                    <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">Địa chỉ lấy hàng</span>
+                                    <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+                                        Địa chỉ lấy hàng
+                                    </span>
                                 </div>
                                 <div className="mt-4 space-y-1 border-t border-zinc-200 pt-4 text-sm">
-                                    <p className="font-medium text-zinc-800">{pendingDeleteAddress.phone}</p>
-                                    <p className="leading-6 text-zinc-600">{pendingDeleteAddress.addressLine}</p>
+                                    <p className="font-medium text-zinc-800">
+                                        {pendingDeleteAddress.phone}
+                                    </p>
+                                    <p className="leading-6 text-zinc-600">
+                                        {pendingDeleteAddress.addressLine}
+                                    </p>
                                 </div>
                             </div>
                             <p className="mt-3 flex items-start gap-2 px-1 text-xs leading-5 text-zinc-500">
                                 <Info className="mt-0.5 size-3.5 shrink-0" />
-                                Ghi chú: Các shipment đã tạo trước đó vẫn giữ nguyên thông tin địa chỉ.
+                                Ghi chú: Các shipment đã tạo trước đó vẫn giữ
+                                nguyên thông tin địa chỉ.
                             </p>
                         </div>
                     ) : null}
 
                     <AlertDialogFooter className="border-t border-zinc-100 bg-zinc-50/70 px-6 py-4 sm:px-7">
-                        <AlertDialogCancel className="h-10 cursor-pointer rounded-xl px-4" disabled={isDeleting}>
+                        <AlertDialogCancel
+                            className="h-10 cursor-pointer rounded-xl px-4"
+                            disabled={isDeleting}
+                        >
                             Hủy
                         </AlertDialogCancel>
                         <AlertDialogAction asChild>
@@ -266,7 +292,11 @@ export function SavedPickupAddressesPanel({
                                     setPendingDeleteAddress(null);
                                 }}
                             >
-                                {isDeleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                                {isDeleting ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="size-4" />
+                                )}
                                 {isDeleting ? 'Đang xóa...' : 'Xóa địa chỉ'}
                             </Button>
                         </AlertDialogAction>
