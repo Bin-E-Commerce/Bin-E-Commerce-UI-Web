@@ -695,7 +695,8 @@ export function AdminRecommendationPolicy({
                                     fallback về Standard Ranking.
                                 </p>
                             </div>
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 role="switch"
                                 aria-checked={mlEnabled}
@@ -716,7 +717,7 @@ export function AdminRecommendationPolicy({
                                         className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition ${mlEnabled ? 'left-[18px]' : 'left-0.5'}`}
                                     />
                                 </span>
-                            </button>
+                            </Button>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-3">
                             <label className="flex items-center gap-2 text-sm text-zinc-700">

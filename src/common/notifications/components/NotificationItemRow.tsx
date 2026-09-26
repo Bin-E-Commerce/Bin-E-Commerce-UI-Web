@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -20,7 +21,8 @@ interface NotificationItemRowProps {
 
 // Chọn icon theo category bằng các nhánh JSX tĩnh để React không khởi tạo lại component icon trong mỗi lần render.
 function NotificationIcon({ category }: { category: string }) {
-    if (category === 'seller_application') return <ClipboardCheck className="size-4" />;
+    if (category === 'seller_application')
+        return <ClipboardCheck className="size-4" />;
     if (category === 'shop_profile') return <FilePenLine className="size-4" />;
     if (category === 'order') return <PackageCheck className="size-4" />;
     if (category === 'security') return <ShieldAlert className="size-4" />;
@@ -35,7 +37,8 @@ export function NotificationItemRow({
     const unread = !notification.readAt;
 
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             onClick={() => onOpen(notification)}
             className={cn(
@@ -43,18 +46,24 @@ export function NotificationItemRow({
                 unread && 'bg-zinc-50/90 shadow-[inset_3px_0_0_#18181b]',
             )}
         >
-            <span className={cn(
-                'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg',
-                unread ? 'bg-zinc-950 text-white shadow-sm' : 'bg-zinc-100 text-zinc-700',
-            )}>
+            <span
+                className={cn(
+                    'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg',
+                    unread
+                        ? 'bg-zinc-950 text-white shadow-sm'
+                        : 'bg-zinc-100 text-zinc-700',
+                )}
+            >
                 <NotificationIcon category={notification.category} />
             </span>
             <span className="min-w-0 flex-1">
                 <span className="flex items-start gap-2">
-                    <span className={cn(
-                        'line-clamp-1 flex-1 text-sm text-zinc-950',
-                        unread ? 'font-bold' : 'font-semibold',
-                    )}>
+                    <span
+                        className={cn(
+                            'line-clamp-1 flex-1 text-sm text-zinc-950',
+                            unread ? 'font-bold' : 'font-semibold',
+                        )}
+                    >
                         {notification.title}
                     </span>
                     {unread && (
@@ -67,16 +76,18 @@ export function NotificationItemRow({
                 <span className="mt-0.5 line-clamp-2 text-xs leading-5 text-zinc-600">
                     {notification.message}
                 </span>
-                <span className={cn(
-                    'mt-1 block text-[11px]',
-                    unread ? 'font-medium text-zinc-600' : 'text-zinc-400',
-                )}>
+                <span
+                    className={cn(
+                        'mt-1 block text-[11px]',
+                        unread ? 'font-medium text-zinc-600' : 'text-zinc-400',
+                    )}
+                >
                     {formatDistanceToNow(new Date(notification.createdAt), {
                         addSuffix: true,
                         locale: vi,
                     })}
                 </span>
             </span>
-        </button>
+        </Button>
     );
 }

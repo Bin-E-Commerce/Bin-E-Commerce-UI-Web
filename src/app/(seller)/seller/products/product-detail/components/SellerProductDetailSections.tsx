@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 // Các section của trang xem chi tiết sản phẩm trong Seller Center.
 // File này điều phối layout và dữ liệu vận hành; phần hiển thị mô tả dùng
 // component dùng chung với storefront để hai vai trò luôn có cùng cấp nội dung.
@@ -377,7 +378,8 @@ function SellerReviewCard({ review }: { review: ProductReview }) {
                     {review.images?.length ? (
                         <div className="mt-4 flex flex-wrap gap-2">
                             {review.images.map((imageUrl, index) => (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     key={imageUrl + '-' + index}
                                     type="button"
                                     onClick={() => setSelectedImageIndex(index)}
@@ -398,7 +400,7 @@ function SellerReviewCard({ review }: { review: ProductReview }) {
                                             Xem ảnh
                                         </span>
                                     </span>
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     ) : null}

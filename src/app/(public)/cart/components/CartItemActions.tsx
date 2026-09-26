@@ -2,6 +2,7 @@
 // Nó dùng chung cho trang cart và mini-cart để mọi nút đều gọi cùng business API, không tự sửa subtotal ở frontend.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Minus, Plus, Trash2 } from 'lucide-react';
 
@@ -60,7 +61,8 @@ export function CartItemActions({
         <div className="flex items-center gap-2">
             {showQuantityActions && (
                 <div className="flex items-center overflow-hidden rounded-lg border border-zinc-200 bg-white">
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={handleDecrease}
                         disabled={item.quantity <= 1 || isBusy}
@@ -71,14 +73,15 @@ export function CartItemActions({
                             className={compact ? 'h-3 w-3' : 'h-4 w-4'}
                             aria-hidden="true"
                         />
-                    </button>
+                    </Button>
                     <span
                         className={`${compact ? 'min-w-8 px-1 text-xs' : 'min-w-10 px-2 text-sm'} text-center font-medium text-zinc-800`}
                         aria-label={`Số lượng ${item.quantity}`}
                     >
                         {item.quantity}
                     </span>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={handleIncrease}
                         disabled={item.quantity >= 999 || isBusy}
@@ -89,11 +92,12 @@ export function CartItemActions({
                             className={compact ? 'h-3 w-3' : 'h-4 w-4'}
                             aria-hidden="true"
                         />
-                    </button>
+                    </Button>
                 </div>
             )}
             {showRemoveAction && (
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={handleRemove}
                     disabled={isBusy}
@@ -108,7 +112,7 @@ export function CartItemActions({
                     {!compact && (
                         <span className="text-xs font-semibold">Xóa</span>
                     )}
-                </button>
+                </Button>
             )}
         </div>
     );

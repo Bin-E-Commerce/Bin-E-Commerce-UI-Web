@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -34,14 +35,15 @@ export function AnnouncementBar() {
                     </span>
                 </div>
 
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={() => setVisible(false)}
                     className="rounded p-0.5 text-zinc-400 transition-colors hover:text-white"
                     aria-label="Đóng thông báo"
                 >
                     <X className="size-3.5" />
-                </button>
+                </Button>
             </div>
         </div>
     );

@@ -27,6 +27,7 @@ interface SellerTopbarProps {
     shopName: string;
     userName: string;
     avatarUrl?: string | null;
+    shopLogoUrl?: string | null;
     onOpenSidebar: () => void;
 }
 
@@ -35,6 +36,7 @@ export function SellerTopbar({
     shopName,
     userName,
     avatarUrl,
+    shopLogoUrl,
     onOpenSidebar,
 }: SellerTopbarProps) {
     const dispatch = useDispatch<AppDispatch>();
@@ -49,7 +51,9 @@ export function SellerTopbar({
         ? `/shop/${profileQuery.data.shop.slug}`
         : '/seller/shop';
     // Seller Center ưu tiên nhận diện bằng logo shop; avatar cá nhân chỉ là fallback khi shop chưa có ảnh đại diện.
-    const displayAvatarUrl = profileQuery.data?.shop.logoUrl || avatarUrl;
+    // Ưu tiên ảnh cá nhân; fallback sang logo shop từ Auth hoặc profile shop hiện tại.
+    const displayAvatarUrl =
+        avatarUrl || shopLogoUrl || profileQuery.data?.shop.logoUrl;
 
     return (
         <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur">
@@ -91,7 +95,8 @@ export function SellerTopbar({
                     <NotificationBell />
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 aria-label="Mở menu tài khoản"
                                 className="group flex h-10 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 pr-3 shadow-sm outline-none transition-colors hover:border-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-950/20"
@@ -118,7 +123,7 @@ export function SellerTopbar({
                                     {userName}
                                 </span>
                                 <ChevronDown className="size-4 text-zinc-400 transition-transform group-data-[state=open]:rotate-180" />
-                            </button>
+                            </Button>
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Portal>
                             <DropdownMenu.Content

@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import type {
     NotificationItem,
     NotificationReadStatus,
@@ -77,10 +81,16 @@ export function NotificationBell() {
                 </Button>
             </PopoverTrigger>
 
-            <PopoverContent align="end" sideOffset={10} className="w-[min(390px,calc(100vw-24px))] overflow-hidden p-0">
+            <PopoverContent
+                align="end"
+                sideOffset={10}
+                className="w-[min(390px,calc(100vw-24px))] overflow-hidden p-0"
+            >
                 <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3">
                     <div>
-                        <p className="text-sm font-semibold text-zinc-950">Thông báo</p>
+                        <p className="text-sm font-semibold text-zinc-950">
+                            Thông báo
+                        </p>
                         <p className="mt-0.5 text-xs text-zinc-500">
                             {totalUnread > 0
                                 ? `${totalUnread} nội dung chưa đọc`
@@ -105,29 +115,36 @@ export function NotificationBell() {
                 </div>
 
                 <div className="flex gap-1 border-b border-zinc-100 px-4 py-2">
-                    {(['all', 'unread'] as NotificationReadStatus[]).map((value) => (
-                        <button
-                            key={value}
-                            type="button"
-                            onClick={() => setStatus(value)}
-                            className={cn(
-                                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                                status === value
-                                    ? 'bg-zinc-950 text-white'
-                                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950',
-                            )}
-                        >
-                            {value === 'all' ? 'Tất cả' : 'Chưa đọc'}
-                            {value === 'unread' && totalUnread > 0 ? (
-                                <span className={cn(
-                                    'min-w-4 rounded-full px-1 text-[10px] font-bold leading-4',
-                                    status === value ? 'bg-red-500 text-white' : 'bg-red-100 text-red-600',
-                                )}>
-                                    {totalUnread > 99 ? '99+' : totalUnread}
-                                </span>
-                            ) : null}
-                        </button>
-                    ))}
+                    {(['all', 'unread'] as NotificationReadStatus[]).map(
+                        (value) => (
+                            <Button
+                                variant="ghost"
+                                key={value}
+                                type="button"
+                                onClick={() => setStatus(value)}
+                                className={cn(
+                                    'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                                    status === value
+                                        ? 'bg-zinc-950 text-white'
+                                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950',
+                                )}
+                            >
+                                {value === 'all' ? 'Tất cả' : 'Chưa đọc'}
+                                {value === 'unread' && totalUnread > 0 ? (
+                                    <span
+                                        className={cn(
+                                            'min-w-4 rounded-full px-1 text-[10px] font-bold leading-4',
+                                            status === value
+                                                ? 'bg-red-500 text-white'
+                                                : 'bg-red-100 text-red-600',
+                                        )}
+                                    >
+                                        {totalUnread > 99 ? '99+' : totalUnread}
+                                    </span>
+                                ) : null}
+                            </Button>
+                        ),
+                    )}
                 </div>
 
                 <div className="max-h-[430px] overflow-y-auto">
@@ -138,7 +155,8 @@ export function NotificationBell() {
                                 Không thể tải thông báo
                             </p>
                             <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                Kết nối tới dịch vụ thông báo đang gián đoạn. Vui lòng thử lại.
+                                Kết nối tới dịch vụ thông báo đang gián đoạn.
+                                Vui lòng thử lại.
                             </p>
                             <Button
                                 type="button"
@@ -154,7 +172,9 @@ export function NotificationBell() {
                     ) : feed.isLoading || isLoadingEmptyFeed ? (
                         <div className="flex h-40 items-center justify-center text-zinc-500">
                             <Loader2 className="size-5 animate-spin" />
-                            <span className="ml-2 text-sm">Đang tải thông báo...</span>
+                            <span className="ml-2 text-sm">
+                                Đang tải thông báo...
+                            </span>
                         </div>
                     ) : items.length === 0 ? (
                         <div className="flex h-40 flex-col items-center justify-center px-6 text-center">
@@ -183,7 +203,9 @@ export function NotificationBell() {
                                         size="sm"
                                         className="w-full"
                                         disabled={feed.isFetchingNextPage}
-                                        onClick={() => void feed.fetchNextPage()}
+                                        onClick={() =>
+                                            void feed.fetchNextPage()
+                                        }
                                     >
                                         {feed.isFetchingNextPage
                                             ? 'Đang tải thêm...'

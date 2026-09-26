@@ -13,10 +13,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type {
-    SellerOrderStatus,
-    SellerOrderTabCounts,
-} from '@/services/order';
+import type { SellerOrderStatus, SellerOrderTabCounts } from '@/services/order';
 
 interface SellerOrderFiltersProps {
     status: SellerOrderStatus | undefined;
@@ -95,7 +92,8 @@ export function SellerOrderFilters({
                         const Icon = tab.icon;
 
                         return (
-                            <button
+                            <Button
+                                variant="ghost"
                                 key={tab.label}
                                 type="button"
                                 aria-current={active ? 'page' : undefined}
@@ -121,7 +119,7 @@ export function SellerOrderFilters({
                                         {count > 99 ? '99+' : count}
                                     </span>
                                 ) : null}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>

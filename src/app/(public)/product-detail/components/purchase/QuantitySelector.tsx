@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Minus, Plus } from 'lucide-react';
 
 interface QuantitySelectorProps {
@@ -20,7 +21,8 @@ export function QuantitySelector({
         <div className="flex flex-wrap items-center gap-4">
             <span className="text-sm font-medium text-zinc-700">Số lượng</span>
             <div className="flex h-10 overflow-hidden rounded border border-zinc-200">
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     aria-label="Giảm số lượng"
                     disabled={quantity <= 1}
@@ -28,7 +30,7 @@ export function QuantitySelector({
                     className="flex w-10 items-center justify-center text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:text-zinc-300"
                 >
                     <Minus className="h-4 w-4" />
-                </button>
+                </Button>
                 <input
                     type="number"
                     aria-label="Số lượng sản phẩm"
@@ -38,7 +40,8 @@ export function QuantitySelector({
                     onChange={(event) => onChange(Number(event.target.value))}
                     className="w-14 border-x border-zinc-200 text-center text-sm outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     aria-label="Tăng số lượng"
                     disabled={stock === 0 || quantity >= stock}
@@ -46,7 +49,7 @@ export function QuantitySelector({
                     className="flex w-10 items-center justify-center text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:text-zinc-300"
                 >
                     <Plus className="h-4 w-4" />
-                </button>
+                </Button>
             </div>
             <span className="text-xs text-zinc-500">
                 {stock > 0 ? `${stock} sản phẩm có sẵn` : 'Tạm hết hàng'}

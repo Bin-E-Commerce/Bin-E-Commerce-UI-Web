@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface OptionCardProps {
@@ -15,7 +16,8 @@ export function OptionCard({
     onClick,
 }: OptionCardProps) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             onClick={onClick}
             className={cn(
@@ -34,7 +36,6 @@ export function OptionCard({
             >
                 {description}
             </span>
-        </button>
+        </Button>
     );
 }
-

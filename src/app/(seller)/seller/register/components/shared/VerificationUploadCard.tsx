@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Loader2, UploadCloud, X } from 'lucide-react';
@@ -143,25 +144,30 @@ export function VerificationUploadCard({
                 ) : null}
 
                 {imageUrl && !uploading ? (
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         aria-label={`Xóa ${title}`}
                         className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-white/90 text-zinc-700 shadow-sm transition-colors hover:bg-white hover:text-zinc-950"
                         onClick={clearDocument}
                     >
                         <X className="size-4" />
-                    </button>
+                    </Button>
                 ) : null}
             </div>
 
             <p className="mt-3 text-sm font-semibold text-zinc-950">{title}</p>
-            <p className="mt-1 text-sm leading-6 text-zinc-500">{description}</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-500">
+                {description}
+            </p>
             {value?.fileName ? (
                 <p className="mt-2 truncate rounded-lg bg-white px-3 py-2 text-xs text-zinc-600 ring-1 ring-zinc-200">
                     {value.fileName}
                 </p>
             ) : null}
-            {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
+            {error ? (
+                <p className="mt-2 text-xs text-red-600">{error}</p>
+            ) : null}
 
             <input
                 ref={inputRef}

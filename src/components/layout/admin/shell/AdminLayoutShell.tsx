@@ -86,11 +86,14 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
 
             {sidebarOpen ? (
                 <div className="fixed inset-0 z-50 lg:hidden">
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         className="absolute inset-0 bg-zinc-950/45"
                         aria-label="Đóng menu quản trị"
-                        onClick={() => setSidebarState({ pathname, open: false })}
+                        onClick={() =>
+                            setSidebarState({ pathname, open: false })
+                        }
                     />
                     <div className="relative h-full w-80 max-w-[86vw] bg-white shadow-2xl">
                         <Button
@@ -99,12 +102,16 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
                             size="icon"
                             className="absolute right-3 top-3 z-10"
                             aria-label="Đóng menu quản trị"
-                            onClick={() => setSidebarState({ pathname, open: false })}
+                            onClick={() =>
+                                setSidebarState({ pathname, open: false })
+                            }
                         >
                             <X className="size-5" />
                         </Button>
                         <AdminSidebar
-                            onNavigate={() => setSidebarState({ pathname, open: false })}
+                            onNavigate={() =>
+                                setSidebarState({ pathname, open: false })
+                            }
                         />
                     </div>
                 </div>
@@ -115,7 +122,9 @@ export function AdminLayoutShell({ children }: AdminLayoutShellProps) {
                     userName={user.name}
                     userRole={user.role}
                     avatarUrl={user.avatarUrl}
-                    onOpenSidebar={() => setSidebarState({ pathname, open: true })}
+                    onOpenSidebar={() =>
+                        setSidebarState({ pathname, open: true })
+                    }
                 />
                 <main className="mx-auto w-full min-w-0 max-w-[1600px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
                     {children}

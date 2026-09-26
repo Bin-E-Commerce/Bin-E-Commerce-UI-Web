@@ -1,6 +1,7 @@
 // File này là section review công khai của product detail.
 // Component lọc theo số sao ở client; backend đã lọc approved và gắn read model like để customer tương tác trực tiếp.
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { MessageSquareText, Star } from 'lucide-react';
 import { useState } from 'react';
@@ -120,7 +121,8 @@ function ReviewFilterButton({
     onClick,
 }: ReviewFilterButtonProps) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             aria-pressed={active}
             onClick={onClick}
@@ -132,6 +134,6 @@ function ReviewFilterButton({
             )}
         >
             {label}
-        </button>
+        </Button>
     );
 }

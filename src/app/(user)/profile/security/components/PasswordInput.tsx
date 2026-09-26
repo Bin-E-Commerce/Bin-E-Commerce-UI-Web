@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState } from 'react';
 import { type ControllerRenderProps, type FieldPath } from 'react-hook-form';
@@ -29,7 +30,8 @@ export function PasswordInput({
                 placeholder={placeholder}
                 className="h-12 rounded-xl pl-11 pr-11 text-sm shadow-none"
             />
-            <button
+            <Button
+                variant="ghost"
                 type="button"
                 onClick={() => setShow((value) => !value)}
                 className="absolute right-3.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-900"
@@ -40,7 +42,7 @@ export function PasswordInput({
                 ) : (
                     <Eye className="h-4 w-4" />
                 )}
-            </button>
+            </Button>
         </div>
     );
 }

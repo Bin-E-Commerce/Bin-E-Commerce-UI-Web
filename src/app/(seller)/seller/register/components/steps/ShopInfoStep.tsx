@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { ImagePlus, Loader2, X } from 'lucide-react';
@@ -15,7 +16,10 @@ import type {
     SellerRegisterFormValues,
 } from '../../types/seller-register-form.type';
 import { Field } from '../shared/Field';
-import { inputClassName, textareaClassName } from '../shared/form-control.styles';
+import {
+    inputClassName,
+    textareaClassName,
+} from '../shared/form-control.styles';
 import {
     SellerCombobox,
     type SellerComboboxOption,
@@ -235,14 +239,15 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
                         </div>
                     ) : null}
                     {hasLogo && !logoUploading ? (
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             aria-label="Xóa logo đã chọn"
                             onClick={clearLogo}
                             className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-white/90 text-zinc-700 shadow-sm transition-colors hover:bg-white hover:text-zinc-950"
                         >
                             <X className="size-4" />
-                        </button>
+                        </Button>
                     ) : null}
                 </div>
                 <p className="mt-3 text-sm font-semibold text-zinc-950">

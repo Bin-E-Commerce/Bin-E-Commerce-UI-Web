@@ -2,6 +2,7 @@
 // Component chỉ gọi API theo shop scope và điều phối thao tác; quyền truy cập vẫn do Gateway/Order Service kiểm tra.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -29,11 +30,7 @@ import { SellerReturnDetailModal } from './seller-return-detail-modal';
 import { SellerReturnRejectDialog } from './seller-return-reject-dialog';
 
 type ReturnQueueFilter =
-    | 'ALL'
-    | 'REQUESTED'
-    | 'AWAITING_SHIPMENT'
-    | 'RECEIVED'
-    | 'RESOLVED';
+    'ALL' | 'REQUESTED' | 'AWAITING_SHIPMENT' | 'RECEIVED' | 'RESOLVED';
 
 const ACTIONABLE_STATUSES = new Set([
     'REQUESTED',
@@ -189,7 +186,8 @@ export function SellerReturnsPageContent() {
                         kết quả kiểm tra minh bạch cho customer.
                     </p>
                 </div>
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={() => void returnsQuery.refetch()}
                     disabled={returnsQuery.isFetching}
@@ -199,7 +197,7 @@ export function SellerReturnsPageContent() {
                         className={`size-4 ${returnsQuery.isFetching ? 'animate-spin' : ''}`}
                     />
                     Làm mới
-                </button>
+                </Button>
             </header>
 
             <section className="grid gap-3 sm:grid-cols-3">
@@ -440,7 +438,8 @@ function ReturnFilterButton({
     children: React.ReactNode;
 }) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             onClick={onClick}
             className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-medium transition ${
@@ -457,7 +456,7 @@ function ReturnFilterButton({
                     {count > 99 ? '99+' : count}
                 </span>
             ) : null}
-        </button>
+        </Button>
     );
 }
 
@@ -544,45 +543,49 @@ function SellerReturnRequestCard({
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
                     <span>Cập nhật {formatUpdatedAt(item.updatedAt)}</span>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={onViewDetails}
                         className="inline-flex cursor-pointer items-center gap-1 font-semibold text-zinc-700 underline-offset-4 hover:text-zinc-950 hover:underline"
                     >
                         <Eye className="size-3.5" /> Xem chi tiết yêu cầu
-                    </button>
+                    </Button>
                 </div>
             </div>
             <div className="flex flex-wrap items-start gap-2 lg:justify-end">
                 {item.status === 'REQUESTED' ? (
                     <>
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             disabled={reviewPending}
                             onClick={() => onReview(true)}
                         >
                             <Check className="size-4" /> Duyệt yêu cầu
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
                             type="button"
                             className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 transition hover:border-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             disabled={reviewPending}
                             onClick={() => onReview(false)}
                         >
                             <X className="size-4" /> Từ chối
-                        </button>
+                        </Button>
                     </>
                 ) : null}
                 {item.status === 'AWAITING_SHIPMENT' ? (
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         disabled={shipmentPending}
                         onClick={onCreateShipment}
                     >
                         <PackageCheck className="size-4" /> Tạo vận đơn hoàn
-                    </button>
+                    </Button>
                 ) : null}
                 {item.status === 'IN_TRANSIT' ? (
                     <span className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-zinc-100 px-3 text-xs font-semibold text-zinc-700 sm:w-auto">
@@ -591,22 +594,24 @@ function SellerReturnRequestCard({
                 ) : null}
                 {item.status === 'RECEIVED' ? (
                     <>
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             disabled={inspectPending}
                             onClick={() => onInspect(true)}
                         >
                             <ClipboardCheck className="size-4" /> Đạt kiểm tra
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
                             type="button"
                             className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 transition hover:border-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             disabled={inspectPending}
                             onClick={() => onInspect(false)}
                         >
                             Không đạt
-                        </button>
+                        </Button>
                     </>
                 ) : null}
             </div>

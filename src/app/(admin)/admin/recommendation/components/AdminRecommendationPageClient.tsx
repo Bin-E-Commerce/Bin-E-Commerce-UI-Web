@@ -65,7 +65,8 @@ export function AdminRecommendationPageClient() {
                         const isActive = state.activeTab === key;
 
                         return (
-                            <button
+                            <Button
+                                variant="ghost"
                                 key={key}
                                 type="button"
                                 role="tab"
@@ -83,7 +84,7 @@ export function AdminRecommendationPageClient() {
                                     <Icon className="size-3.5" />
                                 </span>
                                 {label}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>

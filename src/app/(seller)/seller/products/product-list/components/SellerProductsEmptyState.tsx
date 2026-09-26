@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { PackageSearch } from 'lucide-react';
 
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 
 interface SellerProductsEmptyStateProps {
     filtered: boolean;
@@ -31,13 +31,14 @@ export function SellerProductsEmptyState({
                     : 'Sản phẩm do shop tạo sẽ xuất hiện tại đây cùng giá bán, tồn kho và trạng thái hiển thị.'}
             </p>
             {filtered ? (
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     className="mt-5 text-sm font-semibold text-zinc-950 underline underline-offset-4"
                     onClick={onClearFilters}
                 >
                     Xóa bộ lọc
-                </button>
+                </Button>
             ) : canCreateProduct ? (
                 <Link
                     href="/seller/products/new"

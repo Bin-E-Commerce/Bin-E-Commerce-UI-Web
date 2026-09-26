@@ -2,6 +2,7 @@
 // Component chỉ phát preset được chọn và không chỉnh sửa trực tiếp state của studio.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,7 +27,8 @@ export function BackgroundPresetOption({
     description,
 }: BackgroundPresetOptionProps) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             disabled={disabled}
             onClick={() => onSelect(value)}
@@ -49,6 +51,6 @@ export function BackgroundPresetOption({
             >
                 {description}
             </span>
-        </button>
+        </Button>
     );
 }

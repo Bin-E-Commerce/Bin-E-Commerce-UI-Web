@@ -1,13 +1,8 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import Image from 'next/image';
-import {
-    ChevronLeft,
-    ChevronRight,
-    ImageOff,
-    Play,
-    Video,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageOff, Play, Video } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -35,7 +30,11 @@ interface ProductGalleryProps {
 
 // Đổi số giây từ API thành định dạng phút:giây để hiển thị nhất quán trên thumbnail video.
 function formatVideoDuration(durationSeconds?: number | null): string | null {
-    if (!Number.isFinite(durationSeconds) || !durationSeconds || durationSeconds < 0) {
+    if (
+        !Number.isFinite(durationSeconds) ||
+        !durationSeconds ||
+        durationSeconds < 0
+    ) {
         return null;
     }
 
@@ -97,7 +96,8 @@ export function ProductGallery({
         if (galleryMedia.length <= 1) return;
         setActiveIndex(
             (current) =>
-                (current + direction + galleryMedia.length) % galleryMedia.length,
+                (current + direction + galleryMedia.length) %
+                galleryMedia.length,
         );
     }
 
@@ -130,28 +130,32 @@ export function ProductGallery({
                 ) : (
                     <div className="flex h-full flex-col items-center justify-center gap-3 text-zinc-400">
                         <ImageOff className="h-10 w-10" />
-                        <span className="text-sm">Sản phẩm chưa có ảnh hoặc video</span>
+                        <span className="text-sm">
+                            Sản phẩm chưa có ảnh hoặc video
+                        </span>
                     </div>
                 )}
 
                 {galleryMedia.length > 1 ? (
                     <>
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             aria-label="Xem nội dung trước"
                             onClick={() => moveMedia(-1)}
                             className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-950 hover:text-white"
                         >
                             <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                            variant="ghost"
                             type="button"
                             aria-label="Xem nội dung tiếp theo"
                             onClick={() => moveMedia(1)}
                             className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-950 hover:text-white"
                         >
                             <ChevronRight className="h-4 w-4" />
-                        </button>
+                        </Button>
                     </>
                 ) : null}
             </div>
@@ -166,7 +170,8 @@ export function ProductGallery({
                                 : null;
 
                         return (
-                            <button
+                            <Button
+                                variant="ghost"
                                 key={
                                     media.type === 'image'
                                         ? media.image.sourceKey
@@ -221,7 +226,7 @@ export function ProductGallery({
                                         </span>
                                     </>
                                 )}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>

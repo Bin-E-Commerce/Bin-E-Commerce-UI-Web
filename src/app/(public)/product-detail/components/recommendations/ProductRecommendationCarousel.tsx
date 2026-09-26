@@ -1,6 +1,7 @@
 // File này sở hữu UI carousel ngang cho product detail; không truy vấn dữ liệu và nhận product/metadata qua props.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -95,7 +96,8 @@ export function ProductRecommendationCarousel({
                         <div className="flex items-center gap-2">
                             {showNavigation ? (
                                 <>
-                                    <button
+                                    <Button
+                                        variant="ghost"
                                         type="button"
                                         aria-label={`Cuộn trái: ${title}`}
                                         disabled={!canScrollLeft}
@@ -103,8 +105,9 @@ export function ProductRecommendationCarousel({
                                         className="hidden rounded-full border border-zinc-200 p-2 text-zinc-600 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-30 sm:inline-flex"
                                     >
                                         <ArrowLeft className="h-4 w-4" />
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
                                         type="button"
                                         aria-label={`Cuộn phải: ${title}`}
                                         disabled={!canScrollRight}
@@ -112,7 +115,7 @@ export function ProductRecommendationCarousel({
                                         className="hidden rounded-full border border-zinc-200 p-2 text-zinc-600 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-30 sm:inline-flex"
                                     >
                                         <ArrowRight className="h-4 w-4" />
-                                    </button>
+                                    </Button>
                                 </>
                             ) : null}
                             {actionPlacement === 'header' ? (

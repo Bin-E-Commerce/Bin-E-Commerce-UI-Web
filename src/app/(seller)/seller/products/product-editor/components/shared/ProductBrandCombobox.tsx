@@ -97,14 +97,15 @@ export function ProductBrandCombobox({
                     className="max-h-72 overflow-y-auto overscroll-contain"
                     onScroll={loadMoreWhenNeeded}
                 >
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition-colors hover:bg-zinc-100 focus-visible:bg-zinc-100 focus-visible:outline-none"
                         onClick={() => chooseBrand(null)}
                     >
                         Không có thương hiệu
                         {!value ? <Check className="size-4" /> : null}
-                    </button>
+                    </Button>
 
                     {brandsQuery.isPending ? (
                         <div className="flex items-center justify-center gap-2 py-8 text-sm text-zinc-500">
@@ -133,7 +134,8 @@ export function ProductBrandCombobox({
                     ) : (
                         <>
                             {brandsQuery.brands.map((brand) => (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     key={brand.id}
                                     type="button"
                                     className="flex w-full items-center justify-between gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-zinc-100 focus-visible:bg-zinc-100 focus-visible:outline-none"
@@ -152,7 +154,7 @@ export function ProductBrandCombobox({
                                     {value?.id === brand.id ? (
                                         <Check className="size-4 shrink-0" />
                                     ) : null}
-                                </button>
+                                </Button>
                             ))}
 
                             {brandsQuery.isFetchingNextPage ? (

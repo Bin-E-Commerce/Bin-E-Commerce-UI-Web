@@ -31,7 +31,8 @@ export function AdminSellerApplicationFilters({
         <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap gap-2">
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => onStatusChange('all')}
                         className={cn(
@@ -42,8 +43,9 @@ export function AdminSellerApplicationFilters({
                         )}
                     >
                         Tất cả
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => onStatusChange('pending_review')}
                         className={cn(
@@ -54,8 +56,9 @@ export function AdminSellerApplicationFilters({
                         )}
                     >
                         Chờ duyệt
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => onStatusChange('draft')}
                         className={cn(
@@ -66,8 +69,9 @@ export function AdminSellerApplicationFilters({
                         )}
                     >
                         Bản nháp
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => onStatusChange('approved')}
                         className={cn(
@@ -78,8 +82,9 @@ export function AdminSellerApplicationFilters({
                         )}
                     >
                         Đã duyệt
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => onStatusChange('rejected')}
                         className={cn(
@@ -90,7 +95,7 @@ export function AdminSellerApplicationFilters({
                         )}
                     >
                         Từ chối
-                    </button>
+                    </Button>
                 </div>
 
                 <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
@@ -98,7 +103,9 @@ export function AdminSellerApplicationFilters({
                         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
                         <Input
                             value={search}
-                            onChange={(event) => onSearchChange(event.target.value)}
+                            onChange={(event) =>
+                                onSearchChange(event.target.value)
+                            }
                             placeholder="Tìm shop, email, slug..."
                             className="h-10 rounded-lg pl-9"
                         />
@@ -110,7 +117,9 @@ export function AdminSellerApplicationFilters({
                         onClick={onRefresh}
                         disabled={loading}
                     >
-                        <RefreshCcw className={cn('size-4', loading && 'animate-spin')} />
+                        <RefreshCcw
+                            className={cn('size-4', loading && 'animate-spin')}
+                        />
                         Làm mới
                     </Button>
                 </div>

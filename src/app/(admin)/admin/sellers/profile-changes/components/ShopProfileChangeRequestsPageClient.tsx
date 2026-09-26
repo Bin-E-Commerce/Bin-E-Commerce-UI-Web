@@ -70,7 +70,8 @@ export function ShopProfileChangeRequestsPageClient() {
             <section className="overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm">
                 <div className="flex gap-2 overflow-x-auto border-b border-zinc-200 p-4">
                     {STATUS_FILTERS.map((filter) => (
-                        <button
+                        <Button
+                            variant="ghost"
                             key={filter.value}
                             type="button"
                             className={cn(
@@ -82,7 +83,7 @@ export function ShopProfileChangeRequestsPageClient() {
                             onClick={() => handleStatusChange(filter.value)}
                         >
                             {filter.label}
-                        </button>
+                        </Button>
                     ))}
                 </div>
 

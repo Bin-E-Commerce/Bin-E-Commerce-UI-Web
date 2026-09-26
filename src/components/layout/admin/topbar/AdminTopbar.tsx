@@ -83,7 +83,8 @@ export function AdminTopbar({
 
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-left transition hover:bg-zinc-50 data-[state=open]:bg-zinc-50"
                                 aria-label="Mở menu tài khoản quản trị"
@@ -98,7 +99,7 @@ export function AdminTopbar({
                                     </span>
                                 </span>
                                 <ChevronDown className="hidden size-4 text-zinc-400 sm:block" />
-                            </button>
+                            </Button>
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Portal>
                             <DropdownMenu.Content

@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState, useRef } from 'react';
 import { Search, X } from 'lucide-react';
@@ -33,13 +34,14 @@ export function SearchBar() {
                 focused ? 'w-72 lg:w-80' : 'w-52 lg:w-64',
             )}
         >
-            <button
+            <Button
+                variant="ghost"
                 type="submit"
                 className="absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-700 transition-colors"
                 aria-label="Tìm kiếm"
             >
                 <Search className="h-4 w-4" />
-            </button>
+            </Button>
             <input
                 ref={inputRef}
                 type="search"
@@ -51,14 +53,15 @@ export function SearchBar() {
                 className="h-9 w-full rounded-lg bg-zinc-100 pl-9 pr-8 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-all duration-200 focus:bg-white focus:ring-2 focus:ring-zinc-900/10 [&::-webkit-search-cancel-button]:hidden"
             />
             {query && (
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={handleClear}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer rounded text-zinc-400 hover:text-zinc-700 transition-colors"
                     aria-label="Xóa"
                 >
                     <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
             )}
         </form>
     );

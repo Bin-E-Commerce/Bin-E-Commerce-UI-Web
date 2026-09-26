@@ -76,11 +76,9 @@ function statusLabel(status: OrderReturnResponse['status']): string {
 }
 
 function isTerminal(status: OrderReturnResponse['status']): boolean {
-    return [
-        'CUSTOMER_CANCELLED',
-        'REJECTED',
-        'INSPECTION_FAILED',
-    ].includes(status);
+    return ['CUSTOMER_CANCELLED', 'REJECTED', 'INSPECTION_FAILED'].includes(
+        status,
+    );
 }
 
 // Chuẩn hóa evidence từ API thành media item để modal dùng chung được cả ảnh và video.
@@ -124,7 +122,9 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
         staleTime: 15_000,
     });
     const trackingQuery = useCustomerTracking(order.id);
-    const advanceReturnDemoMutation = useAdvanceDemoCustomerReturnShipment(order.id);
+    const advanceReturnDemoMutation = useAdvanceDemoCustomerReturnShipment(
+        order.id,
+    );
     const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
     const [reason, setReason] = useState<OrderReturnReason>('DAMAGED');
     const [description, setDescription] = useState('');
@@ -196,11 +196,11 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
         (item) => !isTerminal(item.status),
     );
     // Giữ màn hình ở chế độ chỉ đọc sau khi Seller từ chối để customer không tạo lại form trên cùng yêu cầu.
-    const hasRejectedRequest = returnsQuery.data?.some(
-        (item) => item.status === 'REJECTED',
-    ) ?? false;
+    const hasRejectedRequest =
+        returnsQuery.data?.some((item) => item.status === 'REJECTED') ?? false;
     // Khi Customer đã gửi issue ở card xác nhận, form này không được xuất hiện lại để tránh nhập trùng dữ liệu.
-    const deliveryIssueReported = order.deliveryConfirmation?.status === 'ISSUE_REPORTED';
+    const deliveryIssueReported =
+        order.deliveryConfirmation?.status === 'ISSUE_REPORTED';
     const selectedShopIds = new Set(
         order.items
             .filter((item) => selectedItemIds.includes(item.id))
@@ -346,7 +346,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2">
                                         <div className="min-w-0 text-xs text-zinc-600">
                                             <p className="font-semibold text-zinc-900">
-                                                Vận đơn hoàn · {returnShipment.trackingCode}
+                                                Vận đơn hoàn ·{' '}
+                                                {returnShipment.trackingCode}
                                             </p>
                                             <p className="mt-1">
                                                 {returnShipment.statusLabel}
@@ -356,9 +357,13 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                             <Button
                                                 type="button"
                                                 className="h-8 rounded-lg bg-zinc-950 px-3 text-xs text-white hover:bg-zinc-800"
-                                                disabled={advanceReturnDemoMutation.isPending}
+                                                disabled={
+                                                    advanceReturnDemoMutation.isPending
+                                                }
                                                 onClick={() =>
-                                                    advanceReturnDemoMutation.mutate(item.id)
+                                                    advanceReturnDemoMutation.mutate(
+                                                        item.id,
+                                                    )
                                                 }
                                             >
                                                 <SkipForward className="size-3.5" />
@@ -395,9 +400,12 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                             ) : null}
                             {item.status === 'REJECTED' ? (
                                 <div className="mt-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-3 text-sm text-zinc-700">
-                                    <p className="font-semibold text-red-900">Shop đã từ chối yêu cầu hoàn hàng</p>
+                                    <p className="font-semibold text-red-900">
+                                        Shop đã từ chối yêu cầu hoàn hàng
+                                    </p>
                                     <p className="mt-1 leading-5">
-                                        {item.reviewNote?.trim() || 'Shop chưa bổ sung lý do từ chối.'}
+                                        {item.reviewNote?.trim() ||
+                                            'Shop chưa bổ sung lý do từ chối.'}
                                     </p>
                                 </div>
                             ) : null}
@@ -405,7 +413,11 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                     ))}
                 </div>
             ) : null}
-            {canCreate && canShowStandaloneForm && !activeRequest && !hasRejectedRequest && !deliveryIssueReported ? (
+            {canCreate &&
+            canShowStandaloneForm &&
+            !activeRequest &&
+            !hasRejectedRequest &&
+            !deliveryIssueReported ? (
                 <div className="space-y-5 px-5 py-5 sm:px-6">
                     <div className="grid gap-3 sm:grid-cols-2">
                         {order.items.map((item) => {
@@ -414,7 +426,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                 selectedShopIds.size > 0 &&
                                 !selectedShopIds.has(item.sellerShopId ?? '');
                             return (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     key={item.id}
                                     type="button"
                                     onClick={() => toggleItem(item.id)}
@@ -437,7 +450,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                             {item.quantity}
                                         </span>
                                     </span>
-                                </button>
+                                </Button>
                             );
                         })}
                     </div>

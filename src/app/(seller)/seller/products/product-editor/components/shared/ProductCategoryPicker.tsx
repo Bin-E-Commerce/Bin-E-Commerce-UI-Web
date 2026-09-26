@@ -1,6 +1,12 @@
 'use client';
 
-import { Check, ChevronDown, ChevronRight, Loader2, Search } from 'lucide-react';
+import {
+    Check,
+    ChevronDown,
+    ChevronRight,
+    Loader2,
+    Search,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -10,10 +16,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-    catalogService,
-    type CatalogCategory,
-} from '@/services/catalog';
+import { catalogService, type CatalogCategory } from '@/services/catalog';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
@@ -115,10 +118,7 @@ export function ProductCategoryPicker({
                 page: 1,
                 pageSize: 100,
             });
-            setColumns([
-                ...columns.slice(0, columnIndex + 1),
-                response.items,
-            ]);
+            setColumns([...columns.slice(0, columnIndex + 1), response.items]);
         } catch (requestError) {
             setLoadError(getErrorMessage(requestError));
         } finally {
@@ -144,7 +144,9 @@ export function ProductCategoryPicker({
                     className="h-11 w-full justify-between px-3 text-left font-normal"
                 >
                     <span className={cn('truncate', !value && 'text-zinc-500')}>
-                        {value?.path || value?.name || 'Chọn ngành hàng cấp cuối'}
+                        {value?.path ||
+                            value?.name ||
+                            'Chọn ngành hàng cấp cuối'}
                     </span>
                     <ChevronDown className="size-4 text-zinc-500" />
                 </Button>
@@ -164,7 +166,8 @@ export function ProductCategoryPicker({
                         />
                     </div>
                     <p className="mt-2 text-xs text-zinc-500">
-                        Chọn đúng ngành hàng giúp hệ thống hiển thị chính xác thuộc tính sản phẩm.
+                        Chọn đúng ngành hàng giúp hệ thống hiển thị chính xác
+                        thuộc tính sản phẩm.
                     </p>
                 </div>
 
@@ -176,7 +179,8 @@ export function ProductCategoryPicker({
                             <LoadingState />
                         ) : searchResults.length > 0 ? (
                             searchResults.map((category) => (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     key={category.id}
                                     type="button"
                                     className="flex w-full items-center justify-between gap-4 rounded-md px-3 py-3 text-left hover:bg-zinc-100"
@@ -195,7 +199,7 @@ export function ProductCategoryPicker({
                                     {value?.id === category.id ? (
                                         <Check className="size-4 shrink-0" />
                                     ) : null}
-                                </button>
+                                </Button>
                             ))
                         ) : (
                             <p className="p-6 text-center text-sm text-zinc-500">
@@ -213,9 +217,11 @@ export function ProductCategoryPicker({
                                 <div className="max-h-80 overflow-y-auto">
                                     {categories.map((category) => {
                                         const selected =
-                                            trail[columnIndex]?.id === category.id;
+                                            trail[columnIndex]?.id ===
+                                            category.id;
                                         return (
-                                            <button
+                                            <Button
+                                                variant="ghost"
                                                 key={category.id}
                                                 type="button"
                                                 className={cn(
@@ -234,13 +240,14 @@ export function ProductCategoryPicker({
                                                     {category.name}
                                                 </span>
                                                 {category.isLeaf ? (
-                                                    value?.id === category.id ? (
+                                                    value?.id ===
+                                                    category.id ? (
                                                         <Check className="size-4" />
                                                     ) : null
                                                 ) : (
                                                     <ChevronRight className="size-4 shrink-0 text-zinc-400" />
                                                 )}
-                                            </button>
+                                            </Button>
                                         );
                                     })}
                                 </div>
@@ -251,7 +258,8 @@ export function ProductCategoryPicker({
                 )}
 
                 <div className="border-t border-zinc-200 px-4 py-3 text-xs text-zinc-500">
-                    Đã chọn: {value?.path || value?.name || 'Chưa chọn ngành hàng'}
+                    Đã chọn:{' '}
+                    {value?.path || value?.name || 'Chưa chọn ngành hàng'}
                 </div>
             </PopoverContent>
         </Popover>

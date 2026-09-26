@@ -10,7 +10,11 @@ import { Check, ImagePlus, Loader2, Star, Trash2 } from 'lucide-react';
 import type { UseFormReturn } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
-import { PRODUCT_MAX_IMAGE_COUNT, PRODUCT_MIN_IMAGE_COUNT, useProductImageUpload } from '../../hooks/useProductImageUpload';
+import {
+    PRODUCT_MAX_IMAGE_COUNT,
+    PRODUCT_MIN_IMAGE_COUNT,
+    useProductImageUpload,
+} from '../../hooks/useProductImageUpload';
 import type { SellerProductCreateFormValues } from '../../types/seller-product-create-form.type';
 
 interface ProductImageUploaderProps {
@@ -20,12 +24,23 @@ interface ProductImageUploaderProps {
 }
 
 // Hiển thị ảnh theo thứ tự payload; ảnh đầu tiên được dùng làm ảnh bìa của sản phẩm.
-export function ProductImageUploader({ form, images, error }: ProductImageUploaderProps) {
+export function ProductImageUploader({
+    form,
+    images,
+    error,
+}: ProductImageUploaderProps) {
     const upload = useProductImageUpload({ images, setValue: form.setValue });
 
     return (
         <div className="space-y-3">
-            <input ref={upload.inputRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(event) => void upload.selectFiles(event)} />
+            <input
+                ref={upload.inputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(event) => void upload.selectFiles(event)}
+            />
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {images.map((image, index) => (
                     <div
@@ -54,7 +69,9 @@ export function ProductImageUploader({ form, images, error }: ProductImageUpload
                                     variant="ghost"
                                     title="Đặt làm ảnh bìa"
                                     className="text-white transition-transform hover:scale-110 hover:bg-white/15 hover:text-white"
-                                    onClick={() => upload.setThumbnail(image.assetId)}
+                                    onClick={() =>
+                                        upload.setThumbnail(image.assetId)
+                                    }
                                 >
                                     <Star className="size-4" />
                                 </Button>
@@ -65,20 +82,47 @@ export function ProductImageUploader({ form, images, error }: ProductImageUpload
                                 variant="ghost"
                                 title="Xóa ảnh"
                                 className="text-white transition-transform hover:scale-110 hover:bg-white/15 hover:text-white"
-                                onClick={() => upload.removeImage(image.assetId)}
+                                onClick={() =>
+                                    upload.removeImage(image.assetId)
+                                }
                             >
                                 <Trash2 className="size-4" />
                             </Button>
                         </div>
                     </div>
                 ))}
-                {images.length < PRODUCT_MAX_IMAGE_COUNT ? <button type="button" disabled={upload.uploading} className="group flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-sm text-zinc-600 shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-300 hover:-translate-y-1 hover:border-zinc-950 hover:bg-white hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60" onClick={upload.openFilePicker}>
-                    {upload.uploading ? <><Loader2 className="size-5 animate-spin" />{upload.progress}%</> : <><span className="flex size-10 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 group-hover:scale-110"><ImagePlus className="size-5" /></span><span className="font-medium">Thêm ảnh</span></>}
-                </button> : null}
+                {images.length < PRODUCT_MAX_IMAGE_COUNT ? (
+                    <Button
+                        variant="ghost"
+                        type="button"
+                        disabled={upload.uploading}
+                        className="group flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-sm text-zinc-600 shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-300 hover:-translate-y-1 hover:border-zinc-950 hover:bg-white hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={upload.openFilePicker}
+                    >
+                        {upload.uploading ? (
+                            <>
+                                <Loader2 className="size-5 animate-spin" />
+                                {upload.progress}%
+                            </>
+                        ) : (
+                            <>
+                                <span className="flex size-10 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
+                                    <ImagePlus className="size-5" />
+                                </span>
+                                <span className="font-medium">Thêm ảnh</span>
+                            </>
+                        )}
+                    </Button>
+                ) : null}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
-                <span>JPG, PNG hoặc WebP, tối đa 5 MB mỗi ảnh. Cần ít nhất {PRODUCT_MIN_IMAGE_COUNT} ảnh.</span>
-                <span>{images.length}/{PRODUCT_MAX_IMAGE_COUNT} ảnh</span>
+                <span>
+                    JPG, PNG hoặc WebP, tối đa 5 MB mỗi ảnh. Cần ít nhất{' '}
+                    {PRODUCT_MIN_IMAGE_COUNT} ảnh.
+                </span>
+                <span>
+                    {images.length}/{PRODUCT_MAX_IMAGE_COUNT} ảnh
+                </span>
             </div>
             {error ? <p className="text-xs text-red-600">{error}</p> : null}
         </div>

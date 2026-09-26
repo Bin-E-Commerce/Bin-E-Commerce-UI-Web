@@ -1,5 +1,6 @@
 // Một lựa chọn account trong danh sách activity, chỉ hiển thị thông tin nhận diện cần thiết.
 
+import { Button } from '@/components/ui/button';
 import { AccountAvatar } from './AccountAvatar';
 import type { ActivityActor } from '../types';
 
@@ -15,7 +16,8 @@ export function ActiveAccountOption({ actor, selected, onSelect }: Props) {
     const displayName = account?.name ?? 'Tài khoản chưa đồng bộ';
 
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             onClick={() => onSelect(actor.actorId)}
             aria-pressed={selected}
@@ -32,9 +34,13 @@ export function ActiveAccountOption({ actor, selected, onSelect }: Props) {
                     size="size-9"
                 />
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold">{displayName}</p>
+                    <p className="truncate text-[13px] font-semibold">
+                        {displayName}
+                    </p>
                     <p className="mt-0.5 truncate text-[11px] text-zinc-500">
-                        {account?.email ?? account?.phone ?? 'Đang cập nhật thông tin'}
+                        {account?.email ??
+                            account?.phone ??
+                            'Đang cập nhật thông tin'}
                     </p>
                 </div>
                 <div className="hidden shrink-0 items-center gap-1.5 text-[11px] text-zinc-500 sm:flex">
@@ -45,6 +51,6 @@ export function ActiveAccountOption({ actor, selected, onSelect }: Props) {
                     <span>{actor.cartAdds} giỏ</span>
                 </div>
             </div>
-        </button>
+        </Button>
     );
 }

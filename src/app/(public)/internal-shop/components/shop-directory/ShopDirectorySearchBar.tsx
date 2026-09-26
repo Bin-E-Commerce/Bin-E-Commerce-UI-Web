@@ -64,14 +64,15 @@ export function ShopDirectorySearchBar({
                                 className="h-10 border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
                             />
                             {search ? (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     type="button"
                                     aria-label="Xóa từ khóa tìm kiếm"
                                     className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700"
                                     onClick={onClear}
                                 >
                                     <X className="h-4 w-4" />
-                                </button>
+                                </Button>
                             ) : null}
                         </div>
                         <Button

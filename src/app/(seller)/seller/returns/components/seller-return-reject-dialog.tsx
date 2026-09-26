@@ -64,7 +64,8 @@ export function SellerReturnRejectDialog({
                             nhận qua email.
                         </p>
                     </div>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         aria-label="Đóng hộp thoại từ chối"
                         disabled={pending}
@@ -72,7 +73,7 @@ export function SellerReturnRejectDialog({
                         className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition hover:bg-zinc-950 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <X className="size-4" />
-                    </button>
+                    </Button>
                 </div>
 
                 <div className="px-5 py-5">

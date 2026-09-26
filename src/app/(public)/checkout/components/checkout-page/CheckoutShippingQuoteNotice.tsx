@@ -1,5 +1,6 @@
 // Thẻ hiển thị phí giao hàng theo trạng thái quote, không tự tính hoặc thay đổi dữ liệu từ backend.
 
+import { Button } from '@/components/ui/button';
 import {
     CircleAlert,
     Clock3,
@@ -66,12 +67,19 @@ export function CheckoutShippingQuoteNotice({
                             <Truck className="size-4" aria-hidden="true" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-zinc-950">Phí giao hàng</p>
-                            <p className="text-xs text-zinc-500">Giao hàng tiêu chuẩn</p>
+                            <p className="text-sm font-semibold text-zinc-950">
+                                Phí giao hàng
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                                Giao hàng tiêu chuẩn
+                            </p>
                         </div>
                     </div>
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-500">
-                        <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+                        <Loader2
+                            className="size-3 animate-spin"
+                            aria-hidden="true"
+                        />
                         Đang tính
                     </span>
                 </div>
@@ -97,8 +105,12 @@ export function CheckoutShippingQuoteNotice({
                             <MapPinned className="size-4" aria-hidden="true" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-zinc-950">Phí giao hàng</p>
-                            <p className="text-xs text-zinc-500">Cần bổ sung thông tin địa chỉ</p>
+                            <p className="text-sm font-semibold text-zinc-950">
+                                Phí giao hàng
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                                Cần bổ sung thông tin địa chỉ
+                            </p>
                         </div>
                     </div>
                     <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
@@ -106,8 +118,14 @@ export function CheckoutShippingQuoteNotice({
                     </span>
                 </div>
                 <div className="flex items-start gap-3 px-4 py-4 text-sm text-zinc-600">
-                    <MapPinned className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
-                    <p>Chọn đủ tỉnh/thành phố, quận/huyện và phường/xã để tính phí giao hàng.</p>
+                    <MapPinned
+                        className="mt-0.5 size-4 shrink-0 text-amber-600"
+                        aria-hidden="true"
+                    />
+                    <p>
+                        Chọn đủ tỉnh/thành phố, quận/huyện và phường/xã để tính
+                        phí giao hàng.
+                    </p>
                 </div>
             </section>
         );
@@ -122,11 +140,18 @@ export function CheckoutShippingQuoteNotice({
                 <div className="flex items-center justify-between border-b border-red-100 bg-red-50/70 px-4 py-3.5">
                     <div className="flex items-center gap-3">
                         <div className="flex size-9 items-center justify-center rounded-xl bg-red-100 text-red-600">
-                            <CircleAlert className="size-4" aria-hidden="true" />
+                            <CircleAlert
+                                className="size-4"
+                                aria-hidden="true"
+                            />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-zinc-950">Phí giao hàng</p>
-                            <p className="text-xs text-zinc-500">Chưa thể lấy báo giá</p>
+                            <p className="text-sm font-semibold text-zinc-950">
+                                Phí giao hàng
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                                Chưa thể lấy báo giá
+                            </p>
                         </div>
                     </div>
                     <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
@@ -135,16 +160,18 @@ export function CheckoutShippingQuoteNotice({
                 </div>
                 <div className="px-4 py-4">
                     <p className="text-sm leading-5 text-zinc-600">
-                        Chưa thể tính phí giao hàng lúc này. Vui lòng thử lại hoặc kiểm tra lại địa chỉ nhận hàng.
+                        Chưa thể tính phí giao hàng lúc này. Vui lòng thử lại
+                        hoặc kiểm tra lại địa chỉ nhận hàng.
                     </p>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={onRetry}
                         className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-800 transition hover:border-zinc-400 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                     >
                         <RefreshCw className="size-3.5" aria-hidden="true" />
                         Thử lại
-                    </button>
+                    </Button>
                 </div>
             </section>
         );
@@ -159,8 +186,12 @@ export function CheckoutShippingQuoteNotice({
                             <Truck className="size-4" aria-hidden="true" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-zinc-950">Phí giao hàng</p>
-                            <p className="text-xs text-zinc-500">Giao hàng tiêu chuẩn</p>
+                            <p className="text-sm font-semibold text-zinc-950">
+                                Phí giao hàng
+                            </p>
+                            <p className="text-xs text-zinc-500">
+                                Giao hàng tiêu chuẩn
+                            </p>
                         </div>
                     </div>
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 ring-1 ring-zinc-200">
@@ -175,13 +206,17 @@ export function CheckoutShippingQuoteNotice({
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-zinc-900">
-                                {shippingFeeBreakdown[0]?.serviceName ?? 'GHN · Giao tiêu chuẩn'}
+                                {shippingFeeBreakdown[0]?.serviceName ??
+                                    'GHN · Giao tiêu chuẩn'}
                             </p>
                             <p className="mt-0.5 text-xs text-zinc-500">
-                                Phí được tính theo địa chỉ và thông tin kiện hàng
+                                Phí được tính theo địa chỉ và thông tin kiện
+                                hàng
                             </p>
                         </div>
-                        <p className="shrink-0 text-base font-bold text-zinc-950">{shippingFee}</p>
+                        <p className="shrink-0 text-base font-bold text-zinc-950">
+                            {shippingFee}
+                        </p>
                     </div>
 
                     {shippingFeeBreakdown.length > 1 ? (
@@ -190,17 +225,28 @@ export function CheckoutShippingQuoteNotice({
                                 Chi tiết theo shop
                             </p>
                             {shippingFeeBreakdown.map((item) => (
-                                <div key={item.shopId} className="flex items-center justify-between gap-3 text-sm">
-                                    <span className="truncate text-zinc-600">{item.serviceName}</span>
-                                    <span className="shrink-0 font-medium text-zinc-900">{formatPrice(item.fee)}</span>
+                                <div
+                                    key={item.shopId}
+                                    className="flex items-center justify-between gap-3 text-sm"
+                                >
+                                    <span className="truncate text-zinc-600">
+                                        {item.serviceName}
+                                    </span>
+                                    <span className="shrink-0 font-medium text-zinc-900">
+                                        {formatPrice(item.fee)}
+                                    </span>
                                 </div>
                             ))}
                         </div>
                     ) : null}
 
                     <div className="mt-4 flex items-start gap-2 rounded-xl bg-zinc-50 px-3 py-2.5 text-xs leading-5 text-zinc-500">
-                        <Info className="mt-0.5 size-3.5 shrink-0 text-zinc-400" aria-hidden="true" />
-                        Mức phí có thể được xác nhận lại khi shop tiếp nhận đơn hàng.
+                        <Info
+                            className="mt-0.5 size-3.5 shrink-0 text-zinc-400"
+                            aria-hidden="true"
+                        />
+                        Mức phí có thể được xác nhận lại khi shop tiếp nhận đơn
+                        hàng.
                     </div>
                 </div>
             </section>
@@ -215,8 +261,12 @@ export function CheckoutShippingQuoteNotice({
                         <Truck className="size-4" aria-hidden="true" />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-zinc-950">Phí giao hàng</p>
-                        <p className="text-xs text-zinc-500">Giao hàng tiêu chuẩn</p>
+                        <p className="text-sm font-semibold text-zinc-950">
+                            Phí giao hàng
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                            Giao hàng tiêu chuẩn
+                        </p>
                     </div>
                 </div>
                 <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-500">
@@ -224,7 +274,10 @@ export function CheckoutShippingQuoteNotice({
                 </span>
             </div>
             <div className="flex items-start gap-3 px-4 py-4 text-sm text-zinc-500">
-                <Clock3 className="mt-0.5 size-4 shrink-0 text-zinc-400" aria-hidden="true" />
+                <Clock3
+                    className="mt-0.5 size-4 shrink-0 text-zinc-400"
+                    aria-hidden="true"
+                />
                 <p>Chọn địa chỉ nhận hàng để xem phí giao hàng chính xác.</p>
             </div>
         </section>

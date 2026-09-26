@@ -5,9 +5,16 @@
 // Component không tự tính hay lưu dữ liệu; mọi mutation được ủy quyền cho Cart Service qua CartItemActions.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useState } from 'react';
-import { ArrowRight, ImageOff, Info, ShoppingBag, ShoppingCart } from 'lucide-react';
+import {
+    ArrowRight,
+    ImageOff,
+    Info,
+    ShoppingBag,
+    ShoppingCart,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -131,26 +138,34 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                             </Link>
 
                             <div className="col-start-2 flex items-center justify-between gap-3 text-left lg:col-start-3 lg:block lg:text-right">
-                                <span className="text-xs text-zinc-400 lg:hidden">Đơn giá</span>
+                                <span className="text-xs text-zinc-400 lg:hidden">
+                                    Đơn giá
+                                </span>
                                 <p className="text-sm font-medium text-zinc-700">
                                     {formatCartPrice(item.unitPrice)}
                                 </p>
                             </div>
 
                             <div className="col-start-2 flex items-center justify-between gap-3 lg:col-start-4 lg:justify-center">
-                                <span className="text-xs text-zinc-400 lg:hidden">Số lượng</span>
+                                <span className="text-xs text-zinc-400 lg:hidden">
+                                    Số lượng
+                                </span>
                                 <CartItemActions item={item} mode="quantity" />
                             </div>
 
                             <div className="col-start-2 flex items-center justify-between gap-3 text-left lg:col-start-5 lg:block lg:text-right">
-                                <span className="text-xs text-zinc-400 lg:hidden">Số tiền</span>
+                                <span className="text-xs text-zinc-400 lg:hidden">
+                                    Số tiền
+                                </span>
                                 <p className="text-base font-bold text-red-600">
                                     {formatCartPrice(item.lineTotal)}
                                 </p>
                             </div>
 
                             <div className="col-start-2 flex items-center justify-between gap-3 lg:col-start-6 lg:justify-self-end">
-                                <span className="text-xs text-zinc-400 lg:hidden">Thao tác</span>
+                                <span className="text-xs text-zinc-400 lg:hidden">
+                                    Thao tác
+                                </span>
                                 <CartItemActions item={item} mode="remove" />
                             </div>
                         </article>
@@ -185,14 +200,15 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                     hàng.
                 </p>
 
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={handleCheckout}
                     className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                 >
                     Thanh toán
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </button>
+                </Button>
             </aside>
 
             <AlertDialog
@@ -232,7 +248,9 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                 Vì sao có dữ liệu từ nguồn khác?
                             </p>
                             <p className="mt-1 text-sm leading-6 text-zinc-700">
-                                Hệ thống crawl thêm sản phẩm và shop từ nguồn công khai để có nhiều ngành hàng, mức giá và bối cảnh mua sắm đa dạng hơn. Nhờ đó, các tính năng{' '}
+                                Hệ thống crawl thêm sản phẩm và shop từ nguồn
+                                công khai để có nhiều ngành hàng, mức giá và bối
+                                cảnh mua sắm đa dạng hơn. Nhờ đó, các tính năng{' '}
                                 <strong className="font-semibold text-zinc-800">
                                     tìm kiếm và gợi ý sản phẩm
                                 </strong>{' '}
@@ -248,19 +266,25 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                 Đã có{' '}
                                 <strong className="font-semibold text-zinc-800">
                                     thông tin sản phẩm và thông tin shop
-                                </strong>. Chưa đồng bộ{' '}
+                                </strong>
+                                . Chưa đồng bộ{' '}
                                 <strong className="font-semibold text-zinc-800">
-                                    tài khoản người bán, tồn kho thực tế, thanh toán
+                                    tài khoản người bán, tồn kho thực tế, thanh
+                                    toán
                                 </strong>{' '}
                                 và{' '}
                                 <strong className="font-semibold text-zinc-800">
                                     vận chuyển
-                                </strong>.
+                                </strong>
+                                .
                             </p>
                         </div>
 
                         <div className="flex gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3.5 text-sm leading-6 text-zinc-700">
-                            <ShoppingCart className="mt-0.5 size-4 shrink-0 text-zinc-500" aria-hidden="true" />
+                            <ShoppingCart
+                                className="mt-0.5 size-4 shrink-0 text-zinc-500"
+                                aria-hidden="true"
+                            />
                             <p>
                                 Để thanh toán, hãy{' '}
                                 <strong className="font-semibold text-zinc-800">
@@ -269,7 +293,8 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                 và chọn sản phẩm thuộc{' '}
                                 <strong className="font-semibold text-zinc-800">
                                     shop nội bộ
-                                </strong>.
+                                </strong>
+                                .
                             </p>
                         </div>
                     </div>
@@ -284,7 +309,10 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                         >
                             <Link href="/internal-shop">
                                 Chọn shop nội bộ
-                                <ArrowRight className="ml-2 size-4" aria-hidden="true" />
+                                <ArrowRight
+                                    className="ml-2 size-4"
+                                    aria-hidden="true"
+                                />
                             </Link>
                         </AlertDialogAction>
                     </AlertDialogFooter>

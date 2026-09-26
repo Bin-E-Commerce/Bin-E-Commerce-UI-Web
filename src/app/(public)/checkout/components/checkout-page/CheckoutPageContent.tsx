@@ -360,7 +360,8 @@ export function CheckoutPageContent() {
                                 </p>
                             )}
 
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 onClick={() => {
                                     if (showAddressForm) {
@@ -381,7 +382,7 @@ export function CheckoutPageContent() {
                                 {showAddressForm
                                     ? 'Đóng form địa chỉ'
                                     : 'Thêm địa chỉ mới'}
-                            </button>
+                            </Button>
 
                             {showAddressForm ? (
                                 <AddressForm
@@ -650,7 +651,8 @@ export function CheckoutPageContent() {
                                 void quoteQuery.refetch();
                             }}
                         />
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             onClick={handleSubmitOrder}
                             disabled={
@@ -679,7 +681,7 @@ export function CheckoutPageContent() {
                                     />
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </aside>
                 </div>
             </div>

@@ -2,6 +2,7 @@
 // Component chỉ phục vụ xem nhanh; các thao tác cập nhật số lượng và xóa item nằm ngoài Phase 2.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import Link from 'next/link';
 
@@ -92,13 +93,14 @@ export function CartPreview({
                     <p className="mt-1 text-xs text-zinc-500">
                         Vui lòng thử lại sau giây lát.
                     </p>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={onRetry}
                         className="mt-4 rounded-lg bg-zinc-950 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-zinc-800"
                     >
                         Thử lại
-                    </button>
+                    </Button>
                 </div>
             )}
 

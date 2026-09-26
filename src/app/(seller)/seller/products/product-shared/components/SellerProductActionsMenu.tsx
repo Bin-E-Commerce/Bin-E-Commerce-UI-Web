@@ -13,7 +13,7 @@ import {
     Trash2,
 } from 'lucide-react';
 
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type {
     SellerProductListItem,
@@ -49,7 +49,8 @@ export function SellerProductActionsMenu({
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     aria-label={`Mở thao tác cho ${product.name}`}
                     title="Mở thao tác"
@@ -59,7 +60,7 @@ export function SellerProductActionsMenu({
                     )}
                 >
                     <MoreHorizontal className="size-4" aria-hidden="true" />
-                </button>
+                </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
                 <DropdownMenu.Content

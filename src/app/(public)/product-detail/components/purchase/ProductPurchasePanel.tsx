@@ -157,7 +157,8 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                         </span>
                     ) : null}
                 </div>
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     aria-label={
                         isFavorite
@@ -176,7 +177,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     <Heart
                         className={cn('h-5 w-5', isFavorite && 'fill-current')}
                     />
-                </button>
+                </Button>
             </div>
 
             <h1 className="mt-4 break-words text-2xl font-bold leading-tight text-zinc-950 lg:text-3xl">

@@ -3,6 +3,7 @@
 // Không hiển thị cart ID hoặc owner ID vì đây là dữ liệu kỹ thuật không có giá trị với người mua.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import Link from 'next/link';
 import {
@@ -74,14 +75,15 @@ export function CartPageContent() {
                         Có lỗi kết nối tạm thời. Vui lòng thử lại để tiếp tục
                         mua sắm.
                     </p>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => void cartQuery.refetch()}
                         className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                     >
                         <RefreshCw className="h-4 w-4" aria-hidden="true" />
                         Thử lại
-                    </button>
+                    </Button>
                 </section>
             </main>
         );
@@ -120,8 +122,8 @@ export function CartPageContent() {
                                         Giỏ hàng của bạn
                                     </h1>
                                     <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-700">
-                                        Kiểm tra lựa chọn của bạn và sẵn sàng cho
-                                        bước mua sắm tiếp theo.
+                                        Kiểm tra lựa chọn của bạn và sẵn sàng
+                                        cho bước mua sắm tiếp theo.
                                     </p>
                                 </div>
                             </div>
@@ -143,93 +145,94 @@ export function CartPageContent() {
                     ) : (
                         <div className="px-6 py-9 sm:px-8 sm:py-11">
                             <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-                            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 ring-4 ring-zinc-50">
-                                <div className="absolute inset-2 rounded-full border border-zinc-200 bg-white" />
-                                <ShoppingBag
-                                    className="relative h-8 w-8 text-zinc-950"
-                                    strokeWidth={1.5}
-                                    aria-hidden="true"
-                                />
-                            </div>
-                            <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                                Chưa có sản phẩm
-                            </p>
-                            <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">
-                                Giỏ hàng đang trống
-                            </h2>
-                            <p className="mt-2 max-w-md text-sm leading-6 text-zinc-600">
-                                Hãy khám phá các sản phẩm phù hợp với bạn. Những
-                                sản phẩm được thêm vào sẽ xuất hiện ở đây.
-                            </p>
-                            <Link
-                                href="/"
-                                className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-6 text-sm font-semibold text-white shadow-lg shadow-zinc-950/15 transition-all hover:-translate-y-0.5 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-                            >
-                                Khám phá sản phẩm
-                            </Link>
+                                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100 ring-4 ring-zinc-50">
+                                    <div className="absolute inset-2 rounded-full border border-zinc-200 bg-white" />
+                                    <ShoppingBag
+                                        className="relative h-8 w-8 text-zinc-950"
+                                        strokeWidth={1.5}
+                                        aria-hidden="true"
+                                    />
+                                </div>
+                                <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                                    Chưa có sản phẩm
+                                </p>
+                                <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">
+                                    Giỏ hàng đang trống
+                                </h2>
+                                <p className="mt-2 max-w-md text-sm leading-6 text-zinc-600">
+                                    Hãy khám phá các sản phẩm phù hợp với bạn.
+                                    Những sản phẩm được thêm vào sẽ xuất hiện ở
+                                    đây.
+                                </p>
+                                <Link
+                                    href="/"
+                                    className="mt-6 inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-6 text-sm font-semibold text-white shadow-lg shadow-zinc-950/15 transition-all hover:-translate-y-0.5 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+                                >
+                                    Khám phá sản phẩm
+                                </Link>
                             </div>
 
                             <div className="mx-auto mt-10 grid max-w-5xl gap-3 border-t border-zinc-100 pt-7 sm:grid-cols-3 sm:gap-4">
-                            <div className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_12px_28px_-18px_rgba(24,24,27,0.55)] sm:p-5">
-                                <div className="absolute inset-x-0 top-0 h-0.5 bg-zinc-950 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm shadow-zinc-950/20">
-                                        <ShieldCheck
-                                            className="h-5 w-5"
-                                            aria-hidden="true"
-                                        />
+                                <div className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_12px_28px_-18px_rgba(24,24,27,0.55)] sm:p-5">
+                                    <div className="absolute inset-x-0 top-0 h-0.5 bg-zinc-950 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm shadow-zinc-950/20">
+                                            <ShieldCheck
+                                                className="h-5 w-5"
+                                                aria-hidden="true"
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400">
+                                            01
+                                        </span>
                                     </div>
-                                    <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400">
-                                        01
-                                    </span>
+                                    <p className="mt-4 text-sm font-semibold text-zinc-950">
+                                        Mua sắm an tâm
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">
+                                        Thông tin đơn hàng được bảo vệ.
+                                    </p>
                                 </div>
-                                <p className="mt-4 text-sm font-semibold text-zinc-950">
-                                    Mua sắm an tâm
-                                </p>
-                                <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                    Thông tin đơn hàng được bảo vệ.
-                                </p>
-                            </div>
-                            <div className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_12px_28px_-18px_rgba(24,24,27,0.55)] sm:p-5">
-                                <div className="absolute inset-x-0 top-0 h-0.5 bg-zinc-950 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm shadow-zinc-950/20">
-                                        <Truck
-                                            className="h-5 w-5"
-                                            aria-hidden="true"
-                                        />
+                                <div className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_12px_28px_-18px_rgba(24,24,27,0.55)] sm:p-5">
+                                    <div className="absolute inset-x-0 top-0 h-0.5 bg-zinc-950 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm shadow-zinc-950/20">
+                                            <Truck
+                                                className="h-5 w-5"
+                                                aria-hidden="true"
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400">
+                                            02
+                                        </span>
                                     </div>
-                                    <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400">
-                                        02
-                                    </span>
+                                    <p className="mt-4 text-sm font-semibold text-zinc-950">
+                                        Giao hàng thuận tiện
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">
+                                        Theo dõi hành trình đơn hàng.
+                                    </p>
                                 </div>
-                                <p className="mt-4 text-sm font-semibold text-zinc-950">
-                                    Giao hàng thuận tiện
-                                </p>
-                                <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                    Theo dõi hành trình đơn hàng.
-                                </p>
-                            </div>
-                            <div className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_12px_28px_-18px_rgba(24,24,27,0.55)] sm:p-5">
-                                <div className="absolute inset-x-0 top-0 h-0.5 bg-zinc-950 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm shadow-zinc-950/20">
-                                        <ShoppingBag
-                                            className="h-5 w-5"
-                                            aria-hidden="true"
-                                        />
+                                <div className="group relative min-h-[142px] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-[0_12px_28px_-18px_rgba(24,24,27,0.55)] sm:p-5">
+                                    <div className="absolute inset-x-0 top-0 h-0.5 bg-zinc-950 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm shadow-zinc-950/20">
+                                            <ShoppingBag
+                                                className="h-5 w-5"
+                                                aria-hidden="true"
+                                            />
+                                        </div>
+                                        <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400">
+                                            03
+                                        </span>
                                     </div>
-                                    <span className="text-[10px] font-semibold tracking-[0.2em] text-zinc-400">
-                                        03
-                                    </span>
+                                    <p className="mt-4 text-sm font-semibold text-zinc-950">
+                                        Lưu lựa chọn
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-500">
+                                        Quay lại mua sắm bất cứ lúc nào.
+                                    </p>
                                 </div>
-                                <p className="mt-4 text-sm font-semibold text-zinc-950">
-                                    Lưu lựa chọn
-                                </p>
-                                <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                    Quay lại mua sắm bất cứ lúc nào.
-                                </p>
-                            </div>
                             </div>
                         </div>
                     )}

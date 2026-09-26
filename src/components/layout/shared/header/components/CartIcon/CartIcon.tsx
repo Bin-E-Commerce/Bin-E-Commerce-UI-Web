@@ -2,6 +2,7 @@
 // Guest vẫn được chuyển tới trang đăng nhập trước khi truy cập các nghiệp vụ cart.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -90,7 +91,8 @@ export function CartIcon({ count = 0 }: CartIconProps) {
 
     return (
         <div ref={containerRef} className="relative">
-            <button
+            <Button
+                variant="ghost"
                 type="button"
                 onClick={handleTogglePreview}
                 className="relative cursor-pointer rounded-md p-2 text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20"
@@ -104,7 +106,7 @@ export function CartIcon({ count = 0 }: CartIconProps) {
                         {cartCount > 99 ? '99+' : cartCount}
                     </span>
                 )}
-            </button>
+            </Button>
 
             {isOpen && (
                 <CartPreview

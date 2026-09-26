@@ -264,7 +264,8 @@ export function RecommendationsPageContent() {
                                 aria-label="Phân trang sản phẩm gợi ý"
                                 className="flex items-center justify-center gap-1"
                             >
-                                <button
+                                <Button
+                                    variant="ghost"
                                     type="button"
                                     disabled={page === 1}
                                     aria-label="Trang trước"
@@ -272,7 +273,7 @@ export function RecommendationsPageContent() {
                                     className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-zinc-200 px-2 text-sm text-zinc-600 transition-colors hover:border-zinc-950 hover:text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-zinc-200 disabled:hover:text-zinc-600"
                                 >
                                     ‹
-                                </button>
+                                </Button>
                                 {getPaginationItems(page, totalPages).map(
                                     (item, index) =>
                                         item === 'ellipsis' ? (
@@ -283,7 +284,8 @@ export function RecommendationsPageContent() {
                                                 …
                                             </span>
                                         ) : (
-                                            <button
+                                            <Button
+                                                variant="ghost"
                                                 key={item}
                                                 type="button"
                                                 aria-current={
@@ -301,10 +303,11 @@ export function RecommendationsPageContent() {
                                                 }`}
                                             >
                                                 {item}
-                                            </button>
+                                            </Button>
                                         ),
                                 )}
-                                <button
+                                <Button
+                                    variant="ghost"
                                     type="button"
                                     disabled={page === totalPages}
                                     aria-label="Trang tiếp theo"
@@ -312,7 +315,7 @@ export function RecommendationsPageContent() {
                                     className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-zinc-200 px-2 text-sm text-zinc-600 transition-colors hover:border-zinc-950 hover:text-zinc-950 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-zinc-200 disabled:hover:text-zinc-600"
                                 >
                                     ›
-                                </button>
+                                </Button>
                             </nav>
                         </div>
                     ) : null}

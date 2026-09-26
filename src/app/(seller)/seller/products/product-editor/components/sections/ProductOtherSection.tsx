@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import type { UseFormReturn } from 'react-hook-form';
 
@@ -30,10 +31,15 @@ export function ProductOtherSection({ form }: ProductOtherSectionProps) {
             description="Bổ sung tình trạng, xuất xứ và mã quản lý để vận hành sản phẩm nhất quán."
         >
             <div className="space-y-6">
-                <ProductFormField label="Tình trạng" required error={errors.condition?.message}>
+                <ProductFormField
+                    label="Tình trạng"
+                    required
+                    error={errors.condition?.message}
+                >
                     <div className="flex flex-wrap gap-2">
                         {conditions.map((item) => (
-                            <button
+                            <Button
+                                variant="ghost"
                                 key={item.value}
                                 type="button"
                                 className={cn(
@@ -42,23 +48,66 @@ export function ProductOtherSection({ form }: ProductOtherSectionProps) {
                                         ? 'border-zinc-950 bg-zinc-950 text-white'
                                         : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400',
                                 )}
-                                onClick={() => form.setValue('condition', item.value, { shouldDirty: true, shouldValidate: true })}
+                                onClick={() =>
+                                    form.setValue('condition', item.value, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
+                                }
                             >
                                 {item.label}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </ProductFormField>
 
                 <div className="grid gap-5 lg:grid-cols-3">
-                    <ProductFormField label="Xuất xứ" htmlFor="product-origin" error={errors.countryOfOrigin?.message}>
-                        <Input id="product-origin" maxLength={120} placeholder="Ví dụ: Việt Nam" className="h-11" {...form.register('countryOfOrigin')} />
+                    <ProductFormField
+                        label="Xuất xứ"
+                        htmlFor="product-origin"
+                        error={errors.countryOfOrigin?.message}
+                    >
+                        <Input
+                            id="product-origin"
+                            maxLength={120}
+                            placeholder="Ví dụ: Việt Nam"
+                            className="h-11"
+                            {...form.register('countryOfOrigin')}
+                        />
                     </ProductFormField>
-                    <ProductFormField label="SKU sản phẩm" htmlFor="product-seller-sku" error={errors.sellerSku?.message}>
-                        <Input id="product-seller-sku" maxLength={160} placeholder="Mã quản lý nội bộ" className="h-11" {...form.register('sellerSku')} />
+                    <ProductFormField
+                        label="SKU sản phẩm"
+                        htmlFor="product-seller-sku"
+                        error={errors.sellerSku?.message}
+                    >
+                        <Input
+                            id="product-seller-sku"
+                            maxLength={160}
+                            placeholder="Mã quản lý nội bộ"
+                            className="h-11"
+                            {...form.register('sellerSku')}
+                        />
                     </ProductFormField>
-                    <ProductFormField label="GTIN dùng chung" htmlFor="product-gtin" error={errors.gtin?.message} hint="Để trống nếu mỗi SKU có mã riêng hoặc không có GTIN.">
-                        <Input id="product-gtin" inputMode="numeric" maxLength={14} placeholder="8, 12, 13 hoặc 14 chữ số" aria-invalid={Boolean(errors.gtin)} className="h-11" {...form.register('gtin', { onChange: (event) => { event.target.value = event.target.value.replace(/\D/g, ''); } })} />
+                    <ProductFormField
+                        label="GTIN dùng chung"
+                        htmlFor="product-gtin"
+                        error={errors.gtin?.message}
+                        hint="Để trống nếu mỗi SKU có mã riêng hoặc không có GTIN."
+                    >
+                        <Input
+                            id="product-gtin"
+                            inputMode="numeric"
+                            maxLength={14}
+                            placeholder="8, 12, 13 hoặc 14 chữ số"
+                            aria-invalid={Boolean(errors.gtin)}
+                            className="h-11"
+                            {...form.register('gtin', {
+                                onChange: (event) => {
+                                    event.target.value =
+                                        event.target.value.replace(/\D/g, '');
+                                },
+                            })}
+                        />
                     </ProductFormField>
                 </div>
             </div>

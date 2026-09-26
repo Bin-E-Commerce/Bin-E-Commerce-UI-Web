@@ -2,6 +2,7 @@
 // Component quản lý điều hướng, preview và vòng đời modal; dữ liệu upload/xóa media thuộc về component cha.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { useEffect, useState, type MouseEvent } from 'react';
@@ -36,7 +37,8 @@ export function ImageLightboxThumbnail({
 }: ImageLightboxThumbnailProps) {
     return (
         <div className="group relative">
-            <button
+            <Button
+                variant="ghost"
                 type="button"
                 onClick={onClick}
                 aria-label={`Xem ${item.label}`}
@@ -70,16 +72,17 @@ export function ImageLightboxThumbnail({
                 <span className="absolute inset-x-0 bottom-0 bg-zinc-950/65 px-1.5 py-1 text-center text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
                     Xem
                 </span>
-            </button>
+            </Button>
             {onRemove ? (
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={onRemove}
                     aria-label={`Xóa ${item.label}`}
                     className="absolute -right-2 -top-2 flex size-6 cursor-pointer items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-600 shadow-sm transition hover:bg-zinc-950 hover:text-white"
                 >
                     <X className="size-3.5" aria-hidden="true" />
-                </button>
+                </Button>
             ) : null}
         </div>
     );
@@ -165,14 +168,15 @@ export function ImageLightbox({
                             Media {safeIndex + 1} / {mediaItems.length}
                         </p>
                     </div>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={onClose}
                         aria-label="Đóng trình xem media"
                         className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition-colors hover:bg-zinc-950 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                     >
                         <X className="size-4.5" aria-hidden="true" />
-                    </button>
+                    </Button>
                 </div>
                 <div className="relative min-h-0 flex-1 bg-zinc-50/80">
                     {activeMedia.type === 'image' ? (
@@ -197,7 +201,8 @@ export function ImageLightbox({
                     )}
                     {mediaItems.length > 1 ? (
                         <>
-                            <button
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 onClick={() =>
                                     setActiveIndex(
@@ -213,8 +218,9 @@ export function ImageLightbox({
                                     className="size-5"
                                     aria-hidden="true"
                                 />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant="ghost"
                                 type="button"
                                 onClick={() =>
                                     setActiveIndex(
@@ -229,7 +235,7 @@ export function ImageLightbox({
                                     className="size-5"
                                     aria-hidden="true"
                                 />
-                            </button>
+                            </Button>
                         </>
                     ) : null}
                 </div>
@@ -237,7 +243,8 @@ export function ImageLightbox({
                     <div className="border-t border-zinc-100 bg-white px-4 py-3 sm:px-6">
                         <div className="flex gap-2 overflow-x-auto pb-0.5">
                             {mediaItems.map((item, index) => (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     key={`${item.url}-${index}`}
                                     type="button"
                                     onClick={() => setActiveIndex(index)}
@@ -272,7 +279,7 @@ export function ImageLightbox({
                                             </span>
                                         </>
                                     )}
-                                </button>
+                                </Button>
                             ))}
                         </div>
                     </div>

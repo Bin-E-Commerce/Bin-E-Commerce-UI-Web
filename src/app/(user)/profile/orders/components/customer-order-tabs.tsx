@@ -2,6 +2,7 @@
 // Mỗi tab gửi đúng bộ lọc status/stage của backend để trạng thái hiển thị nhất quán với nghiệp vụ.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import {
     ClipboardList,
@@ -105,7 +106,8 @@ export function CustomerOrderTabs({
                         : 0;
 
                     return (
-                        <button
+                        <Button
+                            variant="ghost"
                             key={tab.label}
                             type="button"
                             onClick={() => onChange(tab.filter)}
@@ -131,7 +133,7 @@ export function CustomerOrderTabs({
                                     {count > 99 ? '99+' : count}
                                 </span>
                             ) : null}
-                        </button>
+                        </Button>
                     );
                 })}
             </div>

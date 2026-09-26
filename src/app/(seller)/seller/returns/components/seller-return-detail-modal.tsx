@@ -2,6 +2,7 @@
 // Component chỉ đọc snapshot request và order được truyền vào; thao tác duyệt, kiểm tra và tạo vận đơn vẫn thuộc màn hình danh sách.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { CalendarDays, CheckCircle2, Clock3, Package, X } from 'lucide-react';
 import { useState } from 'react';
@@ -164,14 +165,15 @@ export function SellerReturnDetailModal({
                                 `#${request.orderId.slice(0, 8)}`}
                         </p>
                     </div>
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={onClose}
                         aria-label="Đóng chi tiết yêu cầu hoàn hàng"
                         className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-zinc-100 text-zinc-600 transition hover:bg-zinc-950 hover:text-white"
                     >
                         <X className="size-4" />
-                    </button>
+                    </Button>
                 </header>
 
                 <div className="min-h-0 overflow-y-auto p-5 sm:p-7">

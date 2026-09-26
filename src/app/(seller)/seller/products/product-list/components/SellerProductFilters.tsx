@@ -36,14 +36,10 @@ interface StatusTabProps {
 }
 
 // Render một tab trạng thái có kích thước ổn định để số lượng thay đổi không làm lệch bố cục.
-function StatusTab({
-    active,
-    label,
-    count,
-    onClick,
-}: StatusTabProps) {
+function StatusTab({ active, label, count, onClick }: StatusTabProps) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             className={
                 active
@@ -53,7 +49,7 @@ function StatusTab({
             onClick={onClick}
         >
             {label} <span className="tabular-nums">({count})</span>
-        </button>
+        </Button>
     );
 }
 
@@ -112,9 +108,7 @@ export function SellerProductFilters({
                     <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
                     <Input
                         value={search}
-                        onChange={(event) =>
-                            onSearchChange(event.target.value)
-                        }
+                        onChange={(event) => onSearchChange(event.target.value)}
                         className="h-10 pl-9"
                         placeholder="Tìm theo tên sản phẩm, slug hoặc SKU"
                         aria-label="Tìm sản phẩm"
@@ -137,9 +131,7 @@ export function SellerProductFilters({
                 >
                     <RefreshCw
                         className={
-                            refreshing
-                                ? 'size-4 animate-spin'
-                                : 'size-4'
+                            refreshing ? 'size-4 animate-spin' : 'size-4'
                         }
                     />
                 </Button>

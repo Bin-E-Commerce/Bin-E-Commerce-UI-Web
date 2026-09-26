@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Building2, ReceiptText, ShieldCheck } from 'lucide-react';
 
@@ -29,7 +30,8 @@ function ShopProfileTabButton({
     onClick,
 }: ShopProfileTabButtonProps) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             role="tab"
             aria-selected={active}
@@ -49,7 +51,7 @@ function ShopProfileTabButton({
                     active ? 'opacity-100' : 'opacity-0',
                 )}
             />
-        </button>
+        </Button>
     );
 }
 

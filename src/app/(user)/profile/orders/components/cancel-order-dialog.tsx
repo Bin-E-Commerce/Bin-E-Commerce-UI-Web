@@ -33,7 +33,8 @@ function QuickReasonOption({
     onSelect: (value: string) => void;
 }) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             aria-pressed={selected}
             onClick={() => onSelect(value)}
@@ -45,7 +46,7 @@ function QuickReasonOption({
                 <Check className="size-3" aria-hidden="true" />
             </span>
             <span>{value}</span>
-        </button>
+        </Button>
     );
 }
 
@@ -100,14 +101,18 @@ export function CancelOrderDialog({
                     <AlertDialogHeader className="border-b border-zinc-100 bg-gradient-to-br from-red-50/70 via-white to-white px-6 py-6 text-left sm:px-7">
                         <div className="flex items-start gap-3">
                             <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-500 ring-1 ring-red-100">
-                                <XCircle className="size-5" aria-hidden="true" />
+                                <XCircle
+                                    className="size-5"
+                                    aria-hidden="true"
+                                />
                             </div>
                             <div className="pt-0.5">
                                 <AlertDialogTitle className="text-lg">
                                     Hủy đơn hàng?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription className="mt-1.5 leading-5">
-                                    Vui lòng chọn lý do để chúng tôi cải thiện trải nghiệm mua sắm của bạn.
+                                    Vui lòng chọn lý do để chúng tôi cải thiện
+                                    trải nghiệm mua sắm của bạn.
                                 </AlertDialogDescription>
                             </div>
                         </div>
@@ -124,27 +129,42 @@ export function CancelOrderDialog({
                             <div className="grid gap-2 sm:grid-cols-2">
                                 <QuickReasonOption
                                     value="Tôi đặt nhầm sản phẩm"
-                                    selected={selectedReason === 'Tôi đặt nhầm sản phẩm'}
+                                    selected={
+                                        selectedReason ===
+                                        'Tôi đặt nhầm sản phẩm'
+                                    }
                                     onSelect={selectReason}
                                 />
                                 <QuickReasonOption
                                     value="Muốn thay đổi thông tin nhận hàng"
-                                    selected={selectedReason === 'Muốn thay đổi thông tin nhận hàng'}
+                                    selected={
+                                        selectedReason ===
+                                        'Muốn thay đổi thông tin nhận hàng'
+                                    }
                                     onSelect={selectReason}
                                 />
                                 <QuickReasonOption
                                     value="Muốn đổi phương thức thanh toán"
-                                    selected={selectedReason === 'Muốn đổi phương thức thanh toán'}
+                                    selected={
+                                        selectedReason ===
+                                        'Muốn đổi phương thức thanh toán'
+                                    }
                                     onSelect={selectReason}
                                 />
                                 <QuickReasonOption
                                     value="Tìm được sản phẩm tốt hơn"
-                                    selected={selectedReason === 'Tìm được sản phẩm tốt hơn'}
+                                    selected={
+                                        selectedReason ===
+                                        'Tìm được sản phẩm tốt hơn'
+                                    }
                                     onSelect={selectReason}
                                 />
                                 <QuickReasonOption
                                     value="Không còn nhu cầu mua"
-                                    selected={selectedReason === 'Không còn nhu cầu mua'}
+                                    selected={
+                                        selectedReason ===
+                                        'Không còn nhu cầu mua'
+                                    }
                                     onSelect={selectReason}
                                 />
                                 <QuickReasonOption
@@ -167,7 +187,9 @@ export function CancelOrderDialog({
                                     id="cancel-reason"
                                     value={reason}
                                     onChange={(event) =>
-                                        setReason(event.target.value.slice(0, 500))
+                                        setReason(
+                                            event.target.value.slice(0, 500),
+                                        )
                                     }
                                     maxLength={500}
                                     placeholder="Chia sẻ thêm lý do hủy đơn của bạn..."

@@ -2,6 +2,7 @@
 // Component chỉ render và phát asset ID/URL đã chọn về panel cha.
 
 'use client';
+import { Button } from '@/components/ui/button';
 
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,7 +32,8 @@ export function ProductImageOption({
     onSelect,
 }: ProductImageOptionProps) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             key={assetId}
             disabled={disabled}
@@ -70,6 +72,6 @@ export function ProductImageOption({
                     ) : null}
                 </div>
             ) : null}
-        </button>
+        </Button>
     );
 }

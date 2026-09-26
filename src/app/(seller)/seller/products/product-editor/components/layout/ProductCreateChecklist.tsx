@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/ui/button';
 
 //
 // Thanh tiến độ ngang của wizard tạo/chỉnh sửa sản phẩm.
@@ -77,7 +78,8 @@ export function ProductCreateChecklist({
 
                         return (
                             <li key={step.id} className="min-w-0">
-                                <button
+                                <Button
+                                    variant="ghost"
                                     type="button"
                                     className={cn(
                                         'flex min-h-[4.25rem] w-full min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-[background-color,border-color,box-shadow,color]',
@@ -129,7 +131,7 @@ export function ProductCreateChecklist({
                                             {statusText}
                                         </span>
                                     </span>
-                                </button>
+                                </Button>
                             </li>
                         );
                     })}

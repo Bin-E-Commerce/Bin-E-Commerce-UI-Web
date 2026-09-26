@@ -266,7 +266,8 @@ export function ShopTaxAndPayoutChangeForm({
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     {(['personal', 'business'] as const).map(
                                         (accountType) => (
-                                            <button
+                                            <Button
+                                                variant="ghost"
                                                 key={accountType}
                                                 type="button"
                                                 disabled={mutation.isPending}
@@ -292,7 +293,7 @@ export function ShopTaxAndPayoutChangeForm({
                                                 {accountType === 'personal'
                                                     ? 'Cá nhân / Hộ kinh doanh'
                                                     : 'Doanh nghiệp'}
-                                            </button>
+                                            </Button>
                                         ),
                                     )}
                                 </div>
@@ -342,7 +343,8 @@ function ChangeAreaButton({
     onClick,
 }: ChangeAreaButtonProps) {
     return (
-        <button
+        <Button
+            variant="ghost"
             type="button"
             className={cn(
                 'flex min-h-20 items-start gap-3 rounded-md border p-4 text-left transition-colors',
@@ -364,7 +366,7 @@ function ChangeAreaButton({
                     {description}
                 </span>
             </span>
-        </button>
+        </Button>
     );
 }
 
