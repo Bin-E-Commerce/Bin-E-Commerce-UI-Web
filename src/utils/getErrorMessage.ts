@@ -52,6 +52,13 @@ export function getErrorMessage(err: unknown): string {
                 : Array.isArray(rawMessage)
                   ? rawMessage[0]
                   : 'Request failed';
+        // Chuyển lỗi cooldown OTP thành thông báo tiếng Việt; số giây vẫn được giữ để người dùng biết thời điểm thử lại.
+        const otpCooldownMatch = serverMsg.match(
+            /^Please wait (\d+)s before requesting a new OTP$/,
+        );
+        if (otpCooldownMatch) {
+            return `Vui lòng chờ ${otpCooldownMatch[1]} giây trước khi yêu cầu mã OTP mới.`;
+        }
         if (err.response?.data?.code === 'AI_RATE_LIMITED') {
             const details = err.response.data.details as
                 | { used?: number; limit?: number; retryAfterSeconds?: number }

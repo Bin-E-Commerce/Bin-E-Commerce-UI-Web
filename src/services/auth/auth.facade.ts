@@ -1,6 +1,10 @@
 // File này gom các Auth API thành facade ổn định cho các feature frontend.
 
-import { changePassword } from './api/password.api';
+import {
+    changePassword,
+    forgotPassword,
+    resetPassword,
+} from './api/password.api';
 import { getMe, updateProfile } from './api/profile.api';
 import { getViewer, login, refresh } from './api/login.api';
 import { logout } from './api/logout.api';
@@ -28,6 +32,8 @@ export const authService = {
     registerInitiate,
     registerVerify,
     changePassword,
+    forgotPassword,
+    resetPassword,
     getSocialAuthUrl,
     socialCallback,
     getMe,

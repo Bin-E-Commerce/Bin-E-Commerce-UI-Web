@@ -98,6 +98,24 @@ export interface RegisterVerifyPayload {
     otp: string;
 }
 
+// Payload yêu cầu gửi OTP đặt lại mật khẩu; email được chuẩn hóa ở hook trước khi gửi.
+export interface ForgotPasswordPayload {
+    email: string;
+}
+
+// Payload xác minh OTP và cập nhật mật khẩu mới cho tài khoản.
+export interface ResetPasswordPayload {
+    identifier: string;
+    otp: string;
+    newPassword: string;
+}
+
+// Kết quả public của endpoint forgot-password, không tiết lộ email có tồn tại hay không.
+export interface ForgotPasswordResult {
+    message: string;
+    expiresIn: number;
+}
+
 export interface ChangePasswordPayload {
     currentPassword: string;
     newPassword: string;
