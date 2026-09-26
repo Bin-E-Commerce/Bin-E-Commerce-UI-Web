@@ -41,11 +41,11 @@ function StatusTab({ active, label, count, onClick }: StatusTabProps) {
         <Button
             variant="ghost"
             type="button"
-            className={
+            className={`h-10 shrink-0 rounded-lg px-3.5 text-sm transition-colors focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
                 active
-                    ? 'h-11 shrink-0 border-b-2 border-zinc-950 px-1 text-sm font-semibold text-zinc-950'
-                    : 'h-11 shrink-0 border-b-2 border-transparent px-1 text-sm text-zinc-500 transition-colors hover:text-zinc-950'
-            }
+                    ? 'bg-zinc-950 font-semibold text-white shadow-sm hover:bg-zinc-800'
+                    : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950'
+            }`}
             onClick={onClick}
         >
             {label} <span className="tabular-nums">({count})</span>
@@ -68,8 +68,8 @@ export function SellerProductFilters({
 }: SellerProductFiltersProps) {
     return (
         <section className="border-y border-zinc-200 bg-white">
-            <div className="overflow-x-auto px-4 sm:px-6">
-                <div className="flex min-w-max gap-6">
+            <div className="overflow-x-auto px-4 py-3 sm:px-6">
+                <div className="flex min-w-max gap-1.5">
                     <StatusTab
                         active={status === undefined}
                         label="Tất cả"

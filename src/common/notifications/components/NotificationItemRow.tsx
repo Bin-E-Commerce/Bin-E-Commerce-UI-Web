@@ -42,7 +42,7 @@ export function NotificationItemRow({
             type="button"
             onClick={() => onOpen(notification)}
             className={cn(
-                'relative flex w-full gap-3 border-b border-zinc-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-950',
+                'relative flex h-auto min-h-[76px] w-full items-start gap-3 overflow-hidden rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-950',
                 unread && 'bg-zinc-50/90 shadow-[inset_3px_0_0_#18181b]',
             )}
         >

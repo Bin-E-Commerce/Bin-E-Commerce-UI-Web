@@ -96,7 +96,7 @@ export function ProductImageUploader({
                         variant="ghost"
                         type="button"
                         disabled={upload.uploading}
-                        className="group flex aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-sm text-zinc-600 shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-300 hover:-translate-y-1 hover:border-zinc-950 hover:bg-white hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="group flex h-auto aspect-square flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-sm text-zinc-600 shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-300 hover:-translate-y-1 hover:border-zinc-950 hover:bg-white hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={upload.openFilePicker}
                     >
                         {upload.uploading ? (

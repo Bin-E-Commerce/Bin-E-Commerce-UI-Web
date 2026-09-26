@@ -79,10 +79,10 @@ export function SellerOrderFilters({
     return (
         <section className="border-y border-zinc-200 bg-white">
             <nav
-                className="overflow-x-auto px-4 sm:px-6"
+                className="overflow-x-auto px-4 py-3 sm:px-6"
                 aria-label="Bộ lọc đơn hàng của Seller"
             >
-                <div className="flex min-w-max gap-5">
+                <div className="flex min-w-max gap-1.5">
                     {tabs.map((tab, index) => {
                         const active =
                             status === tab.value || (index === 0 && !status);
@@ -97,15 +97,15 @@ export function SellerOrderFilters({
                                 key={tab.label}
                                 type="button"
                                 aria-current={active ? 'page' : undefined}
-                                className={`group flex h-14 shrink-0 cursor-pointer items-center gap-2 border-b-2 px-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
+                                className={`group flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3.5 text-sm transition-colors focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
                                     active
-                                        ? 'border-zinc-950 font-semibold text-zinc-950'
-                                        : 'border-transparent text-zinc-500 hover:text-zinc-950'
+                                        ? 'bg-zinc-950 font-semibold text-white shadow-sm hover:bg-zinc-800'
+                                        : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950'
                                 }`}
                                 onClick={() => onStatusChange(tab.value)}
                             >
                                 <Icon
-                                    className={`size-4 shrink-0 ${active ? 'text-zinc-950' : 'text-zinc-400 group-hover:text-zinc-700'}`}
+                                    className={`size-4 shrink-0 ${active ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-700'}`}
                                     aria-hidden="true"
                                 />
                                 <span className="whitespace-nowrap">

@@ -118,7 +118,7 @@ export function RegisterStep1({
                                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                                         <Input
                                             type="email"
-                                            placeholder="ban@example.com"
+                                            placeholder="name@example.com"
                                             autoComplete="email"
                                             className="h-11 bg-white pl-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
                                             {...field}

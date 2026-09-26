@@ -112,7 +112,7 @@ export function CustomerOrderTabs({
                             type="button"
                             onClick={() => onChange(tab.filter)}
                             aria-current={active ? 'page' : undefined}
-                            className={`group flex min-w-max shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
+                            className={`group flex min-w-max shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
                                 active
                                     ? 'bg-zinc-950 text-white shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]'
                                     : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950'

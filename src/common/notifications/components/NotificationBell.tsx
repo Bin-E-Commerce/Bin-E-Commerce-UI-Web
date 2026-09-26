@@ -147,7 +147,7 @@ export function NotificationBell() {
                     )}
                 </div>
 
-                <div className="max-h-[430px] overflow-y-auto">
+                <div className="max-h-[430px] space-y-2 overflow-y-auto bg-zinc-50/70 p-2">
                     {feed.isError && items.length === 0 ? (
                         <div className="flex h-44 flex-col items-center justify-center px-6 text-center">
                             <Bell className="size-6 text-zinc-300" />

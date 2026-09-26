@@ -78,7 +78,7 @@ export function AdminTopbar({
                     </div>
                 </div>
 
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ml-auto flex items-center gap-3">
                     <NotificationBell />
 
                     <DropdownMenu.Root>
@@ -86,7 +86,7 @@ export function AdminTopbar({
                             <Button
                                 variant="ghost"
                                 type="button"
-                                className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-left transition hover:bg-zinc-50 data-[state=open]:bg-zinc-50"
+                                className="flex h-11 items-center gap-2.5 rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-left transition hover:border-zinc-300 hover:bg-zinc-50 data-[state=open]:border-zinc-300 data-[state=open]:bg-zinc-50 sm:px-3"
                                 aria-label="Mở menu tài khoản quản trị"
                             >
                                 <AdminAvatar avatarUrl={avatarUrl} />

@@ -79,6 +79,7 @@ export function HomeShowcasePrompt() {
                                 alt="Bin E-Commerce"
                                 width={112}
                                 height={36}
+                                style={{ width: 'auto' }}
                                 className="h-9 w-auto object-contain object-left"
                             />
                             <div className="border-l border-zinc-200 pl-3">
