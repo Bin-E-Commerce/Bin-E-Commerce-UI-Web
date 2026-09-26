@@ -92,6 +92,26 @@ authorizedAxios.interceptors.response.use(
         // Nếu refresh token thành công → retry request gốc với token mới
         // Nếu refresh token thất bại → logout người dùng để đảm bảo an toàn cho hệ thống
         if (error.response?.status === 401 && originalRequest) {
+            const currentAccessToken = appStore?.getState().auth.accessToken;
+            const authorizationHeader =
+                originalRequest.headers?.Authorization ??
+                originalRequest.headers?.authorization;
+            const requestAccessToken =
+                typeof authorizationHeader === 'string'
+                    ? authorizationHeader.replace(/^Bearer\s+/i, '')
+                    : undefined;
+
+            // Chi refresh khi request that su duoc gui bang access token hien tai.
+            // Request guest khong co token hoac request cu mang token truoc khi login
+            // khong duoc phep logout phien moi, tranh race lam user quay lai login.
+            if (
+                !currentAccessToken ||
+                !requestAccessToken ||
+                requestAccessToken !== currentAccessToken
+            ) {
+                return Promise.reject(error);
+            }
+
             // Nếu request thất bại là chính request refresh token → logout
             if (originalRequest.url?.includes(`${API_VERSION}/auth/refresh`)) {
                 appStore?.dispatch(logoutUser());

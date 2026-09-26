@@ -10,7 +10,13 @@ const VI_ERROR_MAP: Record<string, string> = {
     'Current password is incorrect': 'Mật khẩu hiện tại không đúng',
     'New password must be different from current password':
         'Mật khẩu mới phải khác mật khẩu hiện tại',
-    'Account is inactive or banned': 'Tài khoản đã bị vô hiệu hóa',
+    'Account is banned':
+        'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên nếu bạn cho rằng đây là nhầm lẫn.',
+    // Giữ mapping cũ để client vẫn hiển thị an toàn nếu còn instance backend chưa được cập nhật.
+    'Account is inactive or banned':
+        'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên nếu bạn cho rằng đây là nhầm lẫn.',
+    'Email not provided by identity provider':
+        'Google chưa cung cấp email tài khoản. Vui lòng thử lại hoặc chọn tài khoản Google khác.',
     'OTP is invalid or expired': 'Mã OTP không hợp lệ hoặc đã hết hạn',
     'Invalid or expired OTP': 'Mã OTP không hợp lệ hoặc đã hết hạn',
     'Refresh token is invalid or expired': 'Phiên đăng nhập đã hết hạn',

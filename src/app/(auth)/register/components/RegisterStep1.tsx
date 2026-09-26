@@ -153,7 +153,8 @@ export function RegisterStep1({
                                             className="h-11 bg-white pl-10 pr-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
                                             {...field}
                                         />
-                                        <button
+                                        <Button
+                                            variant="ghost"
                                             type="button"
                                             onClick={() =>
                                                 setShowPassword((v) => !v)
@@ -170,7 +171,7 @@ export function RegisterStep1({
                                             ) : (
                                                 <Eye className="h-4 w-4 cursor-pointer" />
                                             )}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </FormControl>
                                 <FormMessage className="text-xs" />
@@ -201,7 +202,8 @@ export function RegisterStep1({
                                             className="h-11 bg-white pl-10 pr-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
                                             {...field}
                                         />
-                                        <button
+                                        <Button
+                                            variant="ghost"
                                             type="button"
                                             onClick={() =>
                                                 setShowConfirmPassword(
@@ -220,7 +222,7 @@ export function RegisterStep1({
                                             ) : (
                                                 <Eye className="h-4 w-4 cursor-pointer" />
                                             )}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </FormControl>
                                 <FormMessage className="text-xs" />

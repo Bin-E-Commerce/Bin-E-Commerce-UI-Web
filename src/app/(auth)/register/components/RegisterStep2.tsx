@@ -103,21 +103,23 @@ export function RegisterStep2({
             </Form>
 
             <div className="flex items-center justify-between text-sm">
-                <button
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={onBack}
                     className="text-zinc-500 transition-colors hover:text-zinc-900"
                 >
                     ← Quay lại
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="ghost"
                     type="button"
                     onClick={onResend}
                     disabled={cooldown > 0}
                     className="font-medium text-zinc-900 transition-colors hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {cooldown > 0 ? `Gửi lại (${cooldown}s)` : 'Gửi lại OTP'}
-                </button>
+                </Button>
             </div>
         </>
     );

@@ -1,3 +1,4 @@
+// Layout dùng chung cho màn hình xác thực; callback được phép rộng hơn để thông báo không bị xuống dòng quá mức.
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -107,7 +108,9 @@ export default function AuthLayout({
                     />
                 </Link>
 
-                <div className="w-full max-w-sm">{children}</div>
+                <div className="w-full max-w-sm has-[.callback-page-shell]:max-w-xl">
+                    {children}
+                </div>
             </div>
         </div>
     );

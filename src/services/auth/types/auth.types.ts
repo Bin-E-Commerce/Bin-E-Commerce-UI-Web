@@ -46,6 +46,7 @@ export interface AuthUser {
     accessProfile?: AccessProfile;
     status: string;
     avatarUrl: string | null;
+    shopLogoUrl: string | null;
     createdAt: string;
 }
 

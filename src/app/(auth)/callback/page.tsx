@@ -6,7 +6,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
@@ -14,6 +14,17 @@ import { authService } from '@/services/auth';
 import { mergeRecommendationSession } from '@/services/recommendation';
 import { getDefaultAuthenticatedPath } from '@/services/auth/access';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+
+// Nhận diện lỗi khóa tài khoản từ cả backend và Keycloak để callback không hiển thị thông báo kỹ thuật.
+function isBlockedAccountError(message: string): boolean {
+    const normalizedMessage = message.toLowerCase();
+    return (
+        normalizedMessage.includes('account is disabled') ||
+        normalizedMessage.includes('account is banned') ||
+        normalizedMessage.includes('tài khoản đã bị khóa') ||
+        normalizedMessage.includes('tài khoản đã bị vô hiệu hóa')
+    );
+}
 
 // Xử lý callback một lần, xác minh state lưu trong sessionStorage rồi mới gửi code lên backend.
 // Lỗi đã có sẵn từ query được suy ra trực tiếp khi render; lỗi kiểm tra browser/API cập nhật qua Promise.
@@ -103,20 +114,91 @@ function CallbackHandler() {
     }, [callbackQuery, dispatch, oauthError, router]);
 
     const displayedError = oauthErrorMessage ?? errorMsg;
+    const isBannedAccount = displayedError
+        ? isBlockedAccountError(displayedError)
+        : false;
 
     if (displayedError) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
-                <p className="text-sm text-red-600">{displayedError}</p>
-                <Button variant="outline" onClick={() => router.push('/login')}>
-                    Quay lại đăng nhập
-                </Button>
+            <div className="callback-page-shell flex w-full items-center justify-center bg-zinc-50 px-6 py-10">
+                <div className="flex w-full max-w-[560px] flex-col items-center rounded-2xl border border-zinc-200 bg-white p-7 text-center shadow-sm sm:p-9">
+                    {isBannedAccount ? (
+                        <>
+                            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-950 text-white shadow-sm">
+                                <ShieldX className="h-7 w-7" />
+                            </span>
+                            <h1 className="mt-5 text-xl font-semibold text-zinc-950">
+                                Tài khoản đã bị khóa
+                            </h1>
+                            <p className="mt-3 max-w-[440px] text-sm leading-6 text-zinc-600">
+                                Tài khoản của bạn đang ở trạng thái{' '}
+                                <strong className="font-semibold text-zinc-900">
+                                    BANNED
+                                </strong>{' '}
+                                và{' '}
+                                <strong className="font-semibold text-zinc-900">
+                                    không thể đăng nhập
+                                </strong>{' '}
+                                vào hệ thống.
+                            </p>
+                            <div className="mt-6 w-full space-y-3 text-left">
+                                <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                                    <p className="text-sm font-semibold text-zinc-950">
+                                        Lý do bị BANNED
+                                    </p>
+                                    <p className="mt-1.5 text-sm leading-6 text-zinc-600">
+                                        Tài khoản bị quản trị viên khóa để bảo
+                                        vệ nền tảng hoặc xử lý một vấn đề cần
+                                        xem xét. Liên hệ Support để biết thêm lý
+                                        do cụ thể.
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-zinc-200 bg-white p-4">
+                                    <p className="text-sm font-semibold text-zinc-950">
+                                        Làm thế nào để yêu cầu gỡ khóa?
+                                    </p>
+                                    <p className="mt-1.5 text-sm leading-6 text-zinc-600">
+                                        Liên hệ{' '}
+                                        <strong className="font-semibold text-zinc-900">
+                                            quản trị viên hoặc Support
+                                        </strong>{' '}
+                                        qua kênh hỗ trợ chính thức. Hãy cung cấp{' '}
+                                        <strong className="font-semibold text-zinc-900">
+                                            email đăng ký
+                                        </strong>{' '}
+                                        và yêu cầu xem xét. Việc mở lại chỉ được
+                                        thực hiện sau khi{' '}
+                                        <strong className="font-semibold text-zinc-900">
+                                            được phê duyệt
+                                        </strong>{' '}
+                                        bởi quản trị viên.
+                                    </p>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <h1 className="text-xl font-semibold text-zinc-950">
+                                Không thể đăng nhập
+                            </h1>
+                            <p className="mt-2 text-sm leading-6 text-red-600">
+                                {displayedError}
+                            </p>
+                        </>
+                    )}
+                    <Button
+                        className="mt-7 w-full max-w-[338px]"
+                        onClick={() => router.push('/login')}
+                    >
+                        Quay lại đăng nhập
+                    </Button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-3">
+        <div className="flex w-full flex-col items-center justify-center gap-3 py-10">
             <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
             <p className="text-sm text-zinc-500">Đang xử lý đăng nhập…</p>
         </div>
@@ -128,7 +210,7 @@ export default function CallbackPage() {
     return (
         <Suspense
             fallback={
-                <div className="flex min-h-screen items-center justify-center">
+                <div className="flex w-full items-center justify-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
                 </div>
             }

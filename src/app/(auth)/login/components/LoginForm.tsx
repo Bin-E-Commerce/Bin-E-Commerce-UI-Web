@@ -1,8 +1,9 @@
+// Form đăng nhập hiển thị lỗi theo ngữ cảnh để tài khoản bị khóa nhận được hướng dẫn rõ ràng ngay trên web.
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, AlertCircle, ShieldX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -19,6 +20,10 @@ export function LoginForm() {
     const [showPassword, setShowPassword] = useState(false);
     const { form, onSubmit, handleGoogleLogin, isGoogleLoading } =
         useLoginForm();
+    const rootErrorMessage = form.formState.errors.root?.message;
+    const isBannedAccount =
+        rootErrorMessage?.toLowerCase().includes('tài khoản đã bị khóa') ||
+        rootErrorMessage?.toLowerCase().includes('vô hiệu hóa');
 
     return (
         <div className="space-y-7">
@@ -39,12 +44,32 @@ export function LoginForm() {
                     className="space-y-4"
                 >
                     {/* Server error */}
-                    {form.formState.errors.root && (
-                        <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span>{form.formState.errors.root.message}</span>
-                        </div>
-                    )}
+                    {rootErrorMessage &&
+                        (isBannedAccount ? (
+                            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-800">
+                                <div className="flex items-start gap-3">
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-white">
+                                        <ShieldX className="h-4 w-4" />
+                                    </span>
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-semibold text-zinc-950">
+                                            Tài khoản đã bị khóa
+                                        </p>
+                                        <p className="text-sm leading-5 text-zinc-600">
+                                            Tài khoản này không thể đăng nhập vì
+                                            đã bị khóa theo chính sách hệ thống.
+                                            Nếu bạn cho rằng đây là nhầm lẫn,
+                                            vui lòng liên hệ quản trị viên.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                                <span>{rootErrorMessage}</span>
+                            </div>
+                        ))}
 
                     {/* Email */}
                     <FormField
@@ -95,7 +120,8 @@ export function LoginForm() {
                                             className="h-11 bg-white pl-10 pr-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
                                             {...field}
                                         />
-                                        <button
+                                        <Button
+                                            variant="ghost"
                                             type="button"
                                             onClick={() =>
                                                 setShowPassword((v) => !v)
@@ -112,7 +138,7 @@ export function LoginForm() {
                                             ) : (
                                                 <Eye className="h-4 w-4 cursor-pointer" />
                                             )}
-                                        </button>
+                                        </Button>
                                     </div>
                                 </FormControl>
                                 <FormMessage className="text-xs" />

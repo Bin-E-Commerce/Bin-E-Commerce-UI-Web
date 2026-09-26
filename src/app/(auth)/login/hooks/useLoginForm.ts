@@ -1,3 +1,4 @@
+// Hook điều phối đăng nhập thường và social login, bao gồm bước kiểm tra trạng thái tài khoản trước khi rời khỏi web.
 'use client';
 
 import { useState } from 'react';
@@ -56,11 +57,24 @@ export function useLoginForm() {
         }
     }
 
-    // Chuyển sang Keycloak Google login và lưu state để callback kiểm tra chống CSRF.
+    // Nếu email đã được nhập, kiểm tra sớm để tài khoản BANNED nhận lỗi ngay trong web.
+    // Email vẫn là tùy chọn vì Google sẽ xác định danh tính sau OAuth; callback/backend
+    // luôn kiểm tra lại trạng thái để không phụ thuộc vào dữ liệu người dùng nhập tay.
     async function handleGoogleLogin(): Promise<void> {
         setIsGoogleLoading(true);
         try {
-            const res = await authService.getSocialAuthUrl('google');
+            form.clearErrors('root');
+            const email = form.getValues('email').trim().toLowerCase();
+
+            if (email && !(await form.trigger('email'))) {
+                setIsGoogleLoading(false);
+                return;
+            }
+
+            const res = await authService.getSocialAuthUrl(
+                'google',
+                email || undefined,
+            );
             sessionStorage.setItem(
                 'oauth_state',
                 JSON.stringify({ state: res.data.state, provider: 'google' }),
