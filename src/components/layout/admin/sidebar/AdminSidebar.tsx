@@ -8,6 +8,7 @@ import {
     ClipboardCheck,
     FilePenLine,
     LayoutDashboard,
+    Users,
     ShieldCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -31,6 +32,7 @@ const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
     ClipboardCheck,
     FilePenLine,
     LayoutDashboard,
+    Users,
 };
 
 // Chuyển navigation backend trả về thành các group sidebar đúng theo groupCode/groupLabel backend seed.

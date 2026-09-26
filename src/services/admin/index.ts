@@ -7,3 +7,5 @@ export * from './types/seller-applications.types';
 export * from './types/shop-profile-changes.types';
 export * from './api/recommendation.api';
 export * from './types/recommendation.types';
+export * from './api/users.api';
+export * from './types/users.types';
