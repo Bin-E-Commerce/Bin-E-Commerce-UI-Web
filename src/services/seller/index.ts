@@ -6,3 +6,5 @@ export * from './types/shop-profile.types';
 export * from './types/public-shop.types';
 export * from './api/public-shop.api';
 export * from './api/shipping-settings.api';
+export * from './api/seller-dashboard.api';
+export * from './types/seller-dashboard.types';
