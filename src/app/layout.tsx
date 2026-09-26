@@ -6,6 +6,7 @@ import { StoreProvider } from '@/components/providers/StoreProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { NotificationProvider } from '@/common/notifications';
+import { InfrastructureStatusProvider } from '@/common/infrastructure-status';
 import {
     DEFAULT_OG_IMAGE_URL,
     SITE_DESCRIPTION,
@@ -54,12 +55,16 @@ export default function RootLayout({
     return (
         <html lang="vi" className="font-sans" data-scroll-behavior="smooth">
             <body className="min-h-screen bg-background text-foreground antialiased">
-                <StoreProvider>
-                    <QueryProvider>
-                        <NotificationProvider>{children}</NotificationProvider>
-                    </QueryProvider>
-                    <Toaster position="top-center" />
-                </StoreProvider>
+                <InfrastructureStatusProvider>
+                    <StoreProvider>
+                        <QueryProvider>
+                            <NotificationProvider>
+                                {children}
+                            </NotificationProvider>
+                        </QueryProvider>
+                        <Toaster position="top-center" />
+                    </StoreProvider>
+                </InfrastructureStatusProvider>
             </body>
         </html>
     );

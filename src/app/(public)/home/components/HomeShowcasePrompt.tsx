@@ -15,6 +15,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useInfrastructureStatus } from '@/common/infrastructure-status';
+import { canShowFeaturePopup } from '@/common/infrastructure-status/utils/popup-priority';
 
 const HOME_SHOWCASE_PROMPT_KEY = 'bin-home-showcase-prompt-date';
 
@@ -40,7 +42,7 @@ function shouldShowShowcasePrompt() {
     }
 }
 
-// Ghi nhận khi popup thực sự mở để React Strict Mode không đánh dấu đã xem trước khi người dùng nhìn thấy modal.
+// Ghi nhận sau khi popup đã chuyển sang trạng thái mở để không đánh dấu đã xem khi bị cảnh báo chặn.
 function markShowcasePromptAsSeen() {
     try {
         window.localStorage.setItem(HOME_SHOWCASE_PROMPT_KEY, getTodayKey());
@@ -52,21 +54,56 @@ function markShowcasePromptAsSeen() {
 // Mời người dùng khám phá phần giới thiệu hệ thống mà không chen vào SSR; state chỉ tồn tại ở client và không gọi API.
 export function HomeShowcasePrompt() {
     const router = useRouter();
+    const { isOpen: isInfrastructureAlertOpen, hasPendingRequests } =
+        useInfrastructureStatus();
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
+        if (
+            !canShowFeaturePopup({
+                hasPendingRequests,
+                isInfrastructureAlertOpen,
+            })
+        ) {
+            return;
+        }
         if (!shouldShowShowcasePrompt()) return;
 
         const openTimer = window.setTimeout(() => {
-            markShowcasePromptAsSeen();
+            if (
+                !canShowFeaturePopup({
+                    hasPendingRequests,
+                    isInfrastructureAlertOpen,
+                })
+            ) {
+                return;
+            }
             setOpen(true);
         }, 0);
 
         return () => window.clearTimeout(openTimer);
-    }, []);
+    }, [hasPendingRequests, isInfrastructureAlertOpen]);
+
+    useEffect(() => {
+        if (open) markShowcasePromptAsSeen();
+    }, [open]);
+
+    useEffect(() => {
+        // Popup hạ tầng có ưu tiên cao hơn; đóng prompt tính năng ngay khi sự cố xuất hiện.
+        if (isInfrastructureAlertOpen) setOpen(false);
+    }, [isInfrastructureAlertOpen]);
 
     return (
-        <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialog
+            open={
+                open &&
+                canShowFeaturePopup({
+                    hasPendingRequests,
+                    isInfrastructureAlertOpen,
+                })
+            }
+            onOpenChange={setOpen}
+        >
             <AlertDialogContent
                 overlayClassName="bg-zinc-950/20 backdrop-blur-md"
                 className="max-w-[34rem] overflow-hidden rounded-[28px] border-zinc-300 bg-white p-0 shadow-[0_28px_90px_-30px_rgba(24,24,27,0.28)] gap-0"

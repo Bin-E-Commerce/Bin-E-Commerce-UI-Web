@@ -8,6 +8,10 @@ import type { InternalAxiosRequestConfig } from 'axios';
 import type { AppStore } from '@/store';
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 import { setAuth, logoutUser, syncAuthViewer } from '@/store/slices/authSlice';
+import {
+    completeAxiosRequest,
+    trackAxiosRequest,
+} from '@/common/infrastructure-status/monitor/infrastructure-status.monitor';
 
 // Mở rộng interface InternalAxiosRequestConfig để thêm thuộc tính _retry,
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -75,6 +79,8 @@ authorizedAxios.interceptors.request.use(
         if (sessionId && !config.headers['X-Session-Id']) {
             config.headers['X-Session-Id'] = sessionId;
         }
+
+        trackAxiosRequest(config);
         return config;
     },
     (error) => Promise.reject(error),
@@ -82,8 +88,12 @@ authorizedAxios.interceptors.request.use(
 
 // Response interceptor — xử lý lỗi 401 Unauthorized, tự động gọi refresh token và retry request nếu cần thiết
 authorizedAxios.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        completeAxiosRequest(response.config);
+        return response;
+    },
     async (error: AxiosError) => {
+        completeAxiosRequest(error.config, error);
         // Kiểm tra nếu lỗi là 401 Unauthorized và request chưa được thử lại trước đó
         const originalRequest = error.config as CustomAxiosRequestConfig;
 

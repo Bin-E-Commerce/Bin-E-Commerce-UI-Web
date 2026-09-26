@@ -1,5 +1,9 @@
 import axios from 'axios';
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
+import {
+    completeAxiosRequest,
+    trackAxiosRequest,
+} from '@/common/infrastructure-status/monitor/infrastructure-status.monitor';
 
 // Create public axios instance for login/register (no auth header required)
 const publicAxios = axios.create({
@@ -14,10 +18,20 @@ const publicAxios = axios.create({
     },
 });
 
+// Theo dõi request public để nhận biết API/Gateway pending hoặc không khả dụng.
+publicAxios.interceptors.request.use((config) => {
+    trackAxiosRequest(config);
+    return config;
+});
+
 // Response interceptor - Selective error handling
 publicAxios.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        completeAxiosRequest(response.config);
+        return response;
+    },
     (error) => {
+        completeAxiosRequest(error.config, error);
         // Không log error khi /auth/refresh fail (hành vi bình thường khi chưa đăng nhập hoặc service chưa chạy)
         const isRefreshError = error.config?.url?.includes(
             `${API_VERSION}/auth/refresh`,
