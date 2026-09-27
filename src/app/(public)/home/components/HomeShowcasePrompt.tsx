@@ -20,37 +20,50 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useInfrastructureStatus } from '@/common/infrastructure-status';
 import { canShowFeaturePopup } from '@/common/infrastructure-status/utils/popup-priority';
+import {
+    hasShownShowcasePromptToday,
+    markShowcasePromptShown,
+} from '../utils/showcase-prompt-visibility';
 
-// Mời người dùng khám phá phần giới thiệu hệ thống mà không chen vào SSR; state chỉ tồn tại ở client và không gọi API.
+// Mời người dùng khám phá phần giới thiệu hệ thống mà không chen vào SSR;
+// popup chỉ được mở khi không có request pending/cảnh báo hạ tầng và mỗi ngày
+// chỉ hiển thị một lần theo localStorage của trình duyệt.
 export function HomeShowcasePrompt() {
     const router = useRouter();
     const { isOpen: isInfrastructureAlertOpen, hasPendingRequests } =
         useInfrastructureStatus();
     const [open, setOpen] = useState(false);
+    const canDisplayPrompt = canShowFeaturePopup({
+        hasPendingRequests,
+        isInfrastructureAlertOpen,
+    });
 
     useEffect(() => {
-        if (
-            !canShowFeaturePopup({
-                hasPendingRequests,
-                isInfrastructureAlertOpen,
-            })
-        ) {
-            return;
-        }
+        if (!canDisplayPrompt || hasShownShowcasePromptToday()) return;
+
         const openTimer = window.setTimeout(() => {
+            // Kiểm tra lại cả quyền ưu tiên và localStorage vì trạng thái hạ tầng
+            // có thể thay đổi trong lúc timer chờ chạy sau khi trang vừa mount.
             if (
                 !canShowFeaturePopup({
                     hasPendingRequests,
                     isInfrastructureAlertOpen,
                 })
-            ) {
+            )
                 return;
-            }
+            if (hasShownShowcasePromptToday()) return;
+
             setOpen(true);
         }, 0);
 
         return () => window.clearTimeout(openTimer);
-    }, [hasPendingRequests, isInfrastructureAlertOpen]);
+    }, [canDisplayPrompt, hasPendingRequests, isInfrastructureAlertOpen]);
+
+    useEffect(() => {
+        // Chỉ ghi trạng thái sau khi popup đã thật sự được render và vẫn được phép
+        // hiển thị; nhờ vậy popup hạ tầng không vô tình “tiêu hao” lượt hiển thị.
+        if (open && canDisplayPrompt) markShowcasePromptShown();
+    }, [canDisplayPrompt, open]);
 
     useEffect(() => {
         // Popup hạ tầng có ưu tiên cao hơn; đóng prompt tính năng ngay khi sự cố xuất hiện.
@@ -58,16 +71,7 @@ export function HomeShowcasePrompt() {
     }, [isInfrastructureAlertOpen]);
 
     return (
-        <AlertDialog
-            open={
-                open &&
-                canShowFeaturePopup({
-                    hasPendingRequests,
-                    isInfrastructureAlertOpen,
-                })
-            }
-            onOpenChange={setOpen}
-        >
+        <AlertDialog open={open && canDisplayPrompt} onOpenChange={setOpen}>
             <AlertDialogContent
                 overlayClassName="bg-zinc-950/20 backdrop-blur-md"
                 className="max-w-[34rem] overflow-hidden rounded-[28px] border-zinc-300 bg-white p-0 shadow-[0_28px_90px_-30px_rgba(24,24,27,0.28)] gap-0"
