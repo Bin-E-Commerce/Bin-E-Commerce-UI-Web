@@ -36,7 +36,7 @@ export function RecommendationDisclosure({
             id={id}
             aria-labelledby={headingId}
             tabIndex={-1}
-            className={`group scroll-mt-24 [&[open]>summary_.disclosure-chevron]:rotate-180 ${sectionVariant || flowVariant ? '' : 'overflow-hidden rounded-2xl border border-zinc-200 bg-white'}`}
+            className={`group min-w-0 scroll-mt-24 [&[open]>summary_.disclosure-chevron]:rotate-180 ${sectionVariant || flowVariant ? '' : 'overflow-hidden rounded-2xl border border-zinc-200 bg-white'}`}
         >
             <RecommendationNumberedHeading
                 number={number}

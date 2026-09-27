@@ -14,7 +14,8 @@ import { recommendationTableOfContents } from '../../constants/recommendation-ta
 
 // Ghép hero và các chương tài liệu; nội dung công nghệ và service được đặt bên trong chương kiến trúc để giữ đúng phân cấp.
 export function RecommendationShowcase() {
-    // Khi mục lục desktop xuất hiện, tăng lề trái theo tâm header rộng 80rem để mép nội dung thẳng với logo, còn mục lục vẫn neo bên phải.
+    // Khi mục lục desktop xuất hiện, giữ layout content và sidebar theo cùng
+    // grid; giới hạn overflow được xử lý ở disclosure để title dài không kéo cột.
     return (
         <div className="bg-zinc-50 text-zinc-950">
             <div className="w-full min-w-0 px-4 sm:px-6 xl:pr-8 xl:pl-[max(2rem,calc(50vw_-_40rem))] sm:py-10">

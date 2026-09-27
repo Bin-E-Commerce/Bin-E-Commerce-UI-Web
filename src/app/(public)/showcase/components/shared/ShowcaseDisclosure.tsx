@@ -23,7 +23,7 @@ export function ShowcaseDisclosure({
             open
             id={id}
             tabIndex={-1}
-            className="group scroll-mt-24 focus-visible:ring-2 focus-visible:ring-zinc-300 [&[open]>summary_.disclosure-chevron]:rotate-180"
+            className="group min-w-0 scroll-mt-24 focus-visible:ring-2 focus-visible:ring-zinc-300 [&[open]>summary_.disclosure-chevron]:rotate-180"
         >
             <summary className="relative grid cursor-pointer list-none grid-cols-[max-content_minmax(0,1fr)_max-content] items-start gap-3.5 py-4 [&::-webkit-details-marker]:hidden after:absolute after:inset-x-4 after:bottom-0 after:h-px after:bg-zinc-200 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400 sm:gap-4 sm:py-5">
                 <span className="inline-flex min-h-9 min-w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-2.5 py-1 font-mono text-sm font-semibold leading-none tabular-nums tracking-tight text-zinc-950 sm:min-h-10 sm:px-3">
