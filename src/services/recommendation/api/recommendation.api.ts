@@ -10,9 +10,7 @@ import {
     clearRecommendationSession,
     getRecommendationSessionId,
     getStoredRecommendationSessionId,
-} from '../session';
-
-export { getRecommendationSessionId } from '../session';
+} from '../session/recommendation-session';
 
 // Gửi interaction tới Gateway với session header; caller luôn tự xử lý lỗi để tracking không ảnh hưởng UX.
 export async function trackRecommendationInteraction(

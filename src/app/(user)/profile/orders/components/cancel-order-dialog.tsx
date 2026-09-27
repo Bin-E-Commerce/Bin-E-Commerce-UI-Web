@@ -38,14 +38,16 @@ function QuickReasonOption({
             type="button"
             aria-pressed={selected}
             onClick={() => onSelect(value)}
-            className={`flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left text-sm transition-all ${selected ? 'border-red-200 bg-red-50/80 text-zinc-950 shadow-sm ring-1 ring-red-100' : 'border-zinc-200 bg-white text-zinc-700 hover:-translate-y-px hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-sm'}`}
+            className={`min-w-0 justify-start whitespace-normal ${selected ? 'border-red-200 bg-red-50/80 text-zinc-950 shadow-sm ring-1 ring-red-100' : 'border-zinc-200 bg-white text-zinc-700 hover:-translate-y-px hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-sm'} flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left text-sm transition-all`}
         >
             <span
                 className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors ${selected ? 'border-red-500 bg-red-500 text-white' : 'border-zinc-300 bg-white text-transparent'}`}
             >
                 <Check className="size-3" aria-hidden="true" />
             </span>
-            <span>{value}</span>
+            <span className="min-w-0 flex-1 whitespace-normal break-words leading-5">
+                {value}
+            </span>
         </Button>
     );
 }

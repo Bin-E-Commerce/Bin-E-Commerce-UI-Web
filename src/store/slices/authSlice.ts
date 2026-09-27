@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { authService, type AuthUser } from '@/services/auth';
-import { clearRecommendationSession } from '@/services/recommendation/session';
+import { clearRecommendationSession } from '@/services/recommendation';
 
 interface AuthState {
     accessToken: string | null;

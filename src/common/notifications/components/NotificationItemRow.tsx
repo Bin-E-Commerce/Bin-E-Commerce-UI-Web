@@ -1,4 +1,8 @@
 'use client';
+
+// Row hiển thị nội dung notification và trạng thái đọc trong popup thông báo.
+// Component không sở hữu logic đánh dấu đã đọc; nó chỉ truyền notification về handler của popup.
+
 import { Button } from '@/components/ui/button';
 
 import { formatDistanceToNow } from 'date-fns';
@@ -43,7 +47,7 @@ export function NotificationItemRow({
             onClick={() => onOpen(notification)}
             className={cn(
                 'relative flex h-auto min-h-[76px] w-full items-start gap-3 overflow-hidden rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left shadow-sm transition-colors hover:border-zinc-300 hover:bg-zinc-50 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-950',
-                unread && 'bg-zinc-50/90 shadow-[inset_3px_0_0_#18181b]',
+                unread && 'bg-zinc-50/90',
             )}
         >
             <span

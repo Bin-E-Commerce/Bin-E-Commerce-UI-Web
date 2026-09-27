@@ -1,7 +1,7 @@
 // Utility này giữ attribution ngắn hạn giữa recommendation card và CTA add-to-cart ở trang chi tiết.
 // Nó không lưu user identity, không gọi API và không được dùng làm nguồn xác thực; backend vẫn verify chữ ký và actor.
 
-import type { RecommendationAttributionContext } from './types/recommendation.types';
+import type { RecommendationAttributionContext } from '../types/recommendation.types';
 
 const ATTRIBUTION_KEY_PREFIX = 'bin-ecommerce:recommendation-attribution:v1:';
 const ATTRIBUTION_TTL_MS = 30 * 60 * 1000;

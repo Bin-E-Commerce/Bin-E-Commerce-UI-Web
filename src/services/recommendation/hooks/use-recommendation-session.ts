@@ -4,8 +4,10 @@
 
 import { useEffect, useState } from 'react';
 
-import { getRecommendationSessionId } from '../api/recommendation.api';
-import { RECOMMENDATION_SESSION_CHANGED_EVENT } from '../session';
+import {
+    getRecommendationSessionId,
+    RECOMMENDATION_SESSION_CHANGED_EVENT,
+} from '../session/recommendation-session';
 
 // Trả session ID ổn định cho query key và chỉ cho phép request chạy sau khi client đã hydrate.
 export function useRecommendationSessionId(): string | null {

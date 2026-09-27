@@ -1,9 +1,7 @@
 // Queue này gom impression theo nhịp scroll, không sở hữu click/cart tracking và không thay đổi attribution contract.
 
-import {
-    getRecommendationSessionId,
-    trackRecommendationInteractions,
-} from '../api/recommendation.api';
+import { trackRecommendationInteractions } from '../api/recommendation.api';
+import { getRecommendationSessionId } from '../session/recommendation-session';
 import type { TrackRecommendationInteractionInput } from '../types/recommendation.types';
 
 const IMPRESSION_BATCH_SIZE = 20;
