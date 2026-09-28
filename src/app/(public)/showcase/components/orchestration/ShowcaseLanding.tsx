@@ -124,28 +124,28 @@ export function ShowcaseLanding() {
                             imageSrc="/images/feature/recommendation/img.png"
                             imageAlt="Minh họa hệ thống phân tích tín hiệu người mua và xếp hạng sản phẩm gợi ý."
                             title="Gợi ý sản phẩm cá nhân hóa"
-                            description="Kết hợp sở thích, hành vi phiên và độ phù hợp sản phẩm để xếp hạng gợi ý. Standard làm nền ổn định; AI chỉ điều chỉnh khi có dự đoán hợp lệ."
+                            description="Không chỉ hiển thị sản phẩm bán chạy, hệ thống đọc profile, session và ngữ cảnh đang xem để chọn đúng ứng viên cho từng khách hàng. Candidate được tìm từ xu hướng, quan hệ và semantic search, rồi qua Standard Ranking và AI-Enhanced Ranking trước khi trả về."
                         />
                         <ShowcaseFeatureCard
                             href="/showcase/ai-optimization"
                             imageSrc="/images/feature/ai-image-optimization/img.png"
                             imageAlt="Minh họa quy trình AI tạo ảnh sản phẩm, xem trước và chờ người bán duyệt trước khi áp dụng."
                             title="Tối ưu ảnh sản phẩm có kiểm duyệt"
-                            description="Tạo ảnh nền trắng hoặc lifestyle, xem trước kết quả rồi duyệt trước khi cập nhật. Có lưu phiên bản để dễ dàng khôi phục khi cần."
+                            description="Tạo ảnh nền trắng hoặc lifestyle từ ảnh gốc, xem trước và để người bán duyệt trước khi áp dụng. Hệ thống lưu lineage, theo dõi trạng thái job và đo lượt xem, lượt bán trước và sau để seller biết ảnh mới có thực sự hiệu quả."
                         />
                         <ShowcaseFeatureCard
                             href="/showcase/authorization-management"
                             imageSrc="/images/feature/authorization/image.png"
                             imageAlt="Minh họa hệ thống phân quyền với role, permission, scope, audit và navigation theo quyền hiệu lực."
                             title="Quản trị phân quyền"
-                            description="RBAC kết hợp permission và scope để kiểm soát đúng người, đúng hành động, đúng shop; profile và navigation được backend lọc, thay đổi quyền có audit và cache invalidation."
+                            description="RBAC kết hợp role, permission và scope để một tài khoản chỉ thấy đúng shop, đúng dữ liệu và đúng thao tác được phép. Quyền hiệu lực được backend kiểm tra, navigation tự lọc, thay đổi đều có audit và cache invalidation."
                         />
                         <ShowcaseFeatureCard
                             href="/showcase/platform-operations"
                             imageSrc="/images/feature/platform-operations/image.png"
                             imageAlt="Minh họa quy trình CI/CD từ Pull Request đến K3s, rollout, rollback và observability."
                             title="CI/CD và vận hành production"
-                            description="Theo dõi hành trình từ commit, CI quality gate và image bất biến đến SSM, K3s rollout, rollback, metrics và logs tập trung."
+                            description="Tự động kiểm tra, build image bất biến và triển khai microservices lên K3s qua từng bước có thể kiểm chứng. Rollout, rollback, metrics và logs tập trung giúp phát hành nhanh mà vẫn giữ production an toàn."
                         />
                     </div>
                 </section>
