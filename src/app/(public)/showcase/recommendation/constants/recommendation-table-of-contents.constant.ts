@@ -144,7 +144,11 @@ export const recommendationTableOfContents: ShowcaseTocItem[] = [
                     },
                     {
                         id: 'ai-enhanced-ranking-formula',
-                        label: '2.2.3 · Công thức AI-Enhanced Ranking',
+                        label: '2.2.3 · Công thức AI‑Enhanced Ranking',
+                    },
+                    {
+                        id: 'recommendation-ranking-evaluation',
+                        label: '2.2.4 · Đo lường chất lượng Ranking',
                     },
                 ],
             },
