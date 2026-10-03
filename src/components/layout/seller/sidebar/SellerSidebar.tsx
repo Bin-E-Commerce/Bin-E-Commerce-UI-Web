@@ -2,6 +2,7 @@
 
 'use client';
 
+import { type UIEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
@@ -24,6 +25,8 @@ interface SellerSidebarProps {
 
 // Sidebar chính của Seller Center, tự nhận pathname hiện tại để giữ trạng thái active nhất quán.
 export function SellerSidebar({ onNavigate }: SellerSidebarProps) {
+    const navRef = useRef<HTMLElement>(null);
+    const [showBottomFade, setShowBottomFade] = useState(false);
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const user = useSelector((state: RootState) => state.auth.user);
@@ -69,6 +72,31 @@ export function SellerSidebar({ onNavigate }: SellerSidebarProps) {
                       : (notificationCounts.data?.byBadgeKey[item.code] ?? 0),
         })),
     }));
+    const visibleItemCount = visibleGroups.reduce(
+        (total, group) => total + group.items.length,
+        0,
+    );
+
+    // Chỉ bật lớp mờ khi phía dưới còn nội dung; khi đã chạm đáy thì bỏ lớp mờ để không che mục cuối.
+    const syncBottomFade = useCallback((element: HTMLElement) => {
+        const distanceToBottom =
+            element.scrollHeight - element.scrollTop - element.clientHeight;
+        setShowBottomFade((current) => {
+            const next = distanceToBottom > 4;
+            return current === next ? current : next;
+        });
+    }, []);
+
+    // Đo lại sau khi danh sách menu thay đổi để trạng thái fade ban đầu phản ánh đúng chiều cao thật.
+    useEffect(() => {
+        const element = navRef.current;
+        if (!element) return;
+
+        const frameId = window.requestAnimationFrame(() =>
+            syncBottomFade(element),
+        );
+        return () => window.cancelAnimationFrame(frameId);
+    }, [syncBottomFade, visibleItemCount]);
 
     // Khi Seller mở menu Đơn hàng, dọn đúng nhóm notification liên quan mà không ảnh hưởng các thông báo khác.
     function handleItemNavigate(item: SellerNavItem) {
@@ -94,19 +122,33 @@ export function SellerSidebar({ onNavigate }: SellerSidebarProps) {
                 </div>
             </div>
 
-            <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-                <TooltipProvider>
-                    {visibleGroups.map((group) => (
-                        <SellerSidebarGroup
-                            key={group.title}
-                            group={group}
-                            pathname={pathname}
-                            search={search}
-                            onNavigate={handleItemNavigate}
-                        />
-                    ))}
-                </TooltipProvider>
-            </nav>
+            <div className="relative min-h-0 flex-1">
+                <nav
+                    ref={navRef}
+                    onScroll={(event: UIEvent<HTMLElement>) =>
+                        syncBottomFade(event.currentTarget)
+                    }
+                    className="h-full space-y-6 overflow-y-auto px-3 py-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                    <TooltipProvider>
+                        {visibleGroups.map((group) => (
+                            <SellerSidebarGroup
+                                key={group.title}
+                                group={group}
+                                pathname={pathname}
+                                search={search}
+                                onNavigate={handleItemNavigate}
+                            />
+                        ))}
+                    </TooltipProvider>
+                </nav>
+                {showBottomFade ? (
+                    <div
+                        className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white via-white/80 to-transparent"
+                        aria-hidden="true"
+                    />
+                ) : null}
+            </div>
         </aside>
     );
 }

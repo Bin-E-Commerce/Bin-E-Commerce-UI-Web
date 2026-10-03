@@ -24,7 +24,6 @@ import type { AppDispatch } from '@/store';
 import { logoutUser } from '@/store/slices/authSlice';
 
 interface SellerTopbarProps {
-    shopName: string;
     userName: string;
     avatarUrl?: string | null;
     shopLogoUrl?: string | null;
@@ -33,7 +32,6 @@ interface SellerTopbarProps {
 
 // Topbar giữ các hành động thường dùng của seller luôn ở trên cùng khi cuộn nội dung.
 export function SellerTopbar({
-    shopName,
     userName,
     avatarUrl,
     shopLogoUrl,
@@ -50,13 +48,20 @@ export function SellerTopbar({
     const shopHref = profileQuery.data?.shop.slug
         ? `/shop/${profileQuery.data.shop.slug}`
         : '/seller/shop';
+    const currentHour = new Date().getHours();
+    const greeting =
+        currentHour < 12
+            ? 'Chào buổi sáng'
+            : currentHour < 18
+              ? 'Chào buổi chiều'
+              : 'Chào buổi tối';
     // Seller Center ưu tiên nhận diện bằng logo shop; avatar cá nhân chỉ là fallback khi shop chưa có ảnh đại diện.
     // Ưu tiên ảnh cá nhân; fallback sang logo shop từ Auth hoặc profile shop hiện tại.
     const displayAvatarUrl =
         avatarUrl || shopLogoUrl || profileQuery.data?.shop.logoUrl;
 
     return (
-        <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur">
+        <header className="sticky top-0 z-30 flex-none border-b border-zinc-200 bg-white/95 backdrop-blur">
             <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
                 <Button
                     type="button"
@@ -69,29 +74,13 @@ export function SellerTopbar({
                     <Menu className="size-5" />
                 </Button>
 
-                <div className="hidden min-w-0 items-center gap-3 lg:flex">
-                    <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-100">
-                        <Store className="size-4 text-zinc-700" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-zinc-950">
-                            {shopName}
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                            Không gian quản trị người bán
-                        </p>
-                    </div>
+                <div className="hidden min-w-0 items-center lg:flex">
+                    <p className="truncate text-base font-semibold text-zinc-950">
+                        {greeting}, {userName}
+                    </p>
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
-                    <Link
-                        href={shopHref}
-                        aria-label="Mở trang shop công khai"
-                        className="group hidden h-9 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm transition-all hover:border-zinc-950 hover:bg-zinc-950 hover:text-white sm:inline-flex"
-                    >
-                        <Store className="size-4 text-zinc-500 transition-colors group-hover:text-white" />
-                        Xem shop
-                    </Link>
                     <NotificationBell />
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild>
@@ -139,6 +128,15 @@ export function SellerTopbar({
                                         Không gian quản trị người bán
                                     </p>
                                 </div>
+                                <DropdownMenu.Item asChild>
+                                    <Link
+                                        href={shopHref}
+                                        className="mt-1 flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-zinc-700 outline-none transition-colors hover:bg-zinc-50"
+                                    >
+                                        <Store className="size-4 text-zinc-400" />
+                                        Xem shop
+                                    </Link>
+                                </DropdownMenu.Item>
                                 <DropdownMenu.Item asChild>
                                     <Link
                                         href="/seller/shop"
