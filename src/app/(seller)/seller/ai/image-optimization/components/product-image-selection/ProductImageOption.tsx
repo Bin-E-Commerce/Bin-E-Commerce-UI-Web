@@ -39,7 +39,7 @@ export function ProductImageOption({
             disabled={disabled}
             onClick={() => onSelect(assetId)}
             className={cn(
-                'relative aspect-square overflow-hidden rounded-xl border-2 bg-zinc-50 transition-[border-color,box-shadow] disabled:cursor-not-allowed disabled:opacity-60',
+                'relative h-auto w-full min-w-0 aspect-square overflow-hidden rounded-xl border-2 bg-zinc-50 p-0 transition-[border-color,box-shadow] disabled:cursor-not-allowed disabled:opacity-60',
                 selected
                     ? 'border-zinc-950 shadow-md'
                     : 'border-zinc-200 hover:border-zinc-400',

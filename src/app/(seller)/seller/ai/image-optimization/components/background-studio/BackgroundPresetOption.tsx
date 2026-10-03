@@ -33,7 +33,7 @@ export function BackgroundPresetOption({
             disabled={disabled}
             onClick={() => onSelect(value)}
             className={cn(
-                'group rounded-lg border-2 p-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                'group h-auto w-full min-w-0 flex-col items-start justify-center gap-0 rounded-lg border-2 p-3 text-left whitespace-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                 selected
                     ? 'border-zinc-950 bg-zinc-50 text-zinc-950 shadow-sm'
                     : 'border-zinc-200 bg-white text-zinc-900 hover:border-zinc-400 hover:bg-zinc-50',
