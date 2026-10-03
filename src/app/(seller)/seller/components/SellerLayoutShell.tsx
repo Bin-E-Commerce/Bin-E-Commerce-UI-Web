@@ -36,6 +36,8 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
     const isProductEditorRoute =
         pathname === '/seller/products/new' ||
         /^\/seller\/products\/[^/]+\/edit$/.test(pathname);
+    // Copilot là workspace hội thoại nên cần dùng toàn bộ chiều rộng dưới topbar, không giữ padding của layout CRUD.
+    const isSellerCopilotRoute = pathname === '/seller/ai/bingpt';
     const canEnterSellerCenter = canAccessSellerCenter(user);
     const canOpenCurrentRoute = canAccessSellerPath(pathname, user);
 
@@ -158,10 +160,15 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
         );
     }
 
-    const shopName = user.name ? `Shop ${user.name}` : 'Shop của tôi';
-
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-950">
+        <div
+            className={cn(
+                'bg-zinc-50 text-zinc-950',
+                isSellerCopilotRoute
+                    ? 'flex h-dvh overflow-hidden'
+                    : 'min-h-screen overflow-x-hidden',
+            )}
+        >
             <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block">
                 <SellerSidebar />
             </div>
@@ -193,15 +200,28 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                 </div>
             ) : null}
 
-            <div className="min-w-0 lg:pl-72">
+            <div
+                className={cn(
+                    'min-w-0 lg:pl-72',
+                    isSellerCopilotRoute
+                        ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+                        : 'overflow-x-hidden',
+                )}
+            >
                 <SellerTopbar
-                    shopName={shopName}
                     userName={user.name}
                     avatarUrl={user.avatarUrl}
                     shopLogoUrl={user.shopLogoUrl}
                     onOpenSidebar={() => setSidebarOpen(true)}
                 />
-                <main className="mx-auto w-full min-w-0 max-w-[1500px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+                <main
+                    className={cn(
+                        'w-full min-w-0',
+                        isSellerCopilotRoute
+                            ? 'min-h-0 flex-1 overflow-hidden p-0'
+                            : 'mx-auto max-w-[1500px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8',
+                    )}
+                >
                     {children}
                 </main>
             </div>

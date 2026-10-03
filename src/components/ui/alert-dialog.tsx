@@ -2,6 +2,7 @@
 
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import * as React from 'react';
+import type { VariantProps } from 'class-variance-authority';
 
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -201,14 +202,18 @@ function AlertDialogDescription({
     );
 }
 
+// Áp dụng cùng hệ variant với Button cho action của dialog để các nút xác nhận,
+// đặc biệt là thao tác xóa, không rơi về style mặc định hoặc viền trình duyệt.
 function AlertDialogAction({
     className,
+    variant = 'default',
     ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action> &
+    VariantProps<typeof buttonVariants>) {
     return (
         <AlertDialogPrimitive.Action
             data-slot="alert-dialog-action"
-            className={cn(buttonVariants(), className)}
+            className={cn(buttonVariants({ variant }), className)}
             {...props}
         />
     );

@@ -98,7 +98,9 @@ export function AiImageLoader({
                 </svg>
                 <div className="ai-image-loader__box" />
             </div>
-            <span className="text-sm font-medium">{label}</span>
+            {label ? (
+                <span className="text-sm font-medium">{label}</span>
+            ) : null}
         </div>
     );
 }

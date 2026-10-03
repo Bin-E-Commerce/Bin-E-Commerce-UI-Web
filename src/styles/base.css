@@ -61,6 +61,15 @@
         box-shadow: 0 0 0 3px oklch(0.205 0 0 / 12%);
     }
 
+    /* Ba dấu chấm chạy lệch pha để trạng thái “Đang phân tích” nhận biết rõ ngay cả khi đang stream nhanh. */
+    .bingpt-thinking-dot {
+        animation: bingpt-thinking-dot 0.95s cubic-bezier(0.4, 0, 0.2, 1)
+            infinite;
+        transform: translateY(0) scale(0.7);
+        opacity: 0.35;
+        will-change: transform, opacity;
+    }
+
     /* Loader hình học dùng chung cho trạng thái xử lý ảnh AI. */
     .ai-image-loader {
         --ai-loader-size: 96px;
@@ -216,11 +225,41 @@
         }
     }
 
+    @keyframes bingpt-thinking-dot {
+        0%,
+        60%,
+        100% {
+            transform: translateY(0) scale(0.7);
+            opacity: 0.35;
+        }
+        30% {
+            transform: translateY(-5px) scale(1.35);
+            opacity: 1;
+        }
+    }
+
+    /* Chỉ đổi độ sáng khi người dùng bật giảm chuyển động, tránh dấu chấm đứng yên hoàn toàn. */
+    @keyframes bingpt-thinking-dot-reduced {
+        0%,
+        100% {
+            opacity: 0.35;
+        }
+        50% {
+            opacity: 0.9;
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .ai-image-loader,
         .ai-image-loader__mask,
         .ai-image-loader__mask polygon {
             animation: none;
+        }
+
+        .bingpt-thinking-dot {
+            animation: bingpt-thinking-dot-reduced 1.2s ease-in-out infinite;
+            transform: none;
+            will-change: opacity;
         }
     }
 }
