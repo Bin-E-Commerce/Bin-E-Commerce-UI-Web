@@ -12,7 +12,7 @@ import {
     LayoutDashboard,
     LogOut,
     Menu,
-    ShieldCheck,
+    Smile,
     ShoppingBag,
     UserRound,
 } from 'lucide-react';
@@ -31,7 +31,7 @@ interface AdminTopbarProps {
     onOpenSidebar: () => void;
 }
 
-// Topbar giữ thao tác admin thường dùng ở vị trí cố định và gọn để không chiếm không gian bảng dữ liệu.
+// Topbar kết hợp lời chào nhận diện admin với thao tác tài khoản, thông báo và điều hướng mà không chiếm nhiều chiều cao.
 export function AdminTopbar({
     userName,
     userRole,
@@ -43,6 +43,14 @@ export function AdminTopbar({
     const displayName = getUserDisplayName({
         name: userName,
     });
+    // Dùng cùng các khung giờ với Seller Center để lời chào của hai khu quản trị nhất quán.
+    const currentHour = new Date().getHours();
+    const greeting =
+        currentHour < 12
+            ? 'Chào buổi sáng'
+            : currentHour < 18
+              ? 'Chào buổi chiều'
+              : 'Chào buổi tối';
 
     // Đăng xuất khỏi Admin Center và đưa người dùng về màn hình đăng nhập.
     async function handleLogout() {
@@ -64,18 +72,17 @@ export function AdminTopbar({
                     <Menu className="size-5" />
                 </Button>
 
-                <div className="hidden min-w-0 items-center gap-3 lg:flex">
-                    <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-100">
-                        <ShieldCheck className="size-4 text-zinc-700" />
-                    </div>
-                    <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-zinc-950">
-                            Admin Center
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                            Quản trị vận hành và kiểm soát nền tảng
-                        </p>
-                    </div>
+                <div className="hidden min-w-0 items-center gap-1.5 lg:flex">
+                    <p className="min-w-0 truncate text-sm font-semibold text-zinc-950">
+                        <span className="font-medium text-zinc-500">
+                            {greeting},{' '}
+                        </span>
+                        {displayName}
+                    </p>
+                    <Smile
+                        className="size-4 shrink-0 text-pink-500"
+                        aria-hidden="true"
+                    />
                 </div>
 
                 <div className="ml-auto flex items-center gap-3">

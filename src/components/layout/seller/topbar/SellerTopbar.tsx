@@ -11,6 +11,7 @@ import {
     ChevronDown,
     LogOut,
     Menu,
+    Smile,
     Settings,
     Store,
     UserRound,
@@ -30,7 +31,7 @@ interface SellerTopbarProps {
     onOpenSidebar: () => void;
 }
 
-// Topbar giữ các hành động thường dùng của seller luôn ở trên cùng khi cuộn nội dung.
+// Topbar kết hợp lời chào nhận diện người bán với các hành động thường dùng khi cuộn nội dung.
 export function SellerTopbar({
     userName,
     avatarUrl,
@@ -74,10 +75,17 @@ export function SellerTopbar({
                     <Menu className="size-5" />
                 </Button>
 
-                <div className="hidden min-w-0 items-center lg:flex">
-                    <p className="truncate text-base font-semibold text-zinc-950">
-                        {greeting}, {userName}
+                <div className="hidden min-w-0 items-center gap-1.5 lg:flex">
+                    <p className="min-w-0 truncate text-sm font-semibold text-zinc-950">
+                        <span className="font-medium text-zinc-500">
+                            {greeting},{' '}
+                        </span>
+                        {userName}
                     </p>
+                    <Smile
+                        className="size-4 shrink-0 text-pink-500"
+                        aria-hidden="true"
+                    />
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
