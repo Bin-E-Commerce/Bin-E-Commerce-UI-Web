@@ -15,6 +15,7 @@ import { checkApiGatewayHealth } from '../services/infrastructure-health.service
 import { isWithinSupportHours } from '../utils/support-hours';
 
 const HEALTH_CHECK_INTERVAL_MS = 15_000;
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Giữ duy nhất một popup ưu tiên, chỉ tự đóng sau khi health endpoint xác nhận Gateway đã hồi phục.
 export function InfrastructureStatusProvider({
@@ -36,6 +37,9 @@ export function InfrastructureStatusProvider({
                 setHasPendingRequests(event.hasPendingRequests);
                 return;
             }
+
+            // Next.js thay NODE_ENV theo bundle; chỉ production mới được mở cảnh báo EC2, còn pending vẫn phục vụ popup khác.
+            if (!IS_PRODUCTION) return;
 
             // Trong giờ vận hành, lỗi API được xử lý bởi feature tương ứng; popup này chỉ dành cho lúc EC2 ngoài lịch bật.
             if (isWithinSupportHours()) return;
@@ -96,11 +100,13 @@ export function InfrastructureStatusProvider({
     return (
         <InfrastructureStatusContext.Provider value={contextValue}>
             {children}
-            <InfrastructureStatusDialog
-                open={isOpen}
-                reason={reason}
-                onRetry={retryHealthCheck}
-            />
+            {IS_PRODUCTION ? (
+                <InfrastructureStatusDialog
+                    open={isOpen}
+                    reason={reason}
+                    onRetry={retryHealthCheck}
+                />
+            ) : null}
         </InfrastructureStatusContext.Provider>
     );
 }
