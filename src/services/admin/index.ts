@@ -9,3 +9,5 @@ export * from './api/recommendation.api';
 export * from './types/recommendation.types';
 export * from './api/users.api';
 export * from './types/users.types';
+export * from './api/seller-knowledge.api';
+export * from './types/seller-knowledge.types';

@@ -1,7 +1,9 @@
-/* ─── Entry point — imports only ────────────────────────────────────── */
+/* Điểm nạp CSS toàn cục; style riêng của tính năng được giới hạn bằng selector cục bộ. */
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@uiw/react-md-editor/markdown-editor.css';
+@import '@uiw/react-markdown-preview/markdown.css';
 
 /* Project-level CSS (split by concern) */
 @import '../styles/theme.css';

@@ -10,6 +10,7 @@ import {
     LayoutDashboard,
     Users,
     ShieldCheck,
+    LibraryBig,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -33,6 +34,7 @@ const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
     FilePenLine,
     LayoutDashboard,
     Users,
+    LibraryBig,
 };
 
 // Chuyển navigation backend trả về thành các group sidebar đúng theo groupCode/groupLabel backend seed.
