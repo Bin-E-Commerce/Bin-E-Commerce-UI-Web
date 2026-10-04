@@ -4,10 +4,9 @@
 'use client';
 
 import {
-    Area,
-    Bar,
     CartesianGrid,
-    ComposedChart,
+    Line,
+    LineChart,
     Tooltip,
     XAxis,
     YAxis,
@@ -32,49 +31,52 @@ interface ChartTooltipProps {
     }>;
 }
 
-// Tooltip hiển thị doanh thu và số đơn của một ngày, không phụ thuộc format mặc định của Recharts.
+// Tooltip gom hai series về cùng một ngày và định dạng riêng tiền tệ với số lượng đơn.
 function DashboardChartTooltip({ active, payload }: ChartTooltipProps) {
     if (!active || !payload?.length || !payload[0]?.payload) return null;
 
     const point = payload[0].payload;
     return (
-        <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs shadow-md">
+        <div className="grid min-w-40 gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-xs shadow-lg">
             <p className="font-semibold text-zinc-950">
                 {formatDashboardDay(point.date)}
             </p>
-            <p className="mt-1 text-zinc-600">
-                Doanh thu: {formatDashboardMoney(point.grossRevenue)}
-            </p>
-            <p className="text-zinc-500">
-                Đơn hàng: {formatDashboardNumber(point.orderCount)}
-            </p>
+            <div className="grid gap-1.5">
+                <p className="flex items-center justify-between gap-4 text-zinc-600">
+                    <span className="inline-flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-zinc-950" />
+                        Doanh thu
+                    </span>
+                    <span className="font-medium tabular-nums text-zinc-950">
+                        {formatDashboardMoney(point.grossRevenue)}
+                    </span>
+                </p>
+                <p className="flex items-center justify-between gap-4 text-zinc-600">
+                    <span className="inline-flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-zinc-400" />
+                        Số đơn
+                    </span>
+                    <span className="font-medium tabular-nums text-zinc-950">
+                        {formatDashboardNumber(point.orderCount)}
+                    </span>
+                </p>
+            </div>
         </div>
     );
 }
 
-// Render hai series với hai thang đo để số đơn nhỏ không bị chìm trong trục doanh thu lớn.
-function ComposedDashboardChart({
+// Vẽ hai đường độc lập; trục số đơn ẩn bên phải giữ đúng tỷ lệ mà không chen thêm nhãn gây rối.
+function RevenueOrdersLineChart({
     data,
 }: {
     data: SellerDashboardSnapshot['revenueTrend'];
 }) {
     return (
-        <ComposedChart
+        <LineChart
+            accessibilityLayer
             data={data}
             margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
         >
-            <defs>
-                <linearGradient
-                    id="seller-dashboard-revenue"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                >
-                    <stop offset="5%" stopColor="#18181b" stopOpacity={0.18} />
-                    <stop offset="95%" stopColor="#18181b" stopOpacity={0} />
-                </linearGradient>
-            </defs>
             <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
@@ -86,6 +88,7 @@ function ComposedDashboardChart({
                 tickLine={false}
                 axisLine={false}
                 minTickGap={24}
+                tickMargin={8}
                 tick={{ fill: '#71717a', fontSize: 11 }}
             />
             <YAxis
@@ -102,29 +105,26 @@ function ComposedDashboardChart({
                 }
             />
             <YAxis yAxisId="orders" orientation="right" hide />
-            <Tooltip
-                content={<DashboardChartTooltip />}
-                cursor={{ stroke: '#a1a1aa' }}
-            />
-            <Area
+            <Tooltip content={<DashboardChartTooltip />} cursor={false} />
+            <Line
                 yAxisId="revenue"
                 type="monotone"
                 dataKey="grossRevenue"
                 stroke="#18181b"
                 strokeWidth={2}
-                fill="url(#seller-dashboard-revenue)"
                 dot={false}
                 activeDot={{ r: 4, fill: '#18181b' }}
             />
-            <Bar
+            <Line
                 yAxisId="orders"
                 dataKey="orderCount"
-                fill="#a1a1aa"
-                fillOpacity={0.65}
-                radius={[3, 3, 0, 0]}
-                barSize={8}
+                type="monotone"
+                stroke="#a1a1aa"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4, fill: '#a1a1aa' }}
             />
-        </ComposedChart>
+        </LineChart>
     );
 }
 
@@ -165,7 +165,7 @@ export function SellerDashboardRevenueChart({
             <CardContent className="px-4 pb-4 pt-3">
                 {hasData ? (
                     <ChartContainer className="h-[220px]">
-                        <ComposedDashboardChart data={snapshot.revenueTrend} />
+                        <RevenueOrdersLineChart data={snapshot.revenueTrend} />
                     </ChartContainer>
                 ) : (
                     <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/60 text-center">
