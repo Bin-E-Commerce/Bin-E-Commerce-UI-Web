@@ -62,7 +62,7 @@ function SelectTrigger({
     );
 }
 
-// Đặt menu trong Portal để không bị cắt bởi layout cha và tự định vị theo trigger.
+// Đặt menu trong Portal và tách popup khỏi trigger; Base UI tự đổi phía khi viewport không đủ chỗ.
 function SelectContent({
     className,
     children,
@@ -70,7 +70,7 @@ function SelectContent({
     sideOffset = 4,
     align = 'center',
     alignOffset = 0,
-    alignItemWithTrigger = true,
+    alignItemWithTrigger = false,
     collisionAvoidance,
     ...props
 }: SelectPrimitive.Popup.Props &
