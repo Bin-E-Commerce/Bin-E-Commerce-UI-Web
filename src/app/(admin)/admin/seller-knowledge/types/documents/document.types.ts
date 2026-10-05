@@ -49,6 +49,8 @@ export interface KnowledgeDocumentWorkspaceProps {
     isCreating: boolean;
     isEditing: boolean;
     isArchiving: boolean;
+    isRestoringDocument: boolean;
+    isActivatingDomain: boolean;
     isTesting: boolean;
     isRollingBack: boolean;
     preview?: SellerKnowledgePreview;
@@ -62,13 +64,44 @@ export interface KnowledgeDocumentWorkspaceProps {
     onStartEditing: () => void;
     onLoadPreview: (revisionId: string) => void;
     onTestDraft: (revisionId: string, question: string) => void;
-    onArchive: (documentId: string) => void;
+    onArchive: (documentId: string) => Promise<void>;
+    onRestoreDocument: (documentId: string) => Promise<void>;
+    onActivateDomain: (domainCode: string) => Promise<void>;
     onRollback: (
         documentId: string,
         revisionId: string,
         reason: string,
     ) => void;
     section: WorkspaceSection;
+}
+
+// Dữ liệu hiển thị và callback bất đồng bộ cho wizard lưu trữ tài liệu.
+export interface ArchiveDocumentFlowProps {
+    document: SellerKnowledgeDocument;
+    domainLabel: string;
+    isArchiving: boolean;
+    isRestoring: boolean;
+    isArchived: boolean;
+    onArchive: (documentId: string) => Promise<void>;
+    onRestore: (documentId: string) => Promise<void>;
+}
+
+// Dữ liệu snapshot cần thiết để dựng các mốc vòng đời mà không ghi thêm trạng thái riêng vào backend.
+export interface DocumentLifecycleProgressProps {
+    document: SellerKnowledgeDocument;
+    latestRevision: SellerKnowledgeRevision | null;
+    isContentChecked: boolean;
+    domainStatus: SellerKnowledgeDomain['status'] | undefined;
+    onContinue: () => void;
+}
+
+// Dữ liệu và thao tác cần thiết cho cảnh báo khôi phục domain ở cuối phần thân modal.
+export interface DomainRecoveryNoticeProps {
+    domainCode: string;
+    domainLabel: string;
+    domainStatus: SellerKnowledgeDomain['status'] | undefined;
+    isActivatingDomain: boolean;
+    onActivateDomain: (domainCode: string) => Promise<void>;
 }
 
 export interface SellerKnowledgeTestMatch {
@@ -102,6 +135,11 @@ export interface MarkdownDocumentEditorProps {
     inputRef: (target: MarkdownFocusTarget | null) => void;
     invalid: boolean;
     describedBy?: string;
+}
+
+// Nội dung Markdown thuần cần dựng thành giao diện định dạng trong card preview.
+export interface KnowledgeMarkdownPreviewProps {
+    source: string;
 }
 
 export interface SaveRevisionVariables {

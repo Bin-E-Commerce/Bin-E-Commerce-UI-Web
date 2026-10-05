@@ -1,9 +1,9 @@
-// Quản lý nhóm tài liệu, phân biệt nguồn hệ thống với nhóm admin tạo bằng contract API.
-
+// Quản lý nhóm tài liệu theo nguồn và giữ lỗi đổi trạng thái cạnh nhóm tương ứng.
 'use client';
 
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isAxiosError } from 'axios';
 import { ChevronDown, Code2, Plus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -14,17 +14,24 @@ import { createKnowledgeSlug } from '../utils/seller-knowledge-display';
 import { KnowledgeDialog } from '../shared/KnowledgeDialog';
 import { DomainSection } from './DomainSection';
 import type { SellerKnowledgeDomainForm } from '../types/domains/domain-form.types';
-import type { KnowledgeDomainsPanelProps } from '../types/domains/domain.types';
+import type {
+    KnowledgeDomainStatusError,
+    KnowledgeDomainsPanelProps,
+} from '../types/domains/domain.types';
 
-// Tách danh mục chỉ đọc khỏi nhóm admin; giữ mã tùy chọn trong phần thu gọn để luồng tạo nhóm luôn gọn và dễ hiểu.
+// Tách nhóm hệ thống khỏi nhóm admin; metadata hệ thống chỉ đọc nhưng admin có thể đổi trạng thái và thêm tài liệu khôi phục.
 export function KnowledgeDomainsPanel({
     domains,
     isCreating,
     isUpdating,
+    onOpenDocuments,
+    onAddDocumentForDomain,
     onCreate,
     onSetStatus,
 }: KnowledgeDomainsPanelProps) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [statusError, setStatusError] =
+        useState<KnowledgeDomainStatusError | null>(null);
     const form = useForm<SellerKnowledgeDomainForm>({
         resolver: zodResolver(sellerKnowledgeDomainFormSchema),
         mode: 'onSubmit',
@@ -62,6 +69,32 @@ export function KnowledgeDomainsPanel({
         });
     }
 
+    // Giữ lỗi trên đúng nhóm thay vì chỉ toast thoáng qua; request thất bại không được xem như đã đổi trạng thái.
+    // Lỗi 400 đã biết được phân loại thành thiếu tài liệu xuất bản để giao diện đưa hướng xử lý cụ thể.
+    // Các lỗi khác vẫn hiện cảnh báo chung, còn chi tiết nội dung không tin cậy từ server không được render trực tiếp.
+    async function updateDomainStatus(
+        code: string,
+        status: 'ACTIVE' | 'ARCHIVED',
+    ) {
+        setStatusError(null);
+        try {
+            await onSetStatus(code, status);
+        } catch (error) {
+            const needsPublishedDocument =
+                status === 'ACTIVE' &&
+                isAxiosError<{ message?: string }>(error) &&
+                error.response?.data.message ===
+                    'Domain cần có ít nhất một tài liệu đã xuất bản trước khi kích hoạt.';
+
+            setStatusError({
+                code,
+                kind: needsPublishedDocument
+                    ? 'published-document-required'
+                    : 'request-failed',
+            });
+        }
+    }
+
     // Chỉ gửi nhóm sau khi schema xác nhận tên/mô tả; mã rỗng được tái sinh để form luôn tạo được định danh an toàn.
     const submitDomain = form.handleSubmit(async (values) => {
         try {
@@ -92,9 +125,9 @@ export function KnowledgeDomainsPanel({
                         Nhóm nội dung
                     </h2>
                     <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        Nhóm giúp BinGPT xác định chủ đề của tài liệu. Nhóm mặc
-                        định chỉ xem được; nhóm bạn tạo có thể lưu trữ hoặc kích
-                        hoạt.
+                        Nhóm giúp BinGPT xác định chủ đề tài liệu. Nhóm mặc định
+                        không sửa được thông tin nhưng có thể bật hoặc ngừng sử
+                        dụng; nhóm bạn tạo có thể kích hoạt hoặc ngừng sử dụng.
                     </p>
                 </div>
                 <Button type="button" onClick={() => setIsCreateOpen(true)}>
@@ -106,18 +139,28 @@ export function KnowledgeDomainsPanel({
             <div className="grid gap-6 xl:grid-cols-2">
                 <DomainSection
                     title="Nhóm mặc định của hệ thống"
-                    description="Được BinGPT dùng sẵn để phân loại tài liệu. Các nhóm này chỉ đọc và không thể lưu trữ tại đây."
+                    description="Nhóm mặc định do hệ thống định nghĩa, không thể sửa thông tin tại đây. “Đang bật” chỉ có nghĩa nhóm được phép dùng để phân loại; để BinGPT tra cứu được, nhóm cần ít nhất một tài liệu đã xuất bản. Nhóm chưa có tài liệu nên để “Ngừng sử dụng” và chỉ bật lại sau khi xuất bản tài liệu."
                     domains={systemDomains}
                     emptyMessage="Chưa có nhóm mặc định trong registry."
                     scrollable
+                    isUpdating={isUpdating}
+                    statusError={statusError}
+                    onDismissStatusError={() => setStatusError(null)}
+                    onOpenDocuments={onOpenDocuments}
+                    onAddDocumentForDomain={onAddDocumentForDomain}
+                    onSetStatus={updateDomainStatus}
                 />
                 <DomainSection
                     title="Nhóm do bạn tạo"
-                    description="Nhóm mới bắt đầu ở trạng thái nháp; xuất bản ít nhất một tài liệu rồi mới kích hoạt được."
+                    description="Nhóm mới bắt đầu ở trạng thái nháp. Chỉ bật nhóm sau khi có ít nhất một tài liệu được xuất bản để BinGPT tra cứu."
                     domains={adminDomains}
                     emptyMessage="Bạn chưa tạo nhóm nào. Tạo nhóm mới để gom một chủ đề tài liệu riêng."
                     isUpdating={isUpdating}
-                    onSetStatus={onSetStatus}
+                    statusError={statusError}
+                    onDismissStatusError={() => setStatusError(null)}
+                    onOpenDocuments={onOpenDocuments}
+                    onAddDocumentForDomain={onAddDocumentForDomain}
+                    onSetStatus={updateDomainStatus}
                 />
             </div>
 

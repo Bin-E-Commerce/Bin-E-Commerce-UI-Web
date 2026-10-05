@@ -3,16 +3,17 @@
 import { useRef, useState } from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 import {
-    Archive,
     ArrowLeft,
     ChevronDown,
     Code2,
     FileText,
     FlaskConical,
+    History,
+    LayoutDashboard,
     Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -21,8 +22,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { ArchiveDocumentFlow } from './ArchiveDocumentFlow';
+import { DomainRecoveryNotice } from './DomainRecoveryNotice';
+import { DocumentLifecycleProgress } from './DocumentLifecycleProgress';
 import { DocumentRevisionHistory } from './DocumentRevisionHistory';
 import { MarkdownDocumentEditor } from './MarkdownDocumentEditor';
+import { KnowledgeMarkdownPreview } from './KnowledgeMarkdownPreview';
 import {
     createKnowledgeSlug,
     formatKnowledgeDate,
@@ -31,7 +36,9 @@ import {
 } from '../utils/seller-knowledge-display';
 import type { KnowledgeDocumentWorkspaceProps } from '../types/documents/document.types';
 
-// Hiển thị chi tiết, chỉnh sửa và lịch sử; dữ liệu nhập do React Hook Form ở trang sở hữu để guard điều hướng dùng cùng trạng thái dirty.
+// Hiển thị chi tiết, chỉnh sửa và lịch sử; tiêu đề tài liệu do dialog sở hữu nên workspace không lặp lại.
+// Dữ liệu nhập do React Hook Form ở trang sở hữu để guard điều hướng dùng cùng trạng thái dirty.
+// Domain archived được hiện để soạn và xuất bản nội dung khôi phục, nhưng planner chỉ dùng domain sau khi được kích hoạt lại.
 // Section chỉ điều khiển nội dung đang xem, còn quyền publish/rollback và lưu revision vẫn do trang điều phối.
 // Workspace đăng ký input trực tiếp vào form context được truyền xuống, nên validation và dữ liệu submit không bị lệch nhau.
 export function KnowledgeDocumentWorkspace({
@@ -43,6 +50,8 @@ export function KnowledgeDocumentWorkspace({
     isCreating,
     isEditing,
     isArchiving,
+    isRestoringDocument,
+    isActivatingDomain,
     isTesting,
     isRollingBack,
     preview,
@@ -57,12 +66,14 @@ export function KnowledgeDocumentWorkspace({
     onLoadPreview,
     onTestDraft,
     onArchive,
+    onRestoreDocument,
+    onActivateDomain,
     onRollback,
     section,
 }: KnowledgeDocumentWorkspaceProps) {
-    const [watchedTitle, watchedSlug] = useWatch({
+    const [watchedTitle, watchedSlug, watchedDomainCode] = useWatch({
         control: formMethods.control,
-        name: ['title', 'slug'],
+        name: ['title', 'slug', 'domainCode'],
     });
     const [fileError, setFileError] = useState('');
     const markdownFileInput = useRef<HTMLInputElement>(null);
@@ -71,8 +82,24 @@ export function KnowledgeDocumentWorkspace({
         revisions.find((revision) => revision.id === selectedRevisionId) ??
         revisions[0] ??
         null;
+    // Lịch sử API sắp revision mới nhất lên đầu; tiến trình bám phiên bản mới nhất kể cả khi người dùng đang xem bản cũ.
+    const latestRevision = revisions[0] ?? null;
     const publishedRevision = revisions.find(
         (revision) => revision.id === document?.publishedRevisionId,
+    );
+    const documentDomain = domains.find(
+        (domain) => domain.code === document?.domainCode,
+    );
+    const isLatestRevisionChecked = Boolean(
+        latestRevision &&
+        (latestRevision.status === 'VALIDATED' ||
+            latestRevision.status === 'PUBLISHED' ||
+            latestRevision.status === 'SUPERSEDED' ||
+            (selectedRevisionId === latestRevision.id &&
+                preview?.validation.valid)),
+    );
+    const selectedDomain = domains.find(
+        (domain) => domain.code === watchedDomainCode,
     );
     // Cập nhật tên và mã sinh tự động cùng lúc; mã admin đã tùy chỉnh được giữ nguyên để tránh đổi định danh ngoài ý muốn.
     function updateTitle(nextTitle: string) {
@@ -109,6 +136,13 @@ export function KnowledgeDocumentWorkspace({
         });
     }
 
+    // Mở đúng revision mới nhất thay vì revision lịch sử đang chọn để nút tiến trình luôn đưa tới bước cần làm.
+    function openLifecycleContent() {
+        if (!latestRevision) return;
+        onSectionChange('content');
+        onLoadPreview(latestRevision.id);
+    }
+
     if (!document && !isCreating) {
         return (
             <Card className="flex min-h-[420px] items-center justify-center border-dashed bg-muted/10">
@@ -133,84 +167,84 @@ export function KnowledgeDocumentWorkspace({
 
     return (
         <div className="space-y-4">
-            <Card className="gap-2 border-0 bg-transparent shadow-none">
-                <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                        <h2 className="truncate text-xl font-semibold tracking-tight">
-                            {isCreating
-                                ? watchedTitle || 'Tạo tài liệu'
-                                : document?.title}
-                        </h2>
-                        {document && (
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                <span
-                                    className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getDocumentStatusClass(document.status)}`}
-                                >
-                                    {getDocumentStatusLabel(document.status)}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    {domains.find(
-                                        (domain) =>
-                                            domain.code === document.domainCode,
-                                    )?.label ?? 'Chưa gán nhóm'}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    Cập nhật{' '}
-                                    {formatKnowledgeDate(document.updatedAt)}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                    {!isCreating && document && !isEditing && (
-                        <div className="flex flex-wrap gap-2">
-                            {document.status !== 'ARCHIVED' && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => onArchive(document.id)}
-                                    disabled={isArchiving}
-                                >
-                                    <Archive />
-                                    {isArchiving
-                                        ? 'Đang lưu trữ...'
-                                        : 'Lưu trữ'}
-                                </Button>
-                            )}
-                        </div>
+            {document && (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+                    {(isCreating || isEditing) && (
+                        <span
+                            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${getDocumentStatusClass(document.status)}`}
+                        >
+                            {getDocumentStatusLabel(document.status)}
+                        </span>
                     )}
-                </CardHeader>
+                    <span className="text-xs text-muted-foreground">
+                        {documentDomain?.label ?? 'Chưa gán nhóm'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                        Cập nhật {formatKnowledgeDate(document.updatedAt)}
+                    </span>
+                </div>
+            )}
+
+            {!isCreating && !isEditing && document && (
+                <DocumentLifecycleProgress
+                    document={document}
+                    latestRevision={latestRevision}
+                    isContentChecked={isLatestRevisionChecked}
+                    domainStatus={documentDomain?.status}
+                    onContinue={openLifecycleContent}
+                />
+            )}
+
+            <Card className="gap-2 border-0 bg-transparent shadow-none">
                 <CardContent>
                     {/* Chỉ giữ điều hướng khi có nhiều màn hình; tạo mới/nội dung là một luồng đơn nên không cần tab đứng riêng. */}
                     {!isCreating && section !== 'content' && (
                         <div
                             role="tablist"
                             aria-label="Khu vực tài liệu"
-                            className="flex gap-1 overflow-x-auto border-b"
+                            className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between"
                         >
-                            <Button
-                                type="button"
-                                role="tab"
-                                id="document-tab-overview"
-                                aria-controls="document-panel-overview"
-                                aria-selected={section === 'overview'}
-                                variant="ghost"
-                                onClick={() => onSectionChange('overview')}
-                                className={`rounded-b-none ${section === 'overview' ? 'border-b-2 border-foreground text-foreground' : 'text-muted-foreground'}`}
-                            >
-                                Tổng quan
-                            </Button>
-                            <Button
-                                type="button"
-                                role="tab"
-                                id="document-tab-history"
-                                aria-controls="document-panel-history"
-                                aria-selected={section === 'history'}
-                                variant="ghost"
-                                onClick={() => onSectionChange('history')}
-                                className={`rounded-b-none ${section === 'history' ? 'border-b-2 border-foreground text-foreground' : 'text-muted-foreground'}`}
-                            >
-                                Phiên bản ({revisions.length})
-                            </Button>
+                            <div className="space-y-0.5">
+                                <p className="text-sm font-semibold tracking-tight">
+                                    Nội dung tài liệu
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Xem thông tin hoặc lịch sử cập nhật
+                                </p>
+                            </div>
+                            <div className="inline-flex w-full rounded-xl border bg-muted/50 p-1 sm:w-auto">
+                                <Button
+                                    type="button"
+                                    role="tab"
+                                    id="document-tab-overview"
+                                    aria-controls="document-panel-overview"
+                                    aria-selected={section === 'overview'}
+                                    variant="ghost"
+                                    onClick={() => onSectionChange('overview')}
+                                    className={`h-9 flex-1 justify-center rounded-lg px-3 sm:flex-none ${section === 'overview' ? 'bg-background text-foreground shadow-sm ring-1 ring-border hover:bg-background hover:text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <LayoutDashboard aria-hidden="true" />
+                                    Tổng quan
+                                </Button>
+                                <Button
+                                    type="button"
+                                    role="tab"
+                                    id="document-tab-history"
+                                    aria-controls="document-panel-history"
+                                    aria-selected={section === 'history'}
+                                    variant="ghost"
+                                    onClick={() => onSectionChange('history')}
+                                    className={`h-9 flex-1 justify-center rounded-lg px-3 sm:flex-none ${section === 'history' ? 'bg-background text-foreground shadow-sm ring-1 ring-border hover:bg-background hover:text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <History aria-hidden="true" />
+                                    Phiên bản
+                                    <span
+                                        className={`ml-0.5 inline-flex min-w-5 items-center justify-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold leading-none ${section === 'history' ? 'bg-muted text-foreground' : 'bg-background text-muted-foreground'}`}
+                                    >
+                                        {revisions.length}
+                                    </span>
+                                </Button>
+                            </div>
                         </div>
                     )}
 
@@ -370,12 +404,12 @@ export function KnowledgeDocumentWorkspace({
                                                             }
                                                         >
                                                             <SelectValue placeholder="Chọn nhóm nội dung">
-                                                                {domains.find(
-                                                                    (domain) =>
-                                                                        domain.code ===
-                                                                        field.value,
-                                                                )?.label ??
-                                                                    'Chọn nhóm nội dung'}
+                                                                {selectedDomain
+                                                                    ? selectedDomain.status ===
+                                                                      'ARCHIVED'
+                                                                        ? `${selectedDomain.label} (Ngừng sử dụng)`
+                                                                        : selectedDomain.label
+                                                                    : 'Chọn nhóm nội dung'}
                                                             </SelectValue>
                                                         </SelectTrigger>
                                                         <SelectContent>
@@ -383,9 +417,7 @@ export function KnowledgeDocumentWorkspace({
                                                                 .filter(
                                                                     (domain) =>
                                                                         domain.kind ===
-                                                                            'knowledge' &&
-                                                                        domain.status !==
-                                                                            'ARCHIVED',
+                                                                        'knowledge',
                                                                 )
                                                                 .map(
                                                                     (
@@ -399,9 +431,10 @@ export function KnowledgeDocumentWorkspace({
                                                                                 domain.code
                                                                             }
                                                                         >
-                                                                            {
-                                                                                domain.label
-                                                                            }
+                                                                            {domain.status ===
+                                                                            'ARCHIVED'
+                                                                                ? `${domain.label} (Ngừng sử dụng)`
+                                                                                : domain.label}
                                                                         </SelectItem>
                                                                     ),
                                                                 )}
@@ -421,6 +454,17 @@ export function KnowledgeDocumentWorkspace({
                                                     }
                                                 </span>
                                             )}
+                                            {isCreating &&
+                                                selectedDomain?.status ===
+                                                    'ARCHIVED' && (
+                                                    <p className="rounded-lg border border-muted bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                                                        Nhóm đang ngừng sử dụng.
+                                                        Tài liệu có thể được
+                                                        xuất bản nhưng BinGPT
+                                                        chỉ sử dụng sau khi bạn
+                                                        kích hoạt lại nhóm.
+                                                    </p>
+                                                )}
                                         </label>
                                         <label className="space-y-2 text-sm font-medium">
                                             Ngôn ngữ
@@ -736,9 +780,13 @@ export function KnowledgeDocumentWorkspace({
                                                                 {chunk.section ||
                                                                     `Phần ${index + 1}`}
                                                             </h3>
-                                                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                                                                {chunk.content}
-                                                            </p>
+                                                            <div className="mt-2 leading-6 text-muted-foreground">
+                                                                <KnowledgeMarkdownPreview
+                                                                    source={
+                                                                        chunk.content
+                                                                    }
+                                                                />
+                                                            </div>
                                                         </article>
                                                     ),
                                                 )}
@@ -836,11 +884,13 @@ export function KnowledgeDocumentWorkspace({
                                                                             %
                                                                         </span>
                                                                     </div>
-                                                                    <p className="mt-2 whitespace-pre-wrap text-sm leading-5 text-muted-foreground">
-                                                                        {
-                                                                            match.content
-                                                                        }
-                                                                    </p>
+                                                                    <div className="mt-2 leading-5 text-muted-foreground">
+                                                                        <KnowledgeMarkdownPreview
+                                                                            source={
+                                                                                match.content
+                                                                            }
+                                                                        />
+                                                                    </div>
                                                                 </article>
                                                             ),
                                                         )}
@@ -873,6 +923,28 @@ export function KnowledgeDocumentWorkspace({
                     )}
                 </CardContent>
             </Card>
+            {/* Khối khôi phục là phần cuối của nội dung cuộn, nằm ngay trên footer cố định của modal. */}
+            {document && documentDomain?.status !== 'ACTIVE' && (
+                <DomainRecoveryNotice
+                    domainCode={document.domainCode}
+                    domainLabel={documentDomain?.label ?? 'Chưa gán nhóm'}
+                    domainStatus={documentDomain?.status}
+                    isActivatingDomain={isActivatingDomain}
+                    onActivateDomain={onActivateDomain}
+                />
+            )}
+            {/* Đặt thao tác ngừng sử dụng cuối thân cuộn, tách khỏi thao tác thường để tránh bấm nhầm. */}
+            {document && !isCreating && !isEditing && (
+                <ArchiveDocumentFlow
+                    document={document}
+                    domainLabel={documentDomain?.label ?? 'Chưa gán nhóm'}
+                    isArchiving={isArchiving}
+                    isRestoring={isRestoringDocument}
+                    isArchived={document.status === 'ARCHIVED'}
+                    onArchive={onArchive}
+                    onRestore={onRestoreDocument}
+                />
+            )}
         </div>
     );
 }

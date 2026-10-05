@@ -1,3 +1,4 @@
+// File này quản lý truy vấn/cache và mutation của Admin Seller Knowledge; component sở hữu cách trình bày lỗi.
 'use client';
 
 import { useState } from 'react';
@@ -14,6 +15,7 @@ import type { SetKnowledgeDomainStatusVariables } from '../types/domains/domain.
 
 const DOCUMENTS_KEY = ['admin-seller-knowledge-documents'];
 const DOMAINS_KEY = ['admin-seller-knowledge-domains'];
+const PUBLISH_TOAST_ID = 'admin-seller-knowledge-publish';
 
 // Hook sở hữu truy vấn, cache và mutation của Admin knowledge; component chỉ gọi API qua service adapter.
 export function useSellerKnowledgeAdmin() {
@@ -91,11 +93,21 @@ export function useSellerKnowledgeAdmin() {
         onError: () => toast.error('Không thể chạy thử tìm kiếm cho bản nháp.'),
     });
 
-    // Publish báo kết quả job và làm mới metadata để trạng thái revision đang dùng không cũ trên màn hình.
+    // API chỉ trả thành công sau khi lập chỉ mục và cập nhật revision đang dùng hoàn tất.
+    // Giữ toast loading cùng một ID để người dùng thấy thao tác đang chạy và được thay bằng kết quả cuối.
+    // Sau đó nạp lại document để tiến trình phản ánh đúng nhóm đã sẵn sàng cho BinGPT hay còn cần khôi phục.
     const publish = useMutation({
         mutationFn: adminSellerKnowledgeService.publish,
+        onMutate: () => {
+            toast.loading('Đang kiểm tra, lập chỉ mục và xuất bản tài liệu…', {
+                id: PUBLISH_TOAST_ID,
+            });
+        },
         onSuccess: async () => {
-            toast.success('Đã lập chỉ mục và xuất bản tài liệu.');
+            toast.success(
+                'Đã xuất bản tài liệu. Xem bước “Đang sử dụng” để biết tài liệu đã sẵn sàng cho BinGPT chưa.',
+                { id: PUBLISH_TOAST_ID },
+            );
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY }),
                 queryClient.invalidateQueries({
@@ -106,6 +118,7 @@ export function useSellerKnowledgeAdmin() {
         onError: () =>
             toast.error(
                 'Xuất bản chưa thành công; phiên bản đang dùng vẫn được giữ nguyên.',
+                { id: PUBLISH_TOAST_ID },
             ),
     });
 
@@ -150,14 +163,17 @@ export function useSellerKnowledgeAdmin() {
             toast.success('Đã cập nhật trạng thái domain.');
             await queryClient.invalidateQueries({ queryKey: DOMAINS_KEY });
         },
-        onError: () => toast.error('Không thể cập nhật trạng thái domain.'),
+        onError: async () => {
+            // Lỗi mạng có thể xảy ra sau khi server đã ghi dữ liệu; tải lại để UI không giữ nhãn cũ.
+            await queryClient.invalidateQueries({ queryKey: DOMAINS_KEY });
+        },
     });
 
-    // Archive ẩn tài liệu khỏi danh sách hoạt động nhưng giữ revision để kiểm toán và khôi phục.
+    // Đánh dấu tài liệu ngừng sử dụng, nhưng vẫn giữ revision và vector đã lập chỉ mục để kiểm toán/khôi phục.
     const archiveDocument = useMutation({
         mutationFn: adminSellerKnowledgeService.archiveDocument,
         onSuccess: async () => {
-            toast.success('Đã lưu trữ tài liệu.');
+            toast.success('Đã chuyển tài liệu sang trạng thái ngừng sử dụng.');
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY }),
                 queryClient.invalidateQueries({
@@ -165,7 +181,25 @@ export function useSellerKnowledgeAdmin() {
                 }),
             ]);
         },
-        onError: () => toast.error('Không thể lưu trữ tài liệu.'),
+        onError: () => toast.error('Không thể ngừng sử dụng tài liệu.'),
+    });
+
+    // Khôi phục trạng thái tài liệu và nạp lại list/detail để nhãn, revision và khả năng thao tác không bị cũ.
+    const restoreDocument = useMutation({
+        mutationFn: adminSellerKnowledgeService.restoreDocument,
+        onSuccess: async (_, documentId) => {
+            toast.success(
+                'Đã khôi phục tài liệu. Nếu nhóm vẫn ngừng sử dụng, hãy khôi phục nhóm riêng để BinGPT dùng tài liệu.',
+            );
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY }),
+                queryClient.invalidateQueries({
+                    queryKey: [...DOCUMENTS_KEY, documentId],
+                }),
+            ]);
+        },
+        onError: () =>
+            toast.error('Không thể khôi phục tài liệu. Hãy thử lại.'),
     });
 
     // Khi đổi document, bỏ revision đang chọn của tài liệu trước để preview không bị lẫn.
@@ -197,6 +231,7 @@ export function useSellerKnowledgeAdmin() {
         createDomain,
         setDomainStatus,
         archiveDocument,
+        restoreDocument,
         isSaving: createDocument.isPending || saveRevision.isPending,
         loadPreview: async (revisionId: string) => {
             selectRevision(revisionId);

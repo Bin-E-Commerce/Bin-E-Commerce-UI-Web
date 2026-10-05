@@ -4,7 +4,10 @@
 
 import { useMemo, useState } from 'react';
 import { BookOpen, FilePlus2, Filter, Search, X } from 'lucide-react';
-import type { SellerKnowledgeDocument } from '@/services/admin';
+import type {
+    SellerKnowledgeDocument,
+    SellerKnowledgeDomain,
+} from '@/services/admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,7 +39,7 @@ import type {
     StatusSelectProps,
 } from '../types/documents/document.types';
 
-// Hiển thị bộ lọc theo bề rộng màn hình, giữ toàn bộ document list trong một vùng đọc rộng.
+// Hiển thị bộ lọc và danh sách tài liệu trong một vùng đọc rộng để mở chi tiết tài liệu.
 export function KnowledgeDocumentsPanel({
     documents,
     domains,
@@ -59,11 +62,7 @@ export function KnowledgeDocumentsPanel({
         [domains],
     );
     const knowledgeDomains = useMemo(
-        () =>
-            domains.filter(
-                (domain) =>
-                    domain.kind === 'knowledge' && domain.status !== 'ARCHIVED',
-            ),
+        () => domains.filter((domain) => domain.kind === 'knowledge'),
         [domains],
     );
     const selectedDomain = domainByCode.get(filters.domain);
@@ -153,7 +152,9 @@ export function KnowledgeDocumentsPanel({
                             aria-label="Lọc theo nhóm nội dung"
                         >
                             <SelectValue className="min-w-0 truncate">
-                                {selectedDomain?.label ?? 'Mọi nhóm nội dung'}
+                                {selectedDomain
+                                    ? getDomainFilterLabel(selectedDomain)
+                                    : 'Mọi nhóm nội dung'}
                             </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="w-80">
@@ -166,7 +167,7 @@ export function KnowledgeDocumentsPanel({
                                     value={domain.code}
                                     className="min-h-10 py-2"
                                 >
-                                    {domain.label}
+                                    {getDomainFilterLabel(domain)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -199,7 +200,11 @@ export function KnowledgeDocumentsPanel({
                 >
                     {filters.domain && (
                         <FilterChip
-                            label={selectedDomain?.label ?? filters.domain}
+                            label={
+                                selectedDomain
+                                    ? getDomainFilterLabel(selectedDomain)
+                                    : filters.domain
+                            }
                             onRemove={() => removeFilter('domain')}
                         />
                     )}
@@ -414,7 +419,7 @@ export function KnowledgeDocumentsPanel({
                                             key={domain.code}
                                             value={domain.code}
                                         >
-                                            {domain.label}
+                                            {getDomainFilterLabel(domain)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -456,6 +461,20 @@ export function KnowledgeDocumentsPanel({
     );
 }
 
+// Giữ cả domain ngừng sử dụng trong bộ lọc để tài liệu lưu trữ vẫn tìm được theo nhóm.
+// Gắn nhãn trạng thái vào tên giúp phân biệt nhóm đang dùng với nhóm chỉ còn phục vụ tra cứu.
+function getDomainFilterLabel(domain: SellerKnowledgeDomain): string {
+    if (domain.status === 'ARCHIVED') {
+        return `${domain.label} (Ngừng sử dụng)`;
+    }
+
+    if (domain.status === 'DRAFT') {
+        return `${domain.label} (Bản nháp)`;
+    }
+
+    return domain.label;
+}
+
 // Dùng cùng bộ giá trị trạng thái ở desktop và mobile để filter luôn cho cùng kết quả.
 function StatusSelect({ value, onValueChange }: StatusSelectProps) {
     const labels: Record<string, string> = {
@@ -463,7 +482,7 @@ function StatusSelect({ value, onValueChange }: StatusSelectProps) {
         DRAFT: 'Bản nháp',
         PUBLISHED: 'Đã xuất bản',
         EXPIRED: 'Hết hiệu lực',
-        ARCHIVED: 'Đã lưu trữ',
+        ARCHIVED: 'Ngừng sử dụng',
     };
     const selectedValue = value || 'all';
 
@@ -489,7 +508,7 @@ function StatusSelect({ value, onValueChange }: StatusSelectProps) {
                 <SelectItem value="DRAFT">Bản nháp</SelectItem>
                 <SelectItem value="PUBLISHED">Đã xuất bản</SelectItem>
                 <SelectItem value="EXPIRED">Hết hiệu lực</SelectItem>
-                <SelectItem value="ARCHIVED">Đã lưu trữ</SelectItem>
+                <SelectItem value="ARCHIVED">Ngừng sử dụng</SelectItem>
             </SelectContent>
         </Select>
     );

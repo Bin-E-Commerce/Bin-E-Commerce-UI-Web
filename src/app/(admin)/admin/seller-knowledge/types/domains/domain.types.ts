@@ -12,12 +12,19 @@ export interface SetKnowledgeDomainStatusVariables {
     status: 'ACTIVE' | 'ARCHIVED';
 }
 
+export interface KnowledgeDomainStatusError {
+    code: string;
+    kind: 'published-document-required' | 'request-failed';
+}
+
 export interface KnowledgeDomainsPanelProps {
     domains: SellerKnowledgeDomain[];
     isCreating: boolean;
     isUpdating: boolean;
+    onOpenDocuments: () => void;
+    onAddDocumentForDomain: (code: string) => void;
     onCreate: (domain: CreateKnowledgeDomainInput) => Promise<void>;
-    onSetStatus: (code: string, status: 'ACTIVE' | 'ARCHIVED') => void;
+    onSetStatus: (code: string, status: 'ACTIVE' | 'ARCHIVED') => Promise<void>;
 }
 
 export interface DomainSectionProps {
@@ -27,5 +34,9 @@ export interface DomainSectionProps {
     emptyMessage: string;
     scrollable?: boolean;
     isUpdating?: boolean;
+    statusError?: KnowledgeDomainStatusError | null;
+    onDismissStatusError?: () => void;
+    onOpenDocuments?: () => void;
+    onAddDocumentForDomain?: (code: string) => void;
     onSetStatus?: (code: string, status: 'ACTIVE' | 'ARCHIVED') => void;
 }

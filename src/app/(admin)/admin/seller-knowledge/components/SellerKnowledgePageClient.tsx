@@ -1,5 +1,4 @@
-// Điều phối hai khu quản trị; cache/API ở hook, nội dung tài liệu ở workspace, panel responsive ở component riêng.
-
+// Điều phối hai khu quản trị và luồng soạn thảo; truy vấn, mutation cùng luật nghiệp vụ nằm ở hook/service.
 'use client';
 
 import { useState } from 'react';
@@ -40,7 +39,7 @@ const EMPTY_FORM: SellerKnowledgeDocumentForm = {
     markdown: '',
 };
 
-// Kết hợp hành động lưu, kiểm tra và xuất bản theo trạng thái hiện hành, không cho xuất bản nội dung chưa kiểm tra.
+// Điều phối lưu, kiểm tra, xuất bản và khôi phục tài liệu; không cho xuất bản nội dung chưa kiểm tra.
 export function SellerKnowledgePageClient() {
     const admin = useSellerKnowledgeAdmin();
     const [pageSection, setPageSection] = useState<PageSection>('documents');
@@ -82,8 +81,9 @@ export function SellerKnowledgePageClient() {
     );
 
     // Chỉ hàm này thực hiện điều hướng thật sau khi requestNavigation đã qua guard dữ liệu chưa lưu.
-    // Chọn tài liệu và tạo tài liệu đều reset form/revision state để nội dung cũ không lẫn sang mục mới.
-    // Chuyển sang nhóm hoặc đóng panel chỉ bỏ state local; document đã lưu vẫn được giữ trong cache để mở lại.
+    // Tạo từ một nhóm cụ thể giữ đúng domain kể cả khi domain đang archived để soạn nội dung khôi phục.
+    // Tạo từ nút chung chỉ chọn domain ACTIVE; mọi lần mở form đều reset revision state để tránh lẫn dữ liệu cũ.
+    // Đóng panel chỉ bỏ state local, tài liệu đã lưu vẫn được giữ trong cache để mở lại.
     function performNavigation(navigation: PendingNavigation) {
         if (navigation.type === 'select-document') {
             admin.selectDocument(navigation.id);
@@ -99,11 +99,21 @@ export function SellerKnowledgePageClient() {
         }
 
         if (navigation.type === 'create-document') {
-            // Tài liệu chỉ gắn vào nhóm knowledge đang dùng; không cho form tạo gọi sang profile/live adapter.
-            const defaultDomain = admin.domains.find(
-                (domain) =>
-                    domain.kind === 'knowledge' && domain.status === 'ACTIVE',
-            );
+            // Chỉ nhận domain knowledge; domain archived vẫn được chọn để chuẩn bị tài liệu khôi phục, không dùng nguồn profile/live.
+            const requestedDomain = navigation.domainCode
+                ? admin.domains.find(
+                      (domain) =>
+                          domain.code === navigation.domainCode &&
+                          domain.kind === 'knowledge',
+                  )
+                : undefined;
+            const defaultDomain =
+                requestedDomain ??
+                admin.domains.find(
+                    (domain) =>
+                        domain.kind === 'knowledge' &&
+                        domain.status === 'ACTIVE',
+                );
             admin.selectDocument(null);
             setPageSection('documents');
             setIsCreating(true);
@@ -166,6 +176,16 @@ export function SellerKnowledgePageClient() {
         setIsDiscardDialogOpen(false);
         setPendingNavigation(null);
         if (navigation) performNavigation(navigation);
+    }
+
+    // Chuyển từ cảnh báo thiếu tài liệu sang tab tài liệu để admin tiếp tục tạo hoặc khôi phục nội dung.
+    function openDocumentsFromDomainNotice() {
+        setPageSection('documents');
+    }
+
+    // Mở form tạo tài liệu với domain được chọn sẵn để người dùng không phải tìm lại nhóm đang xử lý.
+    function openDocumentCreationForDomain(domainCode: string) {
+        requestNavigation({ type: 'create-document', domainCode });
     }
 
     // Chỉ tạo revision sau khi Zod xác nhận metadata và Markdown; ngày rỗng được đổi thành undefined theo contract API.
@@ -253,6 +273,14 @@ export function SellerKnowledgePageClient() {
                     'Chưa tải được nội dung phiên bản. Hãy thử lại.',
                 );
             });
+    }
+
+    // Dùng chung mutation quản lý domain để nút tại tiến trình tuân theo cùng quyền và điều kiện publish như tab nhóm.
+    async function activateDomain(domainCode: string) {
+        await admin.setDomainStatus.mutateAsync({
+            code: domainCode,
+            status: 'ACTIVE',
+        });
     }
 
     // Hủy chỉnh sửa nhưng giữ tài liệu đã lưu; tài liệu mới thì panel đóng và selection tạm được xóa.
@@ -349,12 +377,17 @@ export function SellerKnowledgePageClient() {
                         domains={admin.domains}
                         isCreating={admin.createDomain.isPending}
                         isUpdating={admin.setDomainStatus.isPending}
+                        onOpenDocuments={openDocumentsFromDomainNotice}
+                        onAddDocumentForDomain={openDocumentCreationForDomain}
                         onCreate={async (domain) => {
                             await admin.createDomain.mutateAsync(domain);
                         }}
-                        onSetStatus={(code, status) =>
-                            admin.setDomainStatus.mutate({ code, status })
-                        }
+                        onSetStatus={async (code, status) => {
+                            await admin.setDomainStatus.mutateAsync({
+                                code,
+                                status,
+                            });
+                        }}
                     />
                 </div>
             )}
@@ -411,17 +444,6 @@ export function SellerKnowledgePageClient() {
                                         }
                                     >
                                         Quay lại tổng quan
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() =>
-                                            selectedRevision &&
-                                            loadPreview(selectedRevision.id)
-                                        }
-                                        disabled={!selectedRevision || isDirty}
-                                    >
-                                        Kiểm tra nội dung
                                     </Button>
                                     <Button
                                         type="button"
@@ -485,6 +507,8 @@ export function SellerKnowledgePageClient() {
                     isCreating={isCreating}
                     isEditing={isEditing}
                     isArchiving={admin.archiveDocument.isPending}
+                    isRestoringDocument={admin.restoreDocument.isPending}
+                    isActivatingDomain={admin.setDomainStatus.isPending}
                     isTesting={admin.testDraft.isPending}
                     isRollingBack={admin.rollback.isPending}
                     preview={admin.preview}
@@ -513,8 +537,12 @@ export function SellerKnowledgePageClient() {
                         admin.testDraft.mutate({ revisionId, question })
                     }
                     onArchive={(documentId) =>
-                        admin.archiveDocument.mutate(documentId)
+                        admin.archiveDocument.mutateAsync(documentId)
                     }
+                    onRestoreDocument={(documentId) =>
+                        admin.restoreDocument.mutateAsync(documentId)
+                    }
+                    onActivateDomain={activateDomain}
                     onRollback={(documentId, revisionId, reason) =>
                         admin.rollback.mutate({
                             documentId,

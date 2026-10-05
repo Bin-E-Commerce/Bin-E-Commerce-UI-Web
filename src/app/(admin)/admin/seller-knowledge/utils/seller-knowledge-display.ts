@@ -25,7 +25,7 @@ export function getDocumentStatusLabel(
         case 'EXPIRED':
             return 'Hết hiệu lực';
         case 'ARCHIVED':
-            return 'Đã lưu trữ';
+            return 'Ngừng sử dụng';
         default:
             return 'Bản nháp';
     }

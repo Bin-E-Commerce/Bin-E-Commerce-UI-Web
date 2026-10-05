@@ -1,3 +1,4 @@
+// Adapter HTTP cho Seller Knowledge admin; xác thực và nghiệp vụ được xử lý ở Gateway/Seller Service.
 import { API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 import type {
@@ -47,6 +48,10 @@ export const adminSellerKnowledgeService = {
     archiveDocument: (id: string) =>
         authorizedAxios
             .post(`${baseUrl}/documents/${id}/archive`)
+            .then((response) => response.data),
+    restoreDocument: (id: string) =>
+        authorizedAxios
+            .post(`${baseUrl}/documents/${id}/restore`)
             .then((response) => response.data),
     createDocument: (payload: {
         title: string;

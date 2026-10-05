@@ -5,6 +5,6 @@ export type PageSection = 'documents' | 'domains';
 export type PendingNavigation =
     | { type: 'close' }
     | { type: 'select-document'; id: string }
-    | { type: 'create-document' }
+    | { type: 'create-document'; domainCode?: string }
     | { type: 'open-domains' }
     | { type: 'cancel-edit' };
