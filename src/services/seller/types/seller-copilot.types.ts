@@ -12,7 +12,6 @@ export interface SellerCopilotCitation {
     domain?: string;
     dataAsOf?: string;
     version?: string;
-    sourcePath?: string;
 }
 
 export type SellerCapabilityStatus =
