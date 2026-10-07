@@ -11,8 +11,8 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { ConversationHistoryItemProps } from '../../../types/conversation-history.types';
-import { formatConversationTitle } from '../../../utils/conversation-history.utils';
+import type { ConversationHistoryItemProps } from '../../../types/history/conversation-history.types';
+import { formatConversationTitle } from '../../../utils/history/conversation-history.utils';
 
 // Render row theo trạng thái active/editing/menu; không tự gọi API để giữ tenant/action boundary ở hook.
 export function ConversationHistoryItem({

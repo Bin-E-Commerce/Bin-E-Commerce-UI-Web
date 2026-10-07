@@ -1,3 +1,5 @@
+// Shell này kiểm tra quyền theo pathname và chọn khung Seller Center phù hợp với từng nhóm route.
+// Route conversation chỉ dùng cùng layout BinGPT; quyền đọc vẫn được xác nhận riêng qua accessProfile.
 'use client';
 
 import Link from 'next/link';
@@ -24,7 +26,7 @@ interface SellerLayoutShellProps {
 const SELLER_ACCESS_DENIED_PATH = '/seller/access-denied';
 
 // Bao toàn bộ Seller Center để xử lý auth, permission, topbar và sidebar responsive ở một nơi duy nhất.
-// Các trang đăng ký seller được đi qua layout này nhưng không yêu cầu quyền vào Seller Center.
+// Các trang đăng ký seller không yêu cầu quyền vào Seller Center; conversation BinGPT dùng cùng workspace toàn màn hình với route gốc.
 export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { user, initialized } = useSelector((state: RootState) => state.auth);
@@ -36,8 +38,10 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
     const isProductEditorRoute =
         pathname === '/seller/products/new' ||
         /^\/seller\/products\/[^/]+\/edit$/.test(pathname);
-    // Copilot là workspace hội thoại nên cần dùng toàn bộ chiều rộng dưới topbar, không giữ padding của layout CRUD.
-    const isSellerCopilotRoute = pathname === '/seller/ai/bingpt';
+    // Conversation detail phải giữ nguyên workspace Copilot; so khớp đúng một segment để không áp layout cho route sâu ngoài phạm vi.
+    const isSellerCopilotRoute = /^\/seller\/ai\/bingpt(?:\/[^/]+)?$/.test(
+        pathname,
+    );
     const canEnterSellerCenter = canAccessSellerCenter(user);
     const canOpenCurrentRoute = canAccessSellerPath(pathname, user);
 

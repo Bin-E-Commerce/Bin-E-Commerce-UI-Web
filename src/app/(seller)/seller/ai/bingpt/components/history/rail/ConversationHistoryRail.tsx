@@ -19,7 +19,7 @@ import {
 import type {
     ConversationHistoryRailActionProps,
     ConversationHistoryRailProps,
-} from '../../../types/conversation-history.types';
+} from '../../../types/history/conversation-history.types';
 
 // Hiển thị rail và giữ các shortcut chính để seller không mất thao tác khi sidebar bị thu gọn.
 export function ConversationHistoryRail({

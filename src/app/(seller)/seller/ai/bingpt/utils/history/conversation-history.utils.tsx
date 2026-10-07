@@ -2,7 +2,7 @@
 // Hàm ở đây không thay đổi state, không gọi API và có thể tái sử dụng cho panel lẫn popup search.
 import type { ReactNode } from 'react';
 import type { SellerCopilotConversation } from '@/services/seller/types/seller-copilot.types';
-import type { ConversationGroup } from '../types/conversation-history.types';
+import type { ConversationGroup } from '../../types/history/conversation-history.types';
 
 // Chuẩn hóa khoảng trắng nhưng giữ nguyên độ dài để title không bị cắt khi row chưa hover.
 export function formatConversationTitle(value: string): string {

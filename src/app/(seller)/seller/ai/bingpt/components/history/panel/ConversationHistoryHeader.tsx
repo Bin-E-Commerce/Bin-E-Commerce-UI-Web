@@ -10,7 +10,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { ConversationHistoryHeaderProps } from '../../../types/conversation-history.types';
+import type { ConversationHistoryHeaderProps } from '../../../types/history/conversation-history.types';
 
 // Render các action header với tooltip thống nhất để sidebar giữ layout gọn trên desktop.
 export function ConversationHistoryHeader({

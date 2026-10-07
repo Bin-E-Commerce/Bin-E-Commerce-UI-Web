@@ -3,7 +3,7 @@
 'use client';
 
 import { MessageSquare } from 'lucide-react';
-import type { ConversationHistoryListProps } from '../../../types/conversation-history.types';
+import type { ConversationHistoryListProps } from '../../../types/history/conversation-history.types';
 import { ConversationHistoryItem } from './ConversationHistoryItem';
 
 // Render loading, empty, grouped conversations và fade scroll trong một boundary riêng.

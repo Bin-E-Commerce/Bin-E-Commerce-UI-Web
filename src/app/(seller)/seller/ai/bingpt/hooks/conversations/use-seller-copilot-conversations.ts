@@ -19,8 +19,8 @@ import type {
     SellerCopilotConversation,
     SellerCopilotSearchResult,
 } from '@/services/seller/types/seller-copilot.types';
-import type { SellerCopilotChatMessage } from '../types/seller-copilot-chat.types';
-import { SELLER_COPILOT_HISTORY_PAGE_SIZE } from '../constants/seller-copilot-pagination.constants';
+import type { SellerCopilotChatMessage } from '../../types/chat/seller-copilot-chat.types';
+import { SELLER_COPILOT_HISTORY_PAGE_SIZE } from '../../constants/seller-copilot-pagination.constants';
 
 interface UseSellerCopilotConversationsOptions {
     accessToken?: string | null;

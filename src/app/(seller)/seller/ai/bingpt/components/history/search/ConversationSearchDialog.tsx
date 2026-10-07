@@ -12,11 +12,11 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
-import type { ConversationSearchDialogProps } from '../../../types/conversation-history.types';
+import type { ConversationSearchDialogProps } from '../../../types/history/conversation-history.types';
 import {
     formatSearchDate,
     highlightSearchText,
-} from '../../../utils/conversation-history.utils';
+} from '../../../utils/history/conversation-history.utils';
 
 // Popup hiển thị recent conversation khi rỗng và cả title/snippet khi seller nhập query.
 export function ConversationSearchDialog({

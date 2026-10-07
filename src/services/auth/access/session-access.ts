@@ -138,7 +138,7 @@ export function canAccessSellerCenter(
 }
 
 // Kiểm tra route Seller Center bằng navigation backend đã lọc permission.
-// Dùng so khớp chính xác để các trang con chưa có permission riêng như tạo sản phẩm không được mở nhờ route cha.
+// Chỉ các màn detail được xác định rõ mới kế thừa quyền đọc từ route danh sách; thao tác tạo/sửa vẫn cần quyền riêng.
 export function canAccessSellerPath(
     pathname: string,
     user: PermissionAwareUser | null | undefined,
@@ -147,6 +147,18 @@ export function canAccessSellerPath(
 
     const navigation = user?.accessProfile?.areas.seller.navigation ?? [];
     if (navigation.some((item) => pathname === item.href)) return true;
+
+    // Conversation là tài nguyên con của BinGPT nên kế thừa đúng quyền mở trang chat,
+    // nhưng chỉ với một path segment; route lồng sâu hoặc URL không liên quan vẫn bị chặn.
+    const isSellerCopilotConversation = /^\/seller\/ai\/bingpt\/[^/]+$/.test(
+        pathname,
+    );
+    if (
+        isSellerCopilotConversation &&
+        navigation.some((item) => item.href === '/seller/ai/bingpt')
+    ) {
+        return true;
+    }
 
     // Route UUID là màn chi tiết của danh sách sản phẩm nên kế thừa quyền đọc route cha; `/new` không khớp UUID và vẫn cần quyền tạo riêng.
     const isSellerProductDetail =

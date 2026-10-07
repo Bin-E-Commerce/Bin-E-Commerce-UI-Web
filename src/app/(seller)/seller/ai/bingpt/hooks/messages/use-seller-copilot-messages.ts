@@ -10,9 +10,10 @@ import {
     type SetStateAction,
 } from 'react';
 import { getSellerCopilotConversation } from '@/services/seller/api/seller-copilot.api';
-import type { SellerCopilotChatMessage } from '../types/seller-copilot-chat.types';
-import { SELLER_COPILOT_MESSAGE_PAGE_SIZE } from '../constants/seller-copilot-pagination.constants';
-import { mapPersistedMessage } from '../utils/map-persisted-message';
+import type { SellerCopilotChatMessage } from '../../types/chat/seller-copilot-chat.types';
+import type { SellerCopilotLoadedModeSession } from '../../types/chat/seller-copilot-chat.types';
+import { SELLER_COPILOT_MESSAGE_PAGE_SIZE } from '../../constants/seller-copilot-pagination.constants';
+import { mapPersistedMessage } from '../../utils/messages/map-persisted-message';
 
 interface UseSellerCopilotMessagesOptions {
     accessToken?: string | null;
@@ -27,8 +28,11 @@ export interface SellerCopilotMessagesController {
     conversationId?: string;
     setConversationId: Dispatch<SetStateAction<string | undefined>>;
     isLoadingMoreMessages: boolean;
+    isLoadingConversation: boolean;
     hasMoreMessages: boolean;
-    loadConversation: (conversationId: string) => Promise<void>;
+    loadConversation: (
+        conversationId: string,
+    ) => Promise<SellerCopilotLoadedModeSession | undefined>;
     loadMoreConversationMessages: () => Promise<void>;
     resetMessages: () => void;
 }
@@ -45,6 +49,7 @@ export function useSellerCopilotMessages({
     const [messages, setMessages] = useState<SellerCopilotChatMessage[]>([]);
     const [conversationId, setConversationId] = useState<string>();
     const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false);
+    const [isLoadingConversation, setIsLoadingConversation] = useState(false);
     const [hasMoreMessages, setHasMoreMessages] = useState(false);
     const conversationAbortRef = useRef<AbortController | null>(null);
     const messageCursorRef = useRef<string | null>(null);
@@ -61,6 +66,7 @@ export function useSellerCopilotMessages({
         isLoadingMoreMessagesRef.current = false;
         setConversationId(undefined);
         setMessages([]);
+        setIsLoadingConversation(false);
         setHasMoreMessages(false);
         setIsLoadingMoreMessages(false);
     }, []);
@@ -73,16 +79,21 @@ export function useSellerCopilotMessages({
         };
     }, [accessToken, resetMessages]);
 
-    // Mở conversation bằng trang message mới nhất để giao diện bắt đầu ở cuối đoạn chat.
-    // Stream đang chạy phải bị hủy trước; nếu không token cũ có thể append vào conversation vừa chọn.
+    // Mở conversation bằng trang message mới nhất và trả mode cuối cùng đã lưu để composer khôi phục đúng nguồn.
+    // Đặt ID đích và trạng thái loading trước khi xóa message để UI không hiểu nhầm đây là trang chào của chat mới.
+    // Mỗi lượt mở hủy request trước; chỉ response của lượt còn hiệu lực mới được phép ghi message/cursor vào state.
     const loadConversation = useCallback(
-        async (nextConversationId: string): Promise<void> => {
-            if (!accessToken || isStreaming) return;
+        async (
+            nextConversationId: string,
+        ): Promise<SellerCopilotLoadedModeSession | undefined> => {
+            if (!accessToken || isStreaming) return undefined;
 
             streamAbortRef.current?.abort();
             conversationAbortRef.current?.abort();
             const controller = new AbortController();
             conversationAbortRef.current = controller;
+            setConversationId(nextConversationId);
+            setIsLoadingConversation(true);
             messageCursorRef.current = null;
             hasMoreMessagesRef.current = false;
             isLoadingMoreMessagesRef.current = false;
@@ -97,13 +108,49 @@ export function useSellerCopilotMessages({
                     { accessToken, signal: controller.signal },
                     { limit: SELLER_COPILOT_MESSAGE_PAGE_SIZE },
                 );
-                if (controller.signal.aborted) return;
+                if (
+                    controller.signal.aborted ||
+                    conversationAbortRef.current !== controller
+                ) {
+                    return;
+                }
 
-                setConversationId(result.conversation.id);
-                setMessages(result.messages.map(mapPersistedMessage));
+                // API phải trả đúng conversation được yêu cầu; không gắn nhầm lịch sử nếu proxy/backend lệch ID.
+                if (result.conversation.id !== nextConversationId) {
+                    throw new Error(
+                        'Không thể xác định đúng cuộc trò chuyện cần mở.',
+                    );
+                }
+
+                const mappedMessages = result.messages.map(mapPersistedMessage);
+                setMessages(mappedMessages);
                 messageCursorRef.current = result.nextBefore;
                 hasMoreMessagesRef.current = result.hasMoreMessages;
                 setHasMoreMessages(result.hasMoreMessages);
+                const latestUserMessage = [...mappedMessages]
+                    .reverse()
+                    .find((message) => message.role === 'user');
+                const latestTimelineMessage = mappedMessages.at(-1);
+                const activeModeMessage =
+                    latestTimelineMessage?.timelineEvent === 'mode_changed'
+                        ? latestTimelineMessage
+                        : latestUserMessage;
+                const latestSessionMessage = [...mappedMessages]
+                    .reverse()
+                    .find((message) => message.modeSessionId);
+
+                // Lịch sử cũ chưa có session ID dùng ID câu hỏi user gần nhất làm khóa tương thích ổn định.
+                return activeModeMessage?.interactionMode
+                    ? {
+                          interactionMode: activeModeMessage.interactionMode,
+                          modeSessionId:
+                              latestTimelineMessage?.timelineEvent ===
+                              'mode_changed'
+                                  ? latestTimelineMessage.modeSessionId
+                                  : (latestSessionMessage?.modeSessionId ??
+                                    latestUserMessage?.id),
+                      }
+                    : undefined;
             } catch (caught) {
                 if (!controller.signal.aborted) {
                     setError(
@@ -112,9 +159,11 @@ export function useSellerCopilotMessages({
                             : 'Không thể mở cuộc trò chuyện.',
                     );
                 }
+                return undefined;
             } finally {
-                if (!controller.signal.aborted) {
+                if (conversationAbortRef.current === controller) {
                     conversationAbortRef.current = null;
+                    setIsLoadingConversation(false);
                 }
             }
         },
@@ -194,6 +243,7 @@ export function useSellerCopilotMessages({
         conversationId,
         setConversationId,
         isLoadingMoreMessages,
+        isLoadingConversation,
         hasMoreMessages,
         loadConversation,
         loadMoreConversationMessages,

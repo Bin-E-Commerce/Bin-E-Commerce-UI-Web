@@ -15,11 +15,11 @@ import type {
     SellerCopilotConversation,
     SellerCopilotSearchResult,
 } from '@/services/seller/types/seller-copilot.types';
-import type { ConversationHistoryPanelProps } from '../../../types/conversation-history.types';
+import type { ConversationHistoryPanelProps } from '../../../types/history/conversation-history.types';
 import {
     formatConversationTitle,
     groupConversations,
-} from '../../../utils/conversation-history.utils';
+} from '../../../utils/history/conversation-history.utils';
 import { DeleteConversationDialog } from '../delete/DeleteConversationDialog';
 import { ConversationSearchDialog } from '../search/ConversationSearchDialog';
 import { ConversationHistoryHeader } from './ConversationHistoryHeader';
