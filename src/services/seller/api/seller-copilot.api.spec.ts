@@ -1,6 +1,9 @@
 // Kiểm tra parser SSE: chỉ event done mới xác nhận thành công và event error phải nổi lên thành lỗi UI.
 import { TextDecoder, TextEncoder } from 'node:util';
-import { streamSellerCopilot } from '@/services/seller/api/seller-copilot.api';
+import {
+    startSellerCopilotModeSession,
+    streamSellerCopilot,
+} from '@/services/seller/api/seller-copilot.api';
 import type { SellerCopilotStreamEvent } from '@/services/seller/types/seller-copilot.types';
 
 describe('streamSellerCopilot', () => {
@@ -100,7 +103,6 @@ describe('streamSellerCopilot', () => {
             {
                 accessToken: 'token',
                 message: 'Câu hỏi',
-                range: '30d',
                 signal: new AbortController().signal,
             },
             onEvent,
@@ -108,6 +110,10 @@ describe('streamSellerCopilot', () => {
 
         // Assert
         expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(mockFetch.mock.calls[0]?.[1]?.body)).toEqual({
+            message: 'Câu hỏi',
+            interactionMode: 'chat',
+        });
         expect(receivedEvents.map((event) => event.type)).toEqual([
             'started',
             'done',
@@ -131,7 +137,6 @@ describe('streamSellerCopilot', () => {
                 {
                     accessToken: 'token',
                     message: 'Câu hỏi',
-                    range: '30d',
                     signal: new AbortController().signal,
                 },
                 onEvent,
@@ -158,7 +163,6 @@ describe('streamSellerCopilot', () => {
                 {
                     accessToken: 'token',
                     message: 'Câu hỏi',
-                    range: '30d',
                     signal: new AbortController().signal,
                 },
                 onEvent,
@@ -166,5 +170,48 @@ describe('streamSellerCopilot', () => {
         ).rejects.toThrow('Bạn thử lại nhé.');
         expect(reader.cancel).toHaveBeenCalledTimes(1);
         expect(onEvent).not.toHaveBeenCalled();
+    });
+});
+
+describe('startSellerCopilotModeSession', () => {
+    // Mode switch phải gửi đúng mode tới endpoint Gateway và chỉ tin session trả từ backend.
+    it('should persist the selected mode and return the server session', async () => {
+        // Arrange
+        const originalFetch = globalThis.fetch;
+        const mockFetch = jest.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: jest.fn().mockResolvedValue({
+                modeSessionId: 'session-knowledge',
+                interactionMode: 'knowledge',
+            }),
+        });
+        globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+        try {
+            // Act
+            const result = await startSellerCopilotModeSession(
+                'conversation-1',
+                'knowledge',
+                { accessToken: 'token' },
+            );
+
+            // Assert
+            expect(result).toEqual({
+                modeSessionId: 'session-knowledge',
+                interactionMode: 'knowledge',
+            });
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    '/seller/ai/copilot/conversations/conversation-1/mode-sessions',
+                ),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ interactionMode: 'knowledge' }),
+                }),
+            );
+        } finally {
+            globalThis.fetch = originalFetch;
+        }
     });
 });

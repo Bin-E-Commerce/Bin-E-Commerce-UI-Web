@@ -9,7 +9,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { SellerCopilotSubmitControlProps } from '../../../types/composer.types';
+import type { SellerCopilotSubmitControlProps } from '../../../types/composer/composer.types';
 
 const MAX_COPILOT_INPUT_LENGTH = 2000;
 

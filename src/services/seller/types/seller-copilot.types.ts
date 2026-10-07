@@ -1,10 +1,16 @@
 // Contract frontend tương ứng với event SSE và resource read-only của Seller Copilot.
 // Type này không chứa access token và không cho client truyền shop scope.
-export type SellerCopilotRange = '7d' | '30d' | '90d';
+import type { SellerCopilotInsight } from './seller-copilot-insight.types';
+
+// Mode do người bán chọn; mode chỉ xác định nguồn backend được phép gọi, không tự cấp quyền ghi dữ liệu.
+export type SellerCopilotInteractionMode =
+    'chat' | 'shop_data' | 'knowledge' | 'agent';
 
 export interface SellerCopilotCitation {
     id: string;
     label: string;
+    title?: string;
+    sectionPath?: string[];
     type: string;
     excerpt?: string;
     content?: string;
@@ -35,17 +41,47 @@ export interface SellerCapabilityStatusItem {
 
 export interface SellerCopilotMessage {
     id: string;
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
     metadata?: {
         citations?: SellerCopilotCitation[];
-        insights?: Array<Record<string, unknown>>;
+        incomplete?: boolean;
+        insights?: SellerCopilotInsight[];
         intent?: string;
         dataAsOf?: string;
         capabilities?: SellerCapabilityStatusItem[];
         answerStatus?: SellerCopilotAnswerStatus;
+        dataSources?: Array<{
+            kind: 'shop_data' | 'live_data' | 'seller_profile';
+            label: string;
+        }>;
+        interactionMode?: SellerCopilotInteractionMode;
+        modeSessionId?: string;
+        timelineEvent?: 'mode_changed';
+        actionProposal?: {
+            proposalId: string;
+            payload: {
+                kind: 'SET_INVENTORY';
+                productId: string;
+                productName: string;
+                variantId: string;
+                variantName: string;
+                expectedAvailable: number;
+                nextAvailable: number;
+            };
+            expiresAt: string;
+            status?: 'pending' | 'completed' | 'failed';
+            result?: Record<string, unknown>;
+        };
     } | null;
     createdAt: string;
+}
+
+export interface SellerCopilotInventoryActionResult {
+    proposalId: string;
+    status: 'completed';
+    message: string;
+    availableQuantity: number;
 }
 
 export interface SellerCopilotConversation {
@@ -79,10 +115,17 @@ export interface SellerCopilotConversationDetail {
 }
 
 export type SellerCopilotStreamEvent =
-    | { type: 'started'; conversationId: string; requestId: string }
+    | {
+          type: 'started';
+          conversationId: string;
+          requestId: string;
+          modeSessionId?: string;
+      }
     | { type: 'status'; phase: string; message: string }
     | { type: 'sources'; items: SellerCopilotCitation[] }
-    | { type: 'insight'; items: Array<Record<string, unknown>> }
+    | { type: 'answer_status'; status: SellerCopilotAnswerStatus }
+    | { type: 'replace'; text: string }
+    | { type: 'insight'; items: SellerCopilotInsight[] }
     | {
           type: 'capability';
           items: SellerCapabilityStatusItem[];
@@ -103,6 +146,34 @@ export type SellerCopilotStreamEvent =
       }
     | { type: 'out_of_scope'; message: string; suggestedPrompts: string[] }
     | { type: 'warning'; code: string; message: string }
+    | {
+          type: 'data_sources';
+          items: Array<{
+              kind: 'shop_data' | 'live_data' | 'seller_profile';
+              label: string;
+          }>;
+      }
+    | {
+          type: 'action_proposed';
+          proposalId: string;
+          action: {
+              kind: 'SET_INVENTORY';
+              productId: string;
+              productName: string;
+              variantId: string;
+              variantName: string;
+              currentAvailable: number;
+              nextAvailable: number;
+          };
+          expiresAt: string;
+      }
+    | {
+          type: 'action_result';
+          proposalId: string;
+          status: 'completed' | 'failed';
+          message: string;
+          availableQuantity?: number;
+      }
     | {
           type: 'done';
           dataAsOf: string;

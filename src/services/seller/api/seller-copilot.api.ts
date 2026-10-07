@@ -5,7 +5,8 @@ import type {
     SellerCopilotConversation,
     SellerCopilotConversationDetail,
     SellerCopilotConversationPage,
-    SellerCopilotRange,
+    SellerCopilotInteractionMode,
+    SellerCopilotInventoryActionResult,
     SellerCopilotSearchResult,
     SellerCopilotStreamEvent,
 } from '@/services/seller/types/seller-copilot.types';
@@ -14,14 +15,15 @@ interface StreamInput {
     accessToken: string;
     conversationId?: string;
     message: string;
-    range: SellerCopilotRange;
+    interactionMode?: SellerCopilotInteractionMode;
+    modeSessionId?: string;
     signal?: AbortSignal;
 }
 
 interface AuthenticatedRequestInput {
     accessToken: string;
     signal?: AbortSignal;
-    method?: 'GET' | 'PATCH' | 'DELETE';
+    method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
     body?: BodyInit;
 }
 
@@ -44,7 +46,16 @@ async function requestSellerCopilotJson<T>(
     });
 
     if (!response.ok) {
-        throw new Error(`BinGPT request failed: ${response.status}`);
+        let message = `Yêu cầu BinGPT thất bại (${response.status}).`;
+        try {
+            const payload = (await response.json()) as { message?: unknown };
+            if (typeof payload.message === 'string' && payload.message.trim()) {
+                message = payload.message;
+            }
+        } catch {
+            // Proxy có thể trả body rỗng/không phải JSON; status HTTP vẫn đủ để báo lỗi tổng quát.
+        }
+        throw new Error(message);
     }
 
     if (response.status === 204) return undefined as T;
@@ -143,6 +154,110 @@ export function deleteSellerCopilotConversation(
     );
 }
 
+// Tạo phiên context mới cho mode đích; server lưu divider và tự xác minh conversation theo user/shop hiện tại.
+export async function startSellerCopilotModeSession(
+    conversationId: string,
+    interactionMode: SellerCopilotInteractionMode,
+    input: AuthenticatedRequestInput,
+): Promise<{
+    modeSessionId: string;
+    interactionMode: SellerCopilotInteractionMode;
+}> {
+    return requestSellerCopilotJson(
+        `/seller/ai/copilot/conversations/${conversationId}/mode-sessions`,
+        {
+            ...input,
+            method: 'POST',
+            body: JSON.stringify({ interactionMode }),
+        },
+    );
+}
+
+// Xác nhận đề xuất đúng một lần; proposalId là tham chiếu opaque, backend tự ràng buộc user/shop và kiểm tra tồn mới nhất.
+export function confirmSellerCopilotInventoryAction(
+    proposalId: string,
+    input: AuthenticatedRequestInput,
+    onEvent?: (event: SellerCopilotStreamEvent) => void,
+): Promise<SellerCopilotInventoryActionResult> {
+    return (async () => {
+        const response = await fetch(
+            `${API_BASE_URL}${API_VERSION}/seller/ai/copilot/actions/${proposalId}/confirm`,
+            {
+                method: 'POST',
+                credentials: 'include',
+                signal: input.signal,
+                headers: {
+                    Authorization: `Bearer ${input.accessToken}`,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            },
+        );
+        if (!response.ok) {
+            const body = await response.text();
+            let message: string | undefined;
+            try {
+                const payload = JSON.parse(body) as { message?: unknown };
+                if (typeof payload.message === 'string')
+                    message = payload.message;
+            } catch {
+                // Gateway có thể trả body không phải JSON; phía dưới sẽ dùng thông báo HTTP tổng quát.
+            }
+            throw new Error(
+                message ?? `Không thể xác nhận đề xuất (${response.status}).`,
+            );
+        }
+        if (!response.body) {
+            throw new Error('BinGPT không mở được luồng xác nhận tồn kho.');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let result: SellerCopilotInventoryActionResult | undefined;
+        // Phân tích từng khối SSE hoàn chỉnh để status/kết quả tới UI ngay cả khi Product Service đang xử lý lâu.
+        const consumeBlock = (block: string) => {
+            const dataLine = block
+                .split(/\r?\n/u)
+                .find((line) => line.startsWith('data:'));
+            if (!dataLine) return;
+            const event = JSON.parse(
+                dataLine.slice(5).trimStart(),
+            ) as SellerCopilotStreamEvent;
+            onEvent?.(event);
+            if (event.type !== 'action_result') return;
+            if (event.status !== 'completed') throw new Error(event.message);
+            result = {
+                proposalId: event.proposalId,
+                status: event.status,
+                message: event.message,
+                availableQuantity: event.availableQuantity ?? 0,
+            };
+        };
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                buffer += decoder.decode(value ?? new Uint8Array(), {
+                    stream: !done,
+                });
+                const blocks = buffer.split(/\r?\n\r?\n/u);
+                buffer = blocks.pop() ?? '';
+                for (const block of blocks) consumeBlock(block);
+                if (done) break;
+            }
+            if (buffer.trim()) consumeBlock(buffer);
+        } catch (error) {
+            await reader.cancel(error).catch(() => undefined);
+            throw error;
+        } finally {
+            reader.releaseLock();
+        }
+        if (!result)
+            throw new Error('BinGPT chưa nhận được kết quả cập nhật tồn kho.');
+        return result;
+    })();
+}
+
 // Gửi POST và parse SSE theo từng dòng vì EventSource không hỗ trợ request body.
 // Buffer giữ lại dòng chưa hoàn chỉnh giữa các network chunk; event/data pairing
 // bảo đảm token và metadata chỉ được chuyển tới hook khi payload đã hoàn chỉnh.
@@ -165,7 +280,8 @@ export async function streamSellerCopilot(
             body: JSON.stringify({
                 conversationId: input.conversationId,
                 message: input.message,
-                range: input.range,
+                interactionMode: input.interactionMode ?? 'chat',
+                modeSessionId: input.modeSessionId,
             }),
         },
     );
