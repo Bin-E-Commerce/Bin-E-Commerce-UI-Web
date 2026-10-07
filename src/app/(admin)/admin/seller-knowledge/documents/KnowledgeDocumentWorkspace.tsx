@@ -805,11 +805,15 @@ export function KnowledgeDocumentWorkspace({
                                                         Thử tìm nội dung
                                                     </h3>
                                                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                                                        Kết quả chỉ giúp kiểm
-                                                        tra độ liên quan của
-                                                        đoạn văn bản; chưa phải
-                                                        kết quả trả lời của
-                                                        chatbot.
+                                                        Chế độ này chỉ so khớp
+                                                        embedding giữa câu đơn
+                                                        và chunk bản nháp; chưa
+                                                        chạy phân loại ý định,
+                                                        lịch sử hội thoại,
+                                                        BM25/RRF hoặc rerank như
+                                                        chat thật. Điểm cosine
+                                                        không phải xác suất trả
+                                                        lời đúng.
                                                     </p>
                                                 </div>
                                                 <div className="flex flex-col gap-2 sm:flex-row">
@@ -873,8 +877,7 @@ export function KnowledgeDocumentWorkspace({
                                                                         </p>
                                                                         <span className="text-xs text-muted-foreground">
                                                                             Điểm
-                                                                            tương
-                                                                            đồng{' '}
+                                                                            cosine{' '}
                                                                             {(
                                                                                 match.score *
                                                                                 100
