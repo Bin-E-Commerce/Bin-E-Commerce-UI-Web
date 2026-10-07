@@ -5,7 +5,7 @@ import {
     isMarkdownTableSeparator,
     parseMarkdownTableCells,
 } from './seller-copilot-markdown-inline';
-import type { SellerCopilotMarkdownBlock } from './seller-copilot-markdown.types';
+import type { SellerCopilotMarkdownBlock } from '../../../../types/answer/markdown.types';
 
 // Chuyển nội dung Markdown đã chuẩn hóa thành block có cấu trúc để component render dễ kiểm soát.
 // Thứ tự nhận diện table/heading/list được giữ ổn định để không làm thay đổi format hiện tại.
@@ -188,7 +188,41 @@ export function parseSellerCopilotMarkdown(
         blocks.push({ type: 'paragraph', lines: paragraphLines });
     }
 
-    return normalizeNumberedSections(blocks);
+    return normalizeBoldTitleLists(normalizeNumberedSections(blocks));
+}
+
+// Gom danh sách phẳng có tiêu đề in đậm thành từng nhóm để dấu bullet chỉ áp dụng cho thông tin mô tả.
+// Chỉ đổi khi có ít nhất hai tiêu đề độc lập và mỗi tiêu đề có chi tiết đi kèm; danh sách thường vẫn giữ nguyên Markdown.
+function normalizeBoldTitleLists(
+    blocks: SellerCopilotMarkdownBlock[],
+): SellerCopilotMarkdownBlock[] {
+    return blocks.map((block) => {
+        if (block.type !== 'unordered-list') return block;
+
+        const sections: Array<{ title: string; details: string[] }> = [];
+        for (const item of block.items) {
+            const titleMatch = /^\*\*([^*\n]+)\*\*$/u.exec(item.trim());
+            if (titleMatch) {
+                sections.push({ title: titleMatch[1].trim(), details: [] });
+                continue;
+            }
+
+            // Chi tiết chỉ được gắn vào tiêu đề gần nhất; dòng đứng trước tiêu đề hoặc danh sách không phân nhóm khiến giữ nguyên block gốc.
+            const currentSection = sections.at(-1);
+            if (!currentSection) return block;
+            currentSection.details.push(item);
+        }
+
+        // Không tự diễn giải danh sách một nhóm hoặc tiêu đề không có mô tả thành cấu trúc sản phẩm.
+        if (
+            sections.length < 2 ||
+            sections.some(({ details }) => !details.length)
+        ) {
+            return block;
+        }
+
+        return { type: 'grouped-list', items: sections };
+    });
 }
 
 // Bỏ số khỏi tiêu đề mở đầu và gom các câu hỏi bị tách thành nhiều danh sách “1.”.

@@ -19,16 +19,21 @@ export function normalizeSellerCopilotDisplayContent(content: string): string {
         .split(/(`{3,}[\s\S]*?`{3,}|~{3,}[\s\S]*?~{3,})/gu)
         .map((part, index) => {
             if (index % 2 === 1) return part;
-            return part
-                .replace(
-                    /`?(READY|NO_PICKUP_ADDRESS|NO_DEFAULT_PICKUP_ADDRESS|INCOMPLETE_PICKUP_ADDRESS|SHIPPING_DISABLED)`?/gu,
-                    (token) => {
-                        const code = token.replace(/`/gu, '');
-                        return SELLER_READINESS_LABELS[code] ?? token;
-                    },
-                )
-                .replace(/!\[([^\]]*)\]\(https?:\/\/[^)]+\)/gu, '$1')
-                .replace(/\(https?:\/\/[^\s)]+\)/gu, '');
+            return (
+                part
+                    // Một số câu trả lời lưu dấu xuống dòng dưới dạng hai ký tự "\\n"; đổi chúng thành newline trước khi parser chia đoạn.
+                    // Chỉ xử lý ngoài fenced code để không làm sai ví dụ code hoặc nội dung cần giữ nguyên ký tự escape.
+                    .replace(/\\r\\n|\\n/gu, '\n')
+                    .replace(
+                        /`?(READY|NO_PICKUP_ADDRESS|NO_DEFAULT_PICKUP_ADDRESS|INCOMPLETE_PICKUP_ADDRESS|SHIPPING_DISABLED)`?/gu,
+                        (token) => {
+                            const code = token.replace(/`/gu, '');
+                            return SELLER_READINESS_LABELS[code] ?? token;
+                        },
+                    )
+                    .replace(/!\[([^\]]*)\]\(https?:\/\/[^)]+\)/gu, '$1')
+                    .replace(/\(https?:\/\/[^\s)]+\)/gu, '')
+            );
         })
         .join('');
 }

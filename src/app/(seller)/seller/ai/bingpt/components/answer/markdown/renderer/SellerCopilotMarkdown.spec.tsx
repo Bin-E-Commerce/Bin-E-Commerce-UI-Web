@@ -1,6 +1,6 @@
 // Unit test cho renderer Markdown của Copilot; kiểm tra format seller nhìn thấy thay vì gọi API thật.
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { SellerCopilotMarkdown } from '@/app/(seller)/seller/ai/bingpt/components/answer/markdown/SellerCopilotMarkdown';
+import { SellerCopilotMarkdown } from '@/app/(seller)/seller/ai/bingpt/components/answer/markdown/renderer/SellerCopilotMarkdown';
 
 // Markdown có heading in đậm và bảng phải giữ đúng cấu trúc để seller đọc policy nhanh.
 it('renders bold conclusions and policy tables', () => {
@@ -48,6 +48,34 @@ it('renders html line breaks as real line breaks inside table cells', () => {
     expect(screen.queryByText('<br>')).not.toBeInTheDocument();
 });
 
+// Khôi phục newline khi backend/model gửi literal backslash+n, để nội dung không lộ chuỗi escape trong chat.
+it('renders escaped newline markers as paragraph breaks', () => {
+    // Arrange
+    const content = 'Đoạn đầu.\\n\\nĐoạn sau.';
+
+    // Act
+    render(<SellerCopilotMarkdown content={content} />);
+
+    // Assert
+    expect(screen.getByText('Đoạn đầu.')).toBeInTheDocument();
+    expect(screen.getByText('Đoạn sau.')).toBeInTheDocument();
+    expect(screen.queryByText(/\\n/u)).not.toBeInTheDocument();
+});
+
+// Literal escape trong fenced code là nội dung mẫu, không phải format đoạn văn cần tự sửa.
+it('preserves escaped newline markers inside fenced code', () => {
+    // Arrange
+    const content = `\`\`\`text
+\\n
+\`\`\``;
+
+    // Act
+    render(<SellerCopilotMarkdown content={content} />);
+
+    // Assert
+    expect(screen.getByRole('code').textContent).toBe('\\n');
+});
+
 // Mã readiness là chi tiết kỹ thuật; seller chỉ cần thấy nguyên nhân và trạng thái
 // bằng tiếng Việt, kể cả khi dữ liệu cũ trong Qdrant vẫn còn mã enum dạng code.
 it('renders readiness codes as Vietnamese labels instead of code badges', () => {
@@ -80,6 +108,36 @@ it('renders bold list labels without a bullet marker', () => {
     expect(
         screen.getByText('Nếu shop thiếu địa chỉ lấy hàng, cần thêm địa chỉ.'),
     ).toBeInTheDocument();
+});
+
+// Tiêu đề sản phẩm in đậm trong danh sách phẳng được nâng thành nhãn nhóm; bullet chỉ còn dành cho thuộc tính bên dưới.
+it('groups bold product titles with their details instead of showing titles as bullets', () => {
+    // Arrange
+    const content = `Shop hiện có 2 sản phẩm với thông tin chi tiết như sau:
+
+- **Giày sục nam chất liệu nhựa mềm nhiều màu**
+- Tổng số biến thể: 6
+- Tồn kho tổng: 28 đơn vị
+- **Quần dài nam dáng suông phối lớp màu đen**
+- Tổng số biến thể: 2
+- Tồn kho tổng: 8 đơn vị`;
+
+    // Act
+    render(<SellerCopilotMarkdown content={content} />);
+
+    // Assert
+    const firstTitle = screen.getByText(
+        'Giày sục nam chất liệu nhựa mềm nhiều màu',
+    );
+    const secondTitle = screen.getByText(
+        'Quần dài nam dáng suông phối lớp màu đen',
+    );
+    expect(firstTitle.closest('section')).toHaveClass('space-y-1.5');
+    expect(firstTitle.closest('li')).toBeNull();
+    expect(secondTitle.closest('li')).toBeNull();
+    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.getByText('Tồn kho tổng: 28 đơn vị')).toBeInTheDocument();
+    expect(screen.getByText('Tồn kho tổng: 8 đơn vị')).toBeInTheDocument();
 });
 
 // Nhãn dài có phần giải thích nối tiếp cũng là tiêu đề nhóm, dù model không đặt dấu hai chấm.
@@ -227,7 +285,7 @@ it('hides raw product image URLs from markdown answers', () => {
     expect(screen.queryByText(/cdn\.example\.com/u)).not.toBeInTheDocument();
 });
 
-// Callout giữ màu theo ngữ nghĩa nhưng không chèn emoji biểu tượng ngoài nhóm mặt cười.
+// Ghi chú cảnh báo giữ nhãn ngữ nghĩa, hiển thị như văn bản thường và không thêm emoji.
 it('renders semantic callouts without non-smiley emoji', () => {
     // Arrange
     const content = '> [!WARNING] Lưu ý\n> **Kiểm tra kỹ** trước khi gửi.';
@@ -236,13 +294,33 @@ it('renders semantic callouts without non-smiley emoji', () => {
     render(<SellerCopilotMarkdown content={content} />);
 
     // Assert
-    expect(screen.getByRole('complementary', { name: 'Lưu ý' })).toHaveClass(
-        'border-amber-200',
-    );
+    const note = screen.getByRole('complementary', { name: 'Lưu ý' });
+    expect(note).toHaveClass('text-sm', 'text-zinc-600');
+    expect(note).not.toHaveClass('border', 'bg-amber-50', 'rounded-lg');
     expect(screen.getByText('Kiểm tra kỹ')).toHaveClass('font-semibold');
     expect(
         screen.queryByText(/[\u{1F300}-\u{1FAFF}]/u),
     ).not.toBeInTheDocument();
+});
+
+// Ghi chú INFO trình bày cùng luồng nội dung, không có khung card hay nền màu.
+it('renders informational notes as plain professional text', () => {
+    // Arrange
+    const content = '> [!INFO] Lưu ý\n> Phần này chưa có dữ liệu xác nhận.';
+
+    // Act
+    render(<SellerCopilotMarkdown content={content} />);
+
+    // Assert
+    const note = screen.getByRole('complementary', { name: 'Lưu ý' });
+    expect(note).toHaveClass('text-sm', 'leading-6', 'text-zinc-600');
+    expect(note).not.toHaveClass(
+        'border',
+        'bg-zinc-50',
+        'rounded-lg',
+        'shadow',
+    );
+    expect(note).toHaveTextContent('Lưu ý: Phần này chưa có dữ liệu xác nhận.');
 });
 
 // Khối fenced code phải giữ xuống dòng, dùng nút shadcn có nhãn truy cập và sao chép đúng nguyên văn.

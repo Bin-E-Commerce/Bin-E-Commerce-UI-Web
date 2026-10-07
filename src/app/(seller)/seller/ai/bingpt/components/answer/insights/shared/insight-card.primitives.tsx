@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight, ImageOff } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 // Format số theo locale seller và dùng em dash khi backend không có giá trị số.
 export function formatInsightNumber(value: unknown): string {
@@ -59,17 +60,20 @@ export function SellerProductThumbnail({
         typeof thumbnailUrl === 'string' && thumbnailUrl.trim()
             ? thumbnailUrl
             : null;
+    const [imageFailed, setImageFailed] = useState(false);
+    const canShowImage = imageUrl !== null && !imageFailed;
 
     return (
         <span className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-white text-zinc-400">
-            {imageUrl ? (
+            {canShowImage ? (
                 <Image
-                    src={imageUrl}
+                    src={imageUrl ?? ''}
                     alt={name}
                     fill
                     sizes="48px"
                     className="object-cover"
                     unoptimized
+                    onError={() => setImageFailed(true)}
                 />
             ) : (
                 <ImageOff className="size-4" />

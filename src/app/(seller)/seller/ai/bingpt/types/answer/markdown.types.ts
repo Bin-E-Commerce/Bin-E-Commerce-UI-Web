@@ -22,5 +22,9 @@ export type SellerCopilotMarkdownBlock =
           type: 'numbered-sections';
           items: Array<{ title: string; details: string[] }>;
       }
+    | {
+          type: 'grouped-list';
+          items: Array<{ title: string; details: string[] }>;
+      }
     | { type: 'table'; headers: string[]; rows: string[][] }
     | { type: 'rule' };

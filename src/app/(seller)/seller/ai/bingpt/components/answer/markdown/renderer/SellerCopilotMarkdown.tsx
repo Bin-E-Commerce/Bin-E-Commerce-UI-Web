@@ -6,9 +6,9 @@ import {
     isMarkdownSectionLabel,
     normalizeSellerCopilotDisplayContent,
     renderInlineMarkdown,
-} from './seller-copilot-markdown-inline';
-import { parseSellerCopilotMarkdown } from './seller-copilot-markdown-parser';
-import type { SellerCopilotMarkdownProps } from './seller-copilot-markdown.types';
+} from '../parser/seller-copilot-markdown-inline';
+import { parseSellerCopilotMarkdown } from '../parser/seller-copilot-markdown-parser';
+import type { SellerCopilotMarkdownProps } from '../../../../types/answer/markdown.types';
 import { SellerCopilotCodeBlock } from './SellerCopilotCodeBlock';
 
 // Render các block đã được whitelist với spacing nhất quán, không để model quyết định class hoặc HTML.
@@ -58,43 +58,47 @@ export function SellerCopilotMarkdown({ content }: SellerCopilotMarkdownProps) {
                 }
 
                 if (block.type === 'callout') {
+                    // Phân biệt sắc thái bằng màu chữ của nhãn, không tạo nền/viền khiến ghi chú trông như một card.
                     const style = {
                         summary: {
-                            classes:
-                                'border-emerald-200 bg-emerald-50 text-emerald-950',
+                            title: 'text-zinc-900 dark:text-zinc-100',
                         },
                         info: {
-                            classes: 'border-sky-200 bg-sky-50 text-sky-950',
+                            title: 'text-zinc-900 dark:text-zinc-100',
                         },
                         warning: {
-                            classes:
-                                'border-amber-200 bg-amber-50 text-amber-950',
+                            title: 'text-amber-800 dark:text-amber-300',
                         },
                         tip: {
-                            classes:
-                                'border-violet-200 bg-violet-50 text-violet-950',
+                            title: 'text-rose-700 dark:text-rose-300',
                         },
                     }[block.variant];
                     return (
                         <aside
                             key={key}
-                            className={`my-5 rounded-xl border px-4 py-3 ${style.classes}`}
+                            className="my-4 text-sm leading-6 text-zinc-600 dark:text-zinc-400"
                             aria-label={block.title}
                         >
-                            <p className="mb-1 font-semibold">
-                                {renderInlineMarkdown(
-                                    block.title,
-                                    `${key}-title`,
-                                )}
-                            </p>
-                            {block.lines.map((line, lineIndex) => (
-                                <p key={`${key}-line-${lineIndex}`}>
+                            <p>
+                                <span
+                                    className={`font-semibold ${style.title}`}
+                                >
                                     {renderInlineMarkdown(
-                                        line,
-                                        `${key}-line-${lineIndex}`,
+                                        block.title,
+                                        `${key}-title`,
                                     )}
-                                </p>
-                            ))}
+                                    :{' '}
+                                </span>
+                                {block.lines.map((line, lineIndex) => (
+                                    <span key={`${key}-line-${lineIndex}`}>
+                                        {lineIndex > 0 && <br />}
+                                        {renderInlineMarkdown(
+                                            line,
+                                            `${key}-line-${lineIndex}`,
+                                        )}
+                                    </span>
+                                ))}
+                            </p>
                         </aside>
                     );
                 }
@@ -192,6 +196,40 @@ export function SellerCopilotMarkdown({ content }: SellerCopilotMarkdownProps) {
                                 </li>
                             ))}
                         </ol>
+                    );
+                }
+
+                if (block.type === 'grouped-list') {
+                    return (
+                        <div key={key} className="my-5 space-y-4">
+                            {block.items.map((item, itemIndex) => (
+                                <section
+                                    key={`${key}-group-${itemIndex}`}
+                                    className="space-y-1.5"
+                                >
+                                    <p className="font-semibold text-zinc-950">
+                                        {renderInlineMarkdown(
+                                            item.title,
+                                            `${key}-group-title-${itemIndex}`,
+                                        )}
+                                    </p>
+                                    <ul className="list-disc space-y-1 pl-6 text-zinc-700 marker:text-zinc-400">
+                                        {item.details.map(
+                                            (detail, detailIndex) => (
+                                                <li
+                                                    key={`${key}-group-${itemIndex}-detail-${detailIndex}`}
+                                                >
+                                                    {renderInlineMarkdown(
+                                                        detail,
+                                                        `${key}-group-${itemIndex}-detail-${detailIndex}`,
+                                                    )}
+                                                </li>
+                                            ),
+                                        )}
+                                    </ul>
+                                </section>
+                            ))}
+                        </div>
                     );
                 }
 
