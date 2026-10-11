@@ -1,5 +1,6 @@
 'use client';
 
+// Component hiển thị bước thông tin tài khoản và giữ nút xem mật khẩu neo cố định trong ô nhập.
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,16 +13,9 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import type { UseFormReturn } from 'react-hook-form';
-import type { RegisterFormValues } from '../schemas/registerSchema';
+import type { RegisterStep1Props } from '../types/register.types';
 
-interface RegisterStep1Props {
-    form: UseFormReturn<RegisterFormValues>;
-    onSubmit: (values: RegisterFormValues) => Promise<void>;
-    handleGoogleLogin: () => Promise<void>;
-    isGoogleLoading: boolean;
-}
-
+// Render thông tin đăng ký; nút hiện/ẩn được neo vào wrapper và có kích thước cố định để không đẩy bố cục.
 export function RegisterStep1({
     form,
     onSubmit,
@@ -72,7 +66,8 @@ export function RegisterStep1({
                                             <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                                             <Input
                                                 placeholder="Nguyễn"
-                                                autoComplete="given-name"
+                                                autoComplete="family-name"
+                                                maxLength={50}
                                                 className="h-11 bg-white pl-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
                                                 {...field}
                                             />
@@ -93,7 +88,8 @@ export function RegisterStep1({
                                     <FormControl>
                                         <Input
                                             placeholder="Văn A"
-                                            autoComplete="family-name"
+                                            autoComplete="given-name"
+                                            maxLength={50}
                                             className="h-11 bg-white text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
                                             {...field}
                                         />
@@ -120,6 +116,7 @@ export function RegisterStep1({
                                             type="email"
                                             placeholder="name@example.com"
                                             autoComplete="email"
+                                            maxLength={254}
                                             className="h-11 bg-white pl-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
                                             {...field}
                                         />
@@ -148,6 +145,7 @@ export function RegisterStep1({
                                                     ? 'text'
                                                     : 'password'
                                             }
+                                            maxLength={100}
                                             placeholder="••••••••"
                                             autoComplete="new-password"
                                             className="h-11 bg-white pl-10 pr-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
@@ -155,11 +153,12 @@ export function RegisterStep1({
                                         />
                                         <Button
                                             variant="ghost"
+                                            size="icon"
                                             type="button"
                                             onClick={() =>
                                                 setShowPassword((v) => !v)
                                             }
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors hover:text-zinc-700"
+                                            className="absolute inset-y-0 right-2 my-auto size-8 active:translate-y-0 text-zinc-400 transition-colors hover:text-zinc-700"
                                             aria-label={
                                                 showPassword
                                                     ? 'Ẩn mật khẩu'
@@ -197,6 +196,7 @@ export function RegisterStep1({
                                                     ? 'text'
                                                     : 'password'
                                             }
+                                            maxLength={100}
                                             placeholder="••••••••"
                                             autoComplete="new-password"
                                             className="h-11 bg-white pl-10 pr-10 text-sm transition-shadow focus-visible:ring-2 focus-visible:ring-zinc-900/20"
@@ -204,13 +204,14 @@ export function RegisterStep1({
                                         />
                                         <Button
                                             variant="ghost"
+                                            size="icon"
                                             type="button"
                                             onClick={() =>
                                                 setShowConfirmPassword(
                                                     (v) => !v,
                                                 )
                                             }
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors hover:text-zinc-700"
+                                            className="absolute inset-y-0 right-2 my-auto size-8 active:translate-y-0 text-zinc-400 transition-colors hover:text-zinc-700"
                                             aria-label={
                                                 showConfirmPassword
                                                     ? 'Ẩn mật khẩu'

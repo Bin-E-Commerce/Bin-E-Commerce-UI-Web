@@ -1,5 +1,6 @@
 'use client';
 
+// Component hiển thị bước xác thực OTP; form chỉ chấp nhận đúng sáu chữ số.
 import { ShieldCheck, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,18 +12,9 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import type { UseFormReturn } from 'react-hook-form';
-import type { OtpFormValues } from '../schemas/registerSchema';
+import type { RegisterStep2Props } from '../types/register.types';
 
-interface RegisterStep2Props {
-    form: UseFormReturn<OtpFormValues>;
-    pendingEmail: string;
-    cooldown: number;
-    onSubmit: (values: OtpFormValues) => Promise<void>;
-    onResend: () => Promise<void>;
-    onBack: () => void;
-}
-
+// Hiển thị OTP, giới hạn nhập sáu ký tự và để schema cùng backend xác nhận định dạng số.
 export function RegisterStep2({
     form,
     pendingEmail,
@@ -73,6 +65,7 @@ export function RegisterStep2({
                                             type="text"
                                             inputMode="numeric"
                                             maxLength={6}
+                                            pattern="[0-9]{6}"
                                             placeholder="123456"
                                             autoComplete="one-time-code"
                                             className="h-11 bg-white pl-10 text-sm tracking-[0.25em]"

@@ -10,9 +10,11 @@ import { toast } from 'sonner';
 import {
     registerSchema,
     otpSchema,
-    type RegisterFormValues,
-    type OtpFormValues,
 } from '../schemas/registerSchema';
+import type {
+    OtpFormValues,
+    RegisterFormValues,
+} from '../types/register.types';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
 import { authService } from '@/services/auth';

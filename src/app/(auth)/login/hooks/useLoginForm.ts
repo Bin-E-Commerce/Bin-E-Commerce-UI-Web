@@ -13,7 +13,7 @@ import type { AuthUser } from '@/services/auth';
 import { mergeRecommendationSession } from '@/services/recommendation';
 import type { AppDispatch } from '@/store';
 import { setAuth } from '@/store/slices/authSlice';
-import { getDefaultAuthenticatedPath } from '@/services/auth/access';
+import { getSafeAuthenticatedRedirectPath } from '@/services/auth/access';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { loginSchema, type LoginFormValues } from '../schemas/loginSchema';
 
@@ -29,11 +29,10 @@ export function useLoginForm() {
         defaultValues: { email: '', password: '' },
     });
 
-    // Ưu tiên redirect hợp lệ trên URL; nếu không có thì seller vào Seller Center và role khác dùng trang mặc định.
+    // Chỉ khôi phục URL cũ nếu session mới được backend xác nhận có quyền vào route đó; nếu không dùng route mặc định theo user.
     function resolveLoginRedirect(user?: AuthUser): string {
         const redirect = searchParams.get('redirect');
-        if (redirect?.startsWith('/')) return redirect;
-        return getDefaultAuthenticatedPath(user);
+        return getSafeAuthenticatedRedirectPath(redirect, user);
     }
 
     // Gửi thông tin đăng nhập, lưu token vào Redux và chuyển trang theo quyền tài khoản.

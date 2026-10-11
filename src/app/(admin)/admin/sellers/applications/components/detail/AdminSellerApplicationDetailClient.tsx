@@ -1,26 +1,45 @@
 'use client';
 
+// Màn hình chi tiết hồ sơ seller: gom thao tác header vào menu.
+// Dữ liệu và quyền xử lý vẫn do hook/API sở hữu.
+import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
     ArrowLeft,
+    ArrowLeftRight,
     Ban,
     BadgeCheck,
     CreditCard,
-    FileCheck2,
+    Clock3,
     ImageOff,
     MapPin,
+    MoreHorizontal,
     RefreshCw,
     Store,
     UserRound,
 } from 'lucide-react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type {
     SellerApplicationDto,
     SellerVerificationDocumentDto,
 } from '@/services/seller';
+import type {
+    AdminSellerApplicationDetailClientProps,
+    AdminSellerApplicationDetailContentProps,
+    ApplicationSectionProps,
+} from '../../types/application-detail.types';
 import { AdminSellerApplicationStatusBadge } from '../shared/AdminSellerApplicationStatusBadge';
 import { useAdminSellerApplication } from '../../hooks/useAdminSellerApplication';
 import {
@@ -37,10 +56,6 @@ import {
 } from './AdminSellerApplicationDetailSection';
 import { ApproveSellerApplicationDialog } from './ApproveSellerApplicationDialog';
 import { RejectSellerApplicationDialog } from './RejectSellerApplicationDialog';
-
-interface AdminSellerApplicationDetailClientProps {
-    applicationId: string;
-}
 
 // Container client của trang chi tiết: lấy hồ sơ theo id và tách rõ trạng thái loading/error/content.
 export function AdminSellerApplicationDetailClient({
@@ -95,131 +110,156 @@ export function AdminSellerApplicationDetailClient({
     );
 }
 
-interface AdminSellerApplicationDetailContentProps {
-    application: SellerApplicationDto;
-    refreshing: boolean;
-    onRefresh: () => void;
-}
-
-// Render hồ sơ theo cách admin duyệt thực tế: nhìn thông tin nhập, nhìn ảnh giấy tờ, rồi đối chiếu từng nhóm.
+// Render hồ sơ và gom thao tác quản trị vào menu gọn.
+// Trạng thái dialog được giữ ở đây để menu có thể đóng ngay sau khi chọn mà không unmount bước xác nhận.
+// Nút duyệt/từ chối chỉ xuất hiện ở trạng thái chờ; dialog tiếp tục khóa thao tác khi mutation đang chạy.
 function AdminSellerApplicationDetailContent({
     application,
     refreshing,
     onRefresh,
 }: AdminSellerApplicationDetailContentProps) {
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
     // Permission lấy từ session do backend resolve; việc ẩn nút chỉ phục vụ UX, endpoint vẫn được gateway và seller-service bảo vệ độc lập.
     const isPendingReview =
         String(application.status).toLowerCase() === 'pending_review';
 
     return (
         <div className="space-y-5">
-            <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="flex items-start gap-4">
+            <section className="rounded-2xl border border-zinc-200/80 bg-white px-3 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.04)] sm:px-4">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                         <ShopLogo application={application} />
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
-                                Chi tiết hồ sơ seller
-                            </p>
-                            <h1 className="mt-2 text-2xl font-semibold text-zinc-950">
+                        <div className="min-w-0">
+                            <h1 className="mt-0.5 truncate text-lg font-semibold leading-6 text-zinc-950 sm:text-xl">
                                 {getApplicationShopDisplayName(application)}
                             </h1>
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                                 <AdminSellerApplicationStatusBadge
                                     status={application.status}
                                 />
-                                <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-500">
-                                    Mã hồ sơ: {application.id}
+                                <span
+                                    title={`Mã hồ sơ: ${application.id}`}
+                                    className="inline-flex max-w-[min(58vw,320px)] items-center gap-1.5 overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] text-zinc-500 sm:text-[11px]"
+                                >
+                                    <span className="shrink-0 font-sans">
+                                        Mã hồ sơ
+                                    </span>
+                                    <span aria-hidden="true">·</span>
+                                    <span className="truncate font-mono">
+                                        {application.id}
+                                    </span>
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                        {isPendingReview ? (
-                            <ApproveSellerApplicationDialog
-                                applicationId={application.id}
-                                shopName={getApplicationShopDisplayName(
-                                    application,
-                                )}
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                aria-label="Mở thao tác hồ sơ"
+                                title="Thao tác hồ sơ"
+                                className="size-9 shrink-0 rounded-xl border-zinc-200 bg-white shadow-sm hover:bg-zinc-50 data-[state=open]:bg-zinc-100 sm:size-10"
                             >
-                                <Button type="button" className="rounded-full">
-                                    <BadgeCheck className="size-4" />
-                                    Chấp thuận hồ sơ
-                                </Button>
-                            </ApproveSellerApplicationDialog>
-                        ) : null}
-                        {isPendingReview ? (
-                            <RejectSellerApplicationDialog
-                                applicationId={application.id}
-                                shopName={getApplicationShopDisplayName(
-                                    application,
-                                )}
+                                <MoreHorizontal className="size-5" />
+                            </Button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                            <DropdownMenu.Content
+                                align="end"
+                                sideOffset={8}
+                                className="z-50 min-w-56 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl outline-none"
                             >
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                                <DropdownMenu.Label className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                                    Thao tác hồ sơ
+                                </DropdownMenu.Label>
+                                {isPendingReview ? (
+                                    <>
+                                        <DropdownMenu.Item
+                                            onSelect={() =>
+                                                setApproveDialogOpen(true)
+                                            }
+                                            className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-800 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100"
+                                        >
+                                            <BadgeCheck className="size-4" />
+                                            Chấp thuận hồ sơ
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item
+                                            onSelect={() =>
+                                                setRejectDialogOpen(true)
+                                            }
+                                            className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-red-700 outline-none transition-colors hover:bg-red-50 focus:bg-red-50"
+                                        >
+                                            <Ban className="size-4" />
+                                            Từ chối hồ sơ
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Separator className="my-1.5 h-px bg-zinc-100" />
+                                    </>
+                                ) : null}
+                                <DropdownMenu.Item asChild>
+                                    <Link
+                                        href="/admin/sellers/applications"
+                                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-zinc-700 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100"
+                                    >
+                                        <ArrowLeft className="size-4" />
+                                        Quay lại danh sách
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item
+                                    disabled={refreshing}
+                                    onSelect={onRefresh}
+                                    className="flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-zinc-700 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
                                 >
-                                    <Ban className="size-4" />
-                                    Từ chối hồ sơ
-                                </Button>
-                            </RejectSellerApplicationDialog>
-                        ) : null}
-                        <Link
-                            href="/admin/sellers/applications"
-                            className={cn(
-                                buttonVariants({ variant: 'outline' }),
-                                'rounded-full',
-                            )}
-                        >
-                            <ArrowLeft className="size-4" />
-                            Quay lại danh sách
-                        </Link>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="rounded-full"
-                            disabled={refreshing}
-                            onClick={onRefresh}
-                        >
-                            <RefreshCw
-                                className={cn(
-                                    'size-4',
-                                    refreshing && 'animate-spin',
-                                )}
-                            />
-                            Làm mới
-                        </Button>
-                    </div>
+                                    <RefreshCw
+                                        className={cn(
+                                            'size-4',
+                                            refreshing && 'animate-spin',
+                                        )}
+                                    />
+                                    Làm mới
+                                </DropdownMenu.Item>
+                            </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                    </DropdownMenu.Root>
                 </div>
             </section>
 
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-                <div className="space-y-5">
-                    <IdentityReviewSection application={application} />
+            <ApproveSellerApplicationDialog
+                applicationId={application.id}
+                shopName={getApplicationShopDisplayName(application)}
+                open={approveDialogOpen}
+                onOpenChange={setApproveDialogOpen}
+            />
+            <RejectSellerApplicationDialog
+                applicationId={application.id}
+                shopName={getApplicationShopDisplayName(application)}
+                open={rejectDialogOpen}
+                onOpenChange={setRejectDialogOpen}
+            />
+
+            <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <IdentityReviewSection application={application} />
+                <ReviewTimelineSection application={application} />
+
+                <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:col-span-2 xl:col-start-1">
                     <ShopInformationSection application={application} />
                     <PickupAddressSection application={application} />
-                    <PayoutSection application={application} />
-                </div>
-
-                <div className="space-y-5">
-                    <ReviewTimelineSection application={application} />
-                    <ReviewChecklistSection application={application} />
+                    <div className="lg:col-span-2">
+                        <PayoutSection application={application} />
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-interface ApplicationSectionProps {
-    application: SellerApplicationDto;
-}
-
 // Hiển thị logo shop thật nếu có; fallback icon giúp header vẫn cân đối khi hồ sơ thiếu logo.
 function ShopLogo({ application }: ApplicationSectionProps) {
     return (
-        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200">
+        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-zinc-200 sm:size-14">
             {application.shop.logoUrl ? (
                 <img
                     src={application.shop.logoUrl}
@@ -233,7 +273,8 @@ function ShopLogo({ application }: ApplicationSectionProps) {
     );
 }
 
-// Nhóm đối chiếu quan trọng nhất: dữ liệu người bán đặt cạnh ảnh giấy tờ để admin kiểm tra nhanh.
+// Tách dữ liệu thành thông tin cần khớp và thông tin bổ sung để admin không phải rà từng field rời.
+// Cột giấy tờ giữ cạnh dữ liệu trên desktop; trên màn hình nhỏ, hai vùng tự xếp dọc theo cùng thứ tự đọc.
 function IdentityReviewSection({ application }: ApplicationSectionProps) {
     const identityLabel =
         application.seller.profileType === 'business'
@@ -248,56 +289,100 @@ function IdentityReviewSection({ application }: ApplicationSectionProps) {
         <AdminSellerApplicationDetailSection
             title="Đối chiếu định danh"
             description="So sánh thông tin người bán đã nhập với ảnh giấy tờ trước khi duyệt hồ sơ."
+            icon={UserRound}
         >
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <div className="space-y-3">
-                    <AdminSellerApplicationDetailField
-                        label="Loại hồ sơ"
-                        value={formatSellerProfileType(
-                            application.seller.profileType,
-                        )}
-                    />
-                    <AdminSellerApplicationDetailField
-                        label="Họ tên / Pháp nhân"
-                        value={formatNullableText(application.seller.legalName)}
-                    />
-                    <AdminSellerApplicationDetailField
-                        label={identityLabel}
-                        value={formatNullableText(identityValue)}
-                    />
-                    <AdminSellerApplicationDetailField
-                        label="Người đại diện"
-                        value={formatNullableText(
-                            application.seller.representativeName,
-                        )}
-                    />
-                    <AdminSellerApplicationDetailField
-                        label="Chức vụ / Vai trò"
-                        value={formatNullableText(
-                            application.seller.representativeRole,
-                        )}
-                    />
-                    <AdminSellerApplicationDetailField
-                        label="Liên hệ"
-                        value={
-                            <div className="space-y-1">
-                                <p>
-                                    {formatNullableText(
-                                        application.seller.email ??
-                                            application.userEmail,
-                                    )}
+                    <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="text-xs font-semibold text-zinc-800">
+                                Thông tin cần khớp
+                            </h3>
+                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-1 text-[10px] font-medium text-zinc-500">
+                                {formatSellerProfileType(
+                                    application.seller.profileType,
+                                )}
+                            </span>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="min-w-0 rounded-lg border border-zinc-200 bg-white px-3 py-2.5">
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                                    Họ tên / Pháp nhân
                                 </p>
-                                <p className="text-zinc-500">
+                                <p className="mt-1 break-words text-sm font-semibold leading-5 text-zinc-950">
                                     {formatNullableText(
-                                        application.seller.phone,
+                                        application.seller.legalName,
                                     )}
                                 </p>
                             </div>
-                        }
-                    />
+                            <div className="min-w-0 rounded-lg border border-zinc-200 bg-white px-3 py-2.5">
+                                <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+                                    {identityLabel}
+                                </p>
+                                <p className="mt-1 break-all font-mono text-sm font-semibold leading-5 text-zinc-950">
+                                    {formatNullableText(identityValue)}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-2 flex items-start gap-1.5 border-t border-zinc-200 pt-2 text-[11px] leading-4 text-zinc-500">
+                            <ArrowLeftRight className="mt-0.5 size-3.5 shrink-0 text-zinc-700" />
+                            <p>
+                                So tên và số định danh với ảnh giấy tờ bên cạnh.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+                            Thông tin bổ sung
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <AdminSellerApplicationDetailField
+                                label="Người đại diện"
+                                value={formatNullableText(
+                                    application.seller.representativeName,
+                                )}
+                            />
+                            <AdminSellerApplicationDetailField
+                                label="Chức vụ / Vai trò"
+                                value={formatNullableText(
+                                    application.seller.representativeRole,
+                                )}
+                            />
+                            <AdminSellerApplicationDetailField
+                                label="Liên hệ"
+                                className="sm:col-span-2"
+                                value={
+                                    <div className="space-y-1">
+                                        <p className="break-all">
+                                            {formatNullableText(
+                                                application.seller.email ??
+                                                    application.userEmail,
+                                            )}
+                                        </p>
+                                        <p className="text-zinc-500">
+                                            {formatNullableText(
+                                                application.seller.phone,
+                                            )}
+                                        </p>
+                                    </div>
+                                }
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <DocumentPreviewGrid application={application} />
+                <div className="min-w-0">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3 className="text-xs font-semibold text-zinc-800">
+                            Giấy tờ xác minh
+                        </h3>
+                        <span className="text-[10px] text-zinc-400">
+                            So trực tiếp với ảnh
+                        </span>
+                    </div>
+                    <DocumentPreviewGrid application={application} />
+                </div>
             </div>
         </AdminSellerApplicationDetailSection>
     );
@@ -334,12 +419,12 @@ function getRequiredDocuments(application: SellerApplicationDto) {
     ];
 }
 
-// Render ảnh giấy tờ thành lưới riêng để nghiệp vụ duyệt không bị lẫn với các field text.
+// Đặt các giấy tờ cạnh nhau theo thứ tự mặt trước/mặt sau hoặc giấy phép/người đại diện.
 function DocumentPreviewGrid({ application }: ApplicationSectionProps) {
     const documents = getRequiredDocuments(application);
 
     return (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
+        <div className="grid auto-rows-fr items-stretch gap-3 sm:grid-cols-2">
             {documents.map((document) => (
                 <DocumentPreviewCard
                     key={document.key}
@@ -358,26 +443,27 @@ interface DocumentPreviewCardProps {
     document?: SellerVerificationDocumentDto;
 }
 
-// Card ảnh giấy tờ có preview lớn, trạng thái thiếu rõ ràng và link mở ảnh gốc khi cần soi chi tiết.
+// Card giấy tờ giữ chiều cao đồng nhất và mở ảnh đầy đủ trong dialog để admin soi trực tiếp.
 function DocumentPreviewCard({
     title,
     description,
     document,
 }: DocumentPreviewCardProps) {
+    const [previewOpen, setPreviewOpen] = useState(false);
     const documentUrl = document?.url;
     const hasDocument = Boolean(documentUrl);
 
     return (
         <article
             className={cn(
-                'rounded-xl border p-3',
+                'flex h-full flex-col rounded-xl border p-2.5 sm:p-3',
                 hasDocument
                     ? 'border-zinc-200 bg-white'
                     : 'border-amber-200 bg-amber-50',
             )}
         >
             <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
-                {hasDocument ? (
+                {documentUrl ? (
                     <img
                         src={documentUrl}
                         alt={title}
@@ -392,7 +478,7 @@ function DocumentPreviewCard({
                     </div>
                 )}
             </div>
-            <div className="mt-3 space-y-1">
+            <div className="mt-2.5 flex flex-1 flex-col">
                 <div className="flex items-start justify-between gap-2">
                     <h3 className="text-sm font-semibold text-zinc-950">
                         {title}
@@ -408,63 +494,128 @@ function DocumentPreviewCard({
                         {hasDocument ? 'Đã có ảnh' : 'Thiếu ảnh'}
                     </span>
                 </div>
-                <p className="text-xs leading-5 text-zinc-500">{description}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">
+                    {description}
+                </p>
                 {document?.fileName ? (
-                    <p className="truncate text-xs text-zinc-400">
+                    <p className="mt-1 truncate text-xs text-zinc-400">
                         {document.fileName}
                     </p>
                 ) : null}
-                {hasDocument ? (
-                    <a
-                        href={documentUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex text-xs font-medium text-zinc-950 underline underline-offset-4"
-                    >
-                        Mở ảnh gốc
-                    </a>
+                {documentUrl ? (
+                    <>
+                        <Button
+                            type="button"
+                            variant="link"
+                            className="mt-auto h-auto justify-start p-0 pt-2 text-xs font-medium text-zinc-950 underline underline-offset-4"
+                            onClick={() => setPreviewOpen(true)}
+                        >
+                            Mở ảnh gốc
+                        </Button>
+                        <Dialog
+                            open={previewOpen}
+                            onOpenChange={setPreviewOpen}
+                        >
+                            <DialogContent className="gap-3 sm:max-w-4xl">
+                                <DialogHeader className="pr-8">
+                                    <DialogTitle>{title}</DialogTitle>
+                                    <DialogDescription>
+                                        Xem ảnh gốc để đối chiếu thông tin giấy tờ.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="relative h-[min(70dvh,720px)] min-h-40 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                                    <Image
+                                        src={documentUrl}
+                                        alt={title}
+                                        fill
+                                        unoptimized
+                                        className="object-contain"
+                                    />
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </>
                 ) : null}
             </div>
         </article>
     );
 }
 
-// Nhóm thông tin nhận diện shop, gồm slug public, ngành hàng, mô hình bán và mô tả.
+// Nhóm thông tin nhận diện shop; logo mở trong dialog để admin xem ảnh mà không rời hồ sơ.
 function ShopInformationSection({ application }: ApplicationSectionProps) {
+    const [logoPreviewOpen, setLogoPreviewOpen] = useState(false);
+
     return (
         <AdminSellerApplicationDetailSection
             title="Thông tin shop"
             description="Kiểm tra tên, đường dẫn, ngành hàng và logo sẽ hiển thị cho người mua."
+            icon={Store}
+            density="compact"
         >
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
                 <AdminSellerApplicationDetailField
                     label="Tên shop"
+                    compact
                     value={formatNullableText(application.shop.name)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Đường dẫn shop"
+                    compact
                     value={formatNullableText(application.shop.slug)}
                 />
                 <AdminSellerApplicationDetailField
-                    label="Ngành hàng chính"
-                    value={formatNullableText(application.shop.mainCategoryId)}
+                    label="Mã ngành hàng"
+                    compact
+                    value={
+                        <span className="break-all font-mono text-xs">
+                            {formatNullableText(
+                                application.shop.mainCategoryId,
+                            )}
+                        </span>
+                    }
                 />
                 <AdminSellerApplicationDetailField
                     label="Mô hình bán hàng"
+                    compact
                     value={formatBusinessModel(application.shop.businessModel)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Logo shop"
+                    compact
                     value={
                         application.shop.logoUrl ? (
-                            <a
-                                href={application.shop.logoUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-zinc-950 underline underline-offset-4"
-                            >
-                                Mở ảnh logo
-                            </a>
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    className="h-auto justify-start p-0 text-xs font-medium text-zinc-950 underline underline-offset-4"
+                                    onClick={() => setLogoPreviewOpen(true)}
+                                >
+                                    Mở ảnh logo
+                                </Button>
+                                <Dialog
+                                    open={logoPreviewOpen}
+                                    onOpenChange={setLogoPreviewOpen}
+                                >
+                                    <DialogContent className="gap-3 sm:max-w-2xl">
+                                        <DialogHeader className="pr-8">
+                                            <DialogTitle>Logo shop</DialogTitle>
+                                            <DialogDescription>
+                                                Xem ảnh logo shop đã tải lên.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="relative h-[min(60dvh,560px)] min-h-40 w-full overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                                            <Image
+                                                src={application.shop.logoUrl}
+                                                alt="Logo shop"
+                                                fill
+                                                unoptimized
+                                                className="object-contain"
+                                            />
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </>
                         ) : (
                             'Chưa cung cấp'
                         )
@@ -472,6 +623,7 @@ function ShopInformationSection({ application }: ApplicationSectionProps) {
                 />
                 <AdminSellerApplicationDetailField
                     label="Mô tả shop"
+                    compact
                     value={formatNullableText(application.shop.description)}
                 />
             </div>
@@ -485,38 +637,46 @@ function PickupAddressSection({ application }: ApplicationSectionProps) {
         <AdminSellerApplicationDetailSection
             title="Địa chỉ lấy hàng"
             description="Kho mặc định dùng để nhận đơn đầu tiên và đối chiếu khu vực vận hành của shop."
+            icon={MapPin}
+            density="compact"
         >
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
                 <AdminSellerApplicationDetailField
                     label="Người phụ trách"
+                    compact
                     value={formatNullableText(
                         application.pickupAddress.contactName,
                     )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Số điện thoại kho"
+                    compact
                     value={formatNullableText(application.pickupAddress.phone)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Tỉnh / Thành phố"
+                    compact
                     value={formatNullableText(
                         application.pickupAddress.provinceName,
                     )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Quận / Huyện"
+                    compact
                     value={formatNullableText(
                         application.pickupAddress.districtName,
                     )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Phường / Xã"
+                    compact
                     value={formatNullableText(
                         application.pickupAddress.wardName,
                     )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Địa chỉ chi tiết"
+                    compact
                     value={formatNullableText(
                         application.pickupAddress.addressLine,
                     )}
@@ -532,34 +692,42 @@ function PayoutSection({ application }: ApplicationSectionProps) {
         <AdminSellerApplicationDetailSection
             title="Thanh toán"
             description="Tài khoản dùng để nhận tiền sau đối soát."
+            icon={CreditCard}
+            density="compact"
         >
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
                 <AdminSellerApplicationDetailField
                     label="Ngân hàng"
+                    compact
                     value={formatNullableText(application.payout.bankName)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Mã ngân hàng"
+                    compact
                     value={formatNullableText(application.payout.bankCode)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Số tài khoản"
+                    compact
                     value={formatNullableText(application.payout.accountNumber)}
                 />
                 <AdminSellerApplicationDetailField
                     label="Chủ tài khoản"
+                    compact
                     value={formatNullableText(
                         application.payout.accountHolderName,
                     )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Loại tài khoản"
+                    compact
                     value={formatPayoutAccountType(
                         application.payout.accountType,
                     )}
                 />
                 <AdminSellerApplicationDetailField
                     label="Chi nhánh"
+                    compact
                     value={formatNullableText(application.payout.branch)}
                 />
             </div>
@@ -573,10 +741,12 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
         <AdminSellerApplicationDetailSection
             title="Trạng thái duyệt"
             description="Theo dõi các mốc thời gian quan trọng của hồ sơ."
+            icon={Clock3}
         >
-            <div className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
                 <AdminSellerApplicationDetailField
                     label="Trạng thái hiện tại"
+                    className="sm:col-span-2"
                     value={
                         <AdminSellerApplicationStatusBadge
                             status={application.status}
@@ -585,6 +755,7 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
                 />
                 <AdminSellerApplicationDetailField
                     label="Lần gửi hồ sơ"
+                    className="sm:col-span-2"
                     value={`Lần ${Math.max(application.submissionRevision, 1)}`}
                 />
                 <AdminSellerApplicationDetailField
@@ -607,10 +778,12 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
                     label="Ghi chú duyệt"
                     value={formatNullableText(application.reviewNote)}
                     muted={!application.reviewNote}
+                    className="sm:col-span-2"
                 />
                 {application.correctionTargets.length > 0 ? (
                     <AdminSellerApplicationDetailField
                         label="Nội dung cần chỉnh sửa"
+                        className="sm:col-span-2"
                         value={
                             <div className="flex flex-wrap gap-2">
                                 {application.correctionTargets.includes(
@@ -659,104 +832,6 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
                         }
                     />
                 ) : null}
-            </div>
-        </AdminSellerApplicationDetailSection>
-    );
-}
-
-// Checklist đọc nhanh giúp admin biết hồ sơ đã đủ các phần chính trước khi bấm duyệt ở bước sau.
-function ReviewChecklistSection({ application }: ApplicationSectionProps) {
-    const identityDocumentsReady = getRequiredDocuments(application).every(
-        (document) => application.seller.documents?.[document.key]?.url,
-    );
-    const checks = [
-        {
-            icon: Store,
-            label: 'Thông tin shop',
-            done: Boolean(
-                application.shop.name &&
-                application.shop.slug &&
-                application.shop.logoUrl,
-            ),
-        },
-        {
-            icon: UserRound,
-            label: 'Thông tin người bán',
-            done: Boolean(
-                application.seller.legalName &&
-                application.seller.phone &&
-                application.seller.email,
-            ),
-        },
-        {
-            icon: FileCheck2,
-            label: 'Ảnh giấy tờ định danh',
-            done: identityDocumentsReady,
-        },
-        {
-            icon: MapPin,
-            label: 'Địa chỉ lấy hàng',
-            done: Boolean(
-                application.pickupAddress.contactName &&
-                application.pickupAddress.phone &&
-                application.pickupAddress.addressLine,
-            ),
-        },
-        {
-            icon: CreditCard,
-            label: 'Tài khoản thanh toán',
-            done: Boolean(
-                application.payout.bankCode && application.payout.accountNumber,
-            ),
-        },
-    ];
-
-    return (
-        <AdminSellerApplicationDetailSection
-            title="Kiểm tra nhanh"
-            description="Các mục chính cần đủ trước khi chuyển hồ sơ sang bước phê duyệt."
-        >
-            <div className="space-y-3">
-                {checks.map((check) => {
-                    const Icon = check.icon;
-
-                    return (
-                        <div
-                            key={check.label}
-                            className="flex items-center justify-between gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="flex size-9 items-center justify-center rounded-lg bg-white text-zinc-700 ring-1 ring-zinc-100">
-                                    <Icon className="size-4" />
-                                </span>
-                                <span className="text-sm font-medium text-zinc-950">
-                                    {check.label}
-                                </span>
-                            </div>
-                            <span
-                                className={cn(
-                                    'rounded-full px-2.5 py-1 text-xs font-medium',
-                                    check.done
-                                        ? 'bg-zinc-950 text-white'
-                                        : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-                                )}
-                            >
-                                {check.done ? 'Đủ dữ liệu' : 'Cần kiểm tra'}
-                            </span>
-                        </div>
-                    );
-                })}
-
-                <div className="rounded-lg border border-zinc-200 bg-white p-4 text-sm leading-6 text-zinc-600">
-                    <div className="flex items-start gap-3">
-                        <BadgeCheck className="mt-0.5 size-5 text-zinc-500" />
-                        <p>
-                            Ưu tiên đối chiếu tên người bán, số định danh, ảnh
-                            giấy tờ và tài khoản nhận tiền trước khi phê duyệt
-                            hồ sơ.
-                        </p>
-                    </div>
-                </div>
             </div>
         </AdminSellerApplicationDetailSection>
     );

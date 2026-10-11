@@ -111,6 +111,90 @@ export function getDefaultAuthenticatedPath(
     return '/';
 }
 
+// Chỉ khôi phục đường dẫn nội bộ sau login khi tài khoản mới có quyền vào đúng khu vực.
+// Redirect được giữ lại qua logout để quay về trang đang xem, nên không thể tin query này là quyền của session trước.
+// URL ngoài hệ thống, route xác thực và route admin/seller trái quyền đều rơi về trang mặc định của user vừa đăng nhập.
+export function getSafeAuthenticatedRedirectPath(
+    requestedPath: string | null | undefined,
+    user: PermissionAwareUser | null | undefined,
+): string {
+    const fallbackPath = getDefaultAuthenticatedPath(user);
+    if (
+        !requestedPath?.startsWith('/') ||
+        requestedPath.startsWith('//') ||
+        requestedPath.includes('\\') ||
+        /[\u0000-\u001f\u007f]/.test(requestedPath)
+    ) {
+        return fallbackPath;
+    }
+
+    let requestedUrl: URL;
+    try {
+        // URL parser chuẩn hóa dấu chấm và xác định origin trước khi quyết định có thể khôi phục đường dẫn.
+        requestedUrl = new URL(requestedPath, 'https://bin.local');
+    } catch {
+        return fallbackPath;
+    }
+
+    if (requestedUrl.origin !== 'https://bin.local') return fallbackPath;
+
+    let pathname: string;
+    try {
+        // Giải mã path một lần để biến thể mã hóa như `/%61dmin` cũng phải qua đúng kiểm tra quyền.
+        pathname = decodeURIComponent(requestedUrl.pathname);
+    } catch {
+        return fallbackPath;
+    }
+    if (
+        pathname.startsWith('//') ||
+        pathname.includes('\\') ||
+        /%(?:2f|5c|2e)/i.test(pathname)
+    ) {
+        return fallbackPath;
+    }
+
+    const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/');
+    const isSellerPath =
+        pathname === '/seller' || pathname.startsWith('/seller/');
+    const isSellerRegistrationPath =
+        pathname === '/seller/register' || pathname.startsWith('/seller/register/');
+
+    // Onboarding là luồng public sau khi đăng nhập của customer, không phải quyền truy cập Seller Center.
+    if (isSellerRegistrationPath) {
+        return canAccessAdmin(user) || canAccessSellerCenter(user)
+            ? fallbackPath
+            : `${pathname}${requestedUrl.search}${requestedUrl.hash}`;
+    }
+
+    // Route quản trị cần cả quyền vào Admin Center lẫn permission của chính trang được yêu cầu.
+    if (isAdminPath) {
+        return canAccessAdmin(user) && canAccessAdminPath(pathname, user)
+            ? `${pathname}${requestedUrl.search}${requestedUrl.hash}`
+            : fallbackPath;
+    }
+
+    // Route Seller Center không được thừa hưởng chỉ vì URL cũ thuộc session trước; kiểm tra lại navigation hiện tại.
+    if (isSellerPath) {
+        return canAccessSellerCenter(user) && canAccessSellerPath(pathname, user)
+            ? `${pathname}${requestedUrl.search}${requestedUrl.hash}`
+            : fallbackPath;
+    }
+
+    // Trang public như checkout vẫn được giữ lại, nhưng trang đăng nhập không thể tự redirect vòng lặp.
+    if (
+        pathname === '/login' ||
+        pathname === '/register' ||
+        pathname === '/forgot-password' ||
+        pathname === '/reset-password' ||
+        pathname === '/callback' ||
+        pathname === '/auth/callback'
+    ) {
+        return fallbackPath;
+    }
+
+    return `${pathname}${requestedUrl.search}${requestedUrl.hash}`;
+}
+
 // Kiểm tra quyền theo path admin hiện tại bằng navigation backend trả trong accessProfile.
 // Route access-denied luôn mở; route còn lại phải xuất hiện trong navigation backend.
 export function canAccessAdminPath(

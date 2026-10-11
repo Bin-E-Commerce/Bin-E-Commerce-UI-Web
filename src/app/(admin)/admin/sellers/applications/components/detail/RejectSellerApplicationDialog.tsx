@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+// Dialog thu lý do từ chối; trạng thái mở do màn hình chi tiết quản lý ngoài dropdown thao tác.
+import { useState } from 'react';
 import { Ban, LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,19 +13,15 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import type { SellerApplicationCorrectionTarget } from '@/services/seller';
 import { useRejectSellerApplication } from '../../hooks/useRejectSellerApplication';
-
-interface RejectSellerApplicationDialogProps {
-    applicationId: string;
-    shopName: string;
-    children?: ReactNode;
-}
+import type {
+    RejectSellerApplicationDialogProps,
+} from '../../types/application-detail.types';
 
 const MIN_REASON_LENGTH = 10;
 const MAX_REASON_LENGTH = 1000;
@@ -33,9 +30,9 @@ const MAX_REASON_LENGTH = 1000;
 export function RejectSellerApplicationDialog({
     applicationId,
     shopName,
-    children,
+    open,
+    onOpenChange,
 }: RejectSellerApplicationDialogProps) {
-    const [open, setOpen] = useState(false);
     const [reason, setReason] = useState('');
     const [correctionTargets, setCorrectionTargets] = useState<
         SellerApplicationCorrectionTarget[]
@@ -51,7 +48,7 @@ export function RejectSellerApplicationDialog({
     // Reset dữ liệu khi đóng để lần thao tác sau không dùng nhầm lý do từ một hồ sơ trước đó.
     const handleOpenChange = (nextOpen: boolean) => {
         if (rejectMutation.isPending) return;
-        setOpen(nextOpen);
+        onOpenChange(nextOpen);
 
         if (!nextOpen) {
             setReason('');
@@ -90,19 +87,6 @@ export function RejectSellerApplicationDialog({
 
     return (
         <AlertDialog open={open} onOpenChange={handleOpenChange}>
-            <AlertDialogTrigger asChild>
-                {children ?? (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                    >
-                        <Ban className="size-4" />
-                        Từ chối hồ sơ
-                    </Button>
-                )}
-            </AlertDialogTrigger>
-
             <AlertDialogContent className="max-w-lg">
                 <AlertDialogHeader>
                     <div className="mb-1 flex size-11 items-center justify-center rounded-xl bg-red-50 text-red-700">
