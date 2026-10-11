@@ -155,8 +155,11 @@ export type SellerCopilotInsight =
     | {
           type: 'LOW_STOCK';
           productId: string;
+          variantId?: string;
           name: string;
           thumbnailUrl: string | null;
           stock: number;
           variantName?: string;
+          sku?: string;
+          sellerSku?: string | null;
       };

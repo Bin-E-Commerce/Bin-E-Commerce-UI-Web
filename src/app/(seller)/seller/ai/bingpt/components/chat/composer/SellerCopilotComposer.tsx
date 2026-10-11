@@ -44,6 +44,16 @@ export function SellerCopilotComposer({
         requestAnimationFrame(() => textareaRef.current?.focus());
     };
 
+    // Chèn lệnh tồn kho hoặc xả hàng vào input rồi chuyển mode; backend vẫn xác thực tác vụ và quyền ghi.
+    const selectAgentCommand = (
+        command: '@tồn-kho' | '@xả-hàng',
+    ) => {
+        setInput((current) => current.replace(/@[^ \n]*$/u, `${command} `));
+        void onInteractionModeChange('agent');
+        setShowAgentSuggestions(false);
+        requestAnimationFrame(() => textareaRef.current?.focus());
+    };
+
     // Chỉ cho phép một tooltip hành động tồn tại tại một thời điểm để tránh tooltip chồng lấn.
     const handleTooltipOpenChange = (
         tooltip: Exclude<ComposerTooltip, null>,
@@ -52,14 +62,18 @@ export function SellerCopilotComposer({
         setActiveTooltip(open ? tooltip : null);
     };
 
-    // Trim và chặn input không hợp lệ trước khi phát message lên hook stream.
+    // Chuẩn hóa input, tự chuyển mode cho command allowlist và chỉ gửi khi đổi mode thành công.
     const submit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (isModeChanging) return;
         const typedAgentMention = /^@bingpt\b\s*/iu.test(input.trim());
+        const typedAgentCommand = /^@(tồn-kho|ton-kho|giá|xả-hàng|xa-hang)\b/iu.test(
+            input.trim(),
+        );
         const value = input.trim().replace(/^@bingpt\b\s*/iu, '');
         if (!value || value.length > MAX_COPILOT_INPUT_LENGTH) return;
-        const selectedMode = typedAgentMention ? 'agent' : interactionMode;
+        const selectedMode =
+            typedAgentMention || typedAgentCommand ? 'agent' : interactionMode;
         if (selectedMode !== interactionMode) {
             const modeChanged = await onInteractionModeChange(selectedMode);
             if (!modeChanged) return;
@@ -75,11 +89,27 @@ export function SellerCopilotComposer({
         setShowAgentSuggestions(/(?:^|\s)@[^\s]*$/u.test(value));
     };
 
-    // Enter submit qua form; Shift+Enter và composition tiếng Việt vẫn giữ hành vi nhập nhiều dòng.
+    // Enter chọn command tồn kho/xả hàng khớp trong menu @; nếu không, submit form, còn Shift+Enter/composition giữ nhập nhiều dòng.
     const handleInputKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (showAgentSuggestions && event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            selectAgent();
+            const query =
+                input
+                    .match(/(?:^|\s)@([^\s]*)$/u)?.[1]
+                    ?.toLocaleLowerCase('vi') ?? '';
+            if (
+                '@tồn-kho'.startsWith(`@${query}`) ||
+                'ton-kho'.startsWith(query)
+            ) {
+                selectAgentCommand('@tồn-kho');
+            } else if (
+                '@xả-hàng'.startsWith(`@${query}`) ||
+                'xa-hang'.startsWith(query)
+            ) {
+                selectAgentCommand('@xả-hàng');
+            } else {
+                selectAgent();
+            }
             return;
         }
         if (
@@ -115,15 +145,31 @@ export function SellerCopilotComposer({
                                     </CommandEmpty>
                                     <CommandGroup heading="Tác nhân">
                                         <CommandItem
-                                            value="bingpt agent"
-                                            onSelect={selectAgent}
+                                            value="@tồn-kho tồn kho sắp hết bổ sung"
+                                            onSelect={() =>
+                                                selectAgentCommand('@tồn-kho')
+                                            }
                                         >
                                             <Bot className="mr-2 size-4 text-zinc-600" />
                                             <span className="font-medium">
-                                                BinGPT
+                                                @tồn-kho
                                             </span>
                                             <span className="ml-auto text-xs text-zinc-500">
-                                                Chỉnh tồn kho
+                                                Sắp hết hàng
+                                            </span>
+                                        </CommandItem>
+                                        <CommandItem
+                                            value="@xả-hàng xả hàng bán chậm giá sàn"
+                                            onSelect={() =>
+                                                selectAgentCommand('@xả-hàng')
+                                            }
+                                        >
+                                            <Bot className="mr-2 size-4 text-zinc-600" />
+                                            <span className="font-medium">
+                                                @xả-hàng
+                                            </span>
+                                            <span className="ml-auto text-xs text-zinc-500">
+                                                Hàng bán chậm
                                             </span>
                                         </CommandItem>
                                     </CommandGroup>

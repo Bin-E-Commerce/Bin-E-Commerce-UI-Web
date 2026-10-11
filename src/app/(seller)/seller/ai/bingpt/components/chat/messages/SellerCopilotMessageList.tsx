@@ -9,6 +9,8 @@ import { SellerCopilotInsightCard } from '../../answer/insights/SellerCopilotIns
 import { SellerCopilotMarkdown } from '../../answer/markdown/renderer/SellerCopilotMarkdown';
 import { SellerCopilotThinkingIndicator } from '../status/SellerCopilotThinkingIndicator';
 import { SellerCopilotInventoryActionCard } from './cards/SellerCopilotInventoryActionCard';
+import { SellerCopilotActionProposalCard } from './cards/SellerCopilotActionProposalCard';
+import type { SellerCopilotActionProposal } from '@/services/seller/types/seller-copilot.types';
 import { SellerCopilotSources } from './sources/SellerCopilotSources';
 import { SellerCopilotModeChangeDivider } from './timeline/SellerCopilotModeChangeDivider';
 
@@ -20,6 +22,15 @@ interface SellerCopilotMessageListProps {
         messageId: string,
         proposal: NonNullable<SellerCopilotChatMessage['actionProposal']>,
     ) => void;
+    onConfirmActions: (
+        messageId: string,
+        proposals: SellerCopilotActionProposal[],
+    ) => void;
+    onReviseAction: (
+        messageId: string,
+        proposal: SellerCopilotActionProposal,
+        nextAvailable: number,
+    ) => void;
 }
 
 // Render answer và trạng thái phụ theo từng message; câu bị Stop/network lỗi vẫn hiện phần đã nhận kèm nhãn chưa hoàn tất.
@@ -29,6 +40,8 @@ export function SellerCopilotMessageList({
     isStreaming,
     onSendMessage,
     onConfirmAction,
+    onConfirmActions,
+    onReviseAction,
 }: SellerCopilotMessageListProps) {
     return (
         <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -106,6 +119,23 @@ export function SellerCopilotMessageList({
                             />
                         ) : null}
                         {message.role === 'assistant' &&
+                        message.actionProposals?.length ? (
+                            <SellerCopilotActionProposalCard
+                                proposals={message.actionProposals}
+                                onConfirm={(proposals) =>
+                                    onConfirmActions(message.id, proposals)
+                                }
+                                onRevise={(proposal, nextAvailable) =>
+                                    onReviseAction(
+                                        message.id,
+                                        proposal,
+                                        nextAvailable,
+                                    )
+                                }
+                            />
+                        ) : null}
+                        {message.role === 'assistant' &&
+                        !message.actionProposals?.length &&
                         message.actionProposal ? (
                             <SellerCopilotInventoryActionCard
                                 proposal={message.actionProposal}

@@ -1,6 +1,8 @@
 // File này là transport client cho endpoint SSE của Seller Copilot.
-// Nó không lưu token, không chọn shop và không biến response stream thành một JSON response duy nhất.
+// Request có xác thực dùng authorizedFetch để retry một lần sau refresh, nhưng vẫn giữ nguyên parsing SSE/JSON.
+// File không chọn shop, lưu token hay biến stream thành một JSON response duy nhất.
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
+import { authorizedFetch } from '@/utils/authorizedAxios';
 import type {
     SellerCopilotConversation,
     SellerCopilotConversationDetail,
@@ -27,23 +29,25 @@ interface AuthenticatedRequestInput {
     body?: BodyInit;
 }
 
-// Gọi endpoint JSON của Copilot với cùng header auth như stream để history và chat dùng chung một boundary.
-// Hàm chỉ đọc response và ném lỗi HTTP có status rõ ràng; nó không tự retry để tránh tạo request lặp ngoài ý muốn.
+// Gọi endpoint JSON qua transport có refresh-and-retry; payload chỉ được gửi lại khi lần đầu nhận 401.
+// Các lỗi khác giữ nguyên status/message để không che lỗi nghiệp vụ hoặc lặp thao tác ghi ngoài ý muốn.
 async function requestSellerCopilotJson<T>(
     path: string,
     input: AuthenticatedRequestInput,
 ): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${API_VERSION}${path}`, {
-        method: input.method ?? 'GET',
-        credentials: 'include',
-        signal: input.signal,
-        headers: {
-            Authorization: `Bearer ${input.accessToken}`,
-            'X-Requested-With': 'XMLHttpRequest',
-            ...(input.body ? { 'Content-Type': 'application/json' } : {}),
+    const response = await authorizedFetch(
+        `${API_BASE_URL}${API_VERSION}${path}`,
+        {
+            method: input.method ?? 'GET',
+            credentials: 'include',
+            signal: input.signal,
+            headers: {
+                ...(input.body ? { 'Content-Type': 'application/json' } : {}),
+            },
+            body: input.body,
         },
-        body: input.body,
-    });
+        input.accessToken,
+    );
 
     if (!response.ok) {
         let message = `Yêu cầu BinGPT thất bại (${response.status}).`;
@@ -180,17 +184,14 @@ export function confirmSellerCopilotInventoryAction(
     onEvent?: (event: SellerCopilotStreamEvent) => void,
 ): Promise<SellerCopilotInventoryActionResult> {
     return (async () => {
-        const response = await fetch(
+        const response = await authorizedFetch(
             `${API_BASE_URL}${API_VERSION}/seller/ai/copilot/actions/${proposalId}/confirm`,
             {
                 method: 'POST',
                 credentials: 'include',
                 signal: input.signal,
-                headers: {
-                    Authorization: `Bearer ${input.accessToken}`,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
             },
+            input.accessToken,
         );
         if (!response.ok) {
             const body = await response.text();
@@ -258,6 +259,44 @@ export function confirmSellerCopilotInventoryAction(
     })();
 }
 
+// Xác nhận tối đa 50 proposal độc lập; backend trả kết quả theo từng dòng và không rollback thành công một phần.
+export function confirmSellerCopilotActionBatch(
+    proposalIds: string[],
+    input: { accessToken: string },
+): Promise<
+    Array<{
+        proposalId: string;
+        status: 'completed' | 'failed';
+        message: string;
+        availableQuantity?: number;
+    }>
+> {
+    return requestSellerCopilotJson(
+        '/seller/ai/copilot/actions/confirm-batch',
+        {
+            accessToken: input.accessToken,
+            method: 'POST',
+            body: JSON.stringify({ proposalIds }),
+        },
+    );
+}
+
+// Lưu target tồn đã chỉnh vào proposal pending để giá trị trong preview và giá trị được xác nhận luôn trùng khớp.
+export function reviseSellerCopilotInventoryProposal(
+    proposalId: string,
+    nextAvailable: number,
+    input: { accessToken: string },
+): Promise<{ proposalId: string; nextAvailable: number; expiresAt: string }> {
+    return requestSellerCopilotJson(
+        `/seller/ai/copilot/actions/${proposalId}`,
+        {
+            accessToken: input.accessToken,
+            method: 'PATCH',
+            body: JSON.stringify({ nextAvailable }),
+        },
+    );
+}
+
 // Gửi POST và parse SSE theo từng dòng vì EventSource không hỗ trợ request body.
 // Buffer giữ lại dòng chưa hoàn chỉnh giữa các network chunk; event/data pairing
 // bảo đảm token và metadata chỉ được chuyển tới hook khi payload đã hoàn chỉnh.
@@ -266,16 +305,14 @@ export async function streamSellerCopilot(
     input: StreamInput,
     onEvent: (event: SellerCopilotStreamEvent) => void,
 ) {
-    const response = await fetch(
+    const response = await authorizedFetch(
         `${API_BASE_URL}${API_VERSION}/seller/ai/copilot/chat/stream`,
         {
             method: 'POST',
             credentials: 'include',
             signal: input.signal,
             headers: {
-                Authorization: `Bearer ${input.accessToken}`,
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
             },
             body: JSON.stringify({
                 conversationId: input.conversationId,
@@ -284,6 +321,7 @@ export async function streamSellerCopilot(
                 modeSessionId: input.modeSessionId,
             }),
         },
+        input.accessToken,
     );
 
     if (!response.ok || !response.body) {

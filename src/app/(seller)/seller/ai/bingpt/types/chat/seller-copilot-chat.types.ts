@@ -5,6 +5,7 @@ import type {
     SellerCopilotAnswerStatus,
     SellerCopilotCitation,
     SellerCopilotInteractionMode,
+    SellerCopilotActionProposal,
 } from '@/services/seller/types/seller-copilot.types';
 import type { SellerCopilotInsight } from '@/services/seller/types/seller-copilot-insight.types';
 
@@ -39,6 +40,7 @@ export interface SellerCopilotChatMessage {
         resultMessage?: string;
         isConfirming?: boolean;
     };
+    actionProposals?: SellerCopilotActionProposal[];
     dataSources?: Array<{
         kind: 'shop_data' | 'live_data' | 'seller_profile';
         label: string;

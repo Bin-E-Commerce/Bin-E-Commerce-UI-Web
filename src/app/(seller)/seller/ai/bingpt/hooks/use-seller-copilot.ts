@@ -1,5 +1,5 @@
 // Composition root của Seller Copilot; ghép state message, mode hiện tại, stream SSE và conversation actions.
-// Mode được giữ qua nhiều lượt trong conversation, đồng bộ lại khi mở lịch sử và reset về Chat cho conversation mới.
+// Mode được giữ qua nhiều lượt trong conversation; conversation mới mặc định vào Dữ liệu shop.
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
@@ -13,11 +13,15 @@ import { useSellerCopilotStream } from './streaming/use-seller-copilot-stream';
 
 export type { SellerCopilotChatMessage };
 
+// Dùng chung một mặc định cho trang mới, chat mới và lịch sử cũ chưa lưu mode.
+// Conversation có mode đã lưu vẫn ưu tiên khôi phục mode đó, không bị ghi đè bởi mặc định.
+const DEFAULT_INTERACTION_MODE: SellerCopilotInteractionMode = 'shop_data';
+
 // Chắp nối message/history/stream; khi tạo phiên mới, hủy request và reset mode để không mang nguồn của phiên trước sang phiên mới.
 export function useSellerCopilot() {
     const accessToken = useAppSelector((state) => state.auth.accessToken);
     const [interactionMode, setInteractionMode] =
-        useState<SellerCopilotInteractionMode>('chat');
+        useState<SellerCopilotInteractionMode>(DEFAULT_INTERACTION_MODE);
     const [isModeChanging, setIsModeChanging] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [error, setError] = useState<string>();
@@ -135,12 +139,13 @@ export function useSellerCopilot() {
         ],
     );
 
+    // Bắt đầu chat sạch và chọn lại nguồn mặc định, tránh để lựa chọn của conversation trước rò sang chat mới.
     const startNewConversation = useCallback(() => {
         // Vô hiệu hóa kết quả mở lịch sử đang chờ trước khi reset, tránh mode cũ quay lại sau khi bấm chat mới.
         conversationSelectionVersionRef.current += 1;
         resetStreaming();
         resetMessages();
-        setInteractionMode('chat');
+        setInteractionMode(DEFAULT_INTERACTION_MODE);
         modeSessionIdRef.current = undefined;
         setError(undefined);
     }, [resetMessages, resetStreaming]);
@@ -160,8 +165,8 @@ export function useSellerCopilot() {
             } else if (
                 activeConversationIdRef.current === targetConversationId
             ) {
-                // Chỉ reset mode khi lần tải mới nhất đã thực sự chọn chat đích nhưng chat chưa có mode lưu.
-                setInteractionMode('chat');
+                // Chỉ dùng mặc định khi lần tải mới nhất chọn đúng chat đích nhưng lịch sử chưa có mode lưu.
+                setInteractionMode(DEFAULT_INTERACTION_MODE);
                 modeSessionIdRef.current = undefined;
             }
             return loadedSession;
@@ -186,6 +191,8 @@ export function useSellerCopilot() {
         error,
         sendMessage: streamController.sendMessage,
         confirmAction: streamController.confirmAction,
+        confirmActions: streamController.confirmActions,
+        reviseAction: streamController.reviseAction,
         stop: streamController.stop,
         loadConversation,
         loadMoreConversationMessages:

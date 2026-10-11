@@ -17,7 +17,8 @@ import {
 } from '@/components/ui/tooltip';
 import type { SellerCopilotModeControlProps } from '../../../types/composer/composer.types';
 
-// Giữ nút mode hình tròn, căn icon giữa; hover chỉ hiện tooltip còn click mới mở menu chọn mode.
+// Giữ nút mode hình tròn, đặt Dữ liệu shop đầu menu và dùng con trỏ pointer cho mọi lựa chọn.
+// Thứ tự/cursor chỉ ảnh hưởng trình bày; value gửi lên hook/backend của từng mode không đổi.
 export function SellerCopilotModeControl({
     mode,
     disabled = false,
@@ -67,7 +68,7 @@ export function SellerCopilotModeControl({
                               ? 'Hồ sơ và dữ liệu live của shop'
                               : mode === 'knowledge'
                                 ? 'Tra cứu chính sách và hướng dẫn'
-                                : 'AI Agent · Chỉnh tồn kho'}
+                                : 'AI Agent · Tra cứu shop và đề xuất thao tác'}
                     </TooltipContent>
                 </Tooltip>
                 <SelectContent
@@ -77,29 +78,29 @@ export function SellerCopilotModeControl({
                     className="w-[160px] min-w-[160px] rounded-xl border border-zinc-200 p-1 shadow-xl shadow-zinc-900/10"
                 >
                     <SelectItem
-                        value="chat"
-                        className="h-9 gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
-                    >
-                        <MessageCircle />
-                        <span>Trò chuyện</span>
-                    </SelectItem>
-                    <SelectItem
                         value="shop_data"
-                        className="h-9 gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
+                        className="h-9 cursor-pointer gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
                     >
                         <Store />
                         <span>Dữ liệu shop</span>
                     </SelectItem>
                     <SelectItem
+                        value="chat"
+                        className="h-9 cursor-pointer gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
+                    >
+                        <MessageCircle />
+                        <span>Trò chuyện</span>
+                    </SelectItem>
+                    <SelectItem
                         value="knowledge"
-                        className="h-9 gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
+                        className="h-9 cursor-pointer gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
                     >
                         <BookOpen />
                         <span>Tài liệu</span>
                     </SelectItem>
                     <SelectItem
                         value="agent"
-                        className="h-9 gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
+                        className="h-9 cursor-pointer gap-2.5 rounded-lg px-2.5 pr-9 text-[13px]"
                     >
                         <Bot />
                         <span>AI Agent</span>

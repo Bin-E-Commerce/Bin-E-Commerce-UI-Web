@@ -33,6 +33,8 @@ it('renders a friendly unsupported notice without showing irrelevant sources', (
             isStreaming={false}
             onSendMessage={jest.fn()}
             onConfirmAction={jest.fn()}
+            onConfirmActions={jest.fn()}
+            onReviseAction={jest.fn()}
         />,
     );
 
@@ -62,6 +64,8 @@ it('hides backend source labels for an answered shop-data message', () => {
             isStreaming={false}
             onSendMessage={jest.fn()}
             onConfirmAction={jest.fn()}
+            onConfirmActions={jest.fn()}
+            onReviseAction={jest.fn()}
         />,
     );
 

@@ -45,6 +45,8 @@ export default function SellerCopilotWorkspace({
         error,
         sendMessage,
         confirmAction,
+        confirmActions,
+        reviseAction,
         stop,
         loadConversation,
         loadMoreConversationMessages,
@@ -273,6 +275,20 @@ export default function SellerCopilotWorkspace({
                                 onSendMessage={handleSendMessage}
                                 onConfirmAction={(messageId, proposal) =>
                                     void confirmAction(messageId, proposal)
+                                }
+                                onConfirmActions={(messageId, proposals) =>
+                                    void confirmActions(messageId, proposals)
+                                }
+                                onReviseAction={(
+                                    messageId,
+                                    proposal,
+                                    nextAvailable,
+                                ) =>
+                                    void reviseAction(
+                                        messageId,
+                                        proposal,
+                                        nextAvailable,
+                                    )
                                 }
                             />
                         ) : isLoadingConversation ||

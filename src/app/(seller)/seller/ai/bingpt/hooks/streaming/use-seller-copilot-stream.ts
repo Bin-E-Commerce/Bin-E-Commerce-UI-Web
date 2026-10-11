@@ -9,7 +9,9 @@ import {
     type SetStateAction,
 } from 'react';
 import {
+    confirmSellerCopilotActionBatch,
     confirmSellerCopilotInventoryAction,
+    reviseSellerCopilotInventoryProposal,
     streamSellerCopilot,
 } from '@/services/seller/api/seller-copilot.api';
 import type {
@@ -42,6 +44,17 @@ export interface SellerCopilotStreamController {
     confirmAction: (
         assistantMessageId: string,
         proposal: SellerCopilotChatMessage['actionProposal'],
+    ) => Promise<void>;
+    confirmActions: (
+        assistantMessageId: string,
+        proposals: SellerCopilotChatMessage['actionProposals'],
+    ) => Promise<void>;
+    reviseAction: (
+        assistantMessageId: string,
+        proposal: NonNullable<
+            SellerCopilotChatMessage['actionProposals']
+        >[number],
+        nextAvailable: number,
     ) => Promise<void>;
 }
 
@@ -285,6 +298,26 @@ export function useSellerCopilotStream({
                                 ),
                             );
                         }
+                        if (event.type === 'action_batch_proposed') {
+                            setMessages((current) =>
+                                current.map((item) =>
+                                    item.id === assistantId
+                                        ? {
+                                              ...item,
+                                              actionProposals:
+                                                  event.proposals.map(
+                                                      (proposal) => ({
+                                                          ...proposal,
+                                                          batchId:
+                                                              event.batchId,
+                                                          status: 'pending' as const,
+                                                      }),
+                                                  ),
+                                          }
+                                        : item,
+                                ),
+                            );
+                        }
                         if (event.type === 'insight') {
                             setMessages((current) =>
                                 current.map((item) =>
@@ -508,6 +541,202 @@ export function useSellerCopilotStream({
         [accessToken, setMessages],
     );
 
+    // Xác nhận các dòng được chọn bằng API batch; trạng thái được cập nhật theo kết quả từng proposal dù có lỗi một phần.
+    const confirmActions = useCallback(
+        async (
+            assistantMessageId: string,
+            proposals: SellerCopilotChatMessage['actionProposals'],
+        ) => {
+            if (
+                !accessToken ||
+                !proposals?.length ||
+                confirmingProposalIdRef.current
+            )
+                return;
+            const eligible = proposals.filter(
+                (proposal) =>
+                    proposal.status === 'pending' &&
+                    Date.parse(proposal.expiresAt) > Date.now(),
+            );
+            if (!eligible.length) return;
+            confirmingProposalIdRef.current = eligible[0]?.proposalId ?? null;
+            setMessages((current) =>
+                current.map((item) =>
+                    item.id === assistantMessageId
+                        ? {
+                              ...item,
+                              actionProposals: item.actionProposals?.map(
+                                  (proposal) =>
+                                      eligible.some(
+                                          (selected) =>
+                                              selected.proposalId ===
+                                              proposal.proposalId,
+                                      )
+                                          ? { ...proposal, isConfirming: true }
+                                          : proposal,
+                              ),
+                          }
+                        : item,
+                ),
+            );
+            try {
+                const results = await confirmSellerCopilotActionBatch(
+                    eligible.map((proposal) => proposal.proposalId),
+                    { accessToken },
+                );
+                setMessages((current) =>
+                    current.map((item) =>
+                        item.id === assistantMessageId
+                            ? {
+                                  ...item,
+                                  actionProposals: item.actionProposals?.map(
+                                      (proposal) => {
+                                          const result = results.find(
+                                              (entry) =>
+                                                  entry.proposalId ===
+                                                  proposal.proposalId,
+                                          );
+                                          return result
+                                              ? {
+                                                    ...proposal,
+                                                    status: result.status,
+                                                    resultMessage:
+                                                        result.message,
+                                                    isConfirming: false,
+                                                }
+                                              : proposal;
+                                      },
+                                  ),
+                              }
+                            : item,
+                    ),
+                );
+            } catch (error) {
+                setMessages((current) =>
+                    current.map((item) =>
+                        item.id === assistantMessageId
+                            ? {
+                                  ...item,
+                                  actionProposals: item.actionProposals?.map(
+                                      (proposal) =>
+                                          eligible.some(
+                                              (selected) =>
+                                                  selected.proposalId ===
+                                                  proposal.proposalId,
+                                          )
+                                              ? {
+                                                    ...proposal,
+                                                    status: 'failed',
+                                                    isConfirming: false,
+                                                    resultMessage:
+                                                        error instanceof Error
+                                                            ? error.message
+                                                            : 'Không thể xác nhận đề xuất.',
+                                                }
+                                              : proposal,
+                                  ),
+                              }
+                            : item,
+                    ),
+                );
+            } finally {
+                confirmingProposalIdRef.current = null;
+            }
+        },
+        [accessToken, setMessages],
+    );
+
+    // Lưu chỉnh sửa target về server trước khi cho xác nhận để UI không thể ghi một giá trị khác với proposal đã persist.
+    const reviseAction = useCallback(
+        async (
+            assistantMessageId: string,
+            proposal: NonNullable<
+                SellerCopilotChatMessage['actionProposals']
+            >[number],
+            nextAvailable: number,
+        ) => {
+            if (
+                !accessToken ||
+                proposal.status !== 'pending' ||
+                !Number.isSafeInteger(nextAvailable) ||
+                nextAvailable < 0
+            )
+                return;
+            setMessages((current) =>
+                current.map((item) =>
+                    item.id === assistantMessageId
+                        ? {
+                              ...item,
+                              actionProposals: item.actionProposals?.map(
+                                  (entry) =>
+                                      entry.proposalId === proposal.proposalId
+                                          ? { ...entry, isUpdating: true }
+                                          : entry,
+                              ),
+                          }
+                        : item,
+                ),
+            );
+            try {
+                await reviseSellerCopilotInventoryProposal(
+                    proposal.proposalId,
+                    nextAvailable,
+                    { accessToken },
+                );
+                setMessages((current) =>
+                    current.map((item) =>
+                        item.id === assistantMessageId
+                            ? {
+                                  ...item,
+                                  actionProposals: item.actionProposals?.map(
+                                      (entry) =>
+                                          entry.proposalId ===
+                                              proposal.proposalId &&
+                                          entry.payload.kind === 'SET_INVENTORY'
+                                              ? {
+                                                    ...entry,
+                                                    payload: {
+                                                        ...entry.payload,
+                                                        nextAvailable,
+                                                    },
+                                                    isUpdating: false,
+                                                    resultMessage: undefined,
+                                                }
+                                              : entry,
+                                  ),
+                              }
+                            : item,
+                    ),
+                );
+            } catch (error) {
+                setMessages((current) =>
+                    current.map((item) =>
+                        item.id === assistantMessageId
+                            ? {
+                                  ...item,
+                                  actionProposals: item.actionProposals?.map(
+                                      (entry) =>
+                                          entry.proposalId ===
+                                          proposal.proposalId
+                                              ? {
+                                                    ...entry,
+                                                    isUpdating: false,
+                                                    resultMessage:
+                                                        error instanceof Error
+                                                            ? error.message
+                                                            : 'Không thể lưu mức đề xuất.',
+                                                }
+                                              : entry,
+                                  ),
+                              }
+                            : item,
+                    ),
+                );
+            }
+        },
+        [accessToken, setMessages],
+    );
+
     // Dừng stream theo thao tác người dùng và flush phần token đã nhận để không mất nội dung đang hiển thị.
     const stop = useCallback(() => {
         streamAbortRef.current?.abort();
@@ -534,5 +763,12 @@ export function useSellerCopilotStream({
         setIsStreaming(false);
     }, [flushTokenBuffer, setIsStreaming, streamAbortRef]);
 
-    return { sendMessage, stop, resetStreaming, confirmAction };
+    return {
+        sendMessage,
+        stop,
+        resetStreaming,
+        confirmAction,
+        confirmActions,
+        reviseAction,
+    };
 }

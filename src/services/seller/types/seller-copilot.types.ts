@@ -2,6 +2,57 @@
 // Type này không chứa access token và không cho client truyền shop scope.
 import type { SellerCopilotInsight } from './seller-copilot-insight.types';
 
+export type SellerCopilotActionPayload =
+    | {
+          kind: 'SET_INVENTORY';
+          productId: string;
+          productName: string;
+          variantId: string;
+          variantName: string;
+          expectedAvailable: number;
+          nextAvailable: number;
+          lowStockThreshold?: number;
+          recommendationReason?: 'LOW_STOCK';
+      }
+    | {
+          kind: 'SET_VARIANT_PRICE';
+          productId: string;
+          productName: string;
+          variantId: string;
+          variantName: string;
+          expectedPrice: number;
+          nextPrice: number;
+          minimumPrice?: number;
+          priceRecommendation?: {
+              kind: 'SLOW_MOVING_CLEARANCE';
+              available: number;
+              quantitySold: number;
+              periodDays: 7 | 30 | 90;
+              requestedDiscountPercent: number;
+              effectiveDiscountPercent: number;
+          };
+      }
+    | {
+          kind: 'UPDATE_PRODUCT_CONTENT';
+          productId: string;
+          productName: string;
+          expectedName?: string;
+          nextName?: string;
+          expectedDescription?: string | null;
+          nextDescription?: string;
+      };
+
+export interface SellerCopilotActionProposal {
+    proposalId: string;
+    batchId: string;
+    payload: SellerCopilotActionPayload;
+    expiresAt: string;
+    status: 'pending' | 'completed' | 'failed' | 'expired';
+    resultMessage?: string;
+    isConfirming?: boolean;
+    isUpdating?: boolean;
+}
+
 // Mode do người bán chọn; mode chỉ xác định nguồn backend được phép gọi, không tự cấp quyền ghi dữ liệu.
 export type SellerCopilotInteractionMode =
     'chat' | 'shop_data' | 'knowledge' | 'agent';
@@ -28,7 +79,8 @@ export type SellerCopilotAnswerStatus =
     | 'partial'
     | 'in_development'
     | 'unsupported'
-    | 'provider_error';
+    | 'provider_error'
+    | 'source_unavailable';
 
 export interface SellerCapabilityStatusItem {
     code: string;
@@ -60,19 +112,20 @@ export interface SellerCopilotMessage {
         timelineEvent?: 'mode_changed';
         actionProposal?: {
             proposalId: string;
-            payload: {
-                kind: 'SET_INVENTORY';
-                productId: string;
-                productName: string;
-                variantId: string;
-                variantName: string;
-                expectedAvailable: number;
-                nextAvailable: number;
-            };
+            batchId?: string | null;
+            payload: SellerCopilotActionPayload;
             expiresAt: string;
             status?: 'pending' | 'completed' | 'failed';
             result?: Record<string, unknown>;
         };
+        actionProposals?: Array<{
+            proposalId: string;
+            batchId: string;
+            payload: SellerCopilotActionPayload;
+            expiresAt: string;
+            status?: 'pending' | 'completed' | 'failed';
+            result?: Record<string, unknown>;
+        }>;
     } | null;
     createdAt: string;
 }
@@ -166,6 +219,15 @@ export type SellerCopilotStreamEvent =
               nextAvailable: number;
           };
           expiresAt: string;
+      }
+    | {
+          type: 'action_batch_proposed';
+          batchId: string;
+          proposals: Array<{
+              proposalId: string;
+              payload: SellerCopilotActionPayload;
+              expiresAt: string;
+          }>;
       }
     | {
           type: 'action_result';
