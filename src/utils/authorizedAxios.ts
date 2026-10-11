@@ -1,13 +1,11 @@
-// Mục đích của file này là tạo ra một instance axios
-// có khả năng tự động refresh access token khi nhận được lỗi 401 Unauthorized từ server,
-// đồng thời quản lý việc dispatch các action liên quan đến authentication trong Redux store.
-// Điều này giúp đảm bảo trải nghiệm người dùng mượt mà hơn, tránh việc bị ngắt quãng khi token hết hạn
-// và cần phải đăng nhập lại.
+// File này sở hữu transport có xác thực cho Axios và Fetch trong trình duyệt.
+// Nó đồng bộ access token với Redux, refresh một lần khi gặp 401 và giữ nguyên
+// quy tắc không retry request guest hoặc request mang token của phiên cũ.
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import type { AppStore } from '@/store';
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
-import { setAuth, logoutUser, syncAuthViewer } from '@/store/slices/authSlice';
+import { clearAuth, setAuth, syncAuthViewer } from '@/store/slices/authSlice';
 import {
     completeAxiosRequest,
     trackAxiosRequest,
@@ -37,9 +35,82 @@ const authorizedAxios = axios.create({
     },
 });
 
-let refreshTokenPromise: Promise<boolean> | null = null;
-let subscribers: ((ok: boolean) => void)[] = []; // Danh sách các callback function đang chờ kết quả của việc refresh token
+let refreshTokenPromise: Promise<string | null> | null = null;
 let accessProfileSyncPromise: Promise<void> | null = null;
+
+// Dùng chung một lần refresh trong tab; auth API sẽ khóa thêm giữa các tab cùng origin.
+// Token mới được cập nhật vào Redux trước khi trả về để request retry và React cùng thấy một phiên.
+export function refreshAccessToken(): Promise<string | null> {
+    if (!refreshTokenPromise) {
+        refreshTokenPromise = import('@/services/auth')
+            .then(({ authService }) => authService.refresh())
+            .then((response) => {
+                const accessToken = response?.data?.accessToken;
+                if (!accessToken) return null;
+
+                appStore?.dispatch(
+                    setAuth({
+                        accessToken,
+                        sessionId: response.data.sessionId,
+                        user: response.data.user,
+                    }),
+                );
+                return accessToken;
+            })
+            .catch(() => null)
+            .finally(() => {
+                refreshTokenPromise = null;
+            });
+    }
+
+    return refreshTokenPromise;
+}
+
+// Gọi Fetch bằng token đang mới nhất; nếu gặp 401, thử token vừa được request khác cập nhật hoặc refresh cookie đúng một lần.
+// Trả nguyên Response cuối cùng để mỗi caller tự phân tích lỗi/JSON/SSE theo hợp đồng riêng của endpoint.
+export async function authorizedFetch(
+    input: RequestInfo | URL,
+    init: RequestInit = {},
+    fallbackAccessToken?: string | null,
+): Promise<Response> {
+    const send = (accessToken: string) => {
+        const headers = new Headers(init.headers);
+        headers.set('Authorization', `Bearer ${accessToken}`);
+        headers.set('X-Requested-With', 'XMLHttpRequest');
+
+        return fetch(input, {
+            ...init,
+            credentials: init.credentials ?? 'include',
+            headers,
+        });
+    };
+
+    const accessToken =
+        appStore?.getState().auth.accessToken ?? fallbackAccessToken;
+    if (!accessToken) {
+        return fetch(input, {
+            ...init,
+            credentials: init.credentials ?? 'include',
+        });
+    }
+
+    const response = await send(accessToken);
+    if (response.status !== 401 || init.signal?.aborted) return response;
+
+    // Nếu một request khác đã refresh xong, retry token mới luôn thay vì rotate refresh cookie thêm lần nữa.
+    const latestAccessToken = appStore?.getState().auth.accessToken;
+    if (latestAccessToken && latestAccessToken !== accessToken) {
+        return send(latestAccessToken);
+    }
+
+    const refreshedAccessToken = await refreshAccessToken();
+    if (!refreshedAccessToken) {
+        appStore?.dispatch(clearAuth());
+        return response;
+    }
+
+    return send(refreshedAccessToken);
+}
 
 // Đồng bộ accessProfile tối đa một lần khi nhiều request cùng nhận 403.
 // Request bị từ chối vẫn giữ nguyên 403; dữ liệu mới chỉ giúp layout chuyển user sang màn hình deny ngay sau đó.
@@ -54,14 +125,6 @@ function synchronizeAccessProfileAfterForbidden(): void {
         .finally(() => {
             accessProfileSyncPromise = null;
         });
-}
-
-// Hàm này sẽ được gọi sau khi quá trình refresh token hoàn tất,
-// để thông báo cho tất cả các request đang chờ biết kết quả của việc refresh token (thành công hay thất bại)
-// và tiếp tục xử lý tương ứng (retry request hoặc logout)
-function onRefreshed(success: boolean) {
-    subscribers.forEach((cb) => cb(success));
-    subscribers = [];
 }
 
 // Request interceptor — attach access token vào header Authorization của mỗi request
@@ -97,10 +160,7 @@ authorizedAxios.interceptors.response.use(
         // Kiểm tra nếu lỗi là 401 Unauthorized và request chưa được thử lại trước đó
         const originalRequest = error.config as CustomAxiosRequestConfig;
 
-        // Nếu lỗi 401 xảy ra trên request refresh token → logout ngay, không retry
-        // Nếu lỗi 401 xảy ra trên request khác và chưa retry → thử refresh token
-        // Nếu refresh token thành công → retry request gốc với token mới
-        // Nếu refresh token thất bại → logout người dùng để đảm bảo an toàn cho hệ thống
+        // Chỉ xử lý request 401 có token; request guest hoặc request thuộc phiên cũ không được phép xóa phiên hiện tại.
         if (error.response?.status === 401 && originalRequest) {
             const currentAccessToken = appStore?.getState().auth.accessToken;
             const authorizationHeader =
@@ -111,90 +171,43 @@ authorizedAxios.interceptors.response.use(
                     ? authorizationHeader.replace(/^Bearer\s+/i, '')
                     : undefined;
 
-            // Chi refresh khi request that su duoc gui bang access token hien tai.
-            // Request guest khong co token hoac request cu mang token truoc khi login
-            // khong duoc phep logout phien moi, tranh race lam user quay lai login.
+            if (!currentAccessToken || !requestAccessToken) {
+                return Promise.reject(error);
+            }
+
+            // Các endpoint xác thực đặc biệt không được refresh đệ quy; chỉ xóa state nếu logout bị từ chối.
             if (
-                !currentAccessToken ||
-                !requestAccessToken ||
-                requestAccessToken !== currentAccessToken
+                originalRequest.url?.includes(`${API_VERSION}/auth/refresh`) ||
+                originalRequest.url?.includes(`${API_VERSION}/auth/logout`)
             ) {
+                appStore?.dispatch(clearAuth());
                 return Promise.reject(error);
             }
 
-            // Nếu request thất bại là chính request refresh token → logout
-            if (originalRequest.url?.includes(`${API_VERSION}/auth/refresh`)) {
-                appStore?.dispatch(logoutUser());
-                return Promise.reject(error);
-            }
-
-            // Nếu request thất bại là chính request logout → không retry, chỉ clear state.
-            // Tránh vòng lặp: logout 401 → refresh → dispatch(logoutUser()) → logout 401 → ...
-            if (originalRequest.url?.includes(`${API_VERSION}/auth/logout`)) {
-                appStore?.dispatch(logoutUser());
-                return Promise.reject(error);
-            }
-
-            // Nếu request đã được thử lại trước đó mà vẫn nhận được 401 → logout để tránh vòng lặp vô hạn
+            // Một request đã retry mà vẫn 401 là lỗi xác thực cuối cùng; dừng tại đây để không tạo vòng lặp.
             if (originalRequest._retry) {
-                appStore?.dispatch(logoutUser());
+                if (requestAccessToken === currentAccessToken) {
+                    appStore?.dispatch(clearAuth());
+                }
                 return Promise.reject(error);
             }
 
-            // Đánh dấu request này đã được thử lại để tránh lặp vô hạn nếu refresh token cũng bị lỗi
             originalRequest._retry = true;
 
-            // Nếu đã có một request refresh token đang chờ xử lý,
-            // không tạo thêm request mới mà chỉ thêm callback vào subscribers để chờ kết quả
-            if (!refreshTokenPromise) {
-                refreshTokenPromise = import('@/services/auth')
-                    .then(({ authService }) => authService.refresh())
-                    .then((res) => {
-                        // Nếu refresh token thành công và nhận được access token mới,
-                        // cập nhật Redux store và thông báo cho các request đang chờ biết kết quả
-                        if (res?.data?.accessToken) {
-                            appStore?.dispatch(
-                                setAuth({
-                                    accessToken: res.data.accessToken,
-                                    sessionId: res.data.sessionId,
-                                    user: res.data.user,
-                                }),
-                            );
-                            onRefreshed(true); // Thông báo cho các request đang chờ biết rằng refresh token thành công
-                            return true;
-                        }
-                        onRefreshed(false);
-                        return false;
-                    })
-                    .catch(() => {
-                        onRefreshed(false);
-                        appStore?.dispatch(logoutUser());
-                        return false;
-                    })
-                    .finally(() => {
-                        refreshTokenPromise = null;
-                    });
+            // Nếu request cũ tới trễ sau khi một request khác đã refresh, dùng token mới hiện tại để retry.
+            if (requestAccessToken !== currentAccessToken) {
+                originalRequest.headers.Authorization = `Bearer ${currentAccessToken}`;
+                return authorizedAxios(originalRequest);
             }
 
-            // Trả về một Promise mới cho request gốc,
-            // sẽ được resolve hoặc reject sau khi quá trình refresh token hoàn tất
-            return new Promise((resolve, reject) => {
-                subscribers.push((ok: boolean) => {
-                    // Nếu refresh token thành công,
-                    // retry request gốc với token mới đã được cập nhật trong header Authorization
-                    if (ok) {
-                        // Lấy token mới từ Redux store sau khi refresh thành công
-                        const token = appStore?.getState().auth.accessToken;
+            const refreshedAccessToken = await refreshAccessToken();
+            if (!refreshedAccessToken) {
+                appStore?.dispatch(clearAuth());
+                return Promise.reject(error);
+            }
 
-                        // Cập nhật header Authorization của request gốc với token mới
-                        if (token)
-                            originalRequest.headers.Authorization = `Bearer ${token}`;
-                        resolve(authorizedAxios(originalRequest)); // Retry request gốc với token mới
-                    } else {
-                        reject(error);
-                    }
-                });
-            });
+            originalRequest.headers.Authorization = `Bearer ${refreshedAccessToken}`;
+            return authorizedAxios(originalRequest);
         }
 
         if (
