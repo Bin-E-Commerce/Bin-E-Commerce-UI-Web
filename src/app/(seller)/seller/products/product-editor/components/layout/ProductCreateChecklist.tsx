@@ -34,8 +34,9 @@ function getCompletionPercentage(
     return Math.round((completedCount / PRODUCT_CREATE_STEPS.length) * 100);
 }
 
-// Hiển thị trạng thái từng bước theo dạng ngang để tên bước có đủ chiều rộng,
-// đồng thời vẫn giữ nhãn lỗi ngắn và số lượng lỗi còn lại để seller biết cần xử lý gì.
+// Hiển thị tiến độ và các bước trong mật độ gọn, nhưng vẫn giữ lưới responsive.
+// Nút tự cao theo nội dung vì Button mặc định có chiều cao cố định và nowrap.
+// Lưới lấy chiều cao theo nội dung dài nhất; các nút lấp đầy ô để card cùng cao.
 export function ProductCreateChecklist({
     activeStep,
     validations,
@@ -45,16 +46,16 @@ export function ProductCreateChecklist({
 
     return (
         <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                 <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                         Tiến độ sản phẩm
                     </p>
-                    <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <h2 className="text-lg font-semibold leading-6 text-zinc-950 sm:text-xl">
+                    <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <h2 className="text-base font-semibold leading-5 text-zinc-950 sm:text-lg">
                             Hoàn thiện thông tin
                         </h2>
-                        <span className="text-sm font-semibold tabular-nums text-zinc-600">
+                        <span className="text-xs font-semibold tabular-nums text-zinc-600">
                             {completion}%
                         </span>
                     </div>
@@ -62,10 +63,10 @@ export function ProductCreateChecklist({
             </div>
 
             <nav
-                className="border-t border-zinc-100 px-3 py-3 sm:px-5 sm:py-4"
+                className="border-t border-zinc-100 px-3 py-2.5 sm:px-4"
                 aria-label="Các bước tạo sản phẩm"
             >
-                <ol className="grid gap-2 md:grid-cols-5">
+                <ol className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-5">
                     {PRODUCT_CREATE_STEPS.map((step, index) => {
                         const validation = validations[step.id];
                         const active = activeStep === step.id;
@@ -77,12 +78,12 @@ export function ProductCreateChecklist({
                               : (validation.errors[0] ?? step.description);
 
                         return (
-                            <li key={step.id} className="min-w-0">
+                            <li key={step.id} className="flex min-w-0">
                                 <Button
                                     variant="ghost"
                                     type="button"
                                     className={cn(
-                                        'flex min-h-[4.25rem] w-full min-w-0 items-start gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-[background-color,border-color,box-shadow,color]',
+                                        'flex h-full min-h-14 w-full min-w-0 items-start gap-2 whitespace-normal rounded-lg border px-2.5 py-2 text-left transition-[background-color,border-color,box-shadow,color]',
                                         active
                                             ? 'border-zinc-950 bg-zinc-50 text-zinc-950 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.45)]'
                                             : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50 hover:text-zinc-950',
@@ -93,7 +94,7 @@ export function ProductCreateChecklist({
                                 >
                                     <span
                                         className={cn(
-                                            'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border',
+                                            'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border',
                                             active
                                                 ? 'border-zinc-950 bg-zinc-950 text-white'
                                                 : validation.valid
@@ -104,25 +105,25 @@ export function ProductCreateChecklist({
                                         )}
                                     >
                                         {active ? (
-                                            <Circle className="size-2.5 fill-current" />
-                                        ) : validation.valid ? (
-                                            <Check className="size-3" />
-                                        ) : validation.errors.length > 0 ? (
-                                            <CircleAlert className="size-3" />
-                                        ) : (
                                             <Circle className="size-2 fill-current" />
+                                        ) : validation.valid ? (
+                                            <Check className="size-2.5" />
+                                        ) : validation.errors.length > 0 ? (
+                                            <CircleAlert className="size-2.5" />
+                                        ) : (
+                                            <Circle className="size-1.5 fill-current" />
                                         )}
                                     </span>
                                     <span className="min-w-0 flex-1">
-                                        <span className="block break-words text-sm font-semibold leading-5">
-                                            <span className="mr-1 text-xs font-medium opacity-60">
+                                        <span className="block break-words text-xs font-semibold leading-4">
+                                            <span className="mr-1 text-[10px] font-medium opacity-60">
                                                 {index + 1}.
                                             </span>
                                             {step.label}
                                         </span>
                                         <span
                                             className={cn(
-                                                'mt-1 block break-words text-xs leading-4',
+                                                'mt-0.5 block break-words text-[11px] leading-4',
                                                 active
                                                     ? 'text-zinc-600'
                                                     : 'text-zinc-500',
@@ -138,7 +139,7 @@ export function ProductCreateChecklist({
                 </ol>
             </nav>
 
-            <p className="border-t border-zinc-100 px-4 py-3 text-xs leading-5 text-zinc-500 sm:px-5">
+            <p className="border-t border-zinc-100 px-3 py-2 text-[11px] leading-4 text-zinc-500 sm:px-4">
                 Chỉ có thể đăng bán khi các trường bắt buộc và từng SKU đều hợp
                 lệ.
             </p>

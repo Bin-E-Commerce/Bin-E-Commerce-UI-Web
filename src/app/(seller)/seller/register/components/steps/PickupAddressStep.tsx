@@ -1,4 +1,5 @@
 // Bước cấu hình kho lấy hàng của Seller dùng trực tiếp mã master data GHN qua Gateway.
+// Tên liên hệ chỉ nhận tên người; số nhà/đường vẫn cho phép chữ số.
 
 import { useMemo } from 'react';
 import { MapPinned } from 'lucide-react';
@@ -100,6 +101,7 @@ export function PickupAddressStep({
                         id="pickupName"
                         value={values.contactName}
                         className={inputClassName}
+                        maxLength={160}
                         placeholder="Tên người liên hệ"
                         onChange={(event) =>
                             onChange({ contactName: event.target.value })
@@ -116,6 +118,8 @@ export function PickupAddressStep({
                         id="pickupPhone"
                         value={values.phone}
                         className={inputClassName}
+                        inputMode="tel"
+                        maxLength={13}
                         placeholder="Số điện thoại kho"
                         onChange={(event) =>
                             onChange({ phone: event.target.value })
@@ -201,6 +205,7 @@ export function PickupAddressStep({
                             id="pickupAddress"
                             value={values.addressLine}
                             className={textareaClassName}
+                            maxLength={500}
                             placeholder="Số nhà, tên đường, ghi chú lấy hàng nếu có."
                             onChange={(event) =>
                                 onChange({ addressLine: event.target.value })

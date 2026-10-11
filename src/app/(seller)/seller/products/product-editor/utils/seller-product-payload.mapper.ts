@@ -1,3 +1,5 @@
+// Ánh xạ state Seller sang payload Product Service, chỉ gửi các trường sản phẩm còn được hỗ trợ.
+// Mapper không tạo lại GTIN từ dữ liệu form hoặc reference cũ.
 import type {
     CreateSellerProductPayload,
     CreateSellerProductStatus,
@@ -72,7 +74,6 @@ export function toCreateSellerProductPayload(
         brandId: emptyToUndefined(values.brandId),
         description: values.description.trim(),
         shortDescription: emptyToUndefined(values.shortDescription),
-        gtin: emptyToUndefined(values.gtin),
         sellerSku: emptyToUndefined(values.sellerSku),
         condition: values.condition,
         countryOfOrigin: emptyToUndefined(values.countryOfOrigin),
@@ -105,8 +106,6 @@ export function toCreateSellerProductPayload(
         variants: values.variants.map((variant) => ({
             optionValueClientIds: variant.optionValueClientIds,
             sku: emptyToUndefined(variant.sku),
-            gtin: emptyToUndefined(variant.gtin),
-            withoutGtin: !variant.gtin.trim() && variant.withoutGtin,
             price: Number(variant.price),
             originalPrice: variant.originalPrice
                 ? Number(variant.originalPrice)

@@ -1,3 +1,4 @@
+// Thu thập phương thức nhận tiền; account number là chuỗi số để giữ nguyên các số 0 ở đầu.
 import { BadgeCheck, CalendarDays, Landmark } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -111,6 +112,7 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                             value={values.accountNumber}
                             className={inputClassName}
                             inputMode="numeric"
+                            maxLength={30}
                             autoComplete="off"
                             placeholder="Ví dụ: 0123456789"
                             onChange={(event) =>
@@ -129,6 +131,7 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                             value={values.accountHolderName}
                             className={inputClassName}
                             autoComplete="name"
+                            maxLength={180}
                             placeholder={
                                 values.accountType === 'business'
                                     ? 'Tên công ty / pháp nhân'
@@ -150,6 +153,7 @@ export function PaymentStep({ values, errors, onChange }: PaymentStepProps) {
                             id="bankBranch"
                             value={values.branch}
                             className={inputClassName}
+                            maxLength={160}
                             placeholder="Không bắt buộc"
                             onChange={(event) =>
                                 onChange({ branch: event.target.value })

@@ -1,20 +1,11 @@
+// Xác thực dữ liệu form tạo/sửa sản phẩm trước khi ánh xạ sang hợp đồng Product Service.
+// Schema giữ các rule bán hàng và SKU nhưng không còn nhận diện GTIN.
 import { z } from 'zod';
 
 import {
     optionalUuidSelectionSchema,
     uuidSelectionSchema,
 } from '@/lib/validation/common-validation.schema';
-
-// Kiểm tra GTIN khi người bán thật sự khai báo mã nhận diện sản phẩm.
-const optionalGtinSchema = z
-    .string()
-    .trim()
-    .refine(
-        (value) =>
-            value.length === 0 ||
-            /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(value),
-        'GTIN phải gồm 8, 12, 13 hoặc 14 chữ số.',
-    );
 
 // Giữ số ở dạng chuỗi trong form để người dùng có thể nhập dở và hiển thị lỗi đúng vị trí.
 const positiveNumberText = (label: string) =>
@@ -50,7 +41,6 @@ export const sellerProductCreateSchema = z
             .string()
             .trim()
             .max(500, 'Mô tả ngắn không được vượt quá 500 ký tự.'),
-        gtin: optionalGtinSchema,
         sellerSku: z
             .string()
             .trim()
@@ -127,8 +117,6 @@ export const sellerProductCreateSchema = z
                     label: z.string(),
                     optionValueClientIds: z.array(z.string()).max(2),
                     sku: z.string().trim().max(160),
-                    gtin: optionalGtinSchema,
-                    withoutGtin: z.boolean(),
                     price: z
                         .string()
                         .trim()
@@ -175,15 +163,6 @@ export const sellerProductCreateSchema = z
                     message: 'Giá gốc phải lớn hơn hoặc bằng giá bán.',
                 });
             }
-
-            // Khi không dùng GTIN chung, từng SKU phải có mã riêng hoặc được đánh dấu không có GTIN.
-            if (!values.gtin && !variant.gtin && !variant.withoutGtin) {
-                context.addIssue({
-                    code: 'custom',
-                    path: ['variants', index, 'gtin'],
-                    message: 'Nhập GTIN hoặc chọn không có GTIN.',
-                });
-            }
         });
     });
 
@@ -194,7 +173,6 @@ export const initialSellerProductCreateValues = {
     brandId: '',
     description: '',
     shortDescription: '',
-    gtin: '',
     sellerSku: '',
     condition: 'new' as const,
     countryOfOrigin: '',
@@ -208,8 +186,6 @@ export const initialSellerProductCreateValues = {
             label: 'Sản phẩm mặc định',
             optionValueClientIds: [],
             sku: '',
-            gtin: '',
-            withoutGtin: true,
             price: '',
             originalPrice: '',
             stockQuantity: '0',

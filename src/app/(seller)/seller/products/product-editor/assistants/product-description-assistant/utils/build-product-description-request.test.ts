@@ -15,7 +15,6 @@ function createValues(): SellerProductCreateFormValues {
         brandId: '',
         description: 'Mô tả hiện tại của sản phẩm.',
         shortDescription: 'Tóm tắt riêng không gửi cho use case mô tả.',
-        gtin: '',
         sellerSku: '',
         condition: 'new',
         countryOfOrigin: '',

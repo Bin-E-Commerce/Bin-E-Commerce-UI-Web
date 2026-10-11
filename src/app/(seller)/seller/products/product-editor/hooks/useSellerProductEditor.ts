@@ -1,3 +1,5 @@
+// Điều phối dữ liệu tham chiếu và trạng thái wizard tạo/sửa sản phẩm phía Seller.
+// Thuộc tính đưa vào reference là nguồn thống nhất cho hiển thị, validation và payload.
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,6 +47,7 @@ import {
     readProductEditorDraft,
     saveProductEditorDraft,
 } from '../utils/product-editor-draft';
+import { isVisibleProductAttribute } from '../utils/product-attribute-visibility.util';
 
 export type ProductSubmitAction = CreateSellerProductStatus | 'UPDATE';
 
@@ -74,7 +77,7 @@ const STEP_FIELDS: Record<
         'package.widthCm',
         'package.heightCm',
     ],
-    other: ['condition', 'countryOfOrigin', 'sellerSku', 'gtin'],
+    other: ['condition', 'countryOfOrigin', 'sellerSku'],
 };
 
 // Chọn bước mở đầu từ query để thao tác “Cập nhật tồn kho” đi thẳng tới bảng SKU.
@@ -152,7 +155,7 @@ export function useSellerProductEditor(productId?: string) {
         setLoadingProduct(true);
         void (async () => {
             try {
-                const [category, attributes] = await Promise.all([
+                const [category, categoryAttributes] = await Promise.all([
                     catalogService.getCategory(detailQuery.data.categoryId),
                     catalogService.listCategoryAttributes(
                         detailQuery.data.categoryId,
@@ -162,6 +165,10 @@ export function useSellerProductEditor(productId?: string) {
                         },
                     ),
                 ]);
+                // Chỉ hydrate các thuộc tính đang được hỗ trợ; field ẩn cũng không tham gia validation hay payload cập nhật.
+                const attributes = categoryAttributes.filter(
+                    isVisibleProductAttribute,
+                );
                 const editValues = toSellerProductEditFormValues(
                     detailQuery.data,
                 );
@@ -288,12 +295,14 @@ export function useSellerProductEditor(productId?: string) {
         setLoadingAttributes(true);
 
         try {
-            const attributes = await catalogService.listCategoryAttributes(
-                category.id,
-                {
+            const categoryAttributes =
+                await catalogService.listCategoryAttributes(category.id, {
                     includeOptions: true,
                     includeConditional: true,
-                },
+                });
+            // Dùng cùng danh sách cho UI, validator và mapper để thuộc tính đã ẩn không bị gửi ngầm lên backend.
+            const attributes = categoryAttributes.filter(
+                isVisibleProductAttribute,
             );
             form.setValue(
                 'attributes',

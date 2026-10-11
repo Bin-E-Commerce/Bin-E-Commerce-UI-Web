@@ -1,9 +1,8 @@
-// UI tracking dùng chung Customer/Seller: timeline, trạng thái provider và bản đồ trình bày nội bộ.
+// UI theo dõi đơn dùng chung Customer/Seller; component chỉ trình bày trạng thái, timeline và vị trí.
 
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { ReactNode } from 'react';
 import {
     Check,
     CircleAlert,
@@ -13,8 +12,9 @@ import {
     Truck,
 } from 'lucide-react';
 
-import type { ShipmentResponse, ShipmentStatus } from '@/services/shipping';
+import type { ShipmentStatus } from '@/services/shipping';
 import { cn } from '@/lib/utils';
+import type { ShipmentTrackingCardProps } from '../types/seller-shipment';
 
 const ShipmentMap = dynamic(() => import('./shipment-map'), {
     ssr: false,
@@ -30,12 +30,6 @@ const STATUS_ORDER: ShipmentStatus[] = [
     'IN_TRANSIT',
     'DELIVERED',
 ];
-
-interface ShipmentTrackingCardProps {
-    shipment: ShipmentResponse;
-    sellerActions?: ReactNode;
-    viewer?: 'seller' | 'customer';
-}
 
 // Định dạng thời gian theo timezone người dùng; GHN có thể chưa trả ETA nên hiển thị trạng thái chờ.
 function formatShipmentDate(value: string | null): string {
@@ -72,30 +66,30 @@ export function ShipmentTrackingCard({
             : shipment.statusLabel;
 
     return (
-        <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-4 border-b border-zinc-100 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
-                <div className="flex items-start gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-zinc-950 text-white">
+        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 bg-zinc-50/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+                <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
                         <Truck className="size-5" aria-hidden="true" />
                     </div>
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">
-                            Vận chuyển
-                        </p>
-                        <h2 className="mt-1 text-base font-bold text-zinc-950">
+                    <div className="min-w-0">
+                        <h2 className="truncate text-base font-bold text-zinc-950">
                             {currentLabel}
                         </h2>
-                        <p className="mt-1 text-sm text-zinc-500">
-                            Mã vận đơn {shipment.trackingCode} · GHN Test
+                        <p className="mt-1 truncate text-xs text-zinc-500 sm:text-sm">
+                            Mã vận đơn{' '}
+                            <span className="font-medium text-zinc-700">
+                                {shipment.trackingCode}
+                            </span>
                         </p>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-                    <div className="rounded-2xl bg-zinc-50 px-3 py-2 text-right">
-                        <p className="text-[11px] text-zinc-500">
+                <div className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">
+                    <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-left shadow-sm sm:text-right">
+                        <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
                             Dự kiến giao
                         </p>
-                        <p className="mt-0.5 text-sm font-semibold text-zinc-950">
+                        <p className="mt-0.5 text-xs font-semibold text-zinc-950 sm:text-sm">
                             {formatShipmentDate(shipment.estimatedDeliveryAt)}
                         </p>
                     </div>
@@ -103,7 +97,7 @@ export function ShipmentTrackingCard({
                 </div>
             </div>
 
-            <div className="p-5 sm:p-6">
+            <div className="border-t border-zinc-100 p-4 sm:p-5">
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
                     <div>
                         <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
@@ -183,14 +177,7 @@ export function ShipmentTrackingCard({
                         <ShipmentMap
                             routePoints={shipment.routePoints}
                             currentLocation={shipment.currentLocation}
-                            demoMode={shipment.demoMode}
                         />
-                        <p className="mt-2 text-xs text-zinc-500">
-                            Lộ trình minh họa nội bộ ·{' '}
-                            {shipment.demoMode
-                                ? 'Đang chạy chế độ demo.'
-                                : 'Trạng thái được đồng bộ từ GHN Test.'}
-                        </p>
                     </div>
                 </div>
             </div>
@@ -198,7 +185,7 @@ export function ShipmentTrackingCard({
     );
 }
 
-// Chuyển mã reason từ GHN Test thành câu tiếng Việt dễ hiểu; UI không để lộ enum hoặc provider code cho khách hàng.
+// Làm sạch dấu vết tên môi trường khỏi ghi chú provider trước khi hiển thị và dùng nội dung an toàn làm fallback.
 function formatEventReason(
     reason: string | null,
     status: ShipmentStatus,
@@ -216,9 +203,17 @@ function formatEventReason(
         cancel: 'Vận đơn đã được hủy.',
     };
     const normalizedReason = reason?.trim().toLowerCase();
+    // Provider có thể nhúng tên môi trường vào ghi chú; bỏ marker và dấu phân cách thừa trước khi dùng fallback.
+    const displayReason = reason
+        ?.trim()
+        .replace(/\bGHN\s*Test\b/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/\s+([.,])/g, '$1')
+        .replace(/\s*[·|]\s*(?=[.,]|$)/g, '')
+        .trim();
     return (
         (normalizedReason && providerReasonLabels[normalizedReason]) ||
-        reason?.trim() ||
+        displayReason ||
         locationLabel ||
         statusLabel(status, viewer)
     );

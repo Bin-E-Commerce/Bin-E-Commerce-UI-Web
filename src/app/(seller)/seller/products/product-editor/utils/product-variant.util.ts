@@ -70,8 +70,6 @@ function createVariant(
         label,
         optionValueClientIds,
         sku: '',
-        gtin: '',
-        withoutGtin: true,
         price: '',
         originalPrice: '',
         stockQuantity: '0',

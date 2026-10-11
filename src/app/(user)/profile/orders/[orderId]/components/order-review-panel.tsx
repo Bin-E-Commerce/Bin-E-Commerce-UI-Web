@@ -315,18 +315,20 @@ export function OrderReviewPanel({ order }: OrderReviewPanelProps) {
     const deadline = formatReviewDeadline(query.data.reviewDeadline);
 
     return (
-        <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-100 px-5 py-5 sm:px-6">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                    Đánh giá tùy chọn
-                </p>
-                <h2 className="mt-2 text-xl font-bold tracking-tight text-zinc-950">
-                    Bạn thấy sản phẩm thế nào?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
-                    Không bắt buộc đánh giá. Nếu muốn chia sẻ, bạn có thể đánh
-                    giá từng sản phẩm trước {deadline ?? 'hết thời hạn'}.
-                </p>
+        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 sm:px-5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                    <Star className="size-4" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                    <h2 className="text-base font-bold tracking-tight text-zinc-950 sm:text-lg">
+                        Bạn thấy sản phẩm thế nào?
+                    </h2>
+                    <p className="mt-0.5 text-xs leading-5 text-zinc-500 sm:text-sm">
+                        Không bắt buộc đánh giá. Nếu muốn chia sẻ, bạn có thể
+                        đánh giá từng sản phẩm trước {deadline ?? 'hết thời hạn'}.
+                    </p>
+                </div>
             </div>
             <div className="divide-y divide-zinc-100 px-5 sm:px-6">
                 {query.data.items.map((item) => (

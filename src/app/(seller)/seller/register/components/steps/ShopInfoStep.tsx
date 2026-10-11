@@ -1,3 +1,4 @@
+// Nhập thông tin storefront và tải logo; tên shop/slug được phép chứa số theo hợp đồng thương mại.
 'use client';
 import { Button } from '@/components/ui/button';
 
@@ -145,6 +146,7 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
                         id="shopName"
                         value={values.name}
                         className={inputClassName}
+                        maxLength={120}
                         placeholder="Ví dụ: Bin Tech Store"
                         onChange={(event) =>
                             onChange({ name: event.target.value })
@@ -161,6 +163,9 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
                         id="shopSlug"
                         value={values.slug}
                         className={inputClassName}
+                        maxLength={140}
+                        autoCapitalize="none"
+                        spellCheck={false}
                         placeholder="bin-tech-store"
                         onChange={(event) =>
                             onChange({ slug: event.target.value })
@@ -212,6 +217,7 @@ export function ShopInfoStep({ values, errors, onChange }: ShopInfoStepProps) {
                             id="shopDescription"
                             value={values.description}
                             className={textareaClassName}
+                            maxLength={1000}
                             placeholder="Giới thiệu ngắn gọn về sản phẩm, cam kết dịch vụ và điểm mạnh của shop."
                             onChange={(event) =>
                                 onChange({ description: event.target.value })

@@ -27,7 +27,6 @@ interface OrderLifecycleStepperProps {
     mode: OrderLifecycleMode;
     currentStage?: OrderLifecycleStage | null;
     legacyStatus?: LegacyOrderStatus | string | null;
-    createdAt: string;
     cancelledAt?: string | null;
     cancelReason?: string | null;
     shipmentStatus?: ShipmentStatus | null;
@@ -198,7 +197,7 @@ function getReturnStatusTitle(
     return (status ? labels[status] : undefined) ?? 'Đang xử lý hoàn hàng';
 }
 
-// Định dạng ngày tại một điểm duy nhất để thời gian trong stepper không lệch với phần còn lại của trang.
+// Định dạng thời gian hủy vì mốc này vẫn cần hiển thị trong trạng thái kết thúc.
 function formatLifecycleDate(value: string): string {
     return new Intl.DateTimeFormat('vi-VN', {
         dateStyle: 'medium',
@@ -206,8 +205,7 @@ function formatLifecycleDate(value: string): string {
     }).format(new Date(value));
 }
 
-// Hiển thị marker số tối giản thay cho icon để timeline tập trung vào thứ tự và trạng thái của từng bước.
-// Marker dùng cùng một kích thước ở mọi breakpoint; nền trắng và chi tiết đen bám theo hệ thống giao diện chung.
+// Hiển thị marker số gọn, đồng nhất giữa các breakpoint để timeline ít chiếm chiều cao hơn.
 function LifecycleStepMarker({
     index,
     state,
@@ -216,16 +214,16 @@ function LifecycleStepMarker({
     state: LifecycleState;
 }) {
     return (
-        <span className="relative flex size-10 -translate-y-1 items-center justify-center">
+        <span className="relative flex size-8 items-center justify-center">
             {state === 'current' ? (
                 <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -inset-1.5 rounded-full border border-black/20 motion-safe:animate-[ping_2.4s_ease-out_infinite] motion-reduce:animate-none"
+                    className="pointer-events-none absolute -inset-1 rounded-full border border-black/20 motion-safe:animate-[ping_2.4s_ease-out_infinite] motion-reduce:animate-none"
                 />
             ) : null}
             <span
                 className={cn(
-                    'relative z-10 flex size-10 items-center justify-center rounded-full border-2 bg-white text-xs font-bold',
+                    'relative z-10 flex size-8 items-center justify-center rounded-full border-2 bg-white text-[11px] font-bold',
                     state === 'complete' && 'border-black bg-black text-white',
                     state === 'current' &&
                         'border-black text-black ring-4 ring-black/10',
@@ -263,13 +261,12 @@ function getProgressMessage(
     return 'Shop sẽ cập nhật hành trình và mã vận đơn khi đơn được bàn giao cho đơn vị vận chuyển.';
 }
 
-// Hiển thị lộ trình theo từng bước bằng marker số, giữ actionSlot bên dưới để Seller có thể thao tác mà không phá bố cục.
-// Component chỉ nhận snapshot trạng thái; không gọi API, không thay đổi order và không quyết định quyền của người dùng.
+// Hiển thị tiến trình trong card gọn; actionSlot vẫn nằm cạnh thông điệp để CTA không bị tách khỏi trạng thái.
+// Component chỉ nhận snapshot trạng thái, không gọi API hay tự thay đổi đơn hàng.
 export function OrderLifecycleStepper({
     mode,
     currentStage,
     legacyStatus,
-    createdAt,
     cancelledAt,
     cancelReason,
     shipmentStatus,
@@ -342,20 +339,20 @@ export function OrderLifecycleStepper({
     return (
         <section
             aria-labelledby={`${mode}-order-lifecycle-title`}
-            className="mt-6 overflow-hidden rounded-[26px] border-y border-slate-200 bg-white text-slate-950 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.35)]"
+            className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm"
         >
-            <div className="border-b border-slate-100 bg-white px-5 py-6 sm:px-8 sm:py-7">
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="border-b border-slate-100 bg-white px-4 py-3 sm:px-5 sm:py-4">
+                <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                         <h2
                             id={`${mode}-order-lifecycle-title`}
-                            className="mt-2 text-xl font-bold tracking-tight text-black sm:text-2xl"
+                            className="text-base font-bold tracking-tight text-black sm:text-lg"
                         >
                             {isCustomerReturnFlow
                                 ? 'Lộ trình hoàn hàng'
                                 : 'Lộ trình đơn hàng'}
                         </h2>
-                        <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500 sm:text-sm">
+                        <p className="mt-0.5 max-w-xl text-xs leading-4 text-slate-500">
                             {isCustomerReturnFlow
                                 ? 'Theo dõi yêu cầu hoàn hàng từ lúc gửi đến khi hoàn tiền.'
                                 : mode === 'seller'
@@ -363,7 +360,7 @@ export function OrderLifecycleStepper({
                                   : 'Theo dõi đơn hàng từ lúc đặt đến khi nhận hàng.'}
                         </p>
                     </div>
-                    <div className="self-start rounded-full border border-black bg-black px-3.5 py-2 text-xs font-semibold text-white shadow-sm sm:self-auto">
+                    <div className="shrink-0 rounded-full border border-black bg-black px-3 py-1.5 text-[11px] font-semibold text-white">
                         {isCustomerReturnFlow || isReturnFailed
                             ? getReturnStatusTitle(returnStatus)
                             : isTerminal
@@ -375,10 +372,10 @@ export function OrderLifecycleStepper({
                 </div>
             </div>
 
-            <div className="p-5 sm:p-8">
+            <div className="p-4 sm:p-5">
                 <ol
                     className={cn(
-                        'grid gap-6 md:gap-0',
+                        'grid gap-4 md:gap-0',
                         steps.length === 6
                             ? 'md:grid-cols-6'
                             : 'md:grid-cols-5',
@@ -414,7 +411,7 @@ export function OrderLifecycleStepper({
                                 aria-current={
                                     state === 'current' ? 'step' : undefined
                                 }
-                                className="relative flex items-start gap-3 md:block md:text-center"
+                                className="relative flex items-start gap-2.5 md:block md:text-center"
                             >
                                 {index < steps.length - 1 ? (
                                     <span
@@ -435,10 +432,10 @@ export function OrderLifecycleStepper({
                                         state={state}
                                     />
                                 </div>
-                                <div className="min-w-0 md:mt-3 md:px-2">
+                                <div className="min-w-0 md:mt-2 md:px-1.5">
                                     <p
                                         className={cn(
-                                            'text-sm font-semibold tracking-tight',
+                                            'text-xs font-semibold tracking-tight sm:text-sm',
                                             state === 'current'
                                                 ? 'text-black'
                                                 : state === 'complete'
@@ -462,7 +459,7 @@ export function OrderLifecycleStepper({
                                     </p>
                                     <p
                                         className={cn(
-                                            'mt-1 text-xs leading-5',
+                                            'mt-0.5 text-[11px] leading-4',
                                             state === 'upcoming'
                                                 ? 'text-slate-400'
                                                 : 'text-slate-500',
@@ -483,7 +480,7 @@ export function OrderLifecycleStepper({
                                                 : step.description}
                                     </p>
                                     {state === 'current' ? (
-                                        <span className="mt-2 inline-flex rounded-full bg-black px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
+                                        <span className="mt-1.5 inline-flex rounded-full bg-black px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-white">
                                             Đang thực hiện
                                         </span>
                                     ) : null}
@@ -494,7 +491,7 @@ export function OrderLifecycleStepper({
                 </ol>
 
                 {isTerminal ? (
-                    <div className="relative mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                    <div className="relative mt-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
                         <div>
                             <p className="text-sm font-semibold text-black">
                                 {terminalTitle}
@@ -522,9 +519,9 @@ export function OrderLifecycleStepper({
                         </div>
                     </div>
                 ) : (
-                    <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                    <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
                         <div className="min-w-0">
-                            <p className="text-sm font-semibold text-black">
+                            <p className="text-xs font-semibold text-black sm:text-sm">
                                 {isCustomerReturnFlow
                                     ? isCompleted
                                         ? 'Yêu cầu hoàn hàng đã hoàn tất'
@@ -558,10 +555,6 @@ export function OrderLifecycleStepper({
                         ) : null}
                     </div>
                 )}
-
-                <div className="mt-6 border-t border-slate-100 pt-4 text-[11px] text-slate-400">
-                    Đơn được tạo lúc {formatLifecycleDate(createdAt)}
-                </div>
             </div>
         </section>
     );

@@ -1,3 +1,5 @@
+// Hiển thị tình trạng, xuất xứ và SKU quản lý trong bước thông tin khác.
+// GTIN không còn thuộc form Seller nên component chỉ quản lý các trường còn hỗ trợ.
 'use client';
 import { Button } from '@/components/ui/button';
 
@@ -61,7 +63,7 @@ export function ProductOtherSection({ form }: ProductOtherSectionProps) {
                     </div>
                 </ProductFormField>
 
-                <div className="grid gap-5 lg:grid-cols-3">
+                <div className="grid gap-5 lg:grid-cols-2">
                     <ProductFormField
                         label="Xuất xứ"
                         htmlFor="product-origin"
@@ -86,27 +88,6 @@ export function ProductOtherSection({ form }: ProductOtherSectionProps) {
                             placeholder="Mã quản lý nội bộ"
                             className="h-11"
                             {...form.register('sellerSku')}
-                        />
-                    </ProductFormField>
-                    <ProductFormField
-                        label="GTIN dùng chung"
-                        htmlFor="product-gtin"
-                        error={errors.gtin?.message}
-                        hint="Để trống nếu mỗi SKU có mã riêng hoặc không có GTIN."
-                    >
-                        <Input
-                            id="product-gtin"
-                            inputMode="numeric"
-                            maxLength={14}
-                            placeholder="8, 12, 13 hoặc 14 chữ số"
-                            aria-invalid={Boolean(errors.gtin)}
-                            className="h-11"
-                            {...form.register('gtin', {
-                                onChange: (event) => {
-                                    event.target.value =
-                                        event.target.value.replace(/\D/g, '');
-                                },
-                            })}
                         />
                     </ProductFormField>
                 </div>

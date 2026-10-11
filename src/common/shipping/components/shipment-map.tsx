@@ -18,7 +18,6 @@ import type { ShipmentRoutePoint } from '@/services/shipping';
 interface ShipmentMapProps {
     routePoints: ShipmentRoutePoint[];
     currentLocation: ShipmentRoutePoint;
-    demoMode: boolean;
 }
 
 const DEFAULT_MAP_POINT: ShipmentRoutePoint = {
@@ -132,7 +131,6 @@ function findCurrentIndex(
 export default function ShipmentMap({
     routePoints,
     currentLocation,
-    demoMode,
 }: ShipmentMapProps) {
     const currentLatitude = Number(currentLocation.latitude);
     const currentLongitude = Number(currentLocation.longitude);
@@ -238,15 +236,12 @@ export default function ShipmentMap({
             <div className="pointer-events-none absolute inset-x-3 top-3 z-[500] flex items-start justify-between gap-2">
                 <div className="max-w-[72%] rounded-xl border border-zinc-200/90 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
                     <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400">
-                        Hành trình vận chuyển
+                        Hành trình đơn hàng
                     </p>
                     <p className="mt-0.5 truncate text-xs font-semibold text-zinc-950">
                         {normalizedCurrentLocation.label}
                     </p>
                 </div>
-                <span className="rounded-full bg-zinc-950 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white shadow-lg">
-                    {demoMode ? 'Demo' : 'GHN Test'}
-                </span>
             </div>
             <div className="pointer-events-none absolute bottom-3 left-3 z-[500] flex items-center gap-3 rounded-lg border border-zinc-200/90 bg-white/95 px-3 py-2 text-[10px] font-medium text-zinc-600 shadow-lg backdrop-blur">
                 <span className="flex items-center gap-1.5">

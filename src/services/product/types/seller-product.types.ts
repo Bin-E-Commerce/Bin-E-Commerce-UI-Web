@@ -1,3 +1,4 @@
+// Khai báo contract API quản lý sản phẩm phía Seller, không đưa GTIN đã ngừng hỗ trợ vào payload.
 import type {
     ProductBrand,
     ProductDetail,
@@ -63,7 +64,6 @@ export interface SellerProductDetail extends ProductDetail {
     images?: SellerProductImage[];
     status: SellerProductStatus;
     sellerSku?: string | null;
-    gtin?: string | null;
     condition: ProductCondition;
     countryOfOrigin?: string | null;
     packageWeightGrams?: number | null;
@@ -100,7 +100,6 @@ export interface CreateSellerProductPayload {
     brandId?: string;
     description: string;
     shortDescription?: string;
-    gtin?: string;
     sellerSku?: string;
     condition: ProductCondition;
     countryOfOrigin?: string;
@@ -136,8 +135,6 @@ export interface CreateSellerProductPayload {
     variants: Array<{
         optionValueClientIds: string[];
         sku?: string;
-        gtin?: string;
-        withoutGtin: boolean;
         price: number;
         originalPrice?: number;
         stockQuantity: number;
@@ -167,8 +164,6 @@ export interface UpdateSellerProductPayload extends Omit<
         id?: string;
         optionValueClientIds: string[];
         sku?: string;
-        gtin?: string;
-        withoutGtin: boolean;
         price: number;
         originalPrice?: number;
         stockQuantity: number;

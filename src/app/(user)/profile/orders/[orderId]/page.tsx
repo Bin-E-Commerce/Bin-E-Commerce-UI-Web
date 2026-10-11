@@ -13,7 +13,6 @@ import {
     Package,
     Phone,
     ReceiptText,
-    ShieldCheck,
     Store,
 } from 'lucide-react';
 
@@ -170,7 +169,8 @@ function getCustomerReturnStatus(
         : requestStatus;
 }
 
-// Trang detail đọc order theo id trên URL, vì vậy refresh vẫn giữ đúng phạm vi order của Customer.
+// Trang chi tiết ưu tiên tiến trình, tiếp đến là sản phẩm/chi phí đơn hàng rồi mới đến vận chuyển và hỗ trợ.
+// Order vẫn được tải theo id trên URL; bố cục mới không đổi quyền hay hành vi của các thao tác hiện có.
 export default function ProfileOrderDetailPage() {
     const params = useParams<{ orderId: string }>();
     const orderId = params.orderId;
@@ -233,7 +233,7 @@ export default function ProfileOrderDetailPage() {
     return (
         <div className="min-h-full bg-zinc-50/60">
             <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-0">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
                     <Link
                         href="/profile/orders"
                         className="inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-950"
@@ -241,60 +241,44 @@ export default function ProfileOrderDetailPage() {
                         <ArrowLeft className="size-4" aria-hidden="true" />
                         Quay lại đơn hàng
                     </Link>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 sm:text-sm">
-                        <span>Mã đơn hàng</span>
-                        <span className="font-semibold text-zinc-950">
-                            #{order.orderNumber}
-                        </span>
-                    </div>
                 </div>
 
-                <header className="mt-5 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
-                    <div className="flex flex-col justify-between gap-4 border-b border-zinc-100 pb-5 sm:flex-row sm:items-start">
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                                Chi tiết đơn hàng
-                            </p>
-                            <div className="mt-2 flex flex-wrap items-center gap-3">
-                                <h1 className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
-                                    #{order.orderNumber}
-                                </h1>
-                            </div>
-                            <p className="mt-2 flex items-center gap-2 text-sm text-zinc-500">
+                <header className="mt-5 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-3">
+                        <div className="min-w-0">
+                            <h1 className="break-all text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
+                                Đơn hàng #{order.orderNumber}
+                            </h1>
+                            <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-zinc-500">
                                 <CalendarDays
-                                    className="size-4"
+                                    className="size-3.5 shrink-0"
                                     aria-hidden="true"
                                 />
                                 Đặt ngày {formatDate(order.createdAt)}
                             </p>
                         </div>
-                        {canCancel ? (
-                            <CancelOrderDialog
-                                loading={cancelMutation.isPending}
-                                onConfirm={async (reason) => {
-                                    await cancelMutation.mutateAsync(reason);
-                                }}
-                            />
-                        ) : null}
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3 pt-5">
-                        <h2 className="text-sm font-semibold text-zinc-950">
-                            Trạng thái đơn hàng
-                        </h2>
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                            <ShieldCheck
-                                className="size-4 text-emerald-600"
-                                aria-hidden="true"
-                            />
-                            Thanh toán COD
-                        </span>
+                        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                            {canCancel ? (
+                                <CancelOrderDialog
+                                    loading={cancelMutation.isPending}
+                                    onConfirm={async (reason) => {
+                                        await cancelMutation.mutateAsync(reason);
+                                    }}
+                                />
+                            ) : null}
+                            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600">
+                                <ReceiptText
+                                    className="size-3.5 text-zinc-500"
+                                    aria-hidden="true"
+                                />
+                                Thanh toán COD
+                            </span>
+                        </div>
                     </div>
                     <OrderLifecycleStepper
                         mode="customer"
                         currentStage={order.fulfillmentStatus}
                         legacyStatus={order.status}
-                        createdAt={order.createdAt}
                         cancelledAt={order.cancelledAt}
                         cancelReason={order.cancelReason}
                         shipmentStatus={shipmentStatus}
@@ -302,109 +286,163 @@ export default function ProfileOrderDetailPage() {
                     />
                 </header>
 
-                <div className="mt-5 space-y-5">
-                    <DeliveryConfirmationCard order={order} />
-                    <OrderReviewPanel order={order} />
-                    <OrderReturnPanel order={order} />
-                </div>
-
                 <div className="mt-5">
-                    <CustomerShipmentPanel
-                        orderId={orderId}
-                        orderStage={order.fulfillmentStatus ?? order.status}
-                    />
+                    <DeliveryConfirmationCard order={order} />
                 </div>
 
-                <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div className="space-y-5">
-                        <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-                            <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-5 py-4 sm:px-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex size-9 items-center justify-center rounded-xl bg-zinc-950 text-white">
-                                        <Store
-                                            className="size-4"
-                                            aria-hidden="true"
-                                        />
+                <section className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                    <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-4 py-3 sm:px-5">
+                        <div className="flex items-center gap-3">
+                            <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                                <Store className="size-4" aria-hidden="true" />
+                            </div>
+                            <div>
+                                <h2 className="font-semibold text-zinc-950">
+                                    Sản phẩm đã đặt
+                                </h2>
+                                <p className="text-xs text-zinc-500">
+                                    Sản phẩm, thanh toán và thông tin nhận hàng
+                                </p>
+                            </div>
+                        </div>
+                        <span className="shrink-0 text-xs text-zinc-400">
+                            {order.items.length} mặt hàng
+                        </span>
+                    </div>
+
+                    <div className="grid lg:grid-cols-[minmax(0,1.5fr)_minmax(220px,0.75fr)_minmax(250px,0.9fr)]">
+                        <div className="divide-y divide-zinc-100 px-4 sm:px-5 lg:border-r lg:border-zinc-100">
+                            {order.items.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className="flex gap-3 py-4 first:pt-4 sm:gap-4"
+                                >
+                                    <Link
+                                        href={`/products/${item.productId}`}
+                                        aria-label={`Xem ${item.productName}`}
+                                        className="block size-20 shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:size-24"
+                                    >
+                                        <div className="size-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 transition-colors hover:border-zinc-400">
+                                            {item.imageUrl ||
+                                            legacyItemImages.get(
+                                                item.productId,
+                                            ) ? (
+                                                <img
+                                                    src={
+                                                        item.imageUrl ??
+                                                        legacyItemImages.get(
+                                                            item.productId,
+                                                        ) ??
+                                                        undefined
+                                                    }
+                                                    alt={item.productName}
+                                                    className="size-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex size-full items-center justify-center text-zinc-400">
+                                                    <Package
+                                                        className="size-7"
+                                                        aria-hidden="true"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </Link>
+                                    <div className="min-w-0 flex-1">
+                                        <Link
+                                            href={`/products/${item.productId}`}
+                                            className="block text-sm font-semibold leading-5 text-zinc-950 underline-offset-4 hover:text-zinc-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+                                        >
+                                            {item.productName}
+                                        </Link>
+                                        <p className="mt-1 text-xs text-zinc-500">
+                                            {item.variantName !== item.productName
+                                                ? item.variantName
+                                                : 'Sản phẩm tiêu chuẩn'}
+                                        </p>
+                                        <p className="mt-1.5 text-xs text-zinc-500">
+                                            {formatMoney(item.unitPrice)} ×{' '}
+                                            {item.quantity}
+                                        </p>
                                     </div>
-                                    <div>
-                                        <h2 className="font-semibold text-zinc-950">
-                                            Sản phẩm đã đặt
-                                        </h2>
-                                        <p className="text-xs text-zinc-500">
-                                            Bin E-Commerce
+                                    <p className="shrink-0 pt-0.5 text-right text-sm font-semibold text-zinc-950">
+                                        {formatMoney(item.lineTotal)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="border-y border-zinc-100 px-4 py-4 sm:px-5 lg:border-y-0 lg:border-r lg:border-zinc-100 lg:py-5">
+                            <div className="flex items-center gap-3">
+                                <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                                    <ReceiptText
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                </div>
+                                <h2 className="font-semibold text-zinc-950">
+                                    Tổng thanh toán
+                                </h2>
+                            </div>
+                            <div className="mt-4 space-y-3 text-sm">
+                                <div className="flex justify-between gap-3 text-zinc-500">
+                                    <span>Tạm tính</span>
+                                    <span className="shrink-0 tabular-nums">
+                                        {formatMoney(order.subtotal)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between gap-3 text-zinc-500">
+                                    <span>Phí vận chuyển</span>
+                                    <span className="shrink-0 tabular-nums">
+                                        {Number(order.shippingFee) === 0
+                                            ? 'Miễn phí'
+                                            : formatMoney(order.shippingFee)}
+                                    </span>
+                                </div>
+                                <div className="border-t border-zinc-100 pt-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="font-semibold text-zinc-950">
+                                            Thành tiền
+                                        </span>
+                                        <span className="shrink-0 text-lg font-bold tabular-nums text-zinc-950">
+                                            {formatMoney(order.totalAmount)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-zinc-50 px-3 py-2.5">
+                                    <span className="text-zinc-500">
+                                        Phương thức
+                                    </span>
+                                    <span className="font-semibold text-zinc-900">
+                                        COD
+                                    </span>
+                                </div>
+                            </div>
+                            {order.cancelledAt ? (
+                                <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
+                                    <p className="font-semibold text-zinc-950">
+                                        Đơn hàng đã hủy
+                                    </p>
+                                    <p className="mt-1">
+                                        Đã hủy lúc{' '}
+                                        {formatDate(order.cancelledAt)}
+                                    </p>
+                                    <div className="mt-2 border-t border-zinc-200 pt-2">
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                            Lý do hủy đơn hàng
+                                        </p>
+                                        <p className="mt-1 text-sm leading-5 text-zinc-700">
+                                            {order.cancelReason?.trim() ||
+                                                'Chưa có lý do hủy được cung cấp.'}
                                         </p>
                                     </div>
                                 </div>
-                                <span className="hidden text-xs text-zinc-400 sm:block">
-                                    {order.items.length} mặt hàng
-                                </span>
-                            </div>
-                            <div className="divide-y divide-zinc-100 px-5 sm:px-6">
-                                {order.items.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex gap-4 py-5 first:pt-5 sm:gap-5"
-                                    >
-                                        <Link
-                                            href={`/products/${item.productId}`}
-                                            aria-label={`Xem ${item.productName}`}
-                                            className="block size-24 shrink-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:size-28"
-                                        >
-                                            <div className="size-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 transition-colors hover:border-zinc-400">
-                                                {item.imageUrl ||
-                                                legacyItemImages.get(
-                                                    item.productId,
-                                                ) ? (
-                                                    <img
-                                                        src={
-                                                            item.imageUrl ??
-                                                            legacyItemImages.get(
-                                                                item.productId,
-                                                            ) ??
-                                                            undefined
-                                                        }
-                                                        alt={item.productName}
-                                                        className="size-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="flex size-full items-center justify-center text-zinc-400">
-                                                        <Package
-                                                            className="size-7"
-                                                            aria-hidden="true"
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </Link>
-                                        <div className="min-w-0 flex-1">
-                                            <Link
-                                                href={`/products/${item.productId}`}
-                                                className="block font-semibold leading-6 text-zinc-950 underline-offset-4 hover:text-zinc-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-                                            >
-                                                {item.productName}
-                                            </Link>
-                                            <p className="mt-1 text-sm text-zinc-500">
-                                                {item.variantName !==
-                                                item.productName
-                                                    ? item.variantName
-                                                    : 'Sản phẩm tiêu chuẩn'}
-                                            </p>
-                                            <p className="mt-2 text-sm text-zinc-500">
-                                                {formatMoney(item.unitPrice)} ×{' '}
-                                                {item.quantity}
-                                            </p>
-                                        </div>
-                                        <p className="shrink-0 pt-1 text-right font-semibold text-zinc-950">
-                                            {formatMoney(item.lineTotal)}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
+                            ) : null}
+                        </div>
 
-                        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="px-4 py-4 sm:px-5 lg:py-5">
                             <div className="flex items-center gap-3">
-                                <div className="flex size-9 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                                <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                     <MapPin
                                         className="size-4"
                                         aria-hidden="true"
@@ -419,92 +457,37 @@ export default function ProfileOrderDetailPage() {
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-5 grid gap-4 rounded-2xl bg-zinc-50 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] sm:p-5">
-                                <div>
-                                    <p className="font-semibold text-zinc-950">
-                                        {order.shippingAddress.fullName}
-                                    </p>
-                                    <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600">
-                                        <Phone
-                                            className="size-4"
-                                            aria-hidden="true"
-                                        />
-                                        {order.shippingAddress.phone}
-                                    </p>
-                                </div>
-                                <p className="text-sm leading-6 text-zinc-600">
+                            <div className="mt-4 rounded-xl bg-zinc-50 p-3.5">
+                                <p className="font-semibold text-zinc-950">
+                                    {order.shippingAddress.fullName}
+                                </p>
+                                <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600">
+                                    <Phone
+                                        className="size-4 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    {order.shippingAddress.phone}
+                                </p>
+                                <p className="mt-3 text-sm leading-6 text-zinc-600">
                                     {formatShippingAddress(
                                         order.shippingAddress,
                                     )}
                                 </p>
                             </div>
-                        </section>
+                        </div>
                     </div>
+                </section>
 
-                    <aside className="h-fit rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 lg:sticky lg:top-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-9 items-center justify-center rounded-xl bg-zinc-950 text-white">
-                                <ReceiptText
-                                    className="size-4"
-                                    aria-hidden="true"
-                                />
-                            </div>
-                            <h2 className="font-semibold text-zinc-950">
-                                Tổng thanh toán
-                            </h2>
-                        </div>
-                        <div className="mt-5 space-y-4 text-sm">
-                            <div className="flex justify-between gap-4 text-zinc-500">
-                                <span>Tạm tính</span>
-                                <span>{formatMoney(order.subtotal)}</span>
-                            </div>
-                            <div className="flex justify-between gap-4 text-zinc-500">
-                                <span>Phí vận chuyển</span>
-                                <span>
-                                    {Number(order.shippingFee) === 0
-                                        ? 'Miễn phí'
-                                        : formatMoney(order.shippingFee)}
-                                </span>
-                            </div>
-                            <div className="border-t border-zinc-100 pt-4">
-                                <div className="flex items-end justify-between gap-4">
-                                    <span className="font-semibold text-zinc-950">
-                                        Thành tiền
-                                    </span>
-                                    <span className="text-xl font-bold text-zinc-950">
-                                        {formatMoney(order.totalAmount)}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between rounded-2xl bg-zinc-50 px-4 py-3">
-                                <span className="text-zinc-500">
-                                    Phương thức
-                                </span>
-                                <span className="font-semibold text-zinc-900">
-                                    COD
-                                </span>
-                            </div>
-                        </div>
-                        {order.cancelledAt ? (
-                            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-5 text-slate-600">
-                                <p className="font-semibold text-slate-950">
-                                    Đơn hàng đã hủy
-                                </p>
-                                <p className="mt-1">
-                                    Đã hủy lúc {formatDate(order.cancelledAt)}
-                                </p>
-                                <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                                        Lý do hủy đơn hàng
-                                    </p>
-                                    <p className="mt-1 text-sm leading-6 text-slate-700">
-                                        {order.cancelReason?.trim() ||
-                                            'Chưa có lý do hủy được cung cấp.'}
-                                    </p>
-                                </div>
-                            </div>
-                        ) : null}
-                    </aside>
+                <div className="mt-5">
+                    <CustomerShipmentPanel
+                        orderId={orderId}
+                        orderStage={order.fulfillmentStatus ?? order.status}
+                    />
+                </div>
+
+                <div className="mt-5 space-y-5">
+                    <OrderReviewPanel order={order} />
+                    <OrderReturnPanel order={order} />
                 </div>
             </div>
         </div>

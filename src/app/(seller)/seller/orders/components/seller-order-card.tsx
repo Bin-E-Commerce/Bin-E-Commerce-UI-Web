@@ -17,7 +17,7 @@ interface SellerOrderCardProps {
     legacyImages: ReadonlyMap<string, string | null>;
 }
 
-// Tạo card có vùng click rõ ràng, đồng thời giữ CTA detail để desktop và mobile đều dễ thao tác.
+// Giữ toàn bộ card là một vùng mở chi tiết, với thông tin đơn hàng được chia gọn thành ba hàng.
 export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
     // Ưu tiên fulfillment stage vì đây là trạng thái vận hành mà Seller cần xử lý.
     const lifecycleStatus = order.fulfillmentStatus ?? order.status;
@@ -27,11 +27,11 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
         <Link
             href={`/seller/orders/${order.id}`}
             className={cn(
-                'group block rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 sm:p-5',
+                'group block rounded-xl border border-zinc-200 bg-white p-3 transition hover:border-zinc-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 sm:p-4',
                 isCancelled && 'bg-zinc-50/40',
             )}
         >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-zinc-100 pb-3">
                 <div className="flex min-w-0 items-center gap-2">
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
                         <Package className="size-4" />
@@ -45,7 +45,7 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     <SellerOrderStatusBadge status={lifecycleStatus} />
                     <span className="text-xs font-medium text-zinc-500">
                         COD
@@ -53,8 +53,8 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                 </div>
             </div>
 
-            <div className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center">
-                <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
                     <div className="flex shrink-0 -space-x-2">
                         {order.previewItems.length > 0 ? (
                             order.previewItems.map((item, index) => (
@@ -93,10 +93,10 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                     </div>
                 </div>
 
-                <div className="flex shrink-0 items-center justify-between gap-8 sm:justify-end">
+                <div className="flex shrink-0 items-center justify-between gap-5 sm:justify-end">
                     <div className="text-left sm:text-right">
                         <p className="text-xs text-zinc-500">Doanh thu shop</p>
-                        <p className="mt-1 text-base font-bold tabular-nums text-zinc-950">
+                        <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-950 sm:text-base">
                             {formatSellerMoney(order.shopItemTotal)}
                         </p>
                     </div>
@@ -104,7 +104,7 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-100 pt-3 text-xs text-zinc-500">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-zinc-100 pt-2.5 text-xs text-zinc-500">
                 <span className="inline-flex items-center gap-1.5">
                     <Package className="size-3.5" />
                     {order.itemCount} sản phẩm của shop

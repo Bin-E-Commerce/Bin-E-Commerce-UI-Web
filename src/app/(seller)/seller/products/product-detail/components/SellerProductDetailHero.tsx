@@ -44,17 +44,18 @@ export function SellerProductDetailHero({
 
     return (
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-            <div className="grid lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+            <div className="grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
                 <div className="min-w-0 border-b border-zinc-200 bg-zinc-50 lg:border-b-0 lg:border-r">
                     <ProductGallery
                         productName={product.name}
                         images={product.images ?? []}
                         videoUrl={product.videoUrl}
                         videoDurationSeconds={product.videoDurationSeconds}
+                        compact
                     />
                 </div>
 
-                <div className="flex min-w-0 flex-col p-5 sm:p-7">
+                <div className="flex min-w-0 flex-col p-4 sm:p-5">
                     <div className="flex flex-wrap items-center gap-2">
                         <SellerProductStatusBadge status={product.status} />
                         {canUpdate ? (
@@ -104,34 +105,34 @@ export function SellerProductDetailHero({
                         ) : null}
                     </div>
 
-                    <h1 className="mt-4 max-w-3xl text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
+                    <h1 className="mt-3 max-w-3xl text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
                         {product.name}
                     </h1>
-                    <p className="mt-2 break-all text-sm text-zinc-500">
+                    <p className="mt-1.5 break-all text-xs text-zinc-500 sm:text-sm">
                         /{product.slug}
                     </p>
-                    <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-600">
+                    <p className="mt-2.5 max-w-2xl text-sm leading-5 text-zinc-600">
                         {product.shortDescription ||
                             'Chưa có mô tả ngắn cho sản phẩm này.'}
                     </p>
 
-                    <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-950 p-5 text-white">
+                    <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-950 p-4 text-white">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-zinc-400">
                             Giá bán hiện tại
                         </p>
-                        <p className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+                        <p className="mt-1.5 text-2xl font-bold tracking-tight sm:text-[1.7rem]">
                             {formatSellerProductPriceRange(
                                 product.minPrice,
                                 product.maxPrice,
                             )}
                         </p>
-                        <p className="mt-2 text-xs text-zinc-400">
+                        <p className="mt-1.5 text-xs text-zinc-400">
                             Khoảng giá được tính từ các phân loại đang có trong
                             sản phẩm.
                         </p>
                     </div>
 
-                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
                         <HeroMetric
                             icon={Boxes}
                             label="Tồn kho"
@@ -154,7 +155,7 @@ export function SellerProductDetailHero({
                         />
                     </div>
 
-                    <div className="mt-auto grid gap-x-5 gap-y-3 border-t border-zinc-100 pt-5 sm:grid-cols-2">
+                    <div className="mt-auto grid gap-x-4 gap-y-2 border-t border-zinc-100 pt-4 sm:grid-cols-2">
                         <MetaItem
                             icon={Hash}
                             label="SKU quản lý"

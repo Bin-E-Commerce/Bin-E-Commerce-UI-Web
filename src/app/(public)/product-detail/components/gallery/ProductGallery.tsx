@@ -1,3 +1,5 @@
+// Gallery dùng chung cho trang công khai và seller; chế độ gọn chỉ đổi mật độ.
+// Hành vi điều hướng và dữ liệu media luôn giữ nguyên giữa hai chế độ.
 'use client';
 import { Button } from '@/components/ui/button';
 
@@ -26,6 +28,7 @@ interface ProductGalleryProps {
     images: ProductImage[];
     videoUrl?: string | null;
     videoDurationSeconds?: number | null;
+    compact?: boolean;
 }
 
 // Đổi số giây từ API thành định dạng phút:giây để hiển thị nhất quán trên thumbnail video.
@@ -72,12 +75,14 @@ function buildGalleryMedia(
     return media;
 }
 
-// Hiển thị gallery sản phẩm với ảnh, video, thumbnail, điều hướng và trạng thái rỗng trên cùng một vùng tương tác.
+// Hiển thị gallery ảnh/video; compact giảm chiều cao cho màn vận hành nhưng vẫn
+// giữ nguyên cách chọn, điều hướng và phát nội dung media.
 export function ProductGallery({
     productName,
     images,
     videoUrl,
     videoDurationSeconds,
+    compact = false,
 }: ProductGalleryProps) {
     const galleryMedia = useMemo(
         () => buildGalleryMedia(images, videoUrl, videoDurationSeconds),
@@ -104,9 +109,17 @@ export function ProductGallery({
     return (
         <section
             aria-label="Media sản phẩm"
-            className="w-full min-w-0 overflow-hidden bg-white p-4 sm:p-6"
+            className={cn(
+                'w-full min-w-0 overflow-hidden bg-white',
+                compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6',
+            )}
         >
-            <div className="relative aspect-square overflow-hidden rounded-lg bg-zinc-50">
+            <div
+                className={cn(
+                    'relative overflow-hidden rounded-lg bg-zinc-50',
+                    compact ? 'aspect-[4/3]' : 'aspect-square',
+                )}
+            >
                 {activeMedia?.type === 'image' ? (
                     <Image
                         src={activeMedia.image.imageUrl}
@@ -114,7 +127,10 @@ export function ProductGallery({
                         fill
                         priority
                         sizes="(max-width: 1024px) 100vw, 46vw"
-                        className="object-contain p-3 sm:p-6"
+                        className={cn(
+                            'object-contain',
+                            compact ? 'p-3 sm:p-4' : 'p-3 sm:p-6',
+                        )}
                     />
                 ) : activeMedia?.type === 'video' ? (
                     <video
@@ -143,7 +159,12 @@ export function ProductGallery({
                             type="button"
                             aria-label="Xem nội dung trước"
                             onClick={() => moveMedia(-1)}
-                            className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-950 hover:text-white"
+                            className={cn(
+                                'absolute top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-950 hover:text-white',
+                                compact
+                                    ? 'left-2 size-8'
+                                    : 'left-3 size-9',
+                            )}
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
@@ -152,7 +173,12 @@ export function ProductGallery({
                             type="button"
                             aria-label="Xem nội dung tiếp theo"
                             onClick={() => moveMedia(1)}
-                            className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-950 hover:text-white"
+                            className={cn(
+                                'absolute top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white/95 text-zinc-700 shadow-sm transition-colors hover:bg-zinc-950 hover:text-white',
+                                compact
+                                    ? 'right-2 size-8'
+                                    : 'right-3 size-9',
+                            )}
                         >
                             <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -161,7 +187,12 @@ export function ProductGallery({
             </div>
 
             {galleryMedia.length > 1 ? (
-                <div className="mt-3 flex snap-x gap-2 overflow-x-auto pb-1">
+                <div
+                    className={cn(
+                        'flex snap-x gap-2 overflow-x-auto pb-1',
+                        compact ? 'mt-2' : 'mt-3',
+                    )}
+                >
                     {galleryMedia.map((media, index) => {
                         const isActive = activeIndex === index;
                         const duration =
@@ -186,7 +217,10 @@ export function ProductGallery({
                                 aria-pressed={isActive}
                                 onClick={() => setActiveIndex(index)}
                                 className={cn(
-                                    'relative h-16 w-16 shrink-0 snap-start overflow-hidden rounded border bg-zinc-50 transition-colors sm:h-20 sm:w-20',
+                                    'relative shrink-0 snap-start overflow-hidden rounded border bg-zinc-50 transition-colors',
+                                    compact
+                                        ? 'size-14 sm:size-16'
+                                        : 'size-16 sm:size-20',
                                     isActive
                                         ? 'border-zinc-950 ring-1 ring-zinc-950'
                                         : 'border-zinc-200 hover:border-zinc-500',
@@ -232,7 +266,12 @@ export function ProductGallery({
                 </div>
             ) : null}
 
-            <p className="mt-3 text-center text-xs text-zinc-500">
+            <p
+                className={cn(
+                    'text-center text-xs text-zinc-500',
+                    compact ? 'mt-2' : 'mt-3',
+                )}
+            >
                 {galleryMedia.length > 0
                     ? `${activeIndex + 1} / ${galleryMedia.length} nội dung`
                     : 'Chưa có media'}

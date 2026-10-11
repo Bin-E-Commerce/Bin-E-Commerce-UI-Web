@@ -36,9 +36,9 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
     return (
         <aside className="self-start">
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-md shadow-zinc-950/5">
-                <div className="border-b border-zinc-100 px-5 py-4">
+                <div className="border-b border-zinc-100 px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
-                        <p className="text-base font-semibold text-zinc-950">
+                        <p className="text-sm font-semibold text-zinc-950">
                             Xem trước
                         </p>
                         <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
@@ -50,8 +50,8 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                     </p>
                 </div>
 
-                <div className="p-5">
-                    <div className="group relative aspect-square overflow-hidden rounded-xl bg-zinc-100 ring-1 ring-inset ring-zinc-200">
+                <div className="p-4">
+                    <div className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-inset ring-zinc-200">
                         {thumbnail ? (
                             // Hiển thị Object URL trước để người bán không phải chờ CDN phản hồi sau khi chọn ảnh.
                             // eslint-disable-next-line @next/next/no-img-element
@@ -64,8 +64,8 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                             />
                         ) : (
                             <div className="flex size-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-zinc-50 to-zinc-100 text-zinc-400">
-                                <span className="flex size-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-zinc-200">
-                                    <ImageOff className="size-7" />
+                                <span className="flex size-12 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-zinc-200">
+                                    <ImageOff className="size-6" />
                                 </span>
                                 <span className="text-sm font-medium">
                                     Chưa có ảnh sản phẩm
@@ -73,13 +73,13 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                             </div>
                         )}
                         {thumbnail ? (
-                            <span className="absolute bottom-3 left-3 rounded-full bg-zinc-950/80 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                        <span className="absolute bottom-2 left-2 rounded-full bg-zinc-950/80 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
                                 Ảnh bìa
                             </span>
                         ) : null}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between gap-2 text-sm text-zinc-500">
+                    <div className="mt-2.5 flex items-center justify-between gap-2 text-xs text-zinc-500">
                         <span>{values.images?.length ?? 0}/9 ảnh</span>
                         {values.video ? (
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 font-medium text-zinc-700">
@@ -88,24 +88,24 @@ export function ProductCreatePreview({ form }: ProductCreatePreviewProps) {
                             </span>
                         ) : null}
                     </div>
-                    <p className="mt-4 line-clamp-2 min-h-12 text-base font-semibold leading-6 text-zinc-950">
+                    <p className="mt-3 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-zinc-950">
                         {values.name?.trim() ||
                             'Tên sản phẩm sẽ hiển thị tại đây'}
                     </p>
-                    <p className="mt-3 text-2xl font-bold tracking-tight text-zinc-950">
+                    <p className="mt-2 text-xl font-bold tracking-tight text-zinc-950">
                         {formatPrice(lowestPrice)}
                     </p>
 
-                    <div className="mt-5 space-y-2.5 border-t border-zinc-100 pt-4 text-sm text-zinc-600">
-                        <div className="flex items-center gap-3">
-                            <span className="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
-                                <Store className="size-4" />
+                    <div className="mt-4 space-y-2 border-t border-zinc-100 pt-3 text-xs text-zinc-600">
+                        <div className="flex items-center gap-2.5">
+                            <span className="flex size-7 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
+                                <Store className="size-3.5" />
                             </span>
                             <span>Shop của bạn</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <span className="flex size-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
-                                <Package className="size-4" />
+                        <div className="flex items-center gap-2.5">
+                            <span className="flex size-7 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
+                                <Package className="size-3.5" />
                             </span>
                             <span>
                                 {values.variants?.length ?? 0} phân loại có sẵn

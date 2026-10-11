@@ -114,7 +114,7 @@ function createLocalMediaPreviews(
     ];
 }
 
-// Quản lý yêu cầu hoàn và chỉ cho khách mô phỏng vận đơn khi backend cho phép demo GHN Test.
+// Quản lý yêu cầu hoàn; phần chọn sản phẩm giữ đủ chiều rộng và form được trình bày gọn trên cùng card.
 export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     const queryClient = useQueryClient();
     const returnsQuery = useQuery({
@@ -274,19 +274,16 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     }
 
     return (
-        <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-            <div className="flex items-start gap-3 border-b border-zinc-100 px-5 py-5 sm:px-6">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
-                    <RotateCcw className="size-5" aria-hidden="true" />
+        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 sm:px-5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                    <RotateCcw className="size-4" aria-hidden="true" />
                 </div>
-                <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                        Đổi trả & hoàn tiền
-                    </p>
-                    <h2 className="mt-1 text-xl font-bold text-zinc-950">
+                <div className="min-w-0">
+                    <h2 className="text-lg font-bold text-zinc-950">
                         Yêu cầu hoàn hàng
                     </h2>
-                    <p className="mt-1 text-sm leading-6 text-zinc-500">
+                    <p className="mt-0.5 text-xs leading-5 text-zinc-500 sm:text-sm">
                         Chọn sản phẩm cần hoàn. Mỗi yêu cầu chỉ áp dụng cho một
                         shop.
                     </p>
@@ -420,8 +417,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
             !activeRequest &&
             !hasRejectedRequest &&
             !deliveryIssueReported ? (
-                <div className="space-y-5 px-5 py-5 sm:px-6">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-4 px-4 py-4 sm:px-5">
+                    <div className="grid gap-2">
                         {order.items.map((item) => {
                             const selected = selectedItemIds.includes(item.id);
                             const locked =
@@ -434,7 +431,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                     type="button"
                                     onClick={() => toggleItem(item.id)}
                                     disabled={locked}
-                                    className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${selected ? 'border-zinc-950 bg-zinc-50' : 'border-zinc-200 bg-white hover:border-zinc-400'} ${locked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
+                                    aria-pressed={selected}
+                                    className={`h-auto w-full min-w-0 justify-start whitespace-normal overflow-hidden rounded-lg border px-3 py-2.5 text-left transition ${selected ? 'border-zinc-950 bg-zinc-50' : 'border-zinc-200 bg-white hover:border-zinc-400'} ${locked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
                                 >
                                     <span
                                         className={`flex size-5 shrink-0 items-center justify-center rounded border ${selected ? 'border-zinc-950 bg-zinc-950 text-white' : 'border-zinc-300'}`}
@@ -456,7 +454,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                             );
                         })}
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-[1fr_1fr]">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
                         <label className="text-sm font-medium text-zinc-700">
                             Lý do hoàn
                             <select
@@ -466,7 +464,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                         event.target.value as OrderReturnReason,
                                     )
                                 }
-                                className="mt-2 h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-950"
+                                className="mt-1.5 h-9 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-950"
                             >
                                 {REASONS.map((item) => (
                                     <option key={item.value} value={item.value}>
@@ -488,8 +486,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                     </span>
                                 )}
                             </p>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
+                            <div className="mt-1.5 flex flex-wrap gap-2">
+                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
                                     <ImagePlus className="size-4" /> Thêm ảnh
                                     <input
                                         hidden
@@ -501,7 +499,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                         }
                                     />
                                 </label>
-                                <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
+                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
                                     <Upload className="size-4" /> Thêm video
                                     <input
                                         hidden
@@ -523,7 +521,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                         onChange={(event) => setDescription(event.target.value)}
                         maxLength={1000}
                         placeholder="Mô tả thêm tình trạng sản phẩm (không bắt buộc)"
-                        className="min-h-24 resize-none rounded-xl border-zinc-200"
+                        className="min-h-20 resize-none rounded-lg border-zinc-200"
                     />
                     {images.length || videos.length ? (
                         <div>
@@ -553,7 +551,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                             </div>
                         </div>
                     ) : null}
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="inline-flex items-center gap-2 text-xs text-zinc-500">
                             <AlertCircle className="size-4" /> Shop sẽ duyệt
                             trước khi tạo vận đơn hoàn.
@@ -568,7 +566,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                 createMutation.isPending
                             }
                             onClick={() => createMutation.mutate()}
-                            className="h-10 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white hover:bg-zinc-800"
+                            className="h-9 rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
                         >
                             {submitting ? 'Đang gửi...' : 'Gửi yêu cầu hoàn'}
                         </Button>

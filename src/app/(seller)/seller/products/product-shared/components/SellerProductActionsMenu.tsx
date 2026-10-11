@@ -10,6 +10,7 @@ import {
     PackageCheck,
     Pencil,
     Power,
+    Star,
     Trash2,
 } from 'lucide-react';
 
@@ -96,6 +97,18 @@ export function SellerProductActionsMenu({
                                         aria-hidden="true"
                                     />
                                     Xem chi tiết
+                                </Link>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item asChild>
+                                <Link
+                                    href={`/seller/products/${product.id}#product-reviews`}
+                                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 outline-none transition-colors hover:bg-zinc-100 focus:bg-zinc-100"
+                                >
+                                    <Star
+                                        className="size-4 text-zinc-500"
+                                        aria-hidden="true"
+                                    />
+                                    Xem đánh giá sản phẩm
                                 </Link>
                             </DropdownMenu.Item>
                             {canUpdate ? (

@@ -1,8 +1,9 @@
+// Hiển thị bảng SKU, giá và tồn kho có thể chỉnh sửa cho từng biến thể sản phẩm.
+// GTIN không còn được nhập hoặc kiểm tra trong luồng tạo/sửa sản phẩm.
 'use client';
 
 import type { UseFormReturn } from 'react-hook-form';
 
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import type { SellerProductCreateFormValues } from '../../types/seller-product-create-form.type';
 
@@ -11,23 +12,25 @@ interface ProductVariantTableProps {
     variants: SellerProductCreateFormValues['variants'];
 }
 
-// Hiển thị từng tổ hợp phân loại để seller nhập giá, tồn kho, SKU và GTIN ở cấp có thể bán.
+// Hiển thị từng tổ hợp phân loại để seller nhập giá, tồn kho và SKU ở cấp có thể bán.
 export function ProductVariantTable({
     form,
     variants,
 }: ProductVariantTableProps) {
     return (
         <div className="overflow-x-auto rounded-md border border-zinc-200">
-            <table className="w-full min-w-[920px] border-collapse text-sm">
+            <table className="w-full min-w-[740px] border-collapse text-sm">
                 <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase text-zinc-500">
                     <tr>
                         <th className="w-44 px-3 py-3">Phân loại</th>
-                        <th className="w-36 px-3 py-3">Giá bán *</th>
+                        <th className="w-36 px-3 py-3">
+                            Giá bán <span className="text-red-600">*</span>
+                        </th>
                         <th className="w-36 px-3 py-3">Giá gốc</th>
-                        <th className="w-28 px-3 py-3">Kho khả dụng *</th>
+                        <th className="w-28 whitespace-nowrap px-3 py-3">
+                            Kho khả dụng <span className="text-red-600">*</span>
+                        </th>
                         <th className="w-40 px-3 py-3">SKU</th>
-                        <th className="w-44 px-3 py-3">GTIN</th>
-                        <th className="w-36 px-3 py-3">Không có GTIN</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200">
@@ -113,53 +116,6 @@ export function ProductVariantTable({
                                         }
                                     />
                                 </td>
-                                <td className="px-3 py-3">
-                                    <Input
-                                        inputMode="numeric"
-                                        disabled={variant.withoutGtin}
-                                        value={variant.gtin}
-                                        aria-invalid={Boolean(errors?.gtin)}
-                                        placeholder="8, 12, 13 hoặc 14 số"
-                                        onChange={(event) =>
-                                            updateVariantTextField(
-                                                form,
-                                                index,
-                                                'gtin',
-                                                event.target.value.replace(
-                                                    /\D/g,
-                                                    '',
-                                                ),
-                                            )
-                                        }
-                                    />
-                                    <FieldError
-                                        message={errors?.gtin?.message}
-                                    />
-                                </td>
-                                <td className="px-3 py-4">
-                                    <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
-                                        <Checkbox
-                                            checked={variant.withoutGtin}
-                                            onCheckedChange={(checked) => {
-                                                updateVariantBooleanField(
-                                                    form,
-                                                    index,
-                                                    'withoutGtin',
-                                                    checked,
-                                                );
-                                                if (checked) {
-                                                    updateVariantTextField(
-                                                        form,
-                                                        index,
-                                                        'gtin',
-                                                        '',
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                        Không có mã
-                                    </label>
-                                </td>
                             </tr>
                         );
                     })}
@@ -173,7 +129,7 @@ export function ProductVariantTable({
 function updateVariantTextField(
     form: UseFormReturn<SellerProductCreateFormValues>,
     index: number,
-    field: 'price' | 'originalPrice' | 'stockQuantity' | 'sku' | 'gtin',
+    field: 'price' | 'originalPrice' | 'stockQuantity' | 'sku',
     value: string,
 ) {
     // Tách từng path cụ thể để React Hook Form kiểm tra đúng kiểu thay vì làm mất an toàn bằng ép `any`.
@@ -192,30 +148,13 @@ function updateVariantTextField(
             shouldDirty: true,
             shouldValidate: true,
         });
-    } else if (field === 'sku') {
+    } else {
+        // Sau ba nhánh số, kiểu còn lại duy nhất là SKU dạng chuỗi.
         form.setValue(`variants.${index}.sku`, value, {
             shouldDirty: true,
             shouldValidate: true,
         });
-    } else {
-        form.setValue(`variants.${index}.gtin`, value, {
-            shouldDirty: true,
-            shouldValidate: true,
-        });
     }
-}
-
-// Cập nhật cờ GTIN riêng vì field boolean không thể dùng chung an toàn với các input chuỗi phía trên.
-function updateVariantBooleanField(
-    form: UseFormReturn<SellerProductCreateFormValues>,
-    index: number,
-    field: 'withoutGtin',
-    value: boolean,
-) {
-    form.setValue(`variants.${index}.${field}`, value, {
-        shouldDirty: true,
-        shouldValidate: true,
-    });
 }
 
 // Giữ chiều cao lỗi gọn trong từng ô và chỉ render khi schema trả message.

@@ -18,12 +18,12 @@ interface ProductCreateStepGuideProps {
 }
 
 //
-// Panel tóm tắt bước hiện tại đặt cạnh form thay cho card sidebar cao.
-// Component ưu tiên hiển thị trạng thái và lỗi cần xử lý; phần mẹo được đưa vào details
-// để seller có thể mở khi cần mà không chiếm chiều cao của khu vực nhập liệu.
+// Panel tóm tắt bước hiện tại cạnh form, ưu tiên lỗi cần xử lý trong bố cục gọn.
+// Phần mẹo vẫn nằm trong details để giữ đủ hướng dẫn mà không chiếm chiều cao mặc định.
 //
 
-// Tìm metadata của bước đang chọn; route luôn truyền id hợp lệ nhưng vẫn trả null để UI an toàn khi cấu hình thay đổi.
+// Tìm metadata bước đang chọn và bỏ panel nếu cấu hình bước không còn hợp lệ.
+// Trạng thái validation chỉ được trình bày tại đây; quyết định hợp lệ vẫn thuộc editor hook.
 export function ProductCreateStepGuide({
     activeStep,
     validation,
@@ -33,20 +33,20 @@ export function ProductCreateStepGuide({
     if (!step) return null;
 
     return (
-        <section className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 sm:p-5">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)] lg:items-start">
-                <div className="flex min-w-0 items-start gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
-                        <Lightbulb className="size-4" />
+        <section className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 sm:p-4">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.8fr)] lg:items-start">
+                <div className="flex min-w-0 items-start gap-2.5">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                        <Lightbulb className="size-3.5" />
                     </span>
                     <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                             Đang thực hiện
                         </p>
-                        <h2 className="mt-1 break-words text-base font-semibold leading-5 text-zinc-950">
+                        <h2 className="mt-0.5 break-words text-sm font-semibold leading-5 text-zinc-950">
                             {step.label}
                         </h2>
-                        <p className="mt-1 break-words text-sm leading-5 text-zinc-600">
+                        <p className="mt-0.5 break-words text-xs leading-4.5 text-zinc-600">
                             {step.description}
                         </p>
                     </div>
@@ -54,17 +54,17 @@ export function ProductCreateStepGuide({
 
                 <div
                     className={cn(
-                        'grid gap-3 rounded-xl border px-4 py-3 text-sm',
+                        'grid gap-2 rounded-lg border px-3 py-2.5 text-xs',
                         validation.valid
                             ? 'border-zinc-200 bg-white text-zinc-950 shadow-sm'
                             : 'border-amber-200 bg-amber-50 text-amber-900',
                     )}
                 >
-                    <div className="flex min-w-0 items-start gap-3 font-medium leading-5">
+                    <div className="flex min-w-0 items-start gap-2 font-medium leading-4.5">
                         {validation.valid ? (
-                            <CheckCircle2 className="mt-0.5 size-7 shrink-0 rounded-full bg-zinc-950 p-1.5 text-white" />
+                            <CheckCircle2 className="mt-0.5 size-6 shrink-0 rounded-full bg-zinc-950 p-1 text-white" />
                         ) : (
-                            <CircleAlert className="mt-0.5 size-7 shrink-0 rounded-full bg-amber-100 p-1.5 text-amber-700" />
+                            <CircleAlert className="mt-0.5 size-6 shrink-0 rounded-full bg-amber-100 p-1 text-amber-700" />
                         )}
                         <span className="min-w-0 break-words">
                             <span className="block">
@@ -73,14 +73,14 @@ export function ProductCreateStepGuide({
                                     : 'Cần hoàn thiện bước này'}
                             </span>
                             {validation.valid ? (
-                                <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+                                <span className="mt-0.5 block text-[11px] font-normal text-zinc-500">
                                     Thông tin đã sẵn sàng để tiếp tục.
                                 </span>
                             ) : null}
                         </span>
                     </div>
                     {!validation.valid && validation.errors.length > 0 ? (
-                        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-4.5">
+                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] leading-4">
                             {validation.errors.map((error) => (
                                 <li key={error} className="break-words">
                                     {error}
@@ -91,12 +91,12 @@ export function ProductCreateStepGuide({
                 </div>
             </div>
 
-            <details className="mt-4 border-t border-zinc-200 pt-3">
-                <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 [&::-webkit-details-marker]:hidden">
-                    <Lightbulb className="size-3.5" />
+            <details className="mt-3 border-t border-zinc-200 pt-2.5">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 [&::-webkit-details-marker]:hidden">
+                    <Lightbulb className="size-3" />
                     Gợi ý hoàn thiện
                 </summary>
-                <ul className="mt-3 grid gap-x-6 gap-y-2 text-xs leading-4.5 text-zinc-600 sm:grid-cols-2">
+                <ul className="mt-2 grid gap-x-6 gap-y-1.5 text-[11px] leading-4 text-zinc-600 sm:grid-cols-2">
                     {activeStep === 'basic' ? (
                         <>
                             <li className="list-disc break-words pl-1">

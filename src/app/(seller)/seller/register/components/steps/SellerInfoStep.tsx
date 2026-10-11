@@ -1,3 +1,5 @@
+// Thu thập danh tính, liên hệ và giấy tờ theo loại hồ sơ cá nhân hoặc doanh nghiệp.
+// Dùng text input với inputMode để giữ số 0 đầu và vẫn xác thực ở Zod/backend.
 import { FileCheck2 } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
@@ -97,6 +99,7 @@ export function SellerInfoStep({
                             id="legalName"
                             value={values.legalName}
                             className={inputClassName}
+                            maxLength={180}
                             placeholder="Ví dụ: Công ty TNHH Bin Tech"
                             onChange={(event) =>
                                 onChange({ legalName: event.target.value })
@@ -114,6 +117,7 @@ export function SellerInfoStep({
                             id="identityName"
                             value={values.legalName}
                             className={inputClassName}
+                            maxLength={180}
                             placeholder="Nhập đúng họ tên trên giấy tờ"
                             onChange={(event) =>
                                 onChange({ legalName: event.target.value })
@@ -133,6 +137,8 @@ export function SellerInfoStep({
                             id="taxCode"
                             value={values.taxCode}
                             className={inputClassName}
+                            inputMode="numeric"
+                            maxLength={13}
                             placeholder="Nhập mã số thuế doanh nghiệp"
                             onChange={(event) =>
                                 onChange({ taxCode: event.target.value })
@@ -150,6 +156,8 @@ export function SellerInfoStep({
                             id="citizenId"
                             value={values.citizenId}
                             className={inputClassName}
+                            inputMode="numeric"
+                            maxLength={12}
                             placeholder="Nhập số căn cước công dân"
                             onChange={(event) =>
                                 onChange({ citizenId: event.target.value })
@@ -168,6 +176,7 @@ export function SellerInfoStep({
                         id="representativeName"
                         value={values.representativeName}
                         className={inputClassName}
+                        maxLength={160}
                         placeholder={
                             isBusiness
                                 ? 'Nhập người phụ trách shop'
@@ -188,6 +197,8 @@ export function SellerInfoStep({
                         id="sellerPhone"
                         value={values.phone}
                         className={inputClassName}
+                        inputMode="tel"
+                        maxLength={13}
                         placeholder="Nhập số điện thoại"
                         onChange={(event) =>
                             onChange({ phone: event.target.value })
@@ -205,6 +216,7 @@ export function SellerInfoStep({
                         type="email"
                         value={values.email}
                         className={inputClassName}
+                        maxLength={254}
                         placeholder="seller@email.com"
                         onChange={(event) =>
                             onChange({ email: event.target.value })
@@ -220,6 +232,7 @@ export function SellerInfoStep({
                         id="representativeRole"
                         value={values.representativeRole}
                         className={inputClassName}
+                        maxLength={120}
                         placeholder={
                             isBusiness
                                 ? 'Ví dụ: Chủ sở hữu, giám đốc, quản lý vận hành'

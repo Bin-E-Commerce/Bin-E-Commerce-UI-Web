@@ -1,3 +1,5 @@
+// Khai báo state form sản phẩm và reference Catalog dùng xuyên suốt wizard Seller.
+// Chỉ giữ dữ liệu seller đang nhập và không chứa trường GTIN đã bỏ khỏi nghiệp vụ.
 import type { CatalogCategoryAttribute } from '@/services/catalog';
 import type { ProductBrand } from '@/services/product';
 
@@ -40,8 +42,6 @@ export interface ProductCreateVariant {
     label: string;
     optionValueClientIds: string[];
     sku: string;
-    gtin: string;
-    withoutGtin: boolean;
     price: string;
     originalPrice: string;
     stockQuantity: string;
@@ -54,7 +54,6 @@ export interface SellerProductCreateFormValues {
     brandId: string;
     description: string;
     shortDescription: string;
-    gtin: string;
     sellerSku: string;
     condition: 'new' | 'used_like_new' | 'used_good';
     countryOfOrigin: string;

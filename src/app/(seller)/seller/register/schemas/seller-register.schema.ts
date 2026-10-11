@@ -1,3 +1,6 @@
+// Schema hợp đồng kiểm tra năm bước onboarding seller trước khi lưu nháp hoặc gửi duyệt.
+// Giữ số trong tên shop/pháp nhân, địa chỉ và mô tả vì đó là dữ liệu hợp lệ.
+// Chỉ các trường định danh cá nhân mới áp dụng quy tắc không có chữ số.
 import { z } from 'zod';
 
 import {
@@ -13,6 +16,7 @@ export type SellerRegisterFieldErrors = Partial<Record<string, string>>;
 const BUSINESS_MODELS = new Set(['retail', 'brand', 'distributor']);
 const ACCOUNT_TYPES = ['personal', 'business'] as const;
 const PROFILE_TYPES = ['individual', 'business'] as const;
+const PERSON_NAME_PATTERN = /^[\p{L}\p{M}]+(?:[ .'-][\p{L}\p{M}]+)*$/u;
 
 const sellerDocumentSchema = z.object({
     assetId: z.string().min(1),
@@ -74,9 +78,14 @@ const sellerInfoSchema = z
             .trim()
             .max(120, 'Chức vụ / vai trò tối đa 120 ký tự.'),
         phone: vietnamPhoneSchema('Số điện thoại người bán không hợp lệ.'),
-        email: z.string().trim().email('Email liên hệ không hợp lệ.'),
+        email: z
+            .string()
+            .trim()
+            .max(254, 'Email liên hệ tối đa 254 ký tự.')
+            .email('Email liên hệ không hợp lệ.'),
         documents: z.record(z.string(), sellerDocumentSchema),
     })
+    // Rule chéo phụ thuộc profileType giữ các lỗi đúng field mà không cấm số trong tên doanh nghiệp.
     .superRefine((value, ctx) => {
         // Cá nhân dùng CCCD, doanh nghiệp dùng mã số thuế; kiểm tra ở FE để người dùng sửa ngay tại bước nhập.
         if (
@@ -98,6 +107,19 @@ const sellerInfoSchema = z
                 code: 'custom',
                 path: ['citizenId'],
                 message: 'Số CCCD cần gồm 9 hoặc 12 số.',
+            });
+        }
+
+        // Tên CCCD và người đại diện là danh tính cá nhân; không nhận chữ số hoặc ký tự trang trí.
+        if (
+            value.profileType === 'individual' &&
+            !PERSON_NAME_PATTERN.test(value.legalName)
+        ) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['legalName'],
+                message:
+                    'Họ tên cá nhân chỉ gồm chữ cái, dấu cách, dấu chấm hoặc gạch nối.',
             });
         }
 
@@ -132,6 +154,14 @@ const sellerInfoSchema = z
                 ctx,
             );
         }
+
+        if (!PERSON_NAME_PATTERN.test(value.representativeName)) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['representativeName'],
+                message: 'Tên người đại diện không được chứa chữ số.',
+            });
+        }
     });
 
 const pickupAddressSchema = z.object({
@@ -140,7 +170,10 @@ const pickupAddressSchema = z.object({
         max: 160,
         minMessage: 'Người phụ trách cần từ 2 đến 160 ký tự.',
         maxMessage: 'Người phụ trách cần từ 2 đến 160 ký tự.',
-    }),
+    }).regex(
+        PERSON_NAME_PATTERN,
+        'Tên người phụ trách không được chứa chữ số.',
+    ),
     phone: vietnamPhoneSchema('Số điện thoại lấy hàng không hợp lệ.'),
     provinceId: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố.'),
     provinceName: z.string().min(1, 'Vui lòng chọn tỉnh/thành phố.'),
@@ -155,33 +188,50 @@ const pickupAddressSchema = z.object({
         .max(500, 'Địa chỉ chi tiết tối đa 500 ký tự.'),
 });
 
-const payoutSchema = z.object({
-    bankCode: z
-        .string()
-        .trim()
-        .min(1, 'Vui lòng chọn ngân hàng nhận thanh toán.')
-        .max(60, 'Vui lòng chọn ngân hàng nhận thanh toán.'),
-    bankName: trimmedStringSchema({
-        min: 2,
-        max: 120,
-        minMessage: 'Tên ngân hàng cần từ 2 đến 120 ký tự.',
-        maxMessage: 'Tên ngân hàng cần từ 2 đến 120 ký tự.',
-    }),
-    accountNumber: z
-        .string()
-        .trim()
-        .regex(/^\d{6,30}$/, 'Số tài khoản cần gồm 6 đến 30 số.'),
-    accountHolderName: trimmedStringSchema({
-        min: 2,
-        max: 180,
-        minMessage: 'Tên chủ tài khoản cần từ 2 đến 180 ký tự.',
-        maxMessage: 'Tên chủ tài khoản cần từ 2 đến 180 ký tự.',
-    }),
-    accountType: z
-        .enum(ACCOUNT_TYPES)
-        .refine(Boolean, 'Vui lòng chọn loại tài khoản hợp lệ.'),
-    branch: z.string().trim().max(160, 'Chi nhánh / khu vực tối đa 160 ký tự.'),
-});
+const payoutSchema = z
+    .object({
+        bankCode: z
+            .string()
+            .trim()
+            .min(1, 'Vui lòng chọn ngân hàng nhận thanh toán.')
+            .max(60, 'Vui lòng chọn ngân hàng nhận thanh toán.'),
+        bankName: trimmedStringSchema({
+            min: 2,
+            max: 120,
+            minMessage: 'Tên ngân hàng cần từ 2 đến 120 ký tự.',
+            maxMessage: 'Tên ngân hàng cần từ 2 đến 120 ký tự.',
+        }),
+        accountNumber: z
+            .string()
+            .trim()
+            .regex(/^\d{6,30}$/, 'Số tài khoản cần gồm 6 đến 30 số.'),
+        accountHolderName: trimmedStringSchema({
+            min: 2,
+            max: 180,
+            minMessage: 'Tên chủ tài khoản cần từ 2 đến 180 ký tự.',
+            maxMessage: 'Tên chủ tài khoản cần từ 2 đến 180 ký tự.',
+        }),
+        accountType: z
+            .enum(ACCOUNT_TYPES)
+            .refine(Boolean, 'Vui lòng chọn loại tài khoản hợp lệ.'),
+        branch: z
+            .string()
+            .trim()
+            .max(160, 'Chi nhánh / khu vực tối đa 160 ký tự.'),
+    })
+    // Tài khoản cá nhân yêu cầu tên người; tên pháp nhân vẫn có thể chứa chữ số.
+    .superRefine((value, ctx) => {
+        if (
+            value.accountType === 'personal' &&
+            !PERSON_NAME_PATTERN.test(value.accountHolderName.trim())
+        ) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['accountHolderName'],
+                message: 'Tên chủ tài khoản cá nhân không được chứa chữ số.',
+            });
+        }
+    });
 
 export const sellerRegisterSchema = z.object({
     shop: shopSchema,

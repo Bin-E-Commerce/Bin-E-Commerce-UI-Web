@@ -1,8 +1,9 @@
-'use client';
-import { Button } from '@/components/ui/button';
 // Các section của trang xem chi tiết sản phẩm trong Seller Center.
 // File này điều phối layout và dữ liệu vận hành; phần hiển thị mô tả dùng
 // component dùng chung với storefront để hai vai trò luôn có cùng cấp nội dung.
+'use client';
+
+import { Button } from '@/components/ui/button';
 import { useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import {
@@ -65,7 +66,7 @@ function ProductContentSection({ product }: { product: SellerProductDetail }) {
     );
 }
 
-// Hiển thị toàn bộ SKU cùng mã hàng, giá, tồn kho và trạng thái để seller kiểm tra từng biến thể.
+// Hiển thị toàn bộ SKU, giá, tồn kho và trạng thái để seller kiểm tra từng biến thể.
 function ProductVariantsSection({ product }: { product: SellerProductDetail }) {
     return (
         <DetailCard
@@ -81,7 +82,7 @@ function ProductVariantsSection({ product }: { product: SellerProductDetail }) {
                         <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                             <tr>
                                 <th className="px-4 py-3">Phân loại</th>
-                                <th className="px-4 py-3">SKU / GTIN</th>
+                                <th className="px-4 py-3">SKU</th>
                                 <th className="px-4 py-3">Giá</th>
                                 <th className="px-4 py-3">Tồn kho</th>
                                 <th className="px-4 py-3">Trạng thái</th>
@@ -123,7 +124,6 @@ function VariantRow({ variant }: { variant: ProductVariant }) {
             </td>
             <td className="px-4 py-4 text-xs text-zinc-600">
                 <p className="font-mono">{variant.sku || 'Chưa có SKU'}</p>
-                <p className="mt-1">GTIN: {variant.gtin || '—'}</p>
             </td>
             <td className="px-4 py-4 font-medium text-zinc-950">
                 {formatSellerProductPrice(variant.price)}
@@ -165,7 +165,6 @@ function ProductInformationSection({
                 rows={[
                     ['Thương hiệu', product.brand?.name || 'Chưa cập nhật'],
                     ['SKU quản lý', product.sellerSku || 'Chưa thiết lập'],
-                    ['GTIN dùng chung', product.gtin || 'Chưa thiết lập'],
                     ['Tình trạng', getConditionLabel(product.condition)],
                     ['Xuất xứ', product.countryOfOrigin || 'Chưa cập nhật'],
                     ['Slug', `/${product.slug}`],

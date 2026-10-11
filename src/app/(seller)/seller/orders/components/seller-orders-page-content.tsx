@@ -86,14 +86,21 @@ export function SellerOrdersPageContent() {
                 ) : ordersQuery.isPending ? (
                     <SellerOrdersSkeleton />
                 ) : data && data.items.length > 0 ? (
-                    <div className="space-y-3 p-4 sm:p-6">
-                        {data.items.map((order) => (
-                            <SellerOrderCard
-                                key={order.id}
-                                order={order}
-                                legacyImages={legacyImages}
-                            />
-                        ))}
+                    <div
+                        role="region"
+                        aria-label="Danh sách đơn hàng"
+                        tabIndex={0}
+                        className="max-h-[min(68vh,48rem)] overflow-y-auto overscroll-contain p-4 [scrollbar-color:#a1a1aa_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-thumb:hover]:bg-zinc-400 [&::-webkit-scrollbar-track]:bg-transparent sm:p-6"
+                    >
+                        <div className="space-y-3">
+                            {data.items.map((order) => (
+                                <SellerOrderCard
+                                    key={order.id}
+                                    order={order}
+                                    legacyImages={legacyImages}
+                                />
+                            ))}
+                        </div>
                     </div>
                 ) : (
                     <SellerOrdersEmptyState
