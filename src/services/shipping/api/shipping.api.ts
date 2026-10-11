@@ -40,6 +40,7 @@ export interface ShipmentResponse {
     mapMode: 'INTERNAL_PRESENTATION';
     trackingSource: 'GHN_TEST';
     demoMode: boolean;
+    demoAdvancementEnabled: boolean;
     estimatedDeliveryAt: string | null;
     history: Array<{
         id: string;

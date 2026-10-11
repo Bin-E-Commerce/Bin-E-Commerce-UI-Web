@@ -114,6 +114,7 @@ function createLocalMediaPreviews(
     ];
 }
 
+// Quản lý yêu cầu hoàn và chỉ cho khách mô phỏng vận đơn khi backend cho phép demo GHN Test.
 export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     const queryClient = useQueryClient();
     const returnsQuery = useQuery({
@@ -353,7 +354,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                                 {returnShipment.statusLabel}
                                             </p>
                                         </div>
-                                        {!shipmentFinished ? (
+                                        {!shipmentFinished &&
+                                        returnShipment.demoAdvancementEnabled ? (
                                             <Button
                                                 type="button"
                                                 className="h-8 rounded-lg bg-zinc-950 px-3 text-xs text-white hover:bg-zinc-800"

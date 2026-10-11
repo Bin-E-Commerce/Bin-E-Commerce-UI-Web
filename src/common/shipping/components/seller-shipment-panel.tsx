@@ -20,7 +20,7 @@ interface SellerShipmentPanelProps {
     orderStage?: string | null;
 }
 
-// Render shipment state của Seller với action rõ theo từng bước nghiệp vụ GHN.
+// Render shipment state của Seller và chỉ hiển thị demo khi backend xác nhận feature flag an toàn.
 export function SellerShipmentPanel({
     orderId,
     orderStage,
@@ -82,6 +82,7 @@ export function SellerShipmentPanel({
         advanceDemoMutation.isPending ||
         printMutation.isPending;
     const canAdvanceDemo =
+        shipment.demoAdvancementEnabled &&
         shipment.trackingSource === 'GHN_TEST' &&
         [
             'READY_TO_SHIP',
