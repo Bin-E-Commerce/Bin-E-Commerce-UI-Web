@@ -1,3 +1,4 @@
+// Stepper của hồ sơ seller: chỉ trình bày tiến độ và chuyển giữa các bước đã mở khóa.
 'use client';
 import { Button } from '@/components/ui/button';
 
@@ -19,7 +20,11 @@ interface SellerRegisterStepperProps {
     changedCorrectionTargets: SellerApplicationCorrectionTarget[];
 }
 
-// Stepper hiển thị tiến độ và khóa bước sau cho tới khi các bước trước đó hợp lệ.
+// Render tiến độ, trạng thái hoàn tất/cần sửa và điều hướng giữa các bước đăng ký.
+// Quyền chuyển bước vẫn do maxReachableStep quyết định; trạng thái sửa hồ sơ được
+// tính từ correctionTargets để không đánh dấu hoàn tất khi người bán chưa sửa đủ.
+// Nội dung mô tả có thể dài theo cấu hình bước, nên mỗi nút phải tự cao và cho phép
+// xuống dòng thay vì dùng chiều cao/nowrap mặc định của Button dùng chung.
 export function SellerRegisterStepper({
     steps,
     currentStep,
@@ -80,7 +85,8 @@ export function SellerRegisterStepper({
                             aria-disabled={disabled}
                             onClick={() => onStepChange(index)}
                             className={cn(
-                                'flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors',
+                                // Override h-8/whitespace-nowrap từ Button chung để mô tả dài không tràn hoặc đè lên bước kế tiếp.
+                                'h-auto min-h-16 w-full justify-start whitespace-normal break-words flex items-start gap-3 rounded-lg border p-3 text-left transition-colors',
                                 active
                                     ? 'border-zinc-950 bg-zinc-950 text-white'
                                     : requiresCorrection && !correctionCompleted
