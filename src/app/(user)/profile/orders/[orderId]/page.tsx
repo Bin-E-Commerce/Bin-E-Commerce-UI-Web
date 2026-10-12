@@ -247,7 +247,7 @@ export default function ProfileOrderDetailPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-3">
                         <div className="min-w-0">
                             <h1 className="break-all text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
-                                Đơn hàng #{order.orderNumber}
+                                Đơn hàng
                             </h1>
                             <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-zinc-500">
                                 <CalendarDays
@@ -262,7 +262,9 @@ export default function ProfileOrderDetailPage() {
                                 <CancelOrderDialog
                                     loading={cancelMutation.isPending}
                                     onConfirm={async (reason) => {
-                                        await cancelMutation.mutateAsync(reason);
+                                        await cancelMutation.mutateAsync(
+                                            reason,
+                                        );
                                     }}
                                 />
                             ) : null}
@@ -356,7 +358,8 @@ export default function ProfileOrderDetailPage() {
                                             {item.productName}
                                         </Link>
                                         <p className="mt-1 text-xs text-zinc-500">
-                                            {item.variantName !== item.productName
+                                            {item.variantName !==
+                                            item.productName
                                                 ? item.variantName
                                                 : 'Sản phẩm tiêu chuẩn'}
                                         </p>

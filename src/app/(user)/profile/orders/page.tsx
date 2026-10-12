@@ -192,11 +192,8 @@ export default function ProfileOrdersPage() {
                                                         />
                                                     </span>
                                                     <div>
-                                                        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-zinc-400">
-                                                            Đơn hàng
-                                                        </p>
                                                         <p className="font-bold text-zinc-950">
-                                                            {order.orderNumber}
+                                                            Đơn hàng
                                                         </p>
                                                     </div>
                                                 </div>

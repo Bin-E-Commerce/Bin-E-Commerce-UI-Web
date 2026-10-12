@@ -86,7 +86,7 @@ function isActiveTab(
     );
 }
 
-// Render segmented control có thể cuộn ngang, giữ nguyên toàn bộ nhãn trên mọi kích thước màn hình.
+// Render tab trạng thái có thể cuộn ngang; badge là tổng số đơn nên chỉ đổi màu theo tab active, không biến mất khi bấm.
 export function CustomerOrderTabs({
     activeFilter,
     onChange,
@@ -114,7 +114,7 @@ export function CustomerOrderTabs({
                             aria-current={active ? 'page' : undefined}
                             className={`group flex min-w-max shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
                                 active
-                                    ? 'bg-zinc-950 text-white shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]'
+                                    ? 'bg-zinc-950 text-white shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)] hover:bg-zinc-950 hover:text-white'
                                     : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950'
                             }`}
                         >
@@ -127,7 +127,11 @@ export function CustomerOrderTabs({
                             </span>
                             {count > 0 ? (
                                 <span
-                                    className="inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white"
+                                    className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none transition-colors duration-200 ${
+                                        active
+                                            ? 'bg-white/15 text-white ring-1 ring-white/20'
+                                            : 'bg-rose-50 text-rose-600'
+                                    }`}
                                     aria-label={`${count} đơn hàng`}
                                 >
                                     {count > 99 ? '99+' : count}

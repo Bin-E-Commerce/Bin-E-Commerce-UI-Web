@@ -344,8 +344,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2">
                                         <div className="min-w-0 text-xs text-zinc-600">
                                             <p className="font-semibold text-zinc-900">
-                                                Vận đơn hoàn ·{' '}
-                                                {returnShipment.trackingCode}
+                                                Vận đơn hoàn
                                             </p>
                                             <p className="mt-1">
                                                 {returnShipment.statusLabel}

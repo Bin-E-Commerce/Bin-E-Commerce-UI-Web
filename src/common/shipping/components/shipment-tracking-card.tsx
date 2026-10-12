@@ -76,12 +76,14 @@ export function ShipmentTrackingCard({
                         <h2 className="truncate text-base font-bold text-zinc-950">
                             {currentLabel}
                         </h2>
-                        <p className="mt-1 truncate text-xs text-zinc-500 sm:text-sm">
-                            Mã vận đơn{' '}
-                            <span className="font-medium text-zinc-700">
-                                {shipment.trackingCode}
-                            </span>
-                        </p>
+                        {viewer === 'seller' ? (
+                            <p className="mt-1 truncate text-xs text-zinc-500 sm:text-sm">
+                                Mã vận đơn{' '}
+                                <span className="font-medium text-zinc-700">
+                                    {shipment.trackingCode}
+                                </span>
+                            </p>
+                        ) : null}
                     </div>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:shrink-0 sm:justify-end">

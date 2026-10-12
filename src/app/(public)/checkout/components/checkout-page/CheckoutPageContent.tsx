@@ -60,7 +60,8 @@ function formatAddress(address: UserAddress): string {
     return `${address.street}, ${address.ward}, ${address.district}, ${address.province}`;
 }
 
-// Tạo checkout page hoàn chỉnh từ cart, address query và order mutation đã tách riêng khỏi UI.
+// Ghép dữ liệu checkout vào các bước chọn địa chỉ và thanh toán.
+// Component chỉ điều phối thao tác người dùng; báo giá và tạo đơn vẫn do backend xác nhận.
 export function CheckoutPageContent() {
     const { initialized, isAuthenticated } = useCartAuthRedirect();
     const cartQuery = useCart();
@@ -306,28 +307,27 @@ export function CheckoutPageContent() {
                 </div>
 
                 <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-                    <div className="space-y-5">
-                        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
-                            <div className="flex items-start justify-between gap-4">
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                                        Bước 01
-                                    </p>
-                                    <h2 className="mt-2 text-xl font-bold text-zinc-950">
+                    <div className="space-y-4">
+                        <section className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                            <div className="flex items-center gap-3">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700">
+                                    <MapPin
+                                        className="size-4"
+                                        aria-hidden="true"
+                                    />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 className="text-lg font-bold tracking-tight text-zinc-950">
                                         Địa chỉ giao hàng
                                     </h2>
-                                    <p className="mt-1 text-sm text-zinc-500">
+                                    <p className="mt-0.5 text-sm text-zinc-500">
                                         Chọn địa chỉ bạn muốn nhận đơn hàng.
                                     </p>
                                 </div>
-                                <MapPin
-                                    className="size-5 text-zinc-400"
-                                    aria-hidden="true"
-                                />
                             </div>
 
                             {addresses.length > 0 ? (
-                                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                     {addresses.map((address) => (
                                         <CheckoutAddressCard
                                             key={address.id}
@@ -354,7 +354,7 @@ export function CheckoutPageContent() {
                                     ))}
                                 </div>
                             ) : (
-                                <p className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm leading-6 text-zinc-600">
+                                <p className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">
                                     Bạn chưa có địa chỉ giao hàng. Thêm địa chỉ
                                     mới để tiếp tục.
                                 </p>
@@ -371,9 +371,9 @@ export function CheckoutPageContent() {
                                         setShowAddressForm(true);
                                     }
                                 }}
-                                className="mt-5 inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-zinc-950 transition hover:text-zinc-500"
+                                className="mt-3 inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-zinc-950 transition hover:text-zinc-500"
                             >
-                                <span className="flex size-7 items-center justify-center rounded-lg border border-zinc-200">
+                                <span className="flex size-6 items-center justify-center rounded-lg border border-zinc-200">
                                     <Plus
                                         className="size-4"
                                         aria-hidden="true"
@@ -465,28 +465,25 @@ export function CheckoutPageContent() {
                             </AlertDialogContent>
                         </AlertDialog>
 
-                        <section className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
-                            <div className="flex items-start gap-4">
-                                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700">
+                        <section className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                            <div className="flex items-center gap-3">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700">
                                     <CreditCard
                                         className="size-5"
                                         aria-hidden="true"
                                     />
                                 </div>
-                                <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                                        Bước 02
-                                    </p>
-                                    <h2 className="mt-2 text-xl font-bold text-zinc-950">
+                                <div className="min-w-0">
+                                    <h2 className="text-lg font-bold tracking-tight text-zinc-950">
                                         Phương thức thanh toán
                                     </h2>
-                                    <p className="mt-1 text-sm text-zinc-500">
+                                    <p className="mt-0.5 text-sm text-zinc-500">
                                         Phase 1 hỗ trợ thanh toán khi nhận hàng.
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-6 flex items-center gap-4 rounded-2xl border-2 border-zinc-950 bg-zinc-50 p-4">
-                                <div className="flex size-11 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                            <div className="mt-4 flex items-center gap-3 rounded-2xl border-2 border-zinc-950 bg-zinc-50 p-3">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
                                     <Truck
                                         className="size-5"
                                         aria-hidden="true"
@@ -506,7 +503,7 @@ export function CheckoutPageContent() {
                                     aria-hidden="true"
                                 />
                             </div>
-                            <label className="mt-6 block">
+                            <label className="mt-4 block">
                                 <span className="text-sm font-semibold text-zinc-800">
                                     Ghi chú cho người bán{' '}
                                     <span className="font-normal text-zinc-400">
@@ -519,17 +516,17 @@ export function CheckoutPageContent() {
                                         setNote(event.target.value)
                                     }
                                     maxLength={500}
-                                    rows={3}
+                                    rows={2}
                                     placeholder="Ví dụ: Giao giờ hành chính..."
-                                    className="mt-2 w-full resize-none rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-4 focus:ring-zinc-950/5"
+                                    className="mt-1.5 w-full resize-none rounded-2xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-950 focus:ring-4 focus:ring-zinc-950/5"
                                 />
                             </label>
                         </section>
                     </div>
 
-                    <aside className="h-fit rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7 lg:sticky lg:top-24">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                    <aside className="h-fit rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5 lg:sticky lg:top-24">
+                        <div className="flex items-center gap-2.5">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
                                 <PackageCheck
                                     className="size-5"
                                     aria-hidden="true"
@@ -544,10 +541,10 @@ export function CheckoutPageContent() {
                                 </p>
                             </div>
                         </div>
-                        <div className="mt-6 space-y-4 border-t border-zinc-100 pt-5">
+                        <div className="mt-4 space-y-3 border-t border-zinc-100 pt-4">
                             {checkoutItems.map((item) => (
-                                <div key={item.id} className="flex gap-3">
-                                    <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
+                                <div key={item.id} className="flex gap-2.5">
+                                    <div className="size-12 shrink-0 overflow-hidden rounded-xl bg-zinc-100">
                                         {item.imageUrl ? (
                                             <img
                                                 src={item.imageUrl}
@@ -570,15 +567,15 @@ export function CheckoutPageContent() {
                                             {item.quantity}
                                         </p>
                                     </div>
-                                    <p className="shrink-0 text-sm font-semibold text-zinc-950">
+                                    <p className="shrink-0 text-[13px] font-semibold text-zinc-950">
                                         {formatPrice(item.lineTotal)}
                                     </p>
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-6 border-t border-zinc-100 pt-5">
-                            <div className="space-y-3 rounded-2xl bg-zinc-50/80 p-4 text-sm">
-                                <div className="flex items-center justify-between gap-4 text-zinc-500">
+                        <div className="mt-4 border-t border-zinc-100 pt-4">
+                            <div className="space-y-2 rounded-2xl bg-zinc-50/80 p-3 text-sm">
+                                <div className="flex items-center justify-between gap-3 text-zinc-500">
                                     <span>Tạm tính</span>
                                     <span className="font-medium text-zinc-800">
                                         {formatPrice(
@@ -586,7 +583,7 @@ export function CheckoutPageContent() {
                                         )}
                                     </span>
                                 </div>
-                                <div className="flex items-center justify-between gap-4 text-zinc-500">
+                                <div className="flex items-center justify-between gap-3 text-zinc-500">
                                     <div className="flex items-center gap-2">
                                         <span>Phí vận chuyển</span>
                                         <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 ring-1 ring-zinc-200">
@@ -616,7 +613,7 @@ export function CheckoutPageContent() {
                                     )}
                                 </div>
                             </div>
-                            <div className="mt-4 flex items-end justify-between gap-4">
+                            <div className="mt-3 flex items-end justify-between gap-3">
                                 <div>
                                     <p className="text-sm font-semibold text-zinc-950">
                                         Tổng thanh toán
@@ -625,14 +622,14 @@ export function CheckoutPageContent() {
                                         Đã bao gồm phí giao hàng
                                     </p>
                                 </div>
-                                <span className="text-xl font-bold tracking-tight text-zinc-950">
+                                <span className="text-lg font-bold tracking-tight text-zinc-950">
                                     {quote
                                         ? formatPrice(quote.totalAmount)
                                         : '—'}
                                 </span>
                             </div>
                         </div>
-                        <p className="mt-4 text-xs leading-5 text-zinc-400">
+                        <p className="mt-3 text-xs leading-5 text-zinc-400">
                             Giá và tồn kho sẽ được kiểm tra lại ở máy chủ trước
                             khi đơn được xác nhận.
                         </p>
@@ -662,7 +659,7 @@ export function CheckoutPageContent() {
                                 quoteQuery.isError ||
                                 !quoteQuery.data
                             }
-                            className="mt-6 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="mt-4 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {orderMutation.isPending ? (
                                 <>

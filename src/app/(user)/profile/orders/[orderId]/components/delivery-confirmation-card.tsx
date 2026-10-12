@@ -4,7 +4,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, Upload } from 'lucide-react';
+import {
+    CircleAlert,
+    Clock3,
+    ImagePlus,
+    PackageCheck,
+    Upload,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -303,32 +309,48 @@ export function DeliveryConfirmationCard({
 
     return (
         <>
-            <section className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-5 shadow-[0_18px_45px_-32px_rgba(0,0,0,0.45)] sm:p-6">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="max-w-xl">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
-                            Xác nhận đơn hàng
-                        </p>
-                        <h2 className="mt-2 text-xl font-bold tracking-tight text-zinc-950">
-                            Bạn đã nhận được đơn hàng chưa?
-                        </h2>
-                        <p className="mt-2 text-sm leading-6 text-zinc-500">
-                            Xác nhận để chúng tôi cập nhật hành trình chính xác.
-                            Bạn có thể bỏ qua phần đánh giá và quay lại sau.
-                        </p>
-                        {remainingTime ? (
-                            <p className="mt-3 text-xs font-medium text-zinc-700">
-                                Bạn có 3 ngày để xác nhận. Thời gian còn lại:{' '}
-                                {remainingTime}.
+            <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <div className="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex min-w-0 items-start gap-4">
+                        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                            <PackageCheck
+                                className="size-5"
+                                aria-hidden="true"
+                            />
+                        </span>
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h2 className="text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
+                                    Bạn đã nhận được đơn hàng chưa?
+                                </h2>
+                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                    Đơn đã giao
+                                </span>
+                            </div>
+                            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-zinc-500">
+                                Xác nhận để cập nhật trạng thái đơn hàng. Bạn có
+                                thể quay lại đánh giá sản phẩm sau.
                             </p>
-                        ) : null}
+                            {remainingTime ? (
+                                <div className="mt-3 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+                                    <Clock3
+                                        className="size-4 shrink-0 text-zinc-500"
+                                        aria-hidden="true"
+                                    />
+                                    <span>Thời hạn xác nhận còn</span>
+                                    <span className="font-semibold text-zinc-950">
+                                        {remainingTime}
+                                    </span>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[330px] lg:grid-cols-1">
+                    <div className="grid shrink-0 gap-2 sm:grid-cols-2 lg:w-60 lg:grid-cols-1">
                         <Button
                             type="button"
                             onClick={handleReceived}
                             disabled={mutation.isPending}
-                            className="h-11 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white hover:bg-zinc-800"
+                            className="h-11 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
                         >
                             {mutation.isPending
                                 ? 'Đang cập nhật...'
@@ -339,8 +361,12 @@ export function DeliveryConfirmationCard({
                             variant="outline"
                             onClick={() => setIssueOpen(true)}
                             disabled={mutation.isPending}
-                            className="h-11 rounded-xl border-zinc-300 px-5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50"
+                            className="h-11 rounded-xl border-zinc-200 px-4 text-sm font-semibold text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950"
                         >
+                            <CircleAlert
+                                className="mr-2 size-4"
+                                aria-hidden="true"
+                            />
                             Chưa nhận / Có vấn đề
                         </Button>
                     </div>

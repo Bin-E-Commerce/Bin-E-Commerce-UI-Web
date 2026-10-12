@@ -26,7 +26,7 @@ export function CheckoutAddressCard({
 }) {
     return (
         <article
-            className={`w-full rounded-2xl border p-4 transition ${selected ? 'border-zinc-950 bg-zinc-50 shadow-sm' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
+            className={`w-full rounded-2xl border p-3 transition ${selected ? 'border-zinc-950 bg-zinc-50 shadow-sm' : 'border-zinc-200 bg-white hover:border-zinc-400'}`}
         >
             <div className="flex items-start gap-3">
                 <Button
@@ -34,14 +34,14 @@ export function CheckoutAddressCard({
                     type="button"
                     onClick={onSelect}
                     aria-pressed={selected}
-                    className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+                    className="flex h-auto min-w-0 flex-1 cursor-pointer items-start justify-start gap-2 whitespace-normal text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                 >
                     <div
                         className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-zinc-950 bg-zinc-950 text-white' : 'border-zinc-300 text-transparent'}`}
                     >
                         <Check className="size-3" aria-hidden="true" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                             <p className="font-semibold text-zinc-950">
                                 {address.fullName}
@@ -62,7 +62,7 @@ export function CheckoutAddressCard({
                         <p className="mt-1 text-sm text-zinc-600">
                             {address.phone}
                         </p>
-                        <p className="mt-2 text-xs leading-5 text-zinc-500">
+                        <p className="mt-2 break-words text-xs leading-5 text-zinc-500">
                             {formatAddress(address)}
                         </p>
                     </div>

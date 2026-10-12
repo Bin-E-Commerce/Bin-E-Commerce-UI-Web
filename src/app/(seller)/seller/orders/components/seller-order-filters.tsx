@@ -99,7 +99,7 @@ export function SellerOrderFilters({
                                 aria-current={active ? 'page' : undefined}
                                 className={`group flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3.5 text-sm transition-colors focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
                                     active
-                                        ? 'bg-zinc-950 font-semibold text-white shadow-sm hover:bg-zinc-800'
+                                        ? 'bg-zinc-950 font-semibold text-white shadow-sm hover:bg-zinc-950 hover:text-white'
                                         : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950'
                                 }`}
                                 onClick={() => onStatusChange(tab.value)}

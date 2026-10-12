@@ -1,3 +1,4 @@
+// Bộ lọc danh sách sản phẩm của Seller; component chỉ trình bày và phát sự kiện lọc, không sở hữu dữ liệu sản phẩm.
 'use client';
 
 import { RefreshCw, Search } from 'lucide-react';
@@ -43,7 +44,7 @@ function StatusTab({ active, label, count, onClick }: StatusTabProps) {
             type="button"
             className={`h-10 shrink-0 rounded-lg px-3.5 text-sm transition-colors focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20 ${
                 active
-                    ? 'bg-zinc-950 font-semibold text-white shadow-sm hover:bg-zinc-800'
+                    ? 'bg-zinc-950 font-semibold text-white shadow-sm hover:bg-zinc-950 hover:text-white'
                     : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-950'
             }`}
             onClick={onClick}

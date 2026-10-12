@@ -444,7 +444,7 @@ function ReturnFilterButton({
             onClick={onClick}
             className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-medium transition ${
                 active
-                    ? 'bg-zinc-950 text-white shadow-sm'
+                    ? 'bg-zinc-950 text-white shadow-sm hover:bg-zinc-950 hover:text-white'
                     : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950'
             }`}
         >
