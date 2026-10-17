@@ -20,6 +20,7 @@ interface SellerDashboardKpiGridProps {
     snapshot: SellerDashboardSnapshot;
 }
 
+// Tạo card doanh thu đen khói, còn các chỉ số khác giữ nền sáng dễ quét.
 export function SellerDashboardKpiGrid({
     snapshot,
 }: SellerDashboardKpiGridProps) {
@@ -30,7 +31,8 @@ export function SellerDashboardKpiGrid({
             value: formatDashboardMoney(kpis.grossRevenue),
             icon: WalletCards,
             href: '/seller/finance',
-            tone: 'bg-zinc-950 text-white',
+            tone: 'bg-white/10 text-white ring-1 ring-white/10',
+            highlight: true,
         },
         {
             label: 'Tổng đơn hàng',
@@ -38,6 +40,7 @@ export function SellerDashboardKpiGrid({
             icon: ShoppingCart,
             href: '/seller/orders',
             tone: 'bg-zinc-100 text-zinc-950',
+            highlight: false,
         },
         {
             label: 'Đơn cần giao',
@@ -45,6 +48,7 @@ export function SellerDashboardKpiGrid({
             icon: Truck,
             href: '/seller/orders',
             tone: 'bg-zinc-100 text-zinc-700',
+            highlight: false,
         },
         {
             label: 'Sản phẩm đang bán',
@@ -52,6 +56,7 @@ export function SellerDashboardKpiGrid({
             icon: PackageCheck,
             href: '/seller/products',
             tone: 'bg-zinc-100 text-zinc-700',
+            highlight: false,
         },
     ];
 
@@ -59,13 +64,38 @@ export function SellerDashboardKpiGrid({
         <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
             {items.map((item) => {
                 const Icon = item.icon;
+                const cardTone = item.highlight
+                    ? 'isolate border-zinc-700 bg-gradient-to-br from-black via-zinc-950 to-zinc-800 text-white shadow-md shadow-black/20'
+                    : 'border-slate-200 bg-gradient-to-br from-white via-white to-slate-50/90';
+                const labelTone = item.highlight
+                    ? 'text-slate-200'
+                    : 'text-zinc-600';
+                const actionTone = item.highlight
+                    ? 'border-slate-500 bg-white/10 text-slate-100 hover:bg-white/15 hover:text-white'
+                    : 'text-zinc-700';
+                const valueTone = item.highlight
+                    ? 'text-white'
+                    : 'text-zinc-950';
+
                 return (
                     <Card
                         key={item.label}
                         size="sm"
-                        className="border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-sm"
+                        className={`relative overflow-hidden border shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-shadow hover:shadow-sm ${cardTone}`}
                     >
-                        <CardContent className="flex min-h-24 flex-col p-3.5">
+                        {item.highlight ? (
+                            <>
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute -right-12 -top-20 size-48 rounded-full bg-gradient-to-br from-white/25 via-white/10 to-transparent blur-2xl"
+                                />
+                                <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute -right-8 -top-14 size-36 rounded-full border border-white/10"
+                                />
+                            </>
+                        ) : null}
+                        <CardContent className="relative z-10 flex min-h-24 flex-col p-3.5">
                             <div className="flex items-center justify-between gap-2">
                                 <div className="flex min-w-0 items-center gap-2">
                                     <span
@@ -73,7 +103,9 @@ export function SellerDashboardKpiGrid({
                                     >
                                         <Icon className="size-4" />
                                     </span>
-                                    <p className="truncate text-xs font-medium text-zinc-600">
+                                    <p
+                                        className={`truncate text-xs font-medium ${labelTone}`}
+                                    >
                                         {item.label}
                                     </p>
                                 </div>
@@ -82,15 +114,16 @@ export function SellerDashboardKpiGrid({
                                     className={buttonVariants({
                                         variant: 'outline',
                                         size: 'sm',
-                                        className:
-                                            'h-7 shrink-0 gap-1 rounded-md px-2 text-[11px] text-zinc-700',
+                                        className: `h-7 shrink-0 gap-1 rounded-md px-2 text-[11px] ${actionTone}`,
                                     })}
                                 >
                                     Xem
                                     <ArrowUpRight className="size-3" />
                                 </Link>
                             </div>
-                            <p className="mt-3 text-xl font-semibold tracking-tight tabular-nums text-zinc-950">
+                            <p
+                                className={`mt-3 text-xl font-semibold tracking-tight tabular-nums ${valueTone}`}
+                            >
                                 {item.value}
                             </p>
                         </CardContent>

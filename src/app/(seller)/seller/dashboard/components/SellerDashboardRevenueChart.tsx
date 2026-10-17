@@ -139,9 +139,9 @@ export function SellerDashboardRevenueChart({
     return (
         <Card
             size="sm"
-            className="border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            className="border-slate-200 bg-gradient-to-br from-white via-white to-slate-50/90 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
         >
-            <CardHeader className="flex-row items-start justify-between gap-3 border-b border-zinc-100 px-4 pb-3 pt-3">
+            <CardHeader className="flex-row items-start justify-between gap-3 border-b border-slate-200/80 px-4 pb-3 pt-3">
                 <div>
                     <CardTitle className="text-base font-semibold text-zinc-950">
                         Doanh thu và đơn hàng

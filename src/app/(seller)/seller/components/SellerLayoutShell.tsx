@@ -164,13 +164,15 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
         );
     }
 
+    // Header sticky cần bám viewport; overflow-x-hidden trên ancestor tạo scroll container và làm sticky cuộn mất.
+    // Dùng overflow-x-clip để vẫn chặn tràn ngang nhưng không đổi vùng tham chiếu của position: sticky.
     return (
         <div
             className={cn(
                 'bg-zinc-50 text-zinc-950',
                 isSellerCopilotRoute
                     ? 'flex h-dvh overflow-hidden'
-                    : 'min-h-screen overflow-x-hidden',
+                    : 'min-h-screen overflow-x-clip',
             )}
         >
             <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block">
@@ -209,7 +211,7 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                     'min-w-0 lg:pl-72',
                     isSellerCopilotRoute
                         ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
-                        : 'overflow-x-hidden',
+                        : 'overflow-x-clip',
                 )}
             >
                 <SellerTopbar
@@ -223,7 +225,7 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                         'w-full min-w-0',
                         isSellerCopilotRoute
                             ? 'min-h-0 flex-1 overflow-hidden p-0'
-                            : 'mx-auto max-w-[1500px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8',
+                            : 'mx-auto max-w-[1500px] overflow-x-clip px-4 py-4 sm:px-6 sm:py-6 lg:px-8',
                     )}
                 >
                     {children}

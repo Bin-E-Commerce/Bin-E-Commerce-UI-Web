@@ -9,6 +9,28 @@ import type {
 } from '@/app/(public)/checkout/types/checkout.types';
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
+const VNPAY_RETURN = `${API_BASE_URL}${API_VERSION}/payments/vnpay/return`;
+
+export type VnpayReturnResponse =
+    | { status: 'PAID'; orderId: string }
+    | {
+          status:
+              | 'FAILED'
+              | 'REFUND_PENDING'
+              | 'REFUNDED'
+              | 'PENDING'
+              | 'UNVERIFIED';
+      };
+
+// Gửi nguyên query VNPay tới backend; client chỉ hiển thị kết quả sau khi server xác minh chữ ký và đối chiếu attempt.
+export async function verifyVnpayReturn(
+    rawQueryString: string,
+): Promise<VnpayReturnResponse> {
+    const response = await authorizedAxios.get<VnpayReturnResponse>(
+        `${VNPAY_RETURN}${rawQueryString}`,
+    );
+    return response.data;
+}
 
 export type DeliveryIssueReason =
     'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
@@ -42,7 +64,7 @@ export async function createCodOrder(
         {
             shippingAddressId: input.shippingAddressId,
             ...(input.cartItemId ? { cartItemId: input.cartItemId } : {}),
-            paymentMethod: 'COD',
+            paymentMethod: input.paymentMethod,
             note: input.note?.trim() || undefined,
         },
         {
@@ -57,7 +79,7 @@ export interface OrderQuoteResponse {
     subtotal: string;
     shippingFee: string;
     totalAmount: string;
-    paymentMethod: 'COD';
+    paymentMethod: 'COD' | 'VNPAY';
     shippingFeeBreakdown: Array<{
         shopId: string;
         provider: string;
@@ -70,13 +92,14 @@ export interface OrderQuoteResponse {
 export async function getOrderQuote(
     shippingAddressId: string,
     cartItemId?: string,
+    paymentMethod: 'COD' | 'VNPAY' = 'COD',
 ): Promise<OrderQuoteResponse> {
     const response = await authorizedAxios.post<OrderQuoteResponse>(
         `${ORDERS}/quote`,
         {
             shippingAddressId,
             ...(cartItemId ? { cartItemId } : {}),
-            paymentMethod: 'COD',
+            paymentMethod,
         },
     );
     return response.data;
@@ -100,7 +123,14 @@ export interface CustomerOrderListItem {
     orderNumber: string;
     status: CustomerOrderStatus;
     fulfillmentStatus?: CustomerOrderStage;
-    paymentMethod: 'COD';
+    paymentStatus?:
+        | 'COD_PENDING_COLLECTION'
+        | 'PENDING'
+        | 'FAILED'
+        | 'PAID'
+        | 'REFUND_PENDING'
+        | 'REFUNDED';
+    paymentMethod: 'COD' | 'VNPAY';
     totalAmount: string;
     itemCount: number;
     previewItems: Array<{

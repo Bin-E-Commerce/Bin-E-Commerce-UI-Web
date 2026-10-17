@@ -96,7 +96,7 @@ export function useCheckout() {
                 queryKey: ['cart', userId ?? 'anonymous'],
             });
             if (order.warnings.length > 0) toast.warning(order.warnings[0]);
-            else toast.success('Đặt hàng COD thành công.');
+            else toast.success(order.paymentMethod === 'COD' ? 'Đặt hàng COD thành công.' : 'Đã tạo đơn, đang chờ thanh toán VNPay.');
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
@@ -115,10 +115,11 @@ export function useCheckout() {
 export function useCheckoutQuote(
     shippingAddressId: string,
     cartItemId?: string,
+    paymentMethod: 'COD' | 'VNPAY' = 'COD',
 ) {
     return useQuery({
-        queryKey: ['checkout-quote', shippingAddressId, cartItemId ?? 'cart'],
-        queryFn: () => getOrderQuote(shippingAddressId, cartItemId),
+        queryKey: ['checkout-quote', shippingAddressId, cartItemId ?? 'cart', paymentMethod],
+        queryFn: () => getOrderQuote(shippingAddressId, cartItemId, paymentMethod),
         enabled: Boolean(shippingAddressId),
         staleTime: 20_000,
         refetchOnWindowFocus: false,

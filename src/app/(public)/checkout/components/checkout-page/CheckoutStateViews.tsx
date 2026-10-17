@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { CheckCircle2, Loader2, PackageCheck } from 'lucide-react';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { OrderResponse } from '../../types/checkout.types';
 
@@ -37,6 +38,112 @@ export function CheckoutShell({
         >
             {children}
         </main>
+    );
+}
+
+// Dựng khung checkout thật trong lúc session, giỏ hàng và địa chỉ đang tải.
+// Skeleton chỉ mô phỏng kích thước, không tạo dữ liệu sản phẩm hay địa chỉ giả.
+// Nội dung trang trí bị ẩn khỏi screen reader; trạng thái tải chỉ được thông báo một lần.
+export function CheckoutLoadingSkeleton() {
+    return (
+        <CheckoutShell>
+            <section
+                role="status"
+                aria-live="polite"
+                className="mx-auto w-full max-w-7xl"
+            >
+                <span className="sr-only">
+                    Đang tải thông tin thanh toán...
+                </span>
+                <div aria-hidden="true">
+                    <div className="mb-5 border-b border-zinc-200 pb-5 sm:mb-6">
+                        <Skeleton className="h-7 w-36 rounded-full" />
+                        <Skeleton className="mt-4 h-9 w-56" />
+                        <Skeleton className="mt-2 h-4 w-80 max-w-full" />
+                    </div>
+
+                    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+                        <div className="space-y-4">
+                            <section
+                                className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="size-9 rounded-xl" />
+                                    <div className="flex-1">
+                                        <Skeleton className="h-5 w-40" />
+                                        <Skeleton className="mt-2 h-4 w-64 max-w-full" />
+                                    </div>
+                                </div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                    {[0, 1].map((card) => (
+                                        <div
+                                            key={card}
+                                            className="rounded-2xl border border-zinc-200 p-4"
+                                        >
+                                            <Skeleton className="h-4 w-36" />
+                                            <Skeleton className="mt-3 h-4 w-28" />
+                                            <Skeleton className="mt-3 h-3 w-full" />
+                                            <Skeleton className="mt-2 h-3 w-3/4" />
+                                        </div>
+                                    ))}
+                                </div>
+                                <Skeleton className="mt-4 h-8 w-36 rounded-xl" />
+                            </section>
+
+                            <section
+                                className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="size-9 rounded-xl" />
+                                    <div className="flex-1">
+                                        <Skeleton className="h-5 w-48" />
+                                        <Skeleton className="mt-2 h-4 w-64 max-w-full" />
+                                    </div>
+                                </div>
+                                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                                    <Skeleton className="h-[76px] rounded-2xl" />
+                                    <Skeleton className="h-[76px] rounded-2xl" />
+                                </div>
+                                <Skeleton className="mt-5 h-4 w-40" />
+                                <Skeleton className="mt-2 h-20 w-full rounded-2xl" />
+                            </section>
+                        </div>
+
+                        <aside
+                            className="h-fit rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5"
+                        >
+                            <div className="flex items-center gap-3 border-b border-zinc-100 pb-4">
+                                <Skeleton className="size-9 rounded-xl" />
+                                <div>
+                                    <Skeleton className="h-5 w-36" />
+                                    <Skeleton className="mt-2 h-3 w-20" />
+                                </div>
+                            </div>
+                            <div className="space-y-4 py-4">
+                                {[0, 1, 2].map((item) => (
+                                    <div
+                                        key={item}
+                                        className="flex gap-3"
+                                    >
+                                        <Skeleton className="size-12 shrink-0 rounded-xl" />
+                                        <div className="min-w-0 flex-1">
+                                            <Skeleton className="h-4 w-full" />
+                                            <Skeleton className="mt-2 h-3 w-2/3" />
+                                        </div>
+                                        <Skeleton className="h-4 w-16 shrink-0" />
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="space-y-3 border-t border-zinc-100 pt-4">
+                                <Skeleton className="h-10 w-full rounded-xl" />
+                                <Skeleton className="h-7 w-full" />
+                                <Skeleton className="h-11 w-full rounded-xl" />
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </section>
+        </CheckoutShell>
     );
 }
 

@@ -4,7 +4,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { BadgeCheck, Star, Store } from 'lucide-react';
+import { BadgeCheck, MessageSquareText, Store } from 'lucide-react';
 
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -74,7 +74,7 @@ export function ProductShopPanel({ shop }: ProductShopPanelProps) {
                         <ShopMetric
                             label="Đánh giá"
                             value={rating > 0 ? rating.toFixed(1) : 'Chưa có'}
-                            icon={<Star className="h-3.5 w-3.5 fill-current" />}
+                            icon={<MessageSquareText className="h-3.5 w-3.5" />}
                         />
                         <ShopMetric
                             label="Lượt đánh giá"

@@ -92,7 +92,7 @@ function createLocalMediaPreviews(
     ];
 }
 
-// Render card xác nhận với hai lựa chọn rõ ràng, ưu tiên thao tác tích cực và giữ lựa chọn báo lỗi dễ tìm.
+// Render card xác nhận với hai lựa chọn rõ ràng; trạng thái DELIVERED đã đủ ngữ cảnh nên không cần thêm tag lặp lại.
 export function DeliveryConfirmationCard({
     order,
 }: DeliveryConfirmationCardProps) {
@@ -323,9 +323,6 @@ export function DeliveryConfirmationCard({
                                 <h2 className="text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
                                     Bạn đã nhận được đơn hàng chưa?
                                 </h2>
-                                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-                                    Đơn đã giao
-                                </span>
                             </div>
                             <p className="mt-1.5 max-w-2xl text-sm leading-6 text-zinc-500">
                                 Xác nhận để cập nhật trạng thái đơn hàng. Bạn có

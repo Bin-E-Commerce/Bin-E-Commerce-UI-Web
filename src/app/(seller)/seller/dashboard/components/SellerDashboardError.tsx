@@ -9,12 +9,13 @@ interface SellerDashboardErrorProps {
     isRetrying: boolean;
 }
 
+// Giải thích lỗi tải dashboard và cho phép yêu cầu lấy snapshot lại.
 export function SellerDashboardError({
     onRetry,
     isRetrying,
 }: SellerDashboardErrorProps) {
     return (
-        <Card size="sm" className="border-zinc-200 shadow-sm">
+        <Card size="sm" className="border-slate-200 bg-gradient-to-br from-white via-slate-50/50 to-slate-100/70 shadow-sm">
             <CardContent className="flex min-h-64 flex-col items-center justify-center px-6 text-center">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-zinc-950 text-white">
                     <TriangleAlert className="size-5" />

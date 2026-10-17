@@ -1,7 +1,7 @@
 //  Bảng sản phẩm seller trên desktop/mobile; giới hạn vùng tên để các cột vận hành luôn dễ quét.
 
 import Image from 'next/image';
-import { ImageOff, Star } from 'lucide-react';
+import { ImageOff, MessageSquareText } from 'lucide-react';
 
 import type { SellerProductListItem } from '@/services/product';
 import {
@@ -189,7 +189,7 @@ function DesktopProductsTable({
                                     đã bán
                                 </p>
                                 <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-xs text-zinc-500">
-                                    <Star className="size-3 fill-current" />
+                                    <MessageSquareText className="size-3" />
                                     {product.ratingAvg ?? 'Chưa có'} ·{' '}
                                     {product.reviewCount} đánh giá
                                 </p>

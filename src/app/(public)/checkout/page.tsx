@@ -2,12 +2,15 @@
 
 import { Suspense } from 'react';
 import { CheckoutPageContent } from '@/app/(public)/checkout/components/checkout-page/CheckoutPageContent';
+import {
+    CheckoutLoadingSkeleton,
+} from '@/app/(public)/checkout/components/checkout-page/CheckoutStateViews';
 
-// Trang checkout COD Phase 1 dành cho user đã đăng nhập.
+// Trang checkout dành cho người mua; Suspense cũng dùng skeleton trong lúc đọc query string.
 export default function CheckoutPage() {
-    // Bao bọc component đọc query string để Next.js có thể prerender route checkout an toàn.
+    // Component đọc query string được bao trong Suspense và dùng cùng skeleton với trạng thái tải dữ liệu.
     return (
-        <Suspense fallback={null}>
+        <Suspense fallback={<CheckoutLoadingSkeleton />}>
             <CheckoutPageContent />
         </Suspense>
     );

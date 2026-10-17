@@ -1,5 +1,5 @@
-// File nay dong goi luong upload anh/video review len Media Service.
-// Anh dung output WebP da xu ly; video dung URL object goc tu CDN.
+// File này upload ảnh/video đánh giá lên Media Service và trả URL công khai cho review.
+// Ảnh dùng object gốc để hiển thị ngay, không phụ thuộc Lambda tạo WebP bất đồng bộ.
 import {
     mediaService,
     type MediaUploadMimeType,
@@ -12,27 +12,16 @@ type ReviewMediaUploadResult = {
     uploadedAssets: ReviewMediaCleanupAsset[];
 };
 
-// Dung URL WebP lon theo object key ma Media Service tra ve cho anh review.
-function buildProcessedReviewImageUrl(
+// Dùng URL object gốc cho cả ảnh và video để review không trỏ tới file xử lý chưa tồn tại.
+function buildOriginalReviewMediaUrl(
     publicBaseUrl: string | null,
     objectKey: string,
+    purpose: 'review_image' | 'review_video',
 ): string {
-    if (!publicBaseUrl) throw new Error('Media CDN chua duoc cau hinh.');
-    const [, , purpose, ownerId, assetId] = objectKey.split('/');
-    if (purpose !== 'review_image' || !ownerId || !assetId)
-        throw new Error('Duong dan anh review khong hop le.');
-    return `${publicBaseUrl.replace(/\/$/, '')}/media/processed/${purpose}/${ownerId}/${assetId}/large.webp`;
-}
-
-// Video review chua can pipeline thumbnail; su dung object goc de trinh duyet phat truc tiep.
-function buildOriginalReviewVideoUrl(
-    publicBaseUrl: string | null,
-    objectKey: string,
-): string {
-    if (!publicBaseUrl) throw new Error('Media CDN chua duoc cau hinh.');
-    const [, , purpose, ownerId, assetId] = objectKey.split('/');
-    if (purpose !== 'review_video' || !ownerId || !assetId)
-        throw new Error('Duong dan video review khong hop le.');
+    if (!publicBaseUrl) throw new Error('Media CDN chưa được cấu hình.');
+    const [, , keyPurpose, ownerId, assetId] = objectKey.split('/');
+    if (keyPurpose !== purpose || !ownerId || !assetId)
+        throw new Error('Đường dẫn media đánh giá không hợp lệ.');
     return `${publicBaseUrl.replace(/\/$/, '')}/${objectKey}`;
 }
 
@@ -63,16 +52,11 @@ export async function uploadReviewMedia(
             uploadedAssets.push(uploadedAsset);
             return {
                 purpose,
-                url:
-                    purpose === 'review_image'
-                        ? buildProcessedReviewImageUrl(
-                              presigned.publicBaseUrl,
-                              presigned.objectKey,
-                          )
-                        : buildOriginalReviewVideoUrl(
-                              presigned.publicBaseUrl,
-                              presigned.objectKey,
-                          ),
+                url: buildOriginalReviewMediaUrl(
+                    presigned.publicBaseUrl,
+                    presigned.objectKey,
+                    purpose,
+                ),
             };
         }),
     );

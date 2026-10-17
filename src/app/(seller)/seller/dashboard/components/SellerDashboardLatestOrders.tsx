@@ -15,15 +15,16 @@ interface SellerDashboardLatestOrdersProps {
     snapshot: SellerDashboardSnapshot;
 }
 
+// Hiển thị đơn mới nhất và liên kết tới trang xử lý chi tiết của từng đơn.
 export function SellerDashboardLatestOrders({
     snapshot,
 }: SellerDashboardLatestOrdersProps) {
     return (
         <Card
             size="sm"
-            className="border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            className="border-slate-200 bg-gradient-to-br from-white via-white to-slate-50/90 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
         >
-            <CardHeader className="flex flex-row items-center gap-2.5 border-b border-zinc-100 px-4 pb-3 pt-3">
+            <CardHeader className="flex flex-row items-center gap-2.5 border-b border-slate-200/80 px-4 pb-3 pt-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
                     <ClipboardList className="size-4" />
                 </span>
@@ -84,7 +85,7 @@ export function SellerDashboardLatestOrders({
                         ))}
                     </div>
                 )}
-                <div className="mt-auto border-t border-zinc-100 p-3">
+                <div className="mt-auto border-t border-slate-200/80 p-3">
                     <Link
                         href="/seller/orders"
                         className={buttonVariants({

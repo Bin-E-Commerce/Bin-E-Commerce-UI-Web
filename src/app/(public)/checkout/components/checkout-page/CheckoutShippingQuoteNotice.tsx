@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import {
     CircleAlert,
     Clock3,
-    Info,
     Loader2,
     MapPinned,
     RefreshCw,
@@ -207,9 +206,6 @@ export function CheckoutShippingQuoteNotice({
                 </div>
                 <div className="p-3">
                     <div className="flex items-center gap-2.5">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
-                            <Truck className="size-4" aria-hidden="true" />
-                        </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-zinc-900">
                                 {shippingFeeBreakdown[0]?.serviceName
@@ -249,14 +245,6 @@ export function CheckoutShippingQuoteNotice({
                         </div>
                     ) : null}
 
-                    <div className="mt-3 flex items-start gap-2 rounded-xl bg-zinc-50 px-2.5 py-2 text-xs leading-5 text-zinc-500">
-                        <Info
-                            className="mt-0.5 size-3.5 shrink-0 text-zinc-400"
-                            aria-hidden="true"
-                        />
-                        Mức phí có thể được xác nhận lại khi shop tiếp nhận đơn
-                        hàng.
-                    </div>
                 </div>
             </section>
         );

@@ -8,9 +8,9 @@ import {
     EyeOff,
     Hash,
     PackageCheck,
+    MessageSquareText,
     Pencil,
     Power,
-    Star,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -144,7 +144,7 @@ export function SellerProductDetailHero({
                             value={formatSellerProductMetric(product.totalSold)}
                         />
                         <HeroMetric
-                            icon={Star}
+                            icon={MessageSquareText}
                             label="Đánh giá"
                             value={product.ratingAvg ?? '—'}
                         />

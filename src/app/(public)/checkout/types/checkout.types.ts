@@ -3,11 +3,13 @@
 import type { UserAddress } from '@/services/auth';
 
 // Input form checkout được hook chuyển thành request Order API có idempotency key.
+// Phương thức được chọn chỉ ảnh hưởng điều hướng; backend vẫn tự chốt giá và tổng tiền.
 export interface CreateCodOrderInput {
     shippingAddressId: string;
     cartItemId?: string;
     note?: string;
     idempotencyKey: string;
+    paymentMethod: 'COD' | 'VNPAY';
 }
 
 // Response order tối thiểu để trang checkout hiển thị kết quả tạo đơn.
@@ -23,8 +25,9 @@ export interface OrderResponse {
         | 'CANCELLED'
         | 'DELIVERY_FAILED'
         | 'RETURN_REFUND';
-    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
-    paymentMethod: 'COD';
+    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_PENDING' | 'REFUNDED';
+    paymentMethod: 'COD' | 'VNPAY';
+    paymentUrl?: string;
     subtotal: string;
     shippingFee: string;
     totalAmount: string;

@@ -23,9 +23,16 @@ export interface SellerOrderListItem {
     id: string;
     orderNumber: string;
     status: SellerOrderStatus;
-    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
+    paymentStatus?:
+        | 'COD_PENDING_COLLECTION'
+        | 'PENDING'
+        | 'FAILED'
+        | 'PAID'
+        | 'REFUND_PENDING'
+        | 'REFUNDED';
     fulfillmentStatus?: SellerOrderStage;
-    paymentMethod: 'COD';
+    paymentMethod: 'COD' | 'VNPAY';
+    isSandbox: boolean;
     shopItemTotal: string;
     shippingFee?: string;
     shippingFeeBreakdown?: Array<Record<string, unknown>>;
@@ -71,8 +78,15 @@ export interface SellerOrderResponse {
     orderNumber: string;
     status: SellerOrderStatus;
     fulfillmentStatus?: SellerOrderStage;
-    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PAID' | 'REFUND_PENDING';
-    paymentMethod: 'COD';
+    paymentStatus?:
+        | 'COD_PENDING_COLLECTION'
+        | 'PENDING'
+        | 'FAILED'
+        | 'PAID'
+        | 'REFUND_PENDING'
+        | 'REFUNDED';
+    paymentMethod: 'COD' | 'VNPAY';
+    isSandbox: boolean;
     shopItemTotal: string;
     shippingFee: string;
     shippingFeeBreakdown: Array<Record<string, unknown>>;

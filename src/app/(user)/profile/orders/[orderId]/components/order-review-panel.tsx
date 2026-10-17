@@ -5,15 +5,22 @@
 'use client';
 
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import Image from 'next/image';
-import { Pencil, Star } from 'lucide-react';
+import { MessageSquareText, Pencil, Star, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import {
+    ImageLightbox,
+    type ImageLightboxMedia,
+} from '@/common/reviews/components/ImageLightbox';
 import { mediaService, type ReviewMediaCleanupAsset } from '@/services/media';
 import type { OrderResponse } from '@/app/(public)/checkout/types/checkout.types';
 import type { OrderReviewItemStatus } from '@/services/product';
+import { getUserDisplayName } from '@/services/auth/utils/user-display-name';
+import type { RootState } from '@/store';
 import {
     useCreateOrderReview,
     useOrderReviewStatus,
@@ -37,6 +44,17 @@ function formatReviewDeadline(deadline: string | null): string | null {
           );
 }
 
+// Hiển thị thời điểm gửi theo locale Việt Nam, giữ card review nhất quán với trang sản phẩm.
+function formatReviewSubmittedAt(createdAt: string): string {
+    const date = new Date(createdAt);
+    return Number.isNaN(date.getTime())
+        ? 'Không rõ thời gian'
+        : new Intl.DateTimeFormat('vi-VN', {
+              dateStyle: 'short',
+              timeStyle: 'short',
+          }).format(date);
+}
+
 // Render review độc lập cho từng item để Customer xem lại hoặc chỉnh sửa đúng sản phẩm đã chọn.
 // Khi review đã tồn tại, form khởi tạo từ snapshot server và chỉ mở sau khi Customer bấm chỉnh sửa.
 // Media cũ được quản lý tách khỏi File mới để Customer có thể xóa từng ảnh/video mà không phải upload lại toàn bộ.
@@ -48,6 +66,7 @@ function ReviewItemComposer({
     item: OrderReviewItemStatus;
 }) {
     const existingReview = item.review;
+    const currentUser = useSelector((state: RootState) => state.auth.user);
     const [editing, setEditing] = useState(!existingReview);
     const [rating, setRating] = useState(existingReview?.rating ?? 0);
     const [title, setTitle] = useState(existingReview?.title ?? '');
@@ -65,9 +84,40 @@ function ReviewItemComposer({
     );
     const [uploading, setUploading] = useState(false);
     const [skipped, setSkipped] = useState(false);
+    const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(
+        null,
+    );
     const createMutation = useCreateOrderReview(orderId);
     const updateMutation = useUpdateOrderReview(orderId);
     const mutation = existingReview ? updateMutation : createMutation;
+    // Dùng hồ sơ hiện tại để tên không phụ thuộc snapshot cũ; review ẩn danh luôn che cả tên lẫn avatar.
+    const reviewerName = existingReview?.isAnonymous
+        ? 'Người mua ẩn danh'
+        : currentUser
+          ? getUserDisplayName(currentUser)
+          : 'Bạn';
+    const reviewerAvatarUrl = existingReview?.isAnonymous
+        ? null
+        : currentUser?.avatarUrl;
+    const reviewerInitials = reviewerName
+        .trim()
+        .split(/\s+/)
+        .slice(-2)
+        .map((part) => part[0])
+        .join('')
+        .toLocaleUpperCase('vi-VN');
+    const existingReviewMedia: ImageLightboxMedia[] = [
+        ...(existingReview?.images ?? []).map((url, index) => ({
+            url,
+            type: 'image' as const,
+            label: `Ảnh đánh giá ${index + 1}`,
+        })),
+        ...(existingReview?.videos ?? []).map((url, index) => ({
+            url,
+            type: 'video' as const,
+            label: `Video đánh giá ${index + 1}`,
+        })),
+    ];
 
     if (skipped && !existingReview) {
         return (
@@ -79,60 +129,141 @@ function ReviewItemComposer({
     }
     if (existingReview && !editing) {
         return (
-            <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div
-                        className="flex items-center gap-1 text-amber-500"
-                        aria-label={`${existingReview.rating} sao`}
-                    >
-                        {Array.from({ length: 5 }).map((_, index) => (
-                            <Star
-                                key={index}
-                                className="size-4"
-                                fill={
-                                    index < existingReview.rating
-                                        ? 'currentColor'
-                                        : 'none'
-                                }
+            <article className="mt-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <span className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-950 text-xs font-bold text-white">
+                            {reviewerAvatarUrl &&
+                            (reviewerAvatarUrl.startsWith('/') ||
+                                reviewerAvatarUrl.startsWith('https://')) ? (
+                                <Image
+                                    src={reviewerAvatarUrl}
+                                    alt={`Avatar của ${reviewerName}`}
+                                    fill
+                                    sizes="44px"
+                                    className="object-cover"
+                                />
+                            ) : existingReview.isAnonymous ? (
+                                <UserRound
+                                    className="size-5"
+                                    aria-hidden="true"
+                                />
+                            ) : (
+                                reviewerInitials || 'B'
+                            )}
+                        </span>
+                        <div className="min-w-0">
+                            <p className="break-words text-sm font-semibold text-zinc-950">
+                                {reviewerName}
+                            </p>
+                            <p className="mt-0.5 text-xs text-zinc-500">
+                                Đánh giá của bạn
+                                {!item.canEdit
+                                    ? ' · Đã hết hạn chỉnh sửa'
+                                    : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                        <time className="text-xs text-zinc-400">
+                            {formatReviewSubmittedAt(existingReview.createdAt)}
+                        </time>
+                        {item.canEdit ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-8 gap-1.5 rounded-lg border-zinc-300 bg-white px-3 text-xs"
+                                onClick={() => setEditing(true)}
+                            >
+                                <Pencil
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                />
+                                Chỉnh sửa
+                            </Button>
+                        ) : null}
+                    </div>
+                </div>
+                <div
+                    className="mt-3 flex items-center gap-1 text-amber-400"
+                    aria-label={`${existingReview.rating} trên 5 sao`}
+                >
+                    {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                            key={index}
+                            className={`size-4 ${index < existingReview.rating ? 'fill-current' : 'text-zinc-200'}`}
+                            aria-hidden="true"
+                        />
+                    ))}
+                    <span className="ml-2 text-xs font-medium text-zinc-500">
+                        {existingReview.rating}/5
+                    </span>
+                </div>
+                {item.variantName ? (
+                    <p className="mt-2 text-xs text-zinc-500">
+                        Phân loại hàng:{' '}
+                        <span className="text-zinc-700">
+                            {item.variantName}
+                        </span>
+                    </p>
+                ) : null}
+                {existingReview.title ? (
+                    <h3 className="mt-3 text-sm font-semibold text-zinc-950">
+                        {existingReview.title}
+                    </h3>
+                ) : null}
+                <p className="mt-2 whitespace-pre-line text-sm leading-6 text-zinc-700">
+                    {existingReview.content || 'Bạn chưa thêm nội dung đánh giá.'}
+                </p>
+                {existingReview.images.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {existingReview.images.map((imageUrl, index) => (
+                            <Button
+                                key={`${imageUrl}-${index}`}
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setSelectedMediaIndex(index)}
+                                aria-label={`Xem ảnh đánh giá ${index + 1}`}
+                                className="group relative size-20 cursor-zoom-in overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 p-0"
+                            >
+                                <Image
+                                    src={imageUrl}
+                                    alt={`Ảnh đánh giá ${index + 1}`}
+                                    fill
+                                    sizes="80px"
+                                    className="object-cover"
+                                />
+                                <span className="absolute inset-0 flex items-center justify-center bg-zinc-950/35 text-[10px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                    Xem ảnh
+                                </span>
+                            </Button>
+                        ))}
+                    </div>
+                ) : null}
+                {existingReview.videos.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {existingReview.videos.map((videoUrl, index) => (
+                            <video
+                                key={`${videoUrl}-${index}`}
+                                src={videoUrl}
+                                controls
+                                preload="metadata"
+                                className="max-h-56 w-full max-w-sm rounded-xl border border-zinc-200 bg-zinc-950"
+                                aria-label={`Video đánh giá ${index + 1}`}
                             />
                         ))}
-                        <span className="ml-1 text-xs font-semibold text-zinc-600">
-                            {existingReview.rating}/5
-                        </span>
                     </div>
-                    {item.canEdit ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="h-8 gap-1.5 rounded-lg border-zinc-300 bg-white px-3 text-xs"
-                            onClick={() => setEditing(true)}
-                        >
-                            <Pencil className="size-3.5" aria-hidden="true" />
-                            Chỉnh sửa
-                        </Button>
-                    ) : null}
-                </div>
-                {existingReview.title ? (
-                    <p className="mt-2 text-sm font-semibold text-zinc-900">
-                        {existingReview.title}
-                    </p>
                 ) : null}
-                {existingReview.content ? (
-                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-zinc-600">
-                        {existingReview.content}
-                    </p>
+                {selectedMediaIndex !== null ? (
+                    <ImageLightbox
+                        media={existingReviewMedia}
+                        initialIndex={selectedMediaIndex}
+                        title="Ảnh và video đánh giá"
+                        altPrefix="Media đánh giá"
+                        onClose={() => setSelectedMediaIndex(null)}
+                    />
                 ) : null}
-                <p className="mt-2 text-xs text-zinc-500">
-                    Tên hiển thị:{' '}
-                    {existingReview.isAnonymous
-                        ? 'Người mua ẩn danh'
-                        : 'Tên tài khoản của bạn'}
-                </p>
-                <p className="mt-2 text-xs font-medium text-zinc-500">
-                    Đã gửi đánh giá
-                    {item.canEdit ? '' : ' · Đã hết hạn chỉnh sửa'}
-                </p>
-            </div>
+            </article>
         );
     }
     if (!item.canReview && !existingReview) {
@@ -175,6 +306,8 @@ function ReviewItemComposer({
                     orderItemId: item.orderItemId,
                     ...reviewInput,
                 });
+                // Sau lần gửi đầu, chuyển sang chế độ xem để không hiện lại nút "Lưu thay đổi" như thể review chưa gửi.
+                setEditing(false);
             }
         } catch {
             // Endpoint cleanup chỉ xóa asset chưa được review nào tham chiếu nên an toàn cả khi request đã lưu nhưng phản hồi lỗi.
@@ -318,7 +451,10 @@ export function OrderReviewPanel({ order }: OrderReviewPanelProps) {
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 sm:px-5">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
-                    <Star className="size-4" aria-hidden="true" />
+                    <MessageSquareText
+                        className="size-4"
+                        aria-hidden="true"
+                    />
                 </div>
                 <div className="min-w-0">
                     <h2 className="text-base font-bold tracking-tight text-zinc-950 sm:text-lg">

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Giữ bố cục dashboard ổn định trong lúc snapshot đầu tiên đang tải.
 export function SellerDashboardLoading() {
     return (
         <div className="space-y-4" aria-label="Đang tải dashboard seller">
@@ -19,7 +20,7 @@ export function SellerDashboardLoading() {
                     <Card
                         key={index}
                         size="sm"
-                        className="border-zinc-200 shadow-sm"
+                        className="border-slate-200 shadow-sm"
                     >
                         <CardContent className="space-y-2 p-4">
                             <Skeleton className="size-9 rounded-lg" />
@@ -30,7 +31,7 @@ export function SellerDashboardLoading() {
                 ))}
             </div>
             <div className="grid gap-3 xl:grid-cols-[1.35fr_0.65fr]">
-                <Card size="sm" className="border-zinc-200 shadow-sm">
+                <Card size="sm" className="border-slate-200 shadow-sm">
                     <CardHeader className="space-y-3">
                         <Skeleton className="h-6 w-48" />
                         <Skeleton className="h-4 w-72" />
@@ -39,7 +40,7 @@ export function SellerDashboardLoading() {
                         <Skeleton className="h-[220px] w-full" />
                     </CardContent>
                 </Card>
-                <Card size="sm" className="border-zinc-200 shadow-sm">
+                <Card size="sm" className="border-slate-200 shadow-sm">
                     <CardHeader className="space-y-3">
                         <Skeleton className="h-6 w-40" />
                         <Skeleton className="h-4 w-64" />

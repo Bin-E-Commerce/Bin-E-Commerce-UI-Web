@@ -3,15 +3,17 @@
 'use client';
 
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import {
     ArrowLeft,
     CalendarDays,
     CircleAlert,
     MapPin,
+    MessageSquareText,
     Package,
     Phone,
     ReceiptText,
-    Star,
+    RotateCcw,
 } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,12 +22,14 @@ import { useSellerShipment } from '@/hooks/shipping/use-shipment';
 import { OrderLifecycleStepper } from '@/common/orders';
 import { useSellerOrderDetail } from '../hooks/use-seller-order-detail';
 import { SellerOrderProductImage } from './seller-order-product-image';
+import { SellerOrderDetailSectionNav } from './seller-order-detail-section-nav';
 import { SellerShipmentPanel } from '@/common/shipping/components/seller-shipment-panel';
 import { SellerShipmentQuickAction } from '@/common/shipping/components/seller-shipment-quick-action';
 import {
     formatSellerMoney,
     formatSellerOrderDate,
 } from '../utils/seller-order-format';
+import { listSellerReturns } from '@/services/order';
 
 interface SellerOrderDetailContentProps {
     orderId: string;
@@ -38,13 +42,20 @@ function formatShippingAddress(address: Record<string, string>): string {
         .join(', ');
 }
 
-// Trình bày chi tiết đơn theo thứ tự ưu tiên; header đặt mã đơn làm tiêu đề, ngày và phương thức là thông tin phụ.
+// Trình bày chi tiết Seller; thẻ doanh thu xếp dọc để nhãn và số tiền không vỡ dòng trong cột hẹp.
 export function SellerOrderDetailContent({
     orderId,
 }: SellerOrderDetailContentProps) {
     const orderQuery = useSellerOrderDetail(orderId);
     const legacyImages = useOrderProductImages(orderQuery.data?.items ?? []);
     const shipmentQuery = useSellerShipment(orderId);
+    const returnsQuery = useQuery({
+        queryKey: ['seller-returns'],
+        queryFn: () => listSellerReturns(),
+        enabled: Boolean(orderQuery.data),
+        staleTime: 15_000,
+        refetchOnMount: 'always',
+    });
 
     if (orderQuery.isPending) {
         return (
@@ -81,6 +92,11 @@ export function SellerOrderDetailContent({
     }
 
     const order = orderQuery.data;
+    // Chỉ coi yêu cầu có orderId trùng khớp là nội dung thuộc card của đơn hiện tại;
+    // khi danh sách đang tải hoặc lỗi, ẩn cả lối tắt lẫn card để không tạo điểm đến giả.
+    const orderReturns = (returnsQuery.data ?? []).filter(
+        (returnRequest) => returnRequest.orderId === order.id,
+    );
     const address = order.shippingAddress;
     const canPrepareShipment =
         !['CANCELLED', 'DELIVERY_FAILED'].includes(
@@ -95,6 +111,15 @@ export function SellerOrderDetailContent({
         order.fulfillmentStatus === 'DELIVERED' ||
         order.fulfillmentStatus === 'COMPLETED' ||
         shipmentQuery.data?.status === 'DELIVERED';
+    // Chỉ có vận đơn thực tế mới tạo card tracking và mục lục tương ứng; trạng thái đang tải hoặc 404 đều không phải vận chuyển đã khởi tạo.
+    const hasShipment = Boolean(shipmentQuery.data);
+    // Tóm tắt phương thức và trạng thái để Seller nhận biết thanh toán ngay trên mục lục.
+    const paymentLabel =
+        order.paymentMethod === 'VNPAY'
+            ? order.paymentStatus === 'PAID'
+                ? 'Đã thanh toán'
+                : 'Chờ thanh toán'
+            : 'COD';
     const reviewProductId = order.items.find((item) =>
         Boolean(item.productId),
     )?.productId;
@@ -111,7 +136,18 @@ export function SellerOrderDetailContent({
                 </Link>
             </div>
 
-            <header className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+            <SellerOrderDetailSectionNav
+                itemCount={order.items.length}
+                paymentLabel={paymentLabel}
+                showShipment={hasShipment}
+                showReview={isDeliveryFinished && Boolean(reviewProductId)}
+                showReturns={orderReturns.length > 0}
+            />
+
+            <header
+                id="order-progress"
+                className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4"
+            >
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-3">
                     <div className="min-w-0">
                         <h1 className="break-all text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
@@ -124,7 +160,13 @@ export function SellerOrderDetailContent({
                     </div>
                     <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600">
                         <ReceiptText className="size-3.5 text-zinc-500" />
-                        Thanh toán COD
+                        {order.paymentMethod === 'VNPAY'
+                            ? order.paymentStatus === 'PAID'
+                                ? order.isSandbox
+                                    ? 'VNPay Sandbox · Đã thanh toán'
+                                    : 'VNPay · Đã thanh toán'
+                                : 'VNPay · Chờ thanh toán'
+                            : 'Thanh toán COD'}
                     </span>
                 </div>
 
@@ -138,10 +180,14 @@ export function SellerOrderDetailContent({
                     actionSlot={
                         isDeliveryFinished && reviewProductId ? (
                             <Link
+                                id="order-review"
                                 href={`/seller/products/${reviewProductId}#product-reviews`}
-                                className="inline-flex h-9 items-center gap-2 rounded-xl bg-zinc-950 px-4 text-xs font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20"
+                                className="scroll-mt-24 inline-flex h-9 items-center gap-2 rounded-xl bg-zinc-950 px-4 text-xs font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20"
                             >
-                                <Star className="size-3.5" aria-hidden="true" />
+                                <MessageSquareText
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                />
                                 Xem đánh giá
                             </Link>
                         ) : canPrepareShipment ? (
@@ -151,7 +197,10 @@ export function SellerOrderDetailContent({
                 />
             </header>
 
-            <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <section
+                id="order-products"
+                className="scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+            >
                 <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-5 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
                         <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
@@ -212,7 +261,10 @@ export function SellerOrderDetailContent({
                         ))}
                     </div>
 
-                    <div className="border-b border-zinc-100 px-5 py-5 sm:px-6 lg:border-b-0 lg:border-r lg:py-6">
+                    <div
+                        id="order-payment"
+                        className="scroll-mt-24 border-b border-zinc-100 px-5 py-5 sm:px-6 lg:border-b-0 lg:border-r lg:py-6"
+                    >
                         <div className="flex items-center gap-3">
                             <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                 <ReceiptText className="size-4" />
@@ -231,11 +283,11 @@ export function SellerOrderDetailContent({
                                 </span>
                             </div>
                             <div className="border-t border-zinc-100 pt-4">
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="font-semibold text-zinc-950">
+                                <div className="flex w-full flex-col items-start gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                                    <span className="whitespace-nowrap text-sm font-semibold text-slate-700">
                                         Doanh thu shop
                                     </span>
-                                    <span className="text-xl font-bold tabular-nums text-zinc-950">
+                                    <span className="whitespace-nowrap text-xl font-extrabold tracking-tight tabular-nums text-slate-950">
                                         {formatSellerMoney(order.shopItemTotal)}
                                     </span>
                                 </div>
@@ -247,7 +299,10 @@ export function SellerOrderDetailContent({
                         </div>
                     </div>
 
-                    <div className="px-5 py-5 sm:px-6 lg:py-6">
+                    <div
+                        id="order-address"
+                        className="scroll-mt-24 px-5 py-5 sm:px-6 lg:py-6"
+                    >
                         <div className="flex items-center gap-3">
                             <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                 <MapPin className="size-4" />
@@ -277,10 +332,46 @@ export function SellerOrderDetailContent({
                 </div>
             </section>
 
-            <SellerShipmentPanel
-                orderId={orderId}
-                orderStage={order.fulfillmentStatus ?? order.status}
-            />
+            {hasShipment && (
+                <div id="order-shipment" className="scroll-mt-24">
+                    <SellerShipmentPanel
+                        orderId={orderId}
+                        orderStage={order.fulfillmentStatus ?? order.status}
+                    />
+                </div>
+            )}
+
+            {orderReturns.length > 0 && (
+                <section
+                    id="order-returns"
+                    className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6"
+                >
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                                <RotateCcw
+                                    className="size-4"
+                                    aria-hidden="true"
+                                />
+                            </div>
+                            <div>
+                                <h2 className="font-semibold text-zinc-950">
+                                    Đổi trả / hoàn tiền
+                                </h2>
+                                <p className="text-xs text-zinc-500">
+                                    Đơn này có {orderReturns.length} yêu cầu đổi trả.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href="/seller/returns"
+                            className="inline-flex h-9 items-center rounded-xl bg-zinc-950 px-4 text-xs font-semibold text-white transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20"
+                        >
+                            Xem yêu cầu
+                        </Link>
+                    </div>
+                </section>
+            )}
         </div>
     );
 }

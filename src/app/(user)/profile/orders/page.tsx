@@ -5,6 +5,7 @@
 
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -18,6 +19,7 @@ import {
 import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import type {
     CustomerOrderFilter,
     CustomerOrderStage,
@@ -27,8 +29,11 @@ import {
     useCustomerOrders,
     useLegacyOrderPreviewImages,
 } from './hooks/use-customer-orders';
+import { verifyVnpayReturn } from '@/services/order';
 import { CustomerOrderActions } from './components/customer-order-actions';
 import { CustomerOrderTabs } from './components/customer-order-tabs';
+import { VnpayPaymentSuccessDialog } from './components/VnpayPaymentSuccessDialog';
+import type { VnpayPaymentSuccessDetails } from './types/vnpay-payment-success.types';
 
 // Định dạng thời gian tại UI, dữ liệu ISO vẫn giữ nguyên từ API.
 function formatDate(value: string): string {
@@ -68,17 +73,81 @@ function readFilter(params: URLSearchParams): CustomerOrderFilter {
     };
 }
 
-// Render danh sách order Customer với loading/error/empty state và ảnh snapshot.
+// Render lịch sử đơn và xử lý VNPay Return; chỉ mở biên nhận khi backend xác nhận PAID.
 export default function ProfileOrdersPage() {
     const router = useRouter();
     const pathname = usePathname();
     const params = useSearchParams();
+    const handledVnpayReturn = useRef(false);
+    const [verifiedPayment, setVerifiedPayment] =
+        useState<VnpayPaymentSuccessDetails | null>(null);
+    const hasVnpayReturn = params.has('vnp_TxnRef');
     const filter = readFilter(params);
     const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
     const ordersQuery = useCustomerOrders(filter, page);
     const images = useLegacyOrderPreviewImages(ordersQuery.data?.items ?? []);
     const isOrdersLoading =
         ordersQuery.isPending || ordersQuery.isPlaceholderData;
+    const refetchOrders = ordersQuery.refetch;
+
+    // Chỉ gửi callback lên backend một lần; backend xác minh chữ ký trước khi mở biên nhận và trả orderId đã lưu.
+    // ID trả về là đích điều hướng chi tiết; sau đó làm mới danh sách và xóa query VNPay để refresh không phát lại callback.
+    useEffect(() => {
+        if (handledVnpayReturn.current || !hasVnpayReturn) return;
+        handledVnpayReturn.current = true;
+
+        const rawQueryString = window.location.search;
+        void verifyVnpayReturn(rawQueryString)
+            .then((result) => {
+                const { status } = result;
+                if (status === 'PAID') {
+                    const callback = new URLSearchParams(rawQueryString);
+                    const callbackAmount = Number(callback.get('vnp_Amount'));
+                    const orderInfo = callback.get('vnp_OrderInfo') ?? '';
+                    const orderNumber = orderInfo
+                        .match(/(?:don|đơn)\s+(.+)$/i)?.[1]
+                        ?.trim();
+                    const transactionNumber = callback.get('vnp_TransactionNo');
+
+                    // Backend đã xác minh callback; thiếu số tiền hoặc mã thì ẩn trường đó.
+                    setVerifiedPayment({
+                        orderId: result.orderId,
+                        ...(Number.isSafeInteger(callbackAmount) &&
+                        callbackAmount > 0
+                            ? { amount: callbackAmount / 100 }
+                            : {}),
+                        ...(orderNumber ? { orderNumber } : {}),
+                        ...(transactionNumber ? { transactionNumber } : {}),
+                    });
+                    void refetchOrders();
+                } else if (status === 'REFUND_PENDING') {
+                    toast.info('Giao dịch đến muộn; hệ thống đang xử lý hoàn tiền.');
+                } else if (status === 'REFUNDED') {
+                    toast.info('Giao dịch đã được hoàn tiền.');
+                } else if (status === 'FAILED') {
+                    toast.error('Thanh toán chưa thành công. Bạn có thể thử lại.');
+                } else if (status === 'PENDING') {
+                    toast.info('Đang chờ VNPay xác nhận giao dịch.');
+                } else {
+                    toast.error('Không xác minh được kết quả thanh toán VNPay.');
+                }
+
+                const cleaned = new URLSearchParams(window.location.search);
+                for (const key of [...cleaned.keys()]) {
+                    if (key.startsWith('vnp_')) cleaned.delete(key);
+                }
+                router.replace(
+                    `${pathname}${cleaned.size ? `?${cleaned}` : ''}`,
+                    { scroll: false },
+                );
+            })
+            .catch(() => {
+                handledVnpayReturn.current = false;
+                toast.error(
+                    'Không thể xác minh thanh toán lúc này. Vui lòng tải lại trang.',
+                );
+            });
+    }, [hasVnpayReturn, pathname, refetchOrders, router]);
 
     // Đổi tab hoặc trang qua URL để browser back/refresh giữ đúng ngữ cảnh.
     function navigate(nextFilter: CustomerOrderFilter, nextPage = 1): void {
@@ -91,6 +160,10 @@ export default function ProfileOrdersPage() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+            <VnpayPaymentSuccessDialog
+                payment={verifiedPayment}
+                onClose={() => setVerifiedPayment(null)}
+            />
             <div className="flex flex-col gap-6 md:flex-row md:gap-8">
                 <ProfileSidebar />
                 <main className="min-w-0 flex-1">
@@ -197,8 +270,11 @@ export default function ProfileOrdersPage() {
                                                         </p>
                                                     </div>
                                                 </div>
+                                                {/* Tab và trạng thái đơn thể hiện tiến trình; nhãn này chỉ nêu phương thức trả tiền. */}
                                                 <span className="text-sm text-zinc-500">
-                                                    COD
+                                                    {order.paymentMethod === 'VNPAY'
+                                                        ? 'VNPay'
+                                                        : 'COD'}
                                                 </span>
                                             </div>
 

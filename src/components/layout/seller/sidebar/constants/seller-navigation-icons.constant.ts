@@ -12,6 +12,7 @@ import {
     ShieldCheck,
     Store,
     Truck,
+    WalletCards,
 } from 'lucide-react';
 import { AiAssistantIcon } from '@/components/ui/ai-assistant-button';
 
@@ -29,6 +30,7 @@ export const SELLER_NAVIGATION_ICON_MAP: Record<string, SellerNavigationIcon> =
         Sparkles,
         Store,
         Truck,
+        WalletCards,
         AiAssistant: AiAssistantIcon,
     };
 

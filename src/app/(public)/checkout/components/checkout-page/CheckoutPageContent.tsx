@@ -1,4 +1,4 @@
-// Component này trình bày checkout Phase 1: chọn địa chỉ, xác nhận COD và kết quả tạo đơn.
+// Component này trình bày checkout: chọn địa chỉ, phương thức thanh toán và kết quả tạo đơn.
 // Form không nhận item hoặc giá từ người dùng; Cart/Order Service là nguồn dữ liệu và phép tính chính thức.
 // Các trạng thái loading, lỗi, rỗng địa chỉ và thành công được hiển thị riêng để người dùng luôn biết bước tiếp theo.
 
@@ -11,7 +11,6 @@ import {
     AlertTriangle,
     ArrowLeft,
     Check,
-    CheckCircle2,
     CreditCard,
     Loader2,
     MapPin,
@@ -40,7 +39,11 @@ import { useCheckout, useCheckoutQuote } from '../../hooks/use-checkout';
 import { AddressForm } from '../address-form/AddressForm';
 import { CheckoutShippingQuoteNotice } from './CheckoutShippingQuoteNotice';
 import { CheckoutAddressCard } from './CheckoutAddressCard';
-import { CheckoutShell, LoadingState } from './CheckoutStateViews';
+import {
+    CheckoutLoadingSkeleton,
+    CheckoutShell,
+    LoadingState,
+} from './CheckoutStateViews';
 
 const EMPTY_ADDRESSES: UserAddress[] = [];
 
@@ -79,6 +82,7 @@ export function CheckoutPageContent() {
         null,
     );
     const [note, setNote] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'VNPAY'>('COD');
     const router = useRouter();
     const searchParams = useSearchParams();
     const buyNowCartItemId = searchParams.get('cartItemId') ?? undefined;
@@ -92,7 +96,7 @@ export function CheckoutPageContent() {
         [addresses],
     );
     const activeAddressId = selectedAddressId || fallbackAddressId;
-    const quoteQuery = useCheckoutQuote(activeAddressId, buyNowCartItemId);
+    const quoteQuery = useCheckoutQuote(activeAddressId, buyNowCartItemId, paymentMethod);
 
     // Chỉ chặn guest sau khi initAuth hoàn tất; nếu chạy sớm hơn, refresh checkout sẽ redirect sai trước khi cookie được restore.
     useEffect(() => {
@@ -170,21 +174,21 @@ export function CheckoutPageContent() {
                 shippingAddressId: activeAddressId,
                 cartItemId: buyNowCartItemId,
                 note: note.trim() || undefined,
+                paymentMethod,
             },
             {
                 // Chuyển thẳng đến detail order vừa tạo để khách hàng thấy ngay mã đơn, trạng thái và snapshot giao hàng.
-                onSuccess: (order) =>
-                    router.replace(`/profile/orders/${order.id}`),
+                onSuccess: (order) => {
+                    if (order.paymentUrl) window.location.assign(order.paymentUrl);
+                    else router.replace(`/profile/orders/${order.id}`);
+                },
             },
         );
     }
 
     if (!initialized || cartQuery.isPending || addressesQuery.isPending) {
-        return (
-            <CheckoutShell>
-                <LoadingState label="Đang chuẩn bị trang thanh toán..." />
-            </CheckoutShell>
-        );
+        // Giữ nguyên bố cục checkout trong lúc session, cart hoặc địa chỉ chưa sẵn sàng.
+        return <CheckoutLoadingSkeleton />;
     }
 
     if (!isAuthenticated) {
@@ -478,30 +482,19 @@ export function CheckoutPageContent() {
                                         Phương thức thanh toán
                                     </h2>
                                     <p className="mt-0.5 text-sm text-zinc-500">
-                                        Phase 1 hỗ trợ thanh toán khi nhận hàng.
+                                        Chọn COD hoặc thanh toán trực tuyến qua VNPay.
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-4 flex items-center gap-3 rounded-2xl border-2 border-zinc-950 bg-zinc-50 p-3">
-                                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
-                                    <Truck
-                                        className="size-5"
-                                        aria-hidden="true"
-                                    />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="font-semibold text-zinc-950">
-                                        Thanh toán khi nhận hàng (COD)
-                                    </p>
-                                    <p className="mt-1 text-sm text-zinc-500">
-                                        Thanh toán trực tiếp cho đơn vị giao
-                                        hàng.
-                                    </p>
-                                </div>
-                                <CheckCircle2
-                                    className="size-5 shrink-0 text-zinc-950"
-                                    aria-hidden="true"
-                                />
+                            <div className="mt-4 grid gap-2 sm:grid-cols-2" role="group" aria-label="Phương thức thanh toán">
+                                <Button type="button" variant="outline" aria-pressed={paymentMethod === 'COD'} onClick={() => setPaymentMethod('COD')} className={paymentMethod === 'COD' ? 'h-auto justify-start gap-3 whitespace-normal border-2 border-zinc-950 bg-zinc-50 p-3 text-left' : 'h-auto justify-start gap-3 whitespace-normal p-3 text-left'}>
+                                    <Truck className="size-5 shrink-0" aria-hidden="true" />
+                                    <span><span className="block font-semibold text-zinc-950">Thanh toán khi nhận hàng (COD)</span><span className="mt-1 block text-sm font-normal text-zinc-500">Trả tiền trực tiếp cho đơn vị giao hàng.</span></span>
+                                </Button>
+                                <Button type="button" variant="outline" aria-pressed={paymentMethod === 'VNPAY'} onClick={() => setPaymentMethod('VNPAY')} className={paymentMethod === 'VNPAY' ? 'h-auto justify-start gap-3 whitespace-normal border-2 border-zinc-950 bg-zinc-50 p-3 text-left' : 'h-auto justify-start gap-3 whitespace-normal p-3 text-left'}>
+                                    <CreditCard className="size-5 shrink-0" aria-hidden="true" />
+                                    <span><span className="block font-semibold text-zinc-950">Ví/Ngân hàng qua VNPay</span><span className="mt-1 block text-sm font-normal text-zinc-500">Chuyển đến cổng thanh toán bảo mật.</span></span>
+                                </Button>
                             </div>
                             <label className="mt-4 block">
                                 <span className="text-sm font-semibold text-zinc-800">
@@ -629,10 +622,6 @@ export function CheckoutPageContent() {
                                 </span>
                             </div>
                         </div>
-                        <p className="mt-3 text-xs leading-5 text-zinc-400">
-                            Giá và tồn kho sẽ được kiểm tra lại ở máy chủ trước
-                            khi đơn được xác nhận.
-                        </p>
                         <CheckoutShippingQuoteNotice
                             isPending={quoteQuery.isFetching}
                             isError={quoteQuery.isError}
@@ -649,7 +638,7 @@ export function CheckoutPageContent() {
                             }}
                         />
                         <Button
-                            variant="ghost"
+                            variant="default"
                             type="button"
                             onClick={handleSubmitOrder}
                             disabled={
@@ -659,7 +648,7 @@ export function CheckoutPageContent() {
                                 quoteQuery.isError ||
                                 !quoteQuery.data
                             }
-                            className="mt-4 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 text-sm font-bold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="mt-4 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 text-sm font-bold text-white transition hover:bg-zinc-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {orderMutation.isPending ? (
                                 <>
@@ -671,7 +660,7 @@ export function CheckoutPageContent() {
                                 </>
                             ) : (
                                 <>
-                                    Đặt hàng COD{' '}
+                                    {paymentMethod === 'COD' ? 'Đặt hàng COD' : 'Thanh toán qua VNPay'}{' '}
                                     <Check
                                         className="size-4"
                                         aria-hidden="true"

@@ -12,6 +12,7 @@ import {
     FileText,
     Heart,
     Info,
+    MessageSquareText,
     Ruler,
     Star,
     Truck,
@@ -450,28 +451,31 @@ function ProductReviewsSection({ product }: { product: SellerProductDetail }) {
     return (
         <DetailCard
             id="product-reviews"
-            icon={Star}
-            eyebrow="Phản hồi"
+            icon={MessageSquareText}
             title="Đánh giá gần đây"
-            description={`${product.reviewCount} đánh giá · điểm trung bình ${product.ratingAvg ?? 'chưa có'}`}
-        >
-            {reviews.length > 0 ? (
-                <div className="space-y-3">
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-2xl font-bold text-zinc-950">
-                                {product.ratingAvg ?? '0.00'}
-                            </span>
+            description="Tổng hợp trải nghiệm thực tế từ khách hàng."
+            headerAside={
+                product.reviewCount > 0 ? (
+                    <div className="inline-flex shrink-0 items-center gap-2.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 sm:gap-3 sm:px-4">
+                        <span className="text-xl font-bold tabular-nums tracking-tight text-zinc-950 sm:text-2xl">
+                            {product.ratingAvg ?? '0.00'}
+                        </span>
+                        <div className="flex flex-col gap-0.5">
                             <SellerReviewStars
                                 rating={Math.round(
                                     Number(product.ratingAvg ?? 0),
                                 )}
                             />
+                            <span className="text-[10px] text-zinc-500 sm:text-xs">
+                                {product.reviewCount} đánh giá
+                            </span>
                         </div>
-                        <span className="text-xs text-zinc-500">
-                            {product.reviewCount} review verified
-                        </span>
                     </div>
+                ) : null
+            }
+        >
+            {reviews.length > 0 ? (
+                <div className="space-y-3">
                     {reviews.map((review) => (
                         <SellerReviewCard key={review.id} review={review} />
                     ))}
@@ -495,9 +499,10 @@ function getConditionLabel(
 interface DetailCardProps {
     id?: string;
     icon: LucideIcon;
-    eyebrow: string;
+    eyebrow?: string;
     title: string;
     description?: string;
+    headerAside?: ReactNode;
     children: ReactNode;
 }
 
@@ -508,6 +513,7 @@ function DetailCard({
     eyebrow,
     title,
     description,
+    headerAside,
     children,
 }: DetailCardProps) {
     return (
@@ -515,23 +521,34 @@ function DetailCard({
             id={id}
             className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6"
         >
-            <div className="flex items-start gap-3 border-b border-zinc-100 pb-4">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
-                    <Icon className="size-4" aria-hidden="true" />
-                </span>
-                <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                        {eyebrow}
-                    </p>
-                    <h2 className="mt-1 text-lg font-bold text-zinc-950">
-                        {title}
-                    </h2>
-                    {description ? (
-                        <p className="mt-1 text-sm text-zinc-500">
-                            {description}
-                        </p>
-                    ) : null}
+            <div
+                className={`flex border-b border-zinc-100 pb-4 ${headerAside ? 'items-center justify-between gap-4' : 'items-start gap-3'}`}
+            >
+                <div
+                    className={`min-w-0 ${headerAside ? 'flex items-center gap-3' : 'flex items-start gap-3'}`}
+                >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                        <Icon className="size-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                        {eyebrow ? (
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                                {eyebrow}
+                            </p>
+                        ) : null}
+                        <h2
+                            className={`${eyebrow ? 'mt-1' : ''} text-lg font-bold text-zinc-950`}
+                        >
+                            {title}
+                        </h2>
+                        {description ? (
+                            <p className="mt-1 text-sm text-zinc-500">
+                                {description}
+                            </p>
+                        ) : null}
+                    </div>
                 </div>
+                {headerAside}
             </div>
             <div className="pt-5">{children}</div>
         </section>

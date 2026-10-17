@@ -56,13 +56,19 @@ export function useMissingProductImages(
     return useOrderProductImages(items);
 }
 
-// Query chi tiết luôn đọc theo orderId trên URL nên refresh trang vẫn khôi phục đúng dữ liệu.
+// Query chi tiết đọc theo orderId và polling khi đơn đang vận chuyển để card xác nhận nhận hàng tự xuất hiện sau webhook giao thành công.
 export function useCustomerOrder(orderId: string, enabled = true) {
     return useQuery({
         queryKey: ['customer-order', orderId],
         queryFn: () => getOrder(orderId),
         enabled: Boolean(orderId) && enabled,
         staleTime: 30_000,
+        refetchInterval: (query) => {
+            // Chỉ poll lúc đơn đang giao; khi đã giao, hoàn tất hoặc hủy thì dừng để tránh request nền vô ích.
+            return query.state.data?.fulfillmentStatus === 'SHIPPING'
+                ? 15_000
+                : false;
+        },
     });
 }
 

@@ -1,7 +1,8 @@
-// File này dựng trang chi tiết đơn hàng Customer, chỉ trình bày snapshot order và điều khiển hủy COD.
+// File này dựng trang chi tiết đơn hàng Customer, trình bày snapshot order và thao tác theo trạng thái hợp lệ.
 
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -33,6 +34,7 @@ import {
     type OrderReturnResponse,
 } from '@/services/order';
 import { DeliveryConfirmationCard } from './components/delivery-confirmation-card';
+import { OrderDetailSectionNav } from './components/order-detail-section-nav';
 import { OrderReviewPanel } from './components/order-review-panel';
 import { OrderReturnPanel } from './components/order-return-panel';
 
@@ -169,8 +171,9 @@ function getCustomerReturnStatus(
         : requestStatus;
 }
 
-// Trang chi tiết ưu tiên tiến trình, tiếp đến là sản phẩm/chi phí đơn hàng rồi mới đến vận chuyển và hỗ trợ.
-// Order vẫn được tải theo id trên URL; bố cục mới không đổi quyền hay hành vi của các thao tác hiện có.
+// Thanh điều hướng được đặt ngay đầu trang để khách thấy các mục trước khi cuộn.
+// Nội dung chính tiếp tục ưu tiên tiến trình, sản phẩm/chi phí rồi đến vận chuyển và hỗ trợ.
+// Dòng phương thức trong phần tổng tiền chỉ nêu VNPay/COD để tránh lặp trạng thái đã thanh toán ở tiêu đề.
 export default function ProfileOrderDetailPage() {
     const params = useParams<{ orderId: string }>();
     const orderId = params.orderId;
@@ -182,6 +185,12 @@ export default function ProfileOrderDetailPage() {
         Boolean(orderQuery.data) &&
         !['CANCELLED', 'DELIVERY_FAILED'].includes(trackingStage ?? '');
     const trackingQuery = useCustomerTracking(orderId, trackingEnabled);
+    const hasDeliveredShipment =
+        trackingQuery.data?.shipments.some(
+            (shipment) =>
+                shipment.shipmentKind !== 'RETURN' &&
+                shipment.status === 'DELIVERED',
+        ) ?? false;
     const returnsQuery = useQuery({
         queryKey: ['order-returns', orderId],
         queryFn: () => listOrderReturns(orderId),
@@ -191,6 +200,49 @@ export default function ProfileOrderDetailPage() {
     const legacyItemImages = useMissingProductImages(
         orderQuery.data?.items ?? [],
     );
+    const orderIdFromQuery = orderQuery.data?.id;
+    const orderFulfillmentStatus = orderQuery.data?.fulfillmentStatus;
+    const deliveryConfirmationStatus =
+        orderQuery.data?.deliveryConfirmation?.status;
+    const refetchOrder = orderQuery.refetch;
+
+    // Shipping có thể báo giao trước khi event Kafka cập nhật Order Service.
+    // Chỉ poll khi vận đơn giao đi thành công nhưng snapshot order chưa ở trạng thái cuối.
+    useEffect(() => {
+        const orderIsResolved =
+            [
+                'COMPLETED',
+                'RETURN_REFUND',
+                'CANCELLED',
+                'DELIVERY_FAILED',
+            ].includes(orderFulfillmentStatus ?? '') ||
+            ['CONFIRMED', 'AUTO_CONFIRMED', 'ISSUE_REPORTED'].includes(
+                deliveryConfirmationStatus ?? '',
+            );
+
+        if (
+            !hasDeliveredShipment ||
+            !orderIdFromQuery ||
+            orderFulfillmentStatus === 'DELIVERED' ||
+            orderIsResolved
+        ) {
+            return;
+        }
+
+        // Refetch ngay, rồi chờ Kafka đồng bộ bằng nhịp thưa để tránh request nền dày.
+        void refetchOrder();
+        const intervalId = window.setInterval(() => {
+            void refetchOrder();
+        }, 5_000);
+
+        return () => window.clearInterval(intervalId);
+    }, [
+        hasDeliveredShipment,
+        orderIdFromQuery,
+        orderFulfillmentStatus,
+        deliveryConfirmationStatus,
+        refetchOrder,
+    ]);
 
     if (orderQuery.isPending) return <OrderDetailSkeleton />;
 
@@ -229,6 +281,27 @@ export default function ProfileOrderDetailPage() {
     const canCancel =
         order.status === 'CONFIRMED' &&
         (!order.fulfillmentStatus || order.fulfillmentStatus === 'TO_SHIP');
+    // Chỉ hiện lối tắt xác nhận khi card nghiệp vụ có thể xuất hiện cho đơn vừa được giao.
+    const showDeliveryConfirmation =
+        order.fulfillmentStatus === 'DELIVERED' &&
+        (!order.deliveryConfirmation?.status ||
+            order.deliveryConfirmation.status === 'PENDING');
+    // Review chỉ có thể xuất hiện sau giao hàng và khi khách chưa mở khiếu nại nhận hàng.
+    const showReview =
+        (order.fulfillmentStatus === 'DELIVERED' ||
+            order.fulfillmentStatus === 'COMPLETED') &&
+        order.deliveryConfirmation.status !== 'ISSUE_REPORTED';
+    const paymentLabel =
+        order.paymentMethod === 'VNPAY'
+            ? order.paymentStatus === 'PAID'
+                ? 'Đã thanh toán'
+                : 'Chờ xác nhận'
+            : 'COD';
+    // Chỉ thêm lối tắt hoàn hàng khi card thật sự có thể xuất hiện hoặc đang có yêu cầu cần theo dõi.
+    const showReturns =
+        (returnsQuery.data?.length ?? 0) > 0 ||
+        (order.fulfillmentStatus === 'COMPLETED' &&
+            order.deliveryConfirmation.status !== 'ISSUE_REPORTED');
 
     return (
         <div className="min-h-full bg-zinc-50/60">
@@ -243,7 +316,18 @@ export default function ProfileOrderDetailPage() {
                     </Link>
                 </div>
 
-                <header className="mt-5 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4">
+                <OrderDetailSectionNav
+                    itemCount={order.items.length}
+                    paymentLabel={paymentLabel}
+                    showDeliveryConfirmation={showDeliveryConfirmation}
+                    showReview={showReview}
+                    showReturns={showReturns}
+                />
+
+                <header
+                    id="order-progress"
+                    className="mt-5 scroll-mt-20 rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm sm:p-4"
+                >
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-3">
                         <div className="min-w-0">
                             <h1 className="break-all text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
@@ -273,7 +357,9 @@ export default function ProfileOrderDetailPage() {
                                     className="size-3.5 text-zinc-500"
                                     aria-hidden="true"
                                 />
-                                Thanh toán COD
+                                {order.paymentMethod === 'VNPAY'
+                                    ? 'VNPay'
+                                    : 'Thanh toán COD'}
                             </span>
                         </div>
                     </div>
@@ -288,11 +374,14 @@ export default function ProfileOrderDetailPage() {
                     />
                 </header>
 
-                <div className="mt-5">
+                <div id="order-delivery-confirmation" className="mt-5 scroll-mt-20">
                     <DeliveryConfirmationCard order={order} />
                 </div>
 
-                <section className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <section
+                    id="order-products"
+                    className="mt-5 scroll-mt-20 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+                >
                     <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-4 py-3 sm:px-5">
                         <div className="flex items-center gap-3">
                             <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
@@ -375,7 +464,10 @@ export default function ProfileOrderDetailPage() {
                             ))}
                         </div>
 
-                        <div className="border-y border-zinc-100 px-4 py-4 sm:px-5 lg:border-y-0 lg:border-r lg:border-zinc-100 lg:py-5">
+                        <div
+                            id="order-payment"
+                            className="scroll-mt-20 border-y border-zinc-100 px-4 py-4 sm:px-5 lg:border-y-0 lg:border-r lg:border-zinc-100 lg:py-5"
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                     <ReceiptText
@@ -417,7 +509,11 @@ export default function ProfileOrderDetailPage() {
                                         Phương thức
                                     </span>
                                     <span className="font-semibold text-zinc-900">
-                                        COD
+                                        {order.paymentMethod === 'VNPAY'
+                                            ? order.paymentStatus === 'PAID'
+                                                ? 'VNPay'
+                                                : 'VNPay · Chờ xác nhận'
+                                            : 'COD'}
                                     </span>
                                 </div>
                             </div>
@@ -443,7 +539,10 @@ export default function ProfileOrderDetailPage() {
                             ) : null}
                         </div>
 
-                        <div className="px-4 py-4 sm:px-5 lg:py-5">
+                        <div
+                            id="order-address"
+                            className="scroll-mt-20 px-4 py-4 sm:px-5 lg:py-5"
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                     <MapPin
@@ -481,7 +580,7 @@ export default function ProfileOrderDetailPage() {
                     </div>
                 </section>
 
-                <div className="mt-5">
+                <div id="order-shipment" className="mt-5 scroll-mt-20">
                     <CustomerShipmentPanel
                         orderId={orderId}
                         orderStage={order.fulfillmentStatus ?? order.status}
@@ -489,8 +588,12 @@ export default function ProfileOrderDetailPage() {
                 </div>
 
                 <div className="mt-5 space-y-5">
-                    <OrderReviewPanel order={order} />
-                    <OrderReturnPanel order={order} />
+                    <div id="order-review" className="scroll-mt-20">
+                        <OrderReviewPanel order={order} />
+                    </div>
+                    <div id="order-returns" className="scroll-mt-20">
+                        <OrderReturnPanel order={order} />
+                    </div>
                 </div>
             </div>
         </div>
