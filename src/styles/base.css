@@ -1,4 +1,4 @@
-/* ─── Base layer resets & typography ────────────────────────────────── */
+/* ─── Thiết lập nền, typography và utility dùng chung cho giao diện ──── */
 @layer base {
     * {
         @apply border-border outline-ring/50;
