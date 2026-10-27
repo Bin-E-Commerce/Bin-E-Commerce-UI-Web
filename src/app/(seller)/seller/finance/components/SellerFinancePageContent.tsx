@@ -1,15 +1,17 @@
-// Màn seller finance hiển thị tiền chờ, khả dụng và ledger; không cho yêu cầu rút tiền ở giai đoạn này.
+// Màn seller finance quản lý số dư, nạp Pay2S Sandbox và yêu cầu admin chuyển khoản payout.
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import {
-    ArrowDownLeft,
     ArrowDownToLine,
-    ArrowUpRight,
     ArrowUpFromLine,
+    Banknote,
     Clock3,
-    Info,
+    CircleDollarSign,
+    Landmark,
+    ShieldCheck,
     WalletCards,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,8 +25,16 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getSellerWallet } from '@/services/seller/api/seller-wallet.api';
+import { shopProfileService } from '@/services/seller';
+import {
+    createSellerWalletDeposit,
+    createSellerWalletWithdrawal,
+    getSellerWallet,
+    getSellerWalletWithdrawals,
+} from '@/services/seller/api/seller-wallet.api';
 import type { SellerWalletAction } from '../types/seller-finance.types';
+import { SellerFinanceSkeleton } from './SellerFinanceSkeleton';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 // Định dạng VND không làm thay đổi số tiền decimal do backend lưu dưới dạng chuỗi.
 function formatMoney(amount: string): string {
@@ -42,49 +52,99 @@ function getTransactionLabel(kind: string): string {
         RELEASE_AVAILABLE: 'Tiền hàng khả dụng',
         REFUND_PENDING_REVERSAL: 'Điều chỉnh hoàn tiền',
         REFUND_AVAILABLE_REVERSAL: 'Điều chỉnh số dư khả dụng',
+        WALLET_DEPOSIT: 'Nạp tiền vào ví',
+        WITHDRAWAL_RESERVED: 'Giữ chỗ yêu cầu rút',
+        WITHDRAWAL_PAID: 'Đã tất toán khoản giữ chỗ',
+        WITHDRAWAL_RELEASED: 'Hoàn giữ chỗ rút tiền',
+        RETURN_SHIPPING_DEBIT: 'Phí vận chuyển hoàn hàng',
     };
     return labels[kind] ?? kind;
 }
 
-// Tải snapshot ví và mở biểu mẫu prototype; các thao tác thử không gửi request hay đổi số dư.
+// Dịch trạng thái payout backend thành nhãn ngắn để seller hiểu admin đang ở bước nào.
+function getWithdrawalStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+        REQUESTED: 'Chờ admin xử lý',
+        PROCESSING: 'Đang chuyển khoản',
+        PAID: 'Đã chuyển',
+        REJECTED: 'Đã từ chối',
+        FAILED: 'Chuyển khoản thất bại',
+    };
+    return labels[status] ?? status;
+}
+
+// Tải ví, tạo nạp Sandbox hoặc gửi yêu cầu payout giữ chỗ theo tài khoản đã xác minh trong hồ sơ shop.
 export function SellerFinancePageContent() {
+    const queryClient = useQueryClient();
     const [activeAction, setActiveAction] = useState<SellerWalletAction | null>(
         null,
     );
-    const [prototypeSubmitted, setPrototypeSubmitted] = useState(false);
+    const [actionNotice, setActionNotice] = useState<string | null>(null);
     const walletQuery = useQuery({
         queryKey: ['seller-wallet', 1],
         queryFn: () => getSellerWallet(1, 30),
         staleTime: 30_000,
     });
+    const profileQuery = useQuery({
+        queryKey: ['seller', 'shop-profile'],
+        queryFn: shopProfileService.getMine,
+        staleTime: 60_000,
+    });
+    const withdrawalsQuery = useQuery({
+        queryKey: ['seller-wallet-withdrawals', 1],
+        queryFn: () => getSellerWalletWithdrawals(1, 20),
+        staleTime: 15_000,
+    });
+    const depositMutation = useMutation({
+        mutationFn: createSellerWalletDeposit,
+        onSuccess: ({ paymentUrl }) => window.location.assign(paymentUrl),
+    });
+    const withdrawalMutation = useMutation({
+        mutationFn: createSellerWalletWithdrawal,
+        onSuccess: async () => {
+            setActiveAction(null);
+            setActionNotice(
+                'Yêu cầu rút đã được gửi. Số tiền được giữ chỗ trong lúc admin xử lý.',
+            );
+            await queryClient.invalidateQueries({
+                queryKey: ['seller-wallet'],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ['seller-wallet-withdrawals'],
+            });
+        },
+    });
     const wallet = walletQuery.data;
+    const payoutAccount = profileQuery.data?.tax;
 
     // Mở biểu mẫu được chọn và xóa thông báo cũ để mỗi lần thử bắt đầu rõ ràng.
-    function openPrototypeAction(action: SellerWalletAction) {
+    function openWalletAction(action: SellerWalletAction) {
         setActiveAction(action);
-        setPrototypeSubmitted(false);
+        setActionNotice(null);
+        depositMutation.reset();
+        withdrawalMutation.reset();
     }
 
-    // Đóng hộp thoại thì xóa trạng thái thử; không gửi dữ liệu tới API hoặc sửa số dư.
+    // Đóng hộp thoại thì xóa trạng thái mutation cũ để lần mở tiếp theo không hiện nhầm lỗi.
     function handleDialogOpenChange(open: boolean) {
         if (open) return;
         setActiveAction(null);
-        setPrototypeSubmitted(false);
+        depositMutation.reset();
+        withdrawalMutation.reset();
     }
 
-    // Chỉ chạy kiểm tra HTML và hiện thông báo prototype; không tạo giao dịch thật.
-    function handlePrototypeSubmit(event: FormEvent<HTMLFormElement>) {
+    // Top-up điều hướng sang Sandbox; yêu cầu rút chỉ gửi số tiền để server tự lấy và snapshot tài khoản shop.
+    function handleWalletActionSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        setPrototypeSubmitted(true);
+        const amount = String(
+            new FormData(event.currentTarget).get('amount') ?? '',
+        );
+        if (activeAction === 'deposit') depositMutation.mutate(amount);
+        if (activeAction === 'withdraw') withdrawalMutation.mutate(amount);
     }
 
-    if (walletQuery.isPending) {
-        return (
-            <div className="rounded-3xl border border-zinc-200 bg-white p-8 text-sm text-zinc-500 shadow-sm">
-                Đang tải số dư shop...
-            </div>
-        );
-    }
+    // Dùng placeholder có cùng cấu trúc trang để lúc chờ API không làm layout giật mạnh.
+    if (walletQuery.isPending) return <SellerFinanceSkeleton />;
     if (walletQuery.isError) {
         return (
             <div
@@ -98,53 +158,152 @@ export function SellerFinancePageContent() {
 
     return (
         <div className="space-y-5 pb-8">
-            <section className="grid gap-3 xl:grid-cols-2" aria-label="Số dư ví">
-                <article className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-5 text-white shadow-md shadow-zinc-900/10">
+            {/* Giữ bề rộng tối thiểu để tiêu đề không bị ép; màn hình hẹp sẽ cuộn ngang thay vì làm thẻ méo. */}
+            <section
+                className="flex min-w-0 gap-3 overflow-x-auto pb-1"
+                aria-label="Tổng quan tài chính shop"
+            >
+                <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-3.5 text-white shadow-md shadow-zinc-900/10">
                     <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute -right-10 -top-12 size-36 rounded-full border border-white/20"
+                        className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full border border-white/20"
                     />
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <span className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/10">
-                                <Clock3 className="size-4 text-zinc-200" aria-hidden="true" />
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/10">
+                                <Clock3
+                                    className="size-3.5 text-zinc-200"
+                                    aria-hidden="true"
+                                />
                             </span>
-                            <span className="text-sm font-medium text-zinc-200">
+                            <span className="line-clamp-2 min-w-0 text-xs font-medium leading-4 text-zinc-200">
                                 Tiền hàng đang chờ
                             </span>
                         </div>
-                        <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-medium text-zinc-200">
+                        <span className="shrink-0 whitespace-nowrap rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-zinc-200">
                             Đang đối soát
                         </span>
                     </div>
-                    <p className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">
+                    <p className="mt-3 text-2xl font-bold tracking-tight">
                         {formatMoney(wallet?.pendingBalance ?? '0')}
                     </p>
-                    <p className="mt-2 max-w-lg text-xs leading-5 text-zinc-300">
-                        Khoản tiền được giữ tại đây đến khi đơn hoàn tất, hết hạn trả hàng và không còn yêu cầu hoàn mở.
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-300">
+                        Tổng tiền hàng từ các đơn chưa hoàn tất; xem mã đơn
+                        trong lịch sử.
                     </p>
                 </article>
 
-                <article className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-slate-100 p-5 shadow-sm">
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                            <span className="flex size-9 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
-                                <WalletCards className="size-4" aria-hidden="true" />
+                <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-slate-100 p-3.5 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white shadow-sm">
+                                <WalletCards
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                />
                             </span>
-                            <span className="text-sm font-medium text-zinc-600">
+                            <span className="line-clamp-2 min-w-0 text-xs font-medium leading-4 text-zinc-600">
                                 Số dư khả dụng
                             </span>
                         </div>
-                        <span className="rounded-full border border-zinc-200 bg-white/80 px-2.5 py-1 text-[10px] font-medium text-zinc-600">
+                        <span className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-white/80 px-2 py-0.5 text-[9px] font-medium text-zinc-600">
                             Có thể sử dụng
                         </span>
                     </div>
-                    <p className="mt-4 text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
+                    <p className="mt-3 text-2xl font-bold tracking-tight text-zinc-950">
                         {formatMoney(wallet?.availableBalance ?? '0')}
                     </p>
-                    <p className="mt-2 text-xs leading-5 text-zinc-500">
-                        Số dư được theo dõi trong ví; thao tác nạp/rút hiện chỉ là giao diện thử nghiệm.
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-500">
+                        Có thể rút hoặc sử dụng; khoản đang chờ admin chuyển
+                        được tách riêng.
                     </p>
+                </article>
+
+                <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3.5 shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-800">
+                            <ShieldCheck
+                                className="size-3.5"
+                                aria-hidden="true"
+                            />
+                        </span>
+                        <span className="line-clamp-2 text-xs font-medium leading-4 text-zinc-600">
+                            Đang giữ chỗ rút tiền
+                        </span>
+                    </div>
+                    <p className="mt-3 text-2xl font-bold tracking-tight text-zinc-950">
+                        {formatMoney(wallet?.reservedBalance ?? '0')}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-500">
+                        Sẽ trừ hẳn khi admin xác nhận đã chuyển khoản.
+                    </p>
+                </article>
+
+                <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-3.5 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white shadow-sm">
+                                <Landmark
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                />
+                            </span>
+                            <div className="min-w-0">
+                                <p className="line-clamp-2 text-xs font-medium leading-4 text-zinc-600">
+                                    Ngân hàng đang sử dụng
+                                </p>
+                                {profileQuery.isPending ? (
+                                    <span className="mt-1 block h-3.5 w-24 animate-pulse rounded bg-zinc-100" />
+                                ) : (
+                                    <p className="mt-1 truncate text-xs font-semibold text-zinc-950">
+                                        {payoutAccount?.payoutBankName ||
+                                            'Chưa thiết lập'}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        {payoutAccount?.payoutBankName ? (
+                            <span className="shrink-0 whitespace-nowrap rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[9px] font-medium text-zinc-600">
+                                Theo hồ sơ shop
+                            </span>
+                        ) : null}
+                    </div>
+
+                    <div className="mt-3 border-t border-zinc-100 pt-2.5">
+                        {profileQuery.isPending ? (
+                            <div className="space-y-2" aria-hidden="true">
+                                <span className="block h-3 w-32 animate-pulse rounded bg-zinc-100" />
+                                <span className="block h-3 w-40 animate-pulse rounded bg-zinc-100" />
+                            </div>
+                        ) : profileQuery.isError ? (
+                            <p className="text-xs leading-5 text-zinc-500">
+                                Không tải được thông tin tài khoản nhận tiền.
+                            </p>
+                        ) : payoutAccount?.payoutBankName ? (
+                            <div className="space-y-1 text-xs">
+                                <p className="truncate text-zinc-600">
+                                    STK:{' '}
+                                    {payoutAccount.payoutAccountNumberMasked ||
+                                        'Chưa cập nhật'}
+                                </p>
+                                <p className="truncate text-zinc-500">
+                                    Chủ TK:{' '}
+                                    {payoutAccount.payoutAccountHolder ||
+                                        'Chưa cập nhật'}
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-xs leading-5 text-zinc-500">
+                                Chưa có tài khoản nhận tiền trong hồ sơ shop.
+                            </p>
+                        )}
+                        <Link
+                            className="mt-2 inline-flex text-xs font-semibold text-zinc-800 underline-offset-4 hover:underline"
+                            href="/seller/shop"
+                        >
+                            Quản lý tại Hồ sơ shop
+                        </Link>
+                    </div>
                 </article>
             </section>
 
@@ -164,7 +323,8 @@ export function SellerFinancePageContent() {
                         </h2>
                     </div>
                     <p className="mt-1.5 text-xs leading-5 text-slate-300">
-                        Mở biểu mẫu mẫu; chưa phát sinh giao dịch hay thay đổi số dư.
+                        Nạp qua Pay2S Sandbox hoặc gửi yêu cầu rút về tài khoản
+                        trong hồ sơ shop.
                     </p>
                 </div>
                 <div className="relative flex flex-wrap gap-2">
@@ -172,15 +332,19 @@ export function SellerFinancePageContent() {
                         type="button"
                         variant="outline"
                         className="h-10 rounded-xl border-white/20 bg-white/5 px-4 text-white backdrop-blur-sm hover:border-white/30 hover:bg-white/10 hover:text-white"
-                        onClick={() => openPrototypeAction('deposit')}
+                        onClick={() => openWalletAction('deposit')}
                     >
                         <ArrowDownToLine aria-hidden="true" />
                         Nạp tiền
                     </Button>
                     <Button
                         type="button"
+                        disabled={
+                            !payoutAccount?.payoutBankName ||
+                            !payoutAccount?.payoutAccountNumberMasked
+                        }
                         className="h-10 rounded-xl border-white/20 bg-gradient-to-r from-zinc-800 to-zinc-700 px-4 text-white shadow-md shadow-black/20 hover:from-zinc-700 hover:to-zinc-600"
-                        onClick={() => openPrototypeAction('withdraw')}
+                        onClick={() => openWalletAction('withdraw')}
                     >
                         <ArrowUpFromLine aria-hidden="true" />
                         Rút tiền
@@ -188,131 +352,161 @@ export function SellerFinancePageContent() {
                 </div>
             </section>
 
+            {actionNotice && (
+                <p
+                    role="status"
+                    className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                >
+                    {actionNotice}
+                </p>
+            )}
+
             <Dialog
                 open={activeAction !== null}
                 onOpenChange={handleDialogOpenChange}
             >
-                <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-md gap-0 overflow-y-auto overflow-x-hidden rounded-3xl border-zinc-200 bg-white p-0 shadow-2xl">
-                    <DialogHeader className="border-b border-zinc-100 px-6 py-5 pr-12">
-                        <DialogTitle className="text-lg font-semibold text-zinc-950">
+                <DialogContent className="w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto overflow-x-hidden rounded-3xl border-zinc-200 bg-white p-0 shadow-2xl sm:max-w-xl">
+                    <DialogHeader className="border-b border-zinc-100 px-6 py-5 pr-12 sm:px-8 sm:py-6">
+                        <DialogTitle className="text-xl font-semibold tracking-tight text-zinc-950">
                             {activeAction === 'deposit'
                                 ? 'Nạp tiền vào ví'
                                 : 'Rút tiền từ ví'}
                         </DialogTitle>
-                        <DialogDescription className="leading-5 text-zinc-500">
+                        <DialogDescription className="max-w-xl leading-5 text-zinc-500">
                             {activeAction === 'deposit'
-                                ? 'Nhập số tiền muốn nạp để xem trước biểu mẫu.'
-                                : 'Nhập thông tin nhận tiền để xem trước biểu mẫu.'}
+                                ? 'Nhập số tiền rồi hoàn tất thanh toán trong Pay2S Sandbox.'
+                                : 'Yêu cầu sẽ gửi tới admin; tài khoản nhận lấy từ hồ sơ shop.'}
                         </DialogDescription>
                     </DialogHeader>
 
                     {activeAction && (
                         <form
-                            className="space-y-5 p-6"
-                            onSubmit={handlePrototypeSubmit}
+                            className="space-y-6 p-6 sm:p-8"
+                            onSubmit={handleWalletActionSubmit}
                         >
-                            <div className="space-y-2">
-                                <Label htmlFor="wallet-action-amount">
-                                    Số tiền {activeAction === 'deposit' ? 'nạp' : 'rút'}
-                                </Label>
-                                <div className="relative">
-                                    <Input
-                                        id="wallet-action-amount"
-                                        name="amount"
-                                        type="number"
-                                        min="10000"
-                                        step="10000"
-                                        placeholder="Tối thiểu 10.000 đ"
-                                        className="h-11 rounded-xl pr-12"
-                                        required
-                                    />
-                                    <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm text-zinc-400">
-                                        đ
-                                    </span>
+                            <div className="space-y-5">
+                                <div className="space-y-2">
+                                    <Label htmlFor="wallet-action-amount">
+                                        Số tiền{' '}
+                                        {activeAction === 'deposit'
+                                            ? 'nạp'
+                                            : 'rút'}
+                                    </Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="wallet-action-amount"
+                                            name="amount"
+                                            type="number"
+                                            min="10000"
+                                            step="10000"
+                                            placeholder="Tối thiểu 10.000 đ"
+                                            className="h-12 rounded-xl border-zinc-300 bg-white px-4 pr-12 text-base shadow-sm focus-visible:ring-zinc-900/15"
+                                            required
+                                        />
+                                        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm text-zinc-400">
+                                            đ
+                                        </span>
+                                    </div>
                                 </div>
+
+                                {activeAction === 'deposit' ? (
+                                    <div className="flex items-start gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4">
+                                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm">
+                                            <Banknote
+                                                className="size-5"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-medium text-zinc-500">
+                                                Phương thức nạp
+                                            </p>
+                                            <p className="mt-0.5 text-sm font-semibold text-zinc-950">
+                                                Pay2S Sandbox
+                                            </p>
+                                            <p className="mt-1 text-sm leading-5 text-zinc-500">
+                                                Số dư chỉ tăng sau khi callback
+                                                Pay2S Sandbox hợp lệ. Tiền nạp
+                                                có thể rút.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4">
+                                        <div className="flex items-start gap-3">
+                                            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-zinc-700 shadow-sm ring-1 ring-zinc-200">
+                                                <Landmark
+                                                    className="size-5"
+                                                    aria-hidden="true"
+                                                />
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-semibold text-zinc-950">
+                                                    {payoutAccount?.payoutBankName ||
+                                                        'Chưa thiết lập ngân hàng'}
+                                                </p>
+                                                <p className="mt-0.5 text-sm text-zinc-600">
+                                                    {payoutAccount?.payoutAccountHolder ||
+                                                        'Chưa có tên chủ tài khoản'}
+                                                </p>
+                                                <p className="mt-1 font-mono text-xs text-zinc-500">
+                                                    STK:{' '}
+                                                    {payoutAccount?.payoutAccountNumberMasked ||
+                                                        '—'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <p className="mt-3 border-t border-zinc-200 pt-3 text-sm leading-5 text-zinc-500">
+                                            Admin chuyển khoản thủ công. Số dư
+                                            sẽ được giữ chỗ ngay khi gửi yêu
+                                            cầu.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
-                            {activeAction === 'deposit' ? (
-                                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                                    <p className="text-xs font-medium text-zinc-500">
-                                        Phương thức mẫu
-                                    </p>
-                                    <p className="mt-1 text-sm font-semibold text-zinc-900">
-                                        VNPay Sandbox
-                                    </p>
-                                    <p className="mt-1 text-xs leading-5 text-zinc-500">
-                                        Chưa kết nối cổng thanh toán nạp ví.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="wallet-bank-name">
-                                            Ngân hàng
-                                        </Label>
-                                        <Input
-                                            id="wallet-bank-name"
-                                            name="bankName"
-                                            placeholder="Ví dụ: Vietcombank"
-                                            className="h-11 rounded-xl"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="wallet-account-holder">
-                                            Tên chủ tài khoản
-                                        </Label>
-                                        <Input
-                                            id="wallet-account-holder"
-                                            name="accountHolder"
-                                            placeholder="NGUYEN VAN A"
-                                            className="h-11 rounded-xl"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="wallet-account-number">
-                                            Số tài khoản
-                                        </Label>
-                                        <Input
-                                            id="wallet-account-number"
-                                            name="accountNumber"
-                                            inputMode="numeric"
-                                            placeholder="Nhập số tài khoản"
-                                            className="h-11 rounded-xl"
-                                            required
-                                        />
-                                    </div>
-                                    <p className="text-xs leading-5 text-zinc-500">
-                                        Thông tin chỉ dùng xem trước biểu mẫu; không gửi lên máy chủ hoặc lưu vào ví.
-                                    </p>
-                                </div>
-                            )}
-
-                            {prototypeSubmitted && (
+                            {(depositMutation.isError ||
+                                withdrawalMutation.isError) && (
                                 <div
-                                    role="status"
-                                    className="flex gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-700"
+                                    role="alert"
+                                    className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-800"
                                 >
-                                    <Info
-                                        className="mt-0.5 size-4 shrink-0"
-                                        aria-hidden="true"
-                                    />
-                                    Đây là giao diện prototype. Yêu cầu chưa được gửi và số dư/lịch sử ví không thay đổi.
+                                    {activeAction === 'deposit'
+                                        ? getErrorMessage(depositMutation.error)
+                                        : getErrorMessage(
+                                              withdrawalMutation.error,
+                                          )}
                                 </div>
                             )}
 
-                            <DialogFooter className="-mx-6 -mb-6 rounded-b-3xl border-zinc-100 bg-zinc-50/80 px-6 py-4 sm:flex-row">
+                            <DialogFooter className="-mx-6 -mb-6 rounded-b-3xl border-zinc-100 bg-zinc-50/80 px-6 py-4 sm:-mx-8 sm:-mb-8 sm:px-8 sm:flex-row">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     className="rounded-xl"
-                                    onClick={() => handleDialogOpenChange(false)}
+                                    onClick={() =>
+                                        handleDialogOpenChange(false)
+                                    }
                                 >
                                     Đóng
                                 </Button>
-                                <Button type="submit" className="rounded-xl">
-                                    Xem xác nhận mẫu
+                                <Button
+                                    type="submit"
+                                    className="rounded-xl"
+                                    disabled={
+                                        depositMutation.isPending ||
+                                        withdrawalMutation.isPending ||
+                                        (activeAction === 'withdraw' &&
+                                            (!payoutAccount?.payoutBankName ||
+                                                !payoutAccount?.payoutAccountNumberMasked))
+                                    }
+                                >
+                                    {depositMutation.isPending ||
+                                    withdrawalMutation.isPending
+                                        ? 'Đang xử lý…'
+                                        : activeAction === 'deposit'
+                                          ? 'Tiếp tục thanh toán'
+                                          : 'Gửi yêu cầu rút'}
                                 </Button>
                             </DialogFooter>
                         </form>
@@ -321,68 +515,266 @@ export function SellerFinancePageContent() {
             </Dialog>
 
             <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 px-5 py-5 sm:px-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 px-5 py-4 sm:px-6">
+                    <div>
+                        <h2 className="font-semibold text-zinc-950">
+                            Yêu cầu rút tiền
+                        </h2>
+                        <p className="mt-1 text-xs text-zinc-500">
+                            Tiền được giữ chỗ khi gửi và chỉ trừ hẳn khi admin
+                            xác nhận đã chuyển.
+                        </p>
+                    </div>
+                    <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-600">
+                        {withdrawalsQuery.data?.total ?? 0} yêu cầu
+                    </span>
+                </div>
+                {withdrawalsQuery.isError ? (
+                    <p role="alert" className="px-5 py-8 text-sm text-rose-700">
+                        Không thể tải lịch sử yêu cầu rút.
+                    </p>
+                ) : withdrawalsQuery.isPending ? (
+                    <div
+                        className="h-20 animate-pulse bg-zinc-50"
+                        aria-label="Đang tải yêu cầu rút"
+                    />
+                ) : withdrawalsQuery.data?.items.length ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-zinc-50 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                <tr>
+                                    <th className="px-5 py-3 sm:px-6">
+                                        Số tiền
+                                    </th>
+                                    <th className="px-5 py-3">
+                                        Tài khoản nhận
+                                    </th>
+                                    <th className="px-5 py-3">Trạng thái</th>
+                                    <th className="px-5 py-3 sm:px-6">
+                                        Ngày gửi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100">
+                                {withdrawalsQuery.data.items.map(
+                                    (withdrawal) => (
+                                        <tr key={withdrawal.id}>
+                                            <td className="px-5 py-4 font-semibold tabular-nums sm:px-6">
+                                                {formatMoney(withdrawal.amount)}
+                                            </td>
+                                            <td className="px-5 py-4">
+                                                <p className="font-medium">
+                                                    {withdrawal.bankName}
+                                                </p>
+                                                <p className="mt-1 text-xs text-zinc-500">
+                                                    {withdrawal.accountHolder} ·{' '}
+                                                    {
+                                                        withdrawal.accountNumberMasked
+                                                    }
+                                                </p>
+                                            </td>
+                                            <td className="px-5 py-4">
+                                                <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs">
+                                                    {getWithdrawalStatusLabel(
+                                                        withdrawal.status,
+                                                    )}
+                                                </span>
+                                                {withdrawal.adminNote ? (
+                                                    <p className="mt-1 max-w-xs text-xs text-zinc-500">
+                                                        {withdrawal.adminNote}
+                                                    </p>
+                                                ) : null}
+                                            </td>
+                                            <td className="px-5 py-4 text-xs text-zinc-500 sm:px-6">
+                                                {new Date(
+                                                    withdrawal.createdAt,
+                                                ).toLocaleString('vi-VN')}
+                                            </td>
+                                        </tr>
+                                    ),
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="px-5 py-9 text-center text-sm text-zinc-500">
+                        Bạn chưa gửi yêu cầu rút tiền nào.
+                    </p>
+                )}
+            </section>
+
+            <section className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 via-white to-slate-50 px-5 py-5 sm:px-6">
                     <div className="flex items-center gap-3">
-                        <span className="flex size-10 items-center justify-center rounded-xl bg-zinc-950 text-white">
-                            <ArrowDownLeft className="size-5" aria-hidden="true" />
+                        <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-zinc-950 to-zinc-700 text-white shadow-md shadow-zinc-900/15">
+                            <Banknote className="size-5" aria-hidden="true" />
                         </span>
                         <div>
-                            <h2 className="font-semibold text-zinc-950">Lịch sử giao dịch</h2>
+                            <h2 className="font-semibold tracking-tight text-zinc-950">
+                                Lịch sử giao dịch
+                            </h2>
                             <p className="mt-1 text-xs text-zinc-500">
-                                Các khoản tiền hàng được ghi nhận vào ví shop
+                                Tiền bán hàng, nạp ví và các khoản điều chỉnh
                             </p>
                         </div>
                     </div>
-                    <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-600">
+                    <span className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-medium text-white shadow-sm">
                         {wallet?.total ?? 0} giao dịch
                     </span>
                 </div>
                 {!wallet?.transactions.length ? (
                     <div className="flex flex-col items-center px-5 py-12 text-center">
                         <span className="flex size-14 items-center justify-center rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 to-slate-100 text-zinc-600">
-                            <WalletCards className="size-6" aria-hidden="true" />
+                            <WalletCards
+                                className="size-6"
+                                aria-hidden="true"
+                            />
                         </span>
                         <p className="mt-4 font-medium text-zinc-900">
                             Chưa ghi nhận giao dịch nào
                         </p>
                         <p className="mt-1 max-w-md text-sm leading-6 text-zinc-500">
-                            Tiền hàng sẽ xuất hiện sau khi thanh toán được xác nhận. Đơn COD chỉ được ghi nhận sau khi shop đã đối soát tiền thu hộ.
+                            Tiền hàng sẽ xuất hiện sau khi thanh toán được xác
+                            nhận. Đơn COD chỉ được ghi nhận sau khi shop đã đối
+                            soát tiền thu hộ.
                         </p>
                     </div>
                 ) : (
-                    <ul className="divide-y divide-zinc-100">
-                        {wallet.transactions.map((transaction) => (
-                            <li key={transaction.id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-zinc-50/80 sm:px-6">
-                                <div className="flex min-w-0 items-center gap-3">
-                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-700">
-                                        {transaction.amount.startsWith('-') ? (
-                                            <ArrowUpRight className="size-4" aria-hidden="true" />
-                                        ) : (
-                                            <ArrowDownLeft className="size-4" aria-hidden="true" />
-                                        )}
-                                    </span>
-                                    <div className="min-w-0">
-                                        <p className="font-medium text-zinc-900">
-                                            {getTransactionLabel(transaction.kind)}
-                                        </p>
-                                        <p className="mt-1 truncate text-xs text-zinc-500">
-                                            Đơn {transaction.orderId}
-                                        </p>
-                                        <time
-                                            className="mt-1 block text-xs text-zinc-400"
-                                            dateTime={transaction.createdAt}
-                                        >
-                                            {new Date(transaction.createdAt).toLocaleString('vi-VN')}
-                                        </time>
-                                    </div>
-                                </div>
-                                <p className="shrink-0 font-semibold tabular-nums text-zinc-950">
-                                    {Number(transaction.amount) > 0 ? '+' : ''}
-                                    {formatMoney(transaction.amount)}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-zinc-50/90 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                                <tr>
+                                    <th
+                                        className="px-5 py-3.5 sm:px-6"
+                                        scope="col"
+                                    >
+                                        Giao dịch
+                                    </th>
+                                    <th
+                                        className="hidden px-5 py-3.5 md:table-cell"
+                                        scope="col"
+                                    >
+                                        Mã tham chiếu
+                                    </th>
+                                    <th
+                                        className="hidden px-5 py-3.5 md:table-cell"
+                                        scope="col"
+                                    >
+                                        Thời gian
+                                    </th>
+                                    <th
+                                        className="px-5 py-3.5 text-right sm:px-6"
+                                        scope="col"
+                                    >
+                                        Số tiền
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100">
+                                {wallet.transactions.map((transaction) => (
+                                    <tr
+                                        key={transaction.id}
+                                        className="group transition-colors hover:bg-gradient-to-r hover:from-zinc-50/80 hover:to-white"
+                                    >
+                                        <td className="px-5 py-4 sm:px-6">
+                                            <div className="flex items-center gap-3">
+                                                <span
+                                                    className={`flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm transition-colors ${transaction.amount.startsWith('-') ? 'border-rose-100 bg-rose-50 text-rose-700' : 'border-zinc-200 bg-white text-zinc-900 group-hover:border-zinc-300'}`}
+                                                >
+                                                    <CircleDollarSign
+                                                        className="size-4"
+                                                        aria-hidden="true"
+                                                    />
+                                                </span>
+                                                <span className="font-medium text-zinc-900">
+                                                    {getTransactionLabel(
+                                                        transaction.kind,
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 pl-[52px] text-xs text-zinc-500 md:hidden">
+                                                <span
+                                                    title={
+                                                        transaction.orderId
+                                                            ? `Mã đơn đầy đủ: ${transaction.orderNumber ?? transaction.orderId}`
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {transaction.orderNumber ??
+                                                        (transaction.orderId
+                                                            ? `#${transaction.orderId.slice(0, 8).toUpperCase()}`
+                                                            : transaction.returnRequestId
+                                                              ? `Hoàn #${transaction.returnRequestId.slice(0, 8).toUpperCase()}`
+                                                              : 'Ví shop')}
+                                                </span>
+                                                <span aria-hidden="true">
+                                                    {' '}
+                                                    ·{' '}
+                                                </span>
+                                                <time
+                                                    dateTime={
+                                                        transaction.createdAt
+                                                    }
+                                                >
+                                                    {new Date(
+                                                        transaction.createdAt,
+                                                    ).toLocaleString('vi-VN', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    })}
+                                                </time>
+                                            </p>
+                                        </td>
+                                        <td className="hidden px-5 py-4 md:table-cell">
+                                            <span
+                                                className="rounded-md bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-600"
+                                                title={
+                                                    transaction.orderId
+                                                        ? `Mã đơn đầy đủ: ${transaction.orderNumber ?? transaction.orderId}`
+                                                        : undefined
+                                                }
+                                            >
+                                                {transaction.orderNumber ??
+                                                    (transaction.orderId
+                                                        ? `#${transaction.orderId.slice(0, 8).toUpperCase()}`
+                                                        : transaction.returnRequestId
+                                                          ? `Hoàn #${transaction.returnRequestId.slice(0, 8).toUpperCase()}`
+                                                          : 'Ví shop')}
+                                            </span>
+                                        </td>
+                                        <td className="hidden px-5 py-4 text-sm text-zinc-500 md:table-cell">
+                                            <time
+                                                dateTime={transaction.createdAt}
+                                            >
+                                                {new Date(
+                                                    transaction.createdAt,
+                                                ).toLocaleString('vi-VN', {
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                })}
+                                            </time>
+                                        </td>
+                                        <td className="px-5 py-4 text-right sm:px-6">
+                                            <span
+                                                className={`font-semibold tabular-nums ${transaction.amount.startsWith('-') ? 'text-rose-700' : 'text-zinc-950'}`}
+                                            >
+                                                {transaction.kind ===
+                                                'WITHDRAWAL_PAID'
+                                                    ? '—'
+                                                    : `${Number(transaction.amount) > 0 ? '+' : ''}${formatMoney(transaction.amount)}`}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </section>
         </div>
