@@ -1,4 +1,4 @@
-// Nội dung detail Seller làm nổi bật trạng thái và thao tác xử lý; sản phẩm, doanh thu và người nhận nằm chung một card.
+// Nội dung detail Seller làm nổi bật trạng thái và thao tác xử lý; sản phẩm, doanh thu và người nhận được tách thành ba card có header đồng nhất.
 
 'use client';
 
@@ -42,7 +42,7 @@ function formatShippingAddress(address: Record<string, string>): string {
         .join(', ');
 }
 
-// Trình bày chi tiết Seller; thẻ doanh thu xếp dọc để nhãn và số tiền không vỡ dòng trong cột hẹp.
+// Trình bày ba khu vực chi tiết Seller với kiểu chữ và khoảng cách gọn để dễ quét mà không đổi dữ liệu đơn.
 export function SellerOrderDetailContent({
     orderId,
 }: SellerOrderDetailContentProps) {
@@ -115,7 +115,7 @@ export function SellerOrderDetailContent({
     const hasShipment = Boolean(shipmentQuery.data);
     // Tóm tắt phương thức và trạng thái để Seller nhận biết thanh toán ngay trên mục lục.
     const paymentLabel =
-        order.paymentMethod === 'VNPAY'
+        order.paymentMethod === 'PAY2S'
             ? order.paymentStatus === 'PAID'
                 ? 'Đã thanh toán'
                 : 'Chờ thanh toán'
@@ -160,12 +160,12 @@ export function SellerOrderDetailContent({
                     </div>
                     <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600">
                         <ReceiptText className="size-3.5 text-zinc-500" />
-                        {order.paymentMethod === 'VNPAY'
+                        {order.paymentMethod === 'PAY2S'
                             ? order.paymentStatus === 'PAID'
                                 ? order.isSandbox
-                                    ? 'VNPay Sandbox · Đã thanh toán'
-                                    : 'VNPay · Đã thanh toán'
-                                : 'VNPay · Chờ thanh toán'
+                                    ? 'Pay2S Sandbox · Đã thanh toán'
+                                    : 'Pay2S · Đã thanh toán'
+                                : 'Pay2S · Chờ thanh toán'
                             : 'Thanh toán COD'}
                     </span>
                 </div>
@@ -199,81 +199,90 @@ export function SellerOrderDetailContent({
 
             <section
                 id="order-products"
-                className="scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+                aria-label="Chi tiết sản phẩm, doanh thu và địa chỉ đơn hàng"
+                className="scroll-mt-24"
             >
-                <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-5 py-4 sm:px-6">
-                    <div className="flex items-center gap-3">
-                        <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
-                            <Package className="size-4" />
-                        </div>
-                        <div>
-                            <h2 className="font-semibold text-zinc-950">
-                                Sản phẩm của shop
-                            </h2>
-                            <p className="text-xs text-zinc-500">
-                                Sản phẩm, doanh thu và thông tin nhận hàng
-                            </p>
-                        </div>
-                    </div>
-                    <span className="text-xs text-zinc-400">
-                        {order.items.length} mặt hàng
-                    </span>
-                </div>
-
-                <div className="grid lg:grid-cols-[minmax(0,1.5fr)_minmax(220px,0.75fr)_minmax(250px,0.9fr)]">
-                    <div className="divide-y divide-zinc-100 px-5 sm:px-6 lg:border-r lg:border-zinc-100">
-                        {order.items.map((item) => (
-                            <div
-                                key={item.id}
-                                className="flex gap-4 py-4 first:pt-5 last:pb-5 sm:gap-5"
-                            >
-                                <SellerOrderProductImage
-                                    src={
-                                        item.imageUrl ??
-                                        legacyImages.get(item.productId) ??
-                                        null
-                                    }
-                                    alt={item.productName}
-                                    large
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex flex-col justify-between gap-2 sm:flex-row">
-                                        <div className="min-w-0">
-                                            <h3 className="font-semibold text-zinc-950">
-                                                {item.productName}
-                                            </h3>
-                                            <p className="mt-1 text-sm text-zinc-500">
-                                                {item.variantName}
-                                            </p>
-                                            <p className="mt-2 text-sm text-zinc-500">
-                                                {formatSellerMoney(
-                                                    item.unitPrice,
-                                                )}{' '}
-                                                × {item.quantity}
-                                            </p>
-                                        </div>
-                                        <p className="shrink-0 text-base font-bold tabular-nums text-zinc-950">
-                                            {formatSellerMoney(item.lineTotal)}
-                                        </p>
-                                    </div>
+                <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.45fr)_minmax(245px,0.75fr)_minmax(260px,0.82fr)]">
+                    <section className="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm lg:col-span-2 xl:col-span-1">
+                        <div className="flex min-h-[76px] items-center justify-between gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
+                            <div className="flex min-w-0 items-center gap-3">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                                    <Package className="size-4" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 className="text-[13px] font-semibold text-zinc-950">
+                                        Danh sách sản phẩm
+                                    </h2>
+                                    <p className="mt-0.5 text-[11px] text-zinc-500">
+                                        Snapshot tại thời điểm đặt hàng
+                                    </p>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                            <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-600">
+                                {order.items.length} mặt hàng
+                            </span>
+                        </div>
+                        <div className="divide-y divide-zinc-100 px-4 sm:px-5">
+                            {order.items.map((item) => (
+                                <div
+                                    key={item.id}
+                                    className="flex gap-3 py-3 first:pt-4 sm:gap-4"
+                                >
+                                    <SellerOrderProductImage
+                                        src={
+                                            item.imageUrl ??
+                                            legacyImages.get(item.productId) ??
+                                            null
+                                        }
+                                        alt={item.productName}
+                                        large
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex flex-col justify-between gap-2 sm:flex-row">
+                                            <div className="min-w-0">
+                                                <h3 className="text-sm font-semibold leading-5 text-zinc-950">
+                                                    {item.productName}
+                                                </h3>
+                                                <p className="mt-1 text-xs text-zinc-500">
+                                                    {item.variantName}
+                                                </p>
+                                                <p className="mt-1.5 text-xs text-zinc-500">
+                                                    {formatSellerMoney(
+                                                        item.unitPrice,
+                                                    )}{' '}
+                                                    × {item.quantity}
+                                                </p>
+                                            </div>
+                                            <p className="shrink-0 text-sm font-bold tabular-nums text-zinc-950">
+                                                {formatSellerMoney(
+                                                    item.lineTotal,
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
 
-                    <div
+                    <section
                         id="order-payment"
-                        className="scroll-mt-24 border-b border-zinc-100 px-5 py-5 sm:px-6 lg:border-b-0 lg:border-r lg:py-6"
+                        className="scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                        <div className="flex min-h-[76px] items-center gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                 <ReceiptText className="size-4" />
                             </div>
-                            <h2 className="font-semibold text-zinc-950">
-                                Tổng tiền shop
-                            </h2>
+                            <div>
+                                <h2 className="text-[13px] font-semibold text-zinc-950">
+                                    Tổng tiền shop
+                                </h2>
+                                <p className="mt-0.5 text-[11px] text-zinc-500">
+                                    Chi tiết doanh thu đơn hàng
+                                </p>
+                            </div>
                         </div>
-                        <div className="mt-5 space-y-4 text-sm">
+                        <div className="space-y-3 p-4 text-xs sm:p-5">
                             <div className="flex items-center justify-between gap-4">
                                 <span className="text-zinc-500">
                                     Tạm tính sản phẩm
@@ -282,53 +291,67 @@ export function SellerOrderDetailContent({
                                     {formatSellerMoney(order.shopItemTotal)}
                                 </span>
                             </div>
-                            <div className="border-t border-zinc-100 pt-4">
-                                <div className="flex w-full flex-col items-start gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-                                    <span className="whitespace-nowrap text-sm font-semibold text-slate-700">
+                            <div className="rounded-xl bg-zinc-950 px-3.5 py-3 text-white">
+                                <div className="flex flex-col items-start gap-1.5">
+                                    <span className="text-xs font-medium text-zinc-300">
                                         Doanh thu shop
                                     </span>
-                                    <span className="whitespace-nowrap text-xl font-extrabold tracking-tight tabular-nums text-slate-950">
+                                    <span className="text-lg font-extrabold tracking-tight tabular-nums">
                                         {formatSellerMoney(order.shopItemTotal)}
                                     </span>
                                 </div>
                             </div>
+                            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] leading-5 text-zinc-500">
+                                Số tiền trên chỉ bao gồm các sản phẩm thuộc shop
+                                của bạn.
+                            </div>
                         </div>
-                        <div className="mt-4 rounded-xl bg-zinc-50 px-3 py-2.5 text-xs leading-5 text-zinc-500">
-                            Số tiền trên chỉ bao gồm các sản phẩm thuộc shop của
-                            bạn.
-                        </div>
-                    </div>
+                    </section>
 
-                    <div
+                    <section
                         id="order-address"
-                        className="scroll-mt-24 px-5 py-5 sm:px-6 lg:py-6"
+                        className="scroll-mt-24 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                        <div className="flex min-h-[76px] items-center gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                 <MapPin className="size-4" />
                             </div>
                             <div>
-                                <h2 className="font-semibold text-zinc-950">
+                                <h2 className="text-[13px] font-semibold text-zinc-950">
                                     Địa chỉ nhận hàng
                                 </h2>
-                                <p className="text-xs text-zinc-500">
+                                <p className="mt-0.5 text-[11px] text-zinc-500">
                                     Snapshot tại thời điểm đặt hàng
                                 </p>
                             </div>
                         </div>
-                        <div className="mt-4 rounded-xl bg-zinc-50 p-4">
-                            <p className="font-semibold text-zinc-950">
-                                {address.fullName || 'Chưa có tên người nhận'}
-                            </p>
-                            <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600">
-                                <Phone className="size-4 shrink-0" />
-                                {address.phone || 'Chưa có số điện thoại'}
-                            </p>
-                            <p className="mt-3 text-sm leading-6 text-zinc-600">
-                                {formatShippingAddress(address)}
-                            </p>
+                        <div className="p-4 sm:p-5">
+                            <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3.5">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                    Người nhận
+                                </p>
+                                <p className="mt-1 text-sm font-semibold text-zinc-950">
+                                    {address.fullName ||
+                                        'Chưa có tên người nhận'}
+                                </p>
+                                <div className="my-3 border-t border-zinc-200" />
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                    Số điện thoại
+                                </p>
+                                <p className="mt-1 flex items-center gap-2 text-xs text-zinc-700">
+                                    <Phone className="size-4 shrink-0 text-zinc-500" />
+                                    {address.phone || 'Chưa có số điện thoại'}
+                                </p>
+                                <div className="my-3 border-t border-zinc-200" />
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                    Địa chỉ giao hàng
+                                </p>
+                                <p className="mt-1 text-xs leading-5 text-zinc-700">
+                                    {formatShippingAddress(address)}
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    </section>
                 </div>
             </section>
 
@@ -359,7 +382,8 @@ export function SellerOrderDetailContent({
                                     Đổi trả / hoàn tiền
                                 </h2>
                                 <p className="text-xs text-zinc-500">
-                                    Đơn này có {orderReturns.length} yêu cầu đổi trả.
+                                    Đơn này có {orderReturns.length} yêu cầu đổi
+                                    trả.
                                 </p>
                             </div>
                         </div>

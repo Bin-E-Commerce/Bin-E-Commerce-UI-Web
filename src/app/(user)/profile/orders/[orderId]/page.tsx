@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -12,11 +12,22 @@ import {
     CircleAlert,
     MapPin,
     Package,
+    PackageCheck,
     Phone,
     ReceiptText,
+    Star,
     Store,
 } from 'lucide-react';
 
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
     useCancelCustomerOrder,
@@ -171,10 +182,11 @@ function getCustomerReturnStatus(
         : requestStatus;
 }
 
-// Thanh điều hướng được đặt ngay đầu trang để khách thấy các mục trước khi cuộn.
-// Nội dung chính tiếp tục ưu tiên tiến trình, sản phẩm/chi phí rồi đến vận chuyển và hỗ trợ.
-// Dòng phương thức trong phần tổng tiền chỉ nêu VNPay/COD để tránh lặp trạng thái đã thanh toán ở tiêu đề.
+// Trang ưu tiên tiến trình đơn, tách rõ ba khu vực chi tiết và gợi ý đánh giá sau khi server xác nhận COMPLETED.
+// Bố cục co từ một cột sang hai rồi ba cột để thông tin vẫn dễ quét ở màn hình nhỏ.
+// Phương thức ở phần thanh toán chỉ nêu Pay2S/COD, tránh lặp trạng thái đã hiển thị trên đầu trang.
 export default function ProfileOrderDetailPage() {
+    const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
     const params = useParams<{ orderId: string }>();
     const orderId = params.orderId;
     const orderQuery = useCustomerOrder(orderId);
@@ -286,13 +298,12 @@ export default function ProfileOrderDetailPage() {
         order.fulfillmentStatus === 'DELIVERED' &&
         (!order.deliveryConfirmation?.status ||
             order.deliveryConfirmation.status === 'PENDING');
-    // Review chỉ có thể xuất hiện sau giao hàng và khi khách chưa mở khiếu nại nhận hàng.
+    // Chỉ mở mục review sau khi khách xác nhận hoàn tất; đơn còn ở DELIVERED chưa đủ điều kiện.
     const showReview =
-        (order.fulfillmentStatus === 'DELIVERED' ||
-            order.fulfillmentStatus === 'COMPLETED') &&
+        order.fulfillmentStatus === 'COMPLETED' &&
         order.deliveryConfirmation.status !== 'ISSUE_REPORTED';
     const paymentLabel =
-        order.paymentMethod === 'VNPAY'
+        order.paymentMethod === 'PAY2S'
             ? order.paymentStatus === 'PAID'
                 ? 'Đã thanh toán'
                 : 'Chờ xác nhận'
@@ -302,6 +313,16 @@ export default function ProfileOrderDetailPage() {
         (returnsQuery.data?.length ?? 0) > 0 ||
         (order.fulfillmentStatus === 'COMPLETED' &&
             order.deliveryConfirmation.status !== 'ISSUE_REPORTED');
+
+    // Đóng popup trước khi cuộn; delay ngắn để Dialog nhả focus trap và khóa cuộn nền.
+    function handleReviewNow(): void {
+        setReviewPromptOpen(false);
+        window.setTimeout(() => {
+            document
+                .getElementById('order-review')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+    }
 
     return (
         <div className="min-h-full bg-zinc-50/60">
@@ -357,8 +378,8 @@ export default function ProfileOrderDetailPage() {
                                     className="size-3.5 text-zinc-500"
                                     aria-hidden="true"
                                 />
-                                {order.paymentMethod === 'VNPAY'
-                                    ? 'VNPay'
+                                {order.paymentMethod === 'PAY2S'
+                                    ? 'Pay2S'
                                     : 'Thanh toán COD'}
                             </span>
                         </div>
@@ -374,112 +395,128 @@ export default function ProfileOrderDetailPage() {
                     />
                 </header>
 
-                <div id="order-delivery-confirmation" className="mt-5 scroll-mt-20">
-                    <DeliveryConfirmationCard order={order} />
+                <div
+                    id="order-delivery-confirmation"
+                    className="mt-5 scroll-mt-20"
+                >
+                    <DeliveryConfirmationCard
+                        order={order}
+                        onOrderCompleted={() => setReviewPromptOpen(true)}
+                    />
                 </div>
 
                 <section
                     id="order-products"
-                    className="mt-5 scroll-mt-20 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+                    aria-label="Chi tiết sản phẩm, thanh toán và địa chỉ đơn hàng"
+                    className="mt-5 scroll-mt-20"
                 >
-                    <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-4 py-3 sm:px-5">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
-                                <Store className="size-4" aria-hidden="true" />
-                            </div>
-                            <div>
-                                <h2 className="font-semibold text-zinc-950">
-                                    Sản phẩm đã đặt
-                                </h2>
-                                <p className="text-xs text-zinc-500">
-                                    Sản phẩm, thanh toán và thông tin nhận hàng
-                                </p>
-                            </div>
-                        </div>
-                        <span className="shrink-0 text-xs text-zinc-400">
-                            {order.items.length} mặt hàng
-                        </span>
-                    </div>
-
-                    <div className="grid lg:grid-cols-[minmax(0,1.5fr)_minmax(220px,0.75fr)_minmax(250px,0.9fr)]">
-                        <div className="divide-y divide-zinc-100 px-4 sm:px-5 lg:border-r lg:border-zinc-100">
-                            {order.items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="flex gap-3 py-4 first:pt-4 sm:gap-4"
-                                >
-                                    <Link
-                                        href={`/products/${item.productId}`}
-                                        aria-label={`Xem ${item.productName}`}
-                                        className="block size-20 shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:size-24"
-                                    >
-                                        <div className="size-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 transition-colors hover:border-zinc-400">
-                                            {item.imageUrl ||
-                                            legacyItemImages.get(
-                                                item.productId,
-                                            ) ? (
-                                                <img
-                                                    src={
-                                                        item.imageUrl ??
-                                                        legacyItemImages.get(
-                                                            item.productId,
-                                                        ) ??
-                                                        undefined
-                                                    }
-                                                    alt={item.productName}
-                                                    className="size-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex size-full items-center justify-center text-zinc-400">
-                                                    <Package
-                                                        className="size-7"
-                                                        aria-hidden="true"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    </Link>
-                                    <div className="min-w-0 flex-1">
-                                        <Link
-                                            href={`/products/${item.productId}`}
-                                            className="block text-sm font-semibold leading-5 text-zinc-950 underline-offset-4 hover:text-zinc-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
-                                        >
-                                            {item.productName}
-                                        </Link>
-                                        <p className="mt-1 text-xs text-zinc-500">
-                                            {item.variantName !==
-                                            item.productName
-                                                ? item.variantName
-                                                : 'Sản phẩm tiêu chuẩn'}
-                                        </p>
-                                        <p className="mt-1.5 text-xs text-zinc-500">
-                                            {formatMoney(item.unitPrice)} ×{' '}
-                                            {item.quantity}
+                    <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.45fr)_minmax(245px,0.75fr)_minmax(260px,0.82fr)]">
+                        <section className="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm lg:col-span-2 xl:col-span-1">
+                            <div className="flex min-h-[76px] items-center justify-between gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
+                                        <Store
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h2 className="text-sm font-semibold text-zinc-950">
+                                            Danh sách sản phẩm
+                                        </h2>
+                                        <p className="mt-0.5 text-xs text-zinc-500">
+                                            Snapshot tại thời điểm đặt hàng
                                         </p>
                                     </div>
-                                    <p className="shrink-0 pt-0.5 text-right text-sm font-semibold text-zinc-950">
-                                        {formatMoney(item.lineTotal)}
-                                    </p>
                                 </div>
-                            ))}
-                        </div>
+                                <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-600">
+                                    {order.items.length} mặt hàng
+                                </span>
+                            </div>
+                            <div className="divide-y divide-zinc-100 px-4 sm:px-5">
+                                {order.items.map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="flex gap-3 py-4 first:pt-4 sm:gap-4"
+                                    >
+                                        <Link
+                                            href={`/products/${item.productId}`}
+                                            aria-label={`Xem ${item.productName}`}
+                                            className="block size-20 shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:size-24"
+                                        >
+                                            <div className="size-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 transition-colors hover:border-zinc-400">
+                                                {item.imageUrl ||
+                                                legacyItemImages.get(
+                                                    item.productId,
+                                                ) ? (
+                                                    <img
+                                                        src={
+                                                            item.imageUrl ??
+                                                            legacyItemImages.get(
+                                                                item.productId,
+                                                            ) ??
+                                                            undefined
+                                                        }
+                                                        alt={item.productName}
+                                                        className="size-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex size-full items-center justify-center text-zinc-400">
+                                                        <Package
+                                                            className="size-7"
+                                                            aria-hidden="true"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Link>
+                                        <div className="min-w-0 flex-1">
+                                            <Link
+                                                href={`/products/${item.productId}`}
+                                                className="block text-sm font-semibold leading-5 text-zinc-950 underline-offset-4 hover:text-zinc-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
+                                            >
+                                                {item.productName}
+                                            </Link>
+                                            <p className="mt-1 text-xs text-zinc-500">
+                                                {item.variantName !==
+                                                item.productName
+                                                    ? item.variantName
+                                                    : 'Sản phẩm tiêu chuẩn'}
+                                            </p>
+                                            <p className="mt-1.5 text-xs text-zinc-500">
+                                                {formatMoney(item.unitPrice)} ×{' '}
+                                                {item.quantity}
+                                            </p>
+                                        </div>
+                                        <p className="shrink-0 rounded-lg bg-zinc-50 px-2.5 py-1 text-right text-sm font-semibold tabular-nums text-zinc-950">
+                                            {formatMoney(item.lineTotal)}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
 
-                        <div
+                        <section
                             id="order-payment"
-                            className="scroll-mt-20 border-y border-zinc-100 px-4 py-4 sm:px-5 lg:border-y-0 lg:border-r lg:border-zinc-100 lg:py-5"
+                            className="scroll-mt-20 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
                         >
-                            <div className="flex items-center gap-3">
+                            <div className="flex min-h-[76px] items-center gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
                                 <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                     <ReceiptText
                                         className="size-4"
                                         aria-hidden="true"
                                     />
                                 </div>
-                                <h2 className="font-semibold text-zinc-950">
-                                    Tổng thanh toán
-                                </h2>
+                                <div>
+                                    <h2 className="text-sm font-semibold text-zinc-950">
+                                        Tổng thanh toán
+                                    </h2>
+                                    <p className="mt-0.5 text-xs text-zinc-500">
+                                        Chi tiết các khoản của đơn hàng
+                                    </p>
+                                </div>
                             </div>
-                            <div className="mt-4 space-y-3 text-sm">
+                            <div className="space-y-3 p-4 text-sm sm:p-5">
                                 <div className="flex justify-between gap-3 text-zinc-500">
                                     <span>Tạm tính</span>
                                     <span className="shrink-0 tabular-nums">
@@ -494,56 +531,56 @@ export default function ProfileOrderDetailPage() {
                                             : formatMoney(order.shippingFee)}
                                     </span>
                                 </div>
-                                <div className="border-t border-zinc-100 pt-3">
+                                <div className="rounded-xl bg-zinc-950 px-3.5 py-3 text-white">
                                     <div className="flex items-center justify-between gap-3">
-                                        <span className="font-semibold text-zinc-950">
+                                        <span className="text-sm font-medium text-zinc-300">
                                             Thành tiền
                                         </span>
-                                        <span className="shrink-0 text-lg font-bold tabular-nums text-zinc-950">
+                                        <span className="shrink-0 text-lg font-bold tabular-nums">
                                             {formatMoney(order.totalAmount)}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between rounded-xl bg-zinc-50 px-3 py-2.5">
-                                    <span className="text-zinc-500">
-                                        Phương thức
+                                <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5">
+                                    <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                                        Thanh toán
                                     </span>
-                                    <span className="font-semibold text-zinc-900">
-                                        {order.paymentMethod === 'VNPAY'
+                                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-800 shadow-sm">
+                                        {order.paymentMethod === 'PAY2S'
                                             ? order.paymentStatus === 'PAID'
-                                                ? 'VNPay'
-                                                : 'VNPay · Chờ xác nhận'
+                                                ? 'Pay2S'
+                                                : 'Pay2S · Chờ xác nhận'
                                             : 'COD'}
                                     </span>
                                 </div>
-                            </div>
-                            {order.cancelledAt ? (
-                                <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
-                                    <p className="font-semibold text-zinc-950">
-                                        Đơn hàng đã hủy
-                                    </p>
-                                    <p className="mt-1">
-                                        Đã hủy lúc{' '}
-                                        {formatDate(order.cancelledAt)}
-                                    </p>
-                                    <div className="mt-2 border-t border-zinc-200 pt-2">
-                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
-                                            Lý do hủy đơn hàng
+                                {order.cancelledAt ? (
+                                    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
+                                        <p className="font-semibold text-zinc-950">
+                                            Đơn hàng đã hủy
                                         </p>
-                                        <p className="mt-1 text-sm leading-5 text-zinc-700">
-                                            {order.cancelReason?.trim() ||
-                                                'Chưa có lý do hủy được cung cấp.'}
+                                        <p className="mt-1">
+                                            Đã hủy lúc{' '}
+                                            {formatDate(order.cancelledAt)}
                                         </p>
+                                        <div className="mt-2 border-t border-zinc-200 pt-2">
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                                Lý do hủy đơn hàng
+                                            </p>
+                                            <p className="mt-1 text-sm leading-5 text-zinc-700">
+                                                {order.cancelReason?.trim() ||
+                                                    'Chưa có lý do hủy được cung cấp.'}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            ) : null}
-                        </div>
+                                ) : null}
+                            </div>
+                        </section>
 
-                        <div
+                        <section
                             id="order-address"
-                            className="scroll-mt-20 px-4 py-4 sm:px-5 lg:py-5"
+                            className="scroll-mt-20 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
                         >
-                            <div className="flex items-center gap-3">
+                            <div className="flex min-h-[76px] items-center gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
                                 <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                     <MapPin
                                         className="size-4"
@@ -551,32 +588,45 @@ export default function ProfileOrderDetailPage() {
                                     />
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold text-zinc-950">
+                                    <h2 className="text-sm font-semibold text-zinc-950">
                                         Địa chỉ nhận hàng
                                     </h2>
-                                    <p className="text-xs text-zinc-500">
+                                    <p className="mt-0.5 text-xs text-zinc-500">
                                         Thông tin tại thời điểm đặt hàng
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-4 rounded-xl bg-zinc-50 p-3.5">
-                                <p className="font-semibold text-zinc-950">
-                                    {order.shippingAddress.fullName}
-                                </p>
-                                <p className="mt-2 flex items-center gap-2 text-sm text-zinc-600">
-                                    <Phone
-                                        className="size-4 shrink-0"
-                                        aria-hidden="true"
-                                    />
-                                    {order.shippingAddress.phone}
-                                </p>
-                                <p className="mt-3 text-sm leading-6 text-zinc-600">
-                                    {formatShippingAddress(
-                                        order.shippingAddress,
-                                    )}
-                                </p>
+                            <div className="p-4 sm:p-5">
+                                <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-4">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                        Người nhận
+                                    </p>
+                                    <p className="mt-1.5 font-semibold text-zinc-950">
+                                        {order.shippingAddress.fullName}
+                                    </p>
+                                    <div className="my-3 border-t border-zinc-200" />
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                        Số điện thoại
+                                    </p>
+                                    <p className="mt-1.5 flex items-center gap-2 text-sm text-zinc-700">
+                                        <Phone
+                                            className="size-4 shrink-0 text-zinc-500"
+                                            aria-hidden="true"
+                                        />
+                                        {order.shippingAddress.phone}
+                                    </p>
+                                    <div className="my-3 border-t border-zinc-200" />
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                        Địa chỉ giao hàng
+                                    </p>
+                                    <p className="mt-1.5 text-sm leading-6 text-zinc-700">
+                                        {formatShippingAddress(
+                                            order.shippingAddress,
+                                        )}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        </section>
                     </div>
                 </section>
 
@@ -596,6 +646,86 @@ export default function ProfileOrderDetailPage() {
                     </div>
                 </div>
             </div>
+            <Dialog open={reviewPromptOpen} onOpenChange={setReviewPromptOpen}>
+                <DialogContent className="max-w-md overflow-hidden rounded-3xl border-zinc-200 bg-white p-0 shadow-2xl">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-zinc-50 via-white to-slate-100 px-5 pb-5 pt-7 sm:px-7">
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -right-16 -top-20 size-52 rounded-full bg-zinc-200/60 blur-3xl"
+                        />
+                        <div className="relative">
+                            <span className="flex size-12 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-sm">
+                                <PackageCheck
+                                    className="size-6"
+                                    aria-hidden="true"
+                                />
+                            </span>
+                            <DialogHeader className="mt-4">
+                                <DialogTitle className="text-xl font-bold tracking-tight text-zinc-950">
+                                    Đơn hàng đã hoàn tất!
+                                </DialogTitle>
+                                <DialogDescription className="text-sm leading-6 text-zinc-600">
+                                    Cảm ơn bạn đã mua sắm. Bạn có thể chia sẻ
+                                    trải nghiệm về sản phẩm trong đơn hàng này.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="mt-4 space-y-2">
+                                {order.items.slice(0, 3).map((item) => (
+                                    <div
+                                        key={item.id}
+                                        className="flex min-w-0 items-center gap-3 rounded-xl border border-zinc-200/80 bg-white/90 px-3 py-2.5"
+                                    >
+                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700">
+                                            <Package
+                                                className="size-4"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-800">
+                                            {item.productName}
+                                        </span>
+                                        <span className="flex shrink-0 items-center gap-0.5 text-amber-500">
+                                            {Array.from({ length: 5 }).map(
+                                                (_, index) => (
+                                                    <Star
+                                                        key={index}
+                                                        className="size-3"
+                                                        aria-hidden="true"
+                                                    />
+                                                ),
+                                            )}
+                                        </span>
+                                    </div>
+                                ))}
+                                {order.items.length > 3 ? (
+                                    <p className="px-1 text-xs text-zinc-500">
+                                        Và {order.items.length - 3} sản phẩm
+                                        khác
+                                    </p>
+                                ) : null}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter className="mx-0 mb-0 gap-2 border-t border-zinc-100 bg-white px-5 py-4 sm:flex-row sm:px-7">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setReviewPromptOpen(false)}
+                            className="h-10 rounded-xl border-zinc-200 px-4"
+                        >
+                            Để sau
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleReviewNow}
+                            className="h-10 rounded-xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"
+                        >
+                            <Star className="mr-2 size-4" aria-hidden="true" />
+                            Đánh giá ngay
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

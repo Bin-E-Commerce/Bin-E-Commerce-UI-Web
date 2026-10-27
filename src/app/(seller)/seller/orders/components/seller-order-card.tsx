@@ -48,9 +48,7 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
                 <div className="flex items-center gap-3">
                     <SellerOrderStatusBadge status={lifecycleStatus} />
                     <span className="text-xs font-medium text-zinc-500">
-                        {order.paymentMethod === 'VNPAY'
-                            ? 'VNPay'
-                            : 'COD'}
+                        {order.paymentMethod === 'PAY2S' ? 'Pay2S' : 'COD'}
                     </span>
                 </div>
             </div>
@@ -97,9 +95,7 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
 
                 <div className="flex shrink-0 items-center justify-between gap-5 sm:justify-end">
                     <div className="text-left sm:text-right">
-                        <p className="text-xs text-zinc-500">
-                            Doanh thu shop
-                        </p>
+                        <p className="text-xs text-zinc-500">Doanh thu shop</p>
                         <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-950 sm:text-base">
                             {formatSellerMoney(order.shopItemTotal)}
                         </p>

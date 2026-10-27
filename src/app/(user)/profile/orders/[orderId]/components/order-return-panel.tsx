@@ -17,6 +17,13 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import type { OrderResponse } from '@/app/(public)/checkout/types/checkout.types';
 import {
     cancelOrderReturn,
@@ -58,6 +65,9 @@ const REASONS: Array<{
     },
     { value: 'OTHER', label: 'Lý do khác', needsEvidence: false },
 ];
+
+const RETURN_SHIPPING_LIMIT_REJECTION_PREFIX =
+    'Phí hoàn GHN vượt giá trị hàng hoàn.';
 
 function statusLabel(status: OrderReturnResponse['status']): string {
     const labels: Record<OrderReturnResponse['status'], string> = {
@@ -142,7 +152,6 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     useEffect(() => {
         const nextMedia = createLocalMediaPreviews(images, videos);
         // State này phản ánh resource URL được tạo từ File API, không phải derived state thuần từ props.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLocalMedia(nextMedia);
 
         return () => {
@@ -196,9 +205,15 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     const activeRequest = returnsQuery.data?.find(
         (item) => !isTerminal(item.status),
     );
-    // Giữ màn hình ở chế độ chỉ đọc sau khi Seller từ chối để customer không tạo lại form trên cùng yêu cầu.
+    // Chỉ khóa form sau khi shop tự từ chối; lỗi giới hạn phí do GHN cho phép khách gửi yêu cầu mới theo phương án khác.
     const hasRejectedRequest =
-        returnsQuery.data?.some((item) => item.status === 'REJECTED') ?? false;
+        returnsQuery.data?.some(
+            (item) =>
+                item.status === 'REJECTED' &&
+                !item.reviewNote?.startsWith(
+                    RETURN_SHIPPING_LIMIT_REJECTION_PREFIX,
+                ),
+        ) ?? false;
     // Khi Customer đã gửi issue ở card xác nhận, form này không được xuất hiện lại để tránh nhập trùng dữ liệu.
     const deliveryIssueReported =
         order.deliveryConfirmation?.status === 'ISSUE_REPORTED';
@@ -289,6 +304,12 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                     </p>
                 </div>
             </div>
+            <div className="border-b border-blue-100 bg-blue-50/70 px-4 py-3 text-xs leading-5 text-blue-950 sm:px-5">
+                Gửi yêu cầu trong vòng 7 ngày kể từ khi đơn hoàn tất. Phí GHN
+                đang hiển thị là ước tính, chưa bị thu; phí thực tế chỉ chốt khi
+                hãng vận chuyển nhận kiện. Lỗi hàng shop chịu phí, đổi ý khách
+                chịu phí; với lý do khác, shop chọn bên chịu khi duyệt.
+            </div>
             {returnsQuery.data?.length ? (
                 <div className="space-y-3 border-b border-zinc-100 px-5 py-4 sm:px-6">
                     {returnsQuery.data.map((item) => (
@@ -302,12 +323,55 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                         {statusLabel(item.status)}
                                     </p>
                                     <p className="mt-1 text-xs text-zinc-500">
-                                        Hoàn dự kiến{' '}
+                                        {item.status === 'REJECTED'
+                                            ? 'Không phát sinh hoàn tiền'
+                                            : item.returnShippingFinalizedAt
+                                              ? 'Hoàn cuối cùng'
+                                              : 'Hoàn dự kiến'}{' '}
                                         {Number(
-                                            item.refundAmount,
+                                            item.status === 'REJECTED'
+                                                ? 0
+                                                : item.returnShippingFinalizedAt
+                                                  ? item.refundAmount
+                                                  : item.estimatedRefundAmount,
                                         ).toLocaleString('vi-VN')}{' '}
                                         đ
                                     </p>
+                                    <p className="mt-1 text-xs text-zinc-500">
+                                        {item.status === 'REJECTED'
+                                            ? 'Phí hoàn hàng dự kiến (không thu)'
+                                            : `Phí hoàn hàng ${item.returnShippingFinalizedAt ? 'thực tế' : 'dự kiến'}`}{' '}
+                                        {Number(
+                                            item.returnShippingFinalizedAt
+                                                ? item.returnShippingCost
+                                                : item.returnShippingEstimatedCost,
+                                        ).toLocaleString('vi-VN')}{' '}
+                                        đ ·{' '}
+                                        {item.status === 'REJECTED'
+                                            ? 'không phát sinh phí vì yêu cầu đã bị từ chối'
+                                            : item.returnShippingPayer ===
+                                                'CUSTOMER'
+                                              ? item.returnShippingFinalizedAt
+                                                  ? 'khách chịu phí'
+                                                  : 'khách dự kiến chịu phí'
+                                              : item.returnShippingPayer ===
+                                                  'SELLER'
+                                                ? 'shop chịu phí'
+                                                : 'shop đang phân loại'}
+                                    </p>
+                                    {Number(
+                                        item.customerReturnShippingReceivableAmount ??
+                                            0,
+                                    ) > 0 ? (
+                                        <p className="mt-1 text-xs font-medium text-amber-800">
+                                            Phí khách còn phải trả (ghi nhận,
+                                            chưa thu):{' '}
+                                            {Number(
+                                                item.customerReturnShippingReceivableAmount,
+                                            ).toLocaleString('vi-VN')}{' '}
+                                            đ
+                                        </p>
+                                    ) : null}
                                 </div>
                                 {item.status === 'REQUESTED' ? (
                                     <Button
@@ -399,7 +463,11 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                             {item.status === 'REJECTED' ? (
                                 <div className="mt-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-3 text-sm text-zinc-700">
                                     <p className="font-semibold text-red-900">
-                                        Shop đã từ chối yêu cầu hoàn hàng
+                                        {item.reviewNote?.startsWith(
+                                            RETURN_SHIPPING_LIMIT_REJECTION_PREFIX,
+                                        )
+                                            ? 'Yêu cầu hoàn bị từ chối do phí GHN'
+                                            : 'Shop đã từ chối yêu cầu hoàn hàng'}
                                     </p>
                                     <p className="mt-1 leading-5">
                                         {item.reviewNote?.trim() ||
@@ -456,21 +524,29 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                     <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
                         <label className="text-sm font-medium text-zinc-700">
                             Lý do hoàn
-                            <select
+                            <Select
                                 value={reason}
-                                onChange={(event) =>
-                                    setReason(
-                                        event.target.value as OrderReturnReason,
-                                    )
-                                }
-                                className="mt-1.5 h-9 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm outline-none focus:border-zinc-950"
+                                onValueChange={(value) => {
+                                    if (value)
+                                        setReason(value as OrderReturnReason);
+                                }}
                             >
-                                {REASONS.map((item) => (
-                                    <option key={item.value} value={item.value}>
-                                        {item.label}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger className="mt-1.5 h-9 w-full bg-white text-sm">
+                                    <SelectValue>
+                                        {selectedReason.label}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {REASONS.map((item) => (
+                                        <SelectItem
+                                            key={item.value}
+                                            value={item.value}
+                                        >
+                                            {item.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </label>
                         <div>
                             <p className="text-sm font-medium text-zinc-700">
@@ -552,8 +628,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                     ) : null}
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="inline-flex items-center gap-2 text-xs text-zinc-500">
-                            <AlertCircle className="size-4" /> Shop sẽ duyệt
-                            trước khi tạo vận đơn hoàn.
+                            <AlertCircle className="size-4" /> Phí GHN hiển thị
+                            là ước tính; chỉ chốt khi hãng vận chuyển nhận kiện.
                         </p>
                         <Button
                             type="button"

@@ -127,10 +127,30 @@ export function SellerReturnDetailModal({
             0,
         );
     const shippingRefundAmount = Number(request.refundShippingAmount ?? 0);
-    const returnShippingCost = Number(request.returnShippingCost ?? 0);
-    const customerReturnShippingFee = Number(request.returnShippingFee ?? 0);
-    const totalRefundAmount =
-        productRefundAmount + shippingRefundAmount - customerReturnShippingFee;
+    const returnShippingFinalized = Boolean(request.returnShippingFinalizedAt);
+    const returnShippingEstimate = Number(
+        request.returnShippingEstimatedCost ?? 0,
+    );
+    const returnShippingActual = Number(request.returnShippingCost ?? 0);
+    // Dùng số tiền server đã tính để estimate và refund cuối không lệch quy tắc làm tròn/giới hạn tổng order.
+    const displayedReturnShippingCost = returnShippingFinalized
+        ? returnShippingActual
+        : returnShippingEstimate;
+    const customerReturnShippingFee =
+        request.status === 'REJECTED'
+            ? 0
+            : returnShippingFinalized
+              ? Number(request.returnShippingFee ?? 0)
+              : request.returnShippingPayer === 'CUSTOMER'
+                ? returnShippingEstimate
+                : 0;
+    const totalRefundAmount = Number(
+        request.status === 'REJECTED'
+            ? 0
+            : returnShippingFinalized
+              ? request.refundAmount
+              : request.estimatedRefundAmount,
+    );
 
     return (
         <div
@@ -228,19 +248,52 @@ export function SellerReturnDetailModal({
                                             )}
                                         />
                                         <DetailRow
-                                            label="Chi phí gửi hàng hoàn (GHN)"
+                                            label={
+                                                returnShippingFinalized
+                                                    ? 'Phí hoàn thực tế (GHN)'
+                                                    : 'Phí hoàn ước tính (GHN)'
+                                            }
                                             value={formatMoney(
-                                                String(returnShippingCost),
+                                                String(
+                                                    displayedReturnShippingCost,
+                                                ),
                                             )}
                                         />
                                         <DetailRow
-                                            label="Phí hoàn khách chịu"
+                                            label="Bên chịu phí hoàn"
+                                            value={
+                                                request.returnShippingPayer ===
+                                                'CUSTOMER'
+                                                    ? 'Khách hàng'
+                                                    : request.returnShippingPayer ===
+                                                        'SELLER'
+                                                      ? 'Shop'
+                                                      : 'Shop cần phân loại khi duyệt'
+                                            }
+                                        />
+                                        <DetailRow
+                                            label={
+                                                returnShippingFinalized
+                                                    ? 'Phí hoàn khách chịu'
+                                                    : 'Phí khách dự kiến chịu'
+                                            }
                                             value={formatMoney(
                                                 String(
                                                     customerReturnShippingFee,
                                                 ),
                                             )}
                                         />
+                                        {Number(
+                                            request.customerReturnShippingReceivableAmount ??
+                                                0,
+                                        ) > 0 ? (
+                                            <DetailRow
+                                                label="Khách còn phải trả (ghi nhận, chưa thu)"
+                                                value={formatMoney(
+                                                    request.customerReturnShippingReceivableAmount,
+                                                )}
+                                            />
+                                        ) : null}
                                         <div className="mt-1 flex items-start justify-between gap-4 border-t border-zinc-200 pt-4">
                                             <dt className="text-sm font-semibold text-zinc-700">
                                                 Tổng tiền hoàn
@@ -265,6 +318,11 @@ export function SellerReturnDetailModal({
                                             )}
                                         />
                                     </dl>
+                                    <p className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">
+                                        Khách có thể yêu cầu hoàn trong 7 ngày
+                                        kể từ khi đơn hoàn tất. Phí hoàn chốt
+                                        theo chi phí GHN thực tế khi nhận kiện.
+                                    </p>
                                     {request.description ? (
                                         <div className="mt-4 rounded-xl bg-zinc-50 p-4">
                                             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">
@@ -342,20 +400,29 @@ export function SellerReturnDetailModal({
                                                 </tr>
                                                 <tr>
                                                     <td className="px-4 py-3 text-zinc-600">
-                                                        Chi phí gửi hàng hoàn
-                                                        (GHN)
+                                                        {request.status ===
+                                                        'REJECTED'
+                                                            ? 'Phí hoàn ước tính (không thu)'
+                                                            : returnShippingFinalized
+                                                              ? 'Phí hoàn thực tế (GHN)'
+                                                              : 'Phí hoàn ước tính (GHN)'}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-medium text-zinc-950">
                                                         {formatMoney(
                                                             String(
-                                                                returnShippingCost,
+                                                                displayedReturnShippingCost,
                                                             ),
                                                         )}
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <td className="px-4 py-3 text-zinc-600">
-                                                        Phí hoàn khách chịu
+                                                        {request.status ===
+                                                        'REJECTED'
+                                                            ? 'Phí khách thực trả'
+                                                            : returnShippingFinalized
+                                                              ? 'Phí hoàn khách chịu'
+                                                              : 'Phí khách dự kiến chịu'}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-medium text-zinc-950">
                                                         −{' '}
@@ -384,12 +451,13 @@ export function SellerReturnDetailModal({
                                         </table>
                                     </div>
                                     <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs leading-5 text-zinc-500">
-                                        Công thức: tiền sản phẩm + phí ship
-                                        chiều đi được hoàn − phí hoàn khách
-                                        chịu. Chi phí GHN chiều ngược là số thực
-                                        tế của vận đơn customer → shop; nếu lỗi
-                                        thuộc shop thì khách không bị khấu trừ
-                                        khoản này.
+                                        Phí trên trước khi GHN nhận kiện chỉ là
+                                        ước tính; chỉ ghi nhận sau khi carrier
+                                        tiếp nhận. Tiền hoàn dự kiến/cuối cùng
+                                        đã được Order Service tính theo phí
+                                        tương ứng. Nếu kiểm hàng không đạt và
+                                        khách chịu phí, hệ thống chỉ ghi khoản
+                                        phải thu, chưa thu tiền thật.
                                     </p>
                                 </section>
 

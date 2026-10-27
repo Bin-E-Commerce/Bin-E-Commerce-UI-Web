@@ -35,6 +35,7 @@ import { useConfirmOrderDelivery } from '../hooks/use-delivery-confirmation';
 
 type DeliveryConfirmationCardProps = {
     order: OrderResponse;
+    onOrderCompleted: () => void;
 };
 
 const ISSUE_REASONS = [
@@ -92,9 +93,10 @@ function createLocalMediaPreviews(
     ];
 }
 
-// Render card xác nhận với hai lựa chọn rõ ràng; trạng thái DELIVERED đã đủ ngữ cảnh nên không cần thêm tag lặp lại.
+// Render card xác nhận và chuyển sự kiện hoàn tất lên trang cha để popup review không bị unmount cùng card.
 export function DeliveryConfirmationCard({
     order,
+    onOrderCompleted,
 }: DeliveryConfirmationCardProps) {
     const queryClient = useQueryClient();
     const [issueOpen, setIssueOpen] = useState(false);
@@ -105,7 +107,7 @@ export function DeliveryConfirmationCard({
     const [videos, setVideos] = useState<File[]>([]);
     const [activeMedia, setActiveMedia] = useState<number | null>(null);
     const firstIssueInputRef = useRef<HTMLInputElement | null>(null);
-    const mutation = useConfirmOrderDelivery(order.id);
+    const mutation = useConfirmOrderDelivery(order.id, onOrderCompleted);
     const [remainingTime, setRemainingTime] = useState(() =>
         formatRemainingTime(order.deliveryConfirmation.deadline),
     );

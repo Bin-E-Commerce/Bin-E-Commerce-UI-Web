@@ -23,8 +23,11 @@ export function useOrderReviewStatus(orderId: string, enabled = true) {
     });
 }
 
-// Gửi xác nhận nhận hàng rồi đồng bộ detail, danh sách order và review status trong cùng một lần mutation.
-export function useConfirmOrderDelivery(orderId: string) {
+// Xác nhận đã nhận hàng và đồng bộ query; trang chi tiết có thể nhận callback khi server trả COMPLETED.
+export function useConfirmOrderDelivery(
+    orderId: string,
+    onOrderCompleted?: () => void,
+) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -40,10 +43,15 @@ export function useConfirmOrderDelivery(orderId: string) {
                     queryKey: ['order-review-status', orderId],
                 }),
             ]);
+            // Chỉ mở popup dựa trên fulfillment status do server trả về, không suy luận trạng thái từ thao tác bấm.
+            const isCompleted = order.fulfillmentStatus === 'COMPLETED';
+            if (isCompleted) onOrderCompleted?.();
             toast.success(
                 order.deliveryConfirmation.status === 'ISSUE_REPORTED'
                     ? 'Đã ghi nhận vấn đề của bạn.'
-                    : 'Đã xác nhận nhận hàng.',
+                    : isCompleted
+                      ? 'Đơn hàng đã hoàn tất.'
+                      : 'Đã xác nhận nhận hàng.',
             );
         },
         onError: (error) => toast.error(getErrorMessage(error)),

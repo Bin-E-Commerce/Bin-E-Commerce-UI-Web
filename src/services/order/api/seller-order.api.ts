@@ -31,7 +31,7 @@ export interface SellerOrderListItem {
         | 'REFUND_PENDING'
         | 'REFUNDED';
     fulfillmentStatus?: SellerOrderStage;
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentMethod: 'COD' | 'PAY2S';
     isSandbox: boolean;
     shopItemTotal: string;
     shippingFee?: string;
@@ -85,7 +85,7 @@ export interface SellerOrderResponse {
         | 'PAID'
         | 'REFUND_PENDING'
         | 'REFUNDED';
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentMethod: 'COD' | 'PAY2S';
     isSandbox: boolean;
     shopItemTotal: string;
     shippingFee: string;
@@ -161,11 +161,13 @@ export async function reviewSellerReturn(
     returnId: string,
     approved: boolean,
     note?: string,
+    returnShippingPayer?: 'CUSTOMER' | 'SELLER',
 ): Promise<OrderReturnResponse> {
     const response = await authorizedAxios.post<OrderReturnResponse>(
         `${SELLER_ORDERS}/returns/${returnId}/${approved ? 'approve' : 'reject'}`,
         {
             note: note?.trim() || undefined,
+            returnShippingPayer,
         },
     );
     return response.data;

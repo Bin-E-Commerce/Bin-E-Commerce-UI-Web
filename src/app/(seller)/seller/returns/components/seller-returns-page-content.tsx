@@ -3,6 +3,13 @@
 
 'use client';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -119,11 +126,13 @@ export function SellerReturnsPageContent() {
             returnId,
             approved,
             note,
+            returnShippingPayer,
         }: {
             returnId: string;
             approved: boolean;
             note?: string;
-        }) => reviewSellerReturn(returnId, approved, note),
+            returnShippingPayer?: 'CUSTOMER' | 'SELLER';
+        }) => reviewSellerReturn(returnId, approved, note, returnShippingPayer),
         onSuccess: () => {
             setRejectingRequest(null);
             invalidateReturnQueries(queryClient);
@@ -156,12 +165,17 @@ export function SellerReturnsPageContent() {
     function handleReviewDecision(
         item: SellerReturnRequest,
         approved: boolean,
+        returnShippingPayer?: 'CUSTOMER' | 'SELLER',
     ): void {
         if (!approved) {
             setRejectingRequest(item);
             return;
         }
-        reviewMutation.mutate({ returnId: item.id, approved: true });
+        reviewMutation.mutate({
+            returnId: item.id,
+            approved: true,
+            returnShippingPayer,
+        });
     }
 
     // Gửi lý do Seller đã xác nhận và đóng dialog sau khi API lưu thành công.
@@ -340,8 +354,8 @@ export function SellerReturnsPageContent() {
                                 reviewPending={reviewMutation.isPending}
                                 inspectPending={inspectMutation.isPending}
                                 shipmentPending={shipmentMutation.isPending}
-                                onReview={(approved) =>
-                                    handleReviewDecision(item, approved)
+                                onReview={(approved, payer) =>
+                                    handleReviewDecision(item, approved, payer)
                                 }
                                 onInspect={(passed) =>
                                     inspectMutation.mutate({
@@ -465,7 +479,10 @@ interface SellerReturnRequestCardProps {
     reviewPending: boolean;
     inspectPending: boolean;
     shipmentPending: boolean;
-    onReview: (approved: boolean) => void;
+    onReview: (
+        approved: boolean,
+        returnShippingPayer?: 'CUSTOMER' | 'SELLER',
+    ) => void;
     onInspect: (passed: boolean) => void;
     onCreateShipment: () => void;
     onViewDetails: () => void;
@@ -482,6 +499,9 @@ function SellerReturnRequestCard({
     onCreateShipment,
     onViewDetails,
 }: SellerReturnRequestCardProps) {
+    const [otherReasonPayer, setOtherReasonPayer] = useState<
+        'CUSTOMER' | 'SELLER' | ''
+    >('');
     return (
         <article className="grid gap-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-8">
             <div className="min-w-0">
@@ -520,11 +540,58 @@ function SellerReturnRequestCard({
                         </p>
                     </div>
                     <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3">
-                        <p className="text-xs text-zinc-500">Hoàn dự kiến</p>
+                        <p className="text-xs text-zinc-500">
+                            {item.status === 'REJECTED'
+                                ? 'Không phát sinh hoàn tiền'
+                                : item.returnShippingFinalizedAt
+                                  ? 'Hoàn cuối cùng'
+                                  : 'Hoàn dự kiến'}
+                        </p>
                         <p className="mt-1 text-sm font-semibold text-zinc-950">
-                            {formatRefundAmount(item.refundAmount)}
+                            {formatRefundAmount(
+                                item.status === 'REJECTED'
+                                    ? '0'
+                                    : item.returnShippingFinalizedAt
+                                      ? item.refundAmount
+                                      : item.estimatedRefundAmount,
+                            )}
                         </p>
                     </div>
+                </div>
+                <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3 text-xs leading-5 text-blue-950">
+                    <p>
+                        {item.status === 'REJECTED'
+                            ? 'Phí hoàn hàng dự kiến (không thu)'
+                            : `Phí gửi hàng hoàn ${item.returnShippingFinalizedAt ? 'thực tế' : 'dự kiến'}`}{' '}
+                        {Number(
+                            item.returnShippingFinalizedAt
+                                ? item.returnShippingCost
+                                : item.returnShippingEstimatedCost,
+                        ).toLocaleString('vi-VN')}{' '}
+                        đ;{' '}
+                        {item.status === 'REJECTED'
+                            ? 'yêu cầu bị từ chối nên chưa phát sinh phí.'
+                            : 'chốt theo phí GHN thực tế khi nhận kiện.'}
+                    </p>
+                    <p className="mt-1">
+                        {item.status === 'REJECTED'
+                            ? 'Không phát sinh phí vì yêu cầu đã bị từ chối trước khi GHN nhận kiện.'
+                            : item.returnShippingPayer === 'CUSTOMER'
+                              ? 'Khách chịu phí; khoản thực tế được trừ vào tiền hoàn.'
+                              : item.returnShippingPayer === 'SELLER'
+                                ? 'Shop chịu phí; khoản thực tế được ghi nhận vào ví shop.'
+                                : 'Lý do khác: shop cần chọn bên chịu phí trước khi duyệt.'}
+                    </p>
+                    {Number(item.customerReturnShippingReceivableAmount ?? 0) >
+                    0 ? (
+                        <p className="mt-1 font-semibold text-amber-900">
+                            Khách còn phải trả (ghi nhận, chưa thu):{' '}
+                            {Number(
+                                item.customerReturnShippingReceivableAmount,
+                            ).toLocaleString('vi-VN')}{' '}
+                            đ
+                        </p>
+                    ) : null}
                 </div>
 
                 {item.description ? (
@@ -553,15 +620,58 @@ function SellerReturnRequestCard({
                     </Button>
                 </div>
             </div>
-            <div className="flex flex-wrap items-start gap-2 lg:justify-end">
+            <div className="flex flex-col items-stretch gap-2 lg:items-end">
                 {item.status === 'REQUESTED' ? (
                     <>
+                        {item.reason === 'OTHER' ? (
+                            <div className="w-full min-w-52 space-y-1 lg:w-56">
+                                <label className="text-xs font-medium text-zinc-600">
+                                    Bên chịu phí hoàn
+                                </label>
+                                <Select
+                                    value={otherReasonPayer}
+                                    onValueChange={(value) =>
+                                        setOtherReasonPayer(
+                                            value as 'CUSTOMER' | 'SELLER',
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger className="h-9 w-full bg-white text-xs">
+                                        <SelectValue>
+                                            {otherReasonPayer === 'CUSTOMER'
+                                                ? 'Khách hàng thanh toán'
+                                                : otherReasonPayer === 'SELLER'
+                                                  ? 'Shop thanh toán'
+                                                  : 'Chọn bên chịu phí'}
+                                        </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="CUSTOMER">
+                                            Khách hàng thanh toán
+                                        </SelectItem>
+                                        <SelectItem value="SELLER">
+                                            Shop thanh toán
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : null}
                         <Button
                             variant="ghost"
                             type="button"
                             className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                            disabled={reviewPending}
-                            onClick={() => onReview(true)}
+                            disabled={
+                                reviewPending ||
+                                (item.reason === 'OTHER' && !otherReasonPayer)
+                            }
+                            onClick={() =>
+                                onReview(
+                                    true,
+                                    item.reason === 'OTHER'
+                                        ? otherReasonPayer || undefined
+                                        : undefined,
+                                )
+                            }
                         >
                             <Check className="size-4" /> Duyệt yêu cầu
                         </Button>

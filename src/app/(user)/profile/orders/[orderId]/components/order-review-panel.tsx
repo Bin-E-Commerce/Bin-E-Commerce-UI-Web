@@ -158,9 +158,7 @@ function ReviewItemComposer({
                             </p>
                             <p className="mt-0.5 text-xs text-zinc-500">
                                 Đánh giá của bạn
-                                {!item.canEdit
-                                    ? ' · Đã hết hạn chỉnh sửa'
-                                    : ''}
+                                {!item.canEdit ? ' · Đã hết hạn chỉnh sửa' : ''}
                             </p>
                         </div>
                     </div>
@@ -213,7 +211,8 @@ function ReviewItemComposer({
                     </h3>
                 ) : null}
                 <p className="mt-2 whitespace-pre-line text-sm leading-6 text-zinc-700">
-                    {existingReview.content || 'Bạn chưa thêm nội dung đánh giá.'}
+                    {existingReview.content ||
+                        'Bạn chưa thêm nội dung đánh giá.'}
                 </p>
                 {existingReview.images.length > 0 ? (
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -431,11 +430,10 @@ function ReviewItemComposer({
     );
 }
 
-// Chỉ mở review panel sau delivery/completed và không có issue mở; query review được gom thành một request theo order.
+// Chỉ tải và hiển thị review panel sau khi đơn COMPLETED, không có khiếu nại nhận hàng đang mở.
 export function OrderReviewPanel({ order }: OrderReviewPanelProps) {
-    const eligibleStage =
-        order.fulfillmentStatus === 'DELIVERED' ||
-        order.fulfillmentStatus === 'COMPLETED';
+    // DELIVERED mới là chờ khách xác nhận nhận hàng; chỉ COMPLETED mới được phép đánh giá.
+    const eligibleStage = order.fulfillmentStatus === 'COMPLETED';
     const enabled =
         eligibleStage && order.deliveryConfirmation.status !== 'ISSUE_REPORTED';
     const query = useOrderReviewStatus(order.id, enabled);
@@ -451,10 +449,7 @@ export function OrderReviewPanel({ order }: OrderReviewPanelProps) {
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 sm:px-5">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-zinc-950 text-white">
-                    <MessageSquareText
-                        className="size-4"
-                        aria-hidden="true"
-                    />
+                    <MessageSquareText className="size-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
                     <h2 className="text-base font-bold tracking-tight text-zinc-950 sm:text-lg">
@@ -462,7 +457,8 @@ export function OrderReviewPanel({ order }: OrderReviewPanelProps) {
                     </h2>
                     <p className="mt-0.5 text-xs leading-5 text-zinc-500 sm:text-sm">
                         Không bắt buộc đánh giá. Nếu muốn chia sẻ, bạn có thể
-                        đánh giá từng sản phẩm trước {deadline ?? 'hết thời hạn'}.
+                        đánh giá từng sản phẩm trước{' '}
+                        {deadline ?? 'hết thời hạn'}.
                     </p>
                 </div>
             </div>
