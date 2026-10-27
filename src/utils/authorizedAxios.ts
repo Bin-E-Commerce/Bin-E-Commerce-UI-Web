@@ -4,7 +4,11 @@
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import type { AppStore } from '@/store';
-import { API_BASE_URL, API_VERSION } from '@/config/api.config';
+import {
+    API_BASE_URL,
+    API_REQUEST_HEADERS,
+    API_VERSION,
+} from '@/config/api.config';
 import { clearAuth, setAuth, syncAuthViewer } from '@/store/slices/authSlice';
 import {
     completeAxiosRequest,
@@ -30,6 +34,7 @@ const authorizedAxios = axios.create({
     timeout: 1000 * 60 * 10,
     withCredentials: true, // Để gửi httpOnly refresh_token cookie tự động
     headers: {
+        ...API_REQUEST_HEADERS,
         // Gửi header này để api-gateway's CsrfGuard chấp nhận state-changing request.
         'X-Requested-With': 'XMLHttpRequest',
     },
@@ -75,6 +80,10 @@ export async function authorizedFetch(
 ): Promise<Response> {
     const send = (accessToken: string) => {
         const headers = new Headers(init.headers);
+        // Bỏ qua trang cảnh báo ngrok để fetch nhận JSON API thay vì HTML trung gian.
+        for (const [name, value] of Object.entries(API_REQUEST_HEADERS)) {
+            headers.set(name, value);
+        }
         headers.set('Authorization', `Bearer ${accessToken}`);
         headers.set('X-Requested-With', 'XMLHttpRequest');
 

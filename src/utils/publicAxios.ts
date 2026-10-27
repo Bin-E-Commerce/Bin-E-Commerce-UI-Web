@@ -1,5 +1,11 @@
+// File gửi request public tới API Gateway mà không cần access token.
+// Nó cấu hình cookie và các header cần thiết cho request từ trình duyệt.
 import axios from 'axios';
-import { API_BASE_URL, API_VERSION } from '@/config/api.config';
+import {
+    API_BASE_URL,
+    API_REQUEST_HEADERS,
+    API_VERSION,
+} from '@/config/api.config';
 import {
     completeAxiosRequest,
     trackAxiosRequest,
@@ -11,6 +17,7 @@ const publicAxios = axios.create({
     withCredentials: true, // Để nhận httpOnly cookies (refresh_token) sau khi đăng ký/đăng nhập
     timeout: 10000,
     headers: {
+        ...API_REQUEST_HEADERS,
         'Content-Type': 'application/json',
         // Gửi header này để api-gateway's CsrfGuard chấp nhận state-changing request.
         // Trình duyệt không cho phép trang web khác domain tự gắn header này vào cross-site request.
