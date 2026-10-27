@@ -1,4 +1,4 @@
-// Popup biên nhận VNPay chỉ xuất hiện sau khi page nhận trạng thái PAID đã được backend xác minh.
+// Popup biên nhận Pay2S chỉ xuất hiện sau khi page nhận trạng thái PAID đã được backend xác minh.
 
 import Link from 'next/link';
 import { ArrowRight, Check, ReceiptText, ShieldCheck } from 'lucide-react';
@@ -12,7 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import type { VnpayPaymentSuccessDialogProps } from '../types/vnpay-payment-success.types';
+import type { Pay2sPaymentSuccessDialogProps } from '../types/pay2s-payment-success.types';
 
 // Định dạng số tiền callback sau khi backend xác nhận chữ ký và đối chiếu snapshot giao dịch.
 function formatVerifiedAmount(amount: number): string {
@@ -24,10 +24,10 @@ function formatVerifiedAmount(amount: number): string {
 }
 
 // Hiển thị biên nhận rõ ràng và các đường đi tiếp theo; dialog không tự thay đổi trạng thái đơn.
-export function VnpayPaymentSuccessDialog({
+export function Pay2sPaymentSuccessDialog({
     payment,
     onClose,
-}: VnpayPaymentSuccessDialogProps) {
+}: Pay2sPaymentSuccessDialogProps) {
     return (
         <Dialog
             open={Boolean(payment)}
@@ -53,15 +53,15 @@ export function VnpayPaymentSuccessDialog({
                             </span>
                         </span>
                         <p className="mt-6 text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">
-                            Thanh toán qua VNPay
+                            Thanh toán qua Pay2S
                         </p>
                         <DialogHeader className="mt-2 items-center text-center">
                             <DialogTitle className="text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">
                                 Thanh toán thành công!
                             </DialogTitle>
                             <DialogDescription className="mt-1 max-w-sm text-sm leading-6 text-zinc-500">
-                                Giao dịch đã được VNPay xác nhận. Bạn có thể theo
-                                dõi tiến độ đơn hàng trong lịch sử mua sắm.
+                                Giao dịch đã được Pay2S xác nhận. Bạn có thể
+                                theo dõi tiến độ đơn hàng trong lịch sử mua sắm.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -111,7 +111,6 @@ export function VnpayPaymentSuccessDialog({
                     </div>
                 </div>
 
-                {/* Nội dung cha dùng p-0 nên footer không cần margin âm của dialog mặc định. */}
                 <DialogFooter className="mx-0 mb-0 gap-2 border-t border-zinc-100 bg-zinc-50/70 px-6 py-4 sm:flex-row sm:justify-center sm:px-9">
                     <Button
                         type="button"
@@ -121,7 +120,6 @@ export function VnpayPaymentSuccessDialog({
                     >
                         Đóng
                     </Button>
-                    {/* Dùng orderId từ kết quả backend xác minh để CTA mở đúng đơn vừa thanh toán, không quay về danh sách chung. */}
                     <Button
                         type="button"
                         className="h-10 rounded-xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"

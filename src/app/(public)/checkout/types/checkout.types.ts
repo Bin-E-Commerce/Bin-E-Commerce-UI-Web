@@ -9,7 +9,21 @@ export interface CreateCodOrderInput {
     cartItemId?: string;
     note?: string;
     idempotencyKey: string;
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentMethod: 'COD' | 'PAY2S';
+}
+
+// Mutation mang theo snapshot cart để retries cùng một nội dung dùng lại key,
+// còn cart đã thay đổi sẽ bắt đầu một ý định checkout mới.
+export interface CheckoutOrderMutationInput {
+    order: Omit<CreateCodOrderInput, 'idempotencyKey'>;
+    cartFingerprint: string;
+}
+
+// Bản ghi sessionStorage có hạn dùng khớp với cửa sổ thanh toán Pay2S.
+export interface StoredCheckoutIdempotencyKey {
+    key: string;
+    signature: string;
+    expiresAt: number;
 }
 
 // Response order tối thiểu để trang checkout hiển thị kết quả tạo đơn.
@@ -25,8 +39,14 @@ export interface OrderResponse {
         | 'CANCELLED'
         | 'DELIVERY_FAILED'
         | 'RETURN_REFUND';
-    paymentStatus?: 'COD_PENDING_COLLECTION' | 'PENDING' | 'PAID' | 'FAILED' | 'REFUND_PENDING' | 'REFUNDED';
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentStatus?:
+        | 'COD_PENDING_COLLECTION'
+        | 'PENDING'
+        | 'PAID'
+        | 'FAILED'
+        | 'REFUND_PENDING'
+        | 'REFUNDED';
+    paymentMethod: 'COD' | 'PAY2S';
     paymentUrl?: string;
     subtotal: string;
     shippingFee: string;

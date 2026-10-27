@@ -9,25 +9,27 @@ import type {
 } from '@/app/(public)/checkout/types/checkout.types';
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
-const VNPAY_RETURN = `${API_BASE_URL}${API_VERSION}/payments/vnpay/return`;
+const PAY2S_RETURN = `${API_BASE_URL}${API_VERSION}/payments/pay2s/return`;
 
-export type VnpayReturnResponse =
+export type Pay2sReturnResponse =
     | { status: 'PAID'; orderId: string }
+    | { status: 'WALLET_DEPOSIT_PAID'; depositId: string }
     | {
           status:
               | 'FAILED'
               | 'REFUND_PENDING'
               | 'REFUNDED'
               | 'PENDING'
+              | 'WALLET_DEPOSIT_FAILED'
               | 'UNVERIFIED';
       };
 
-// Gửi nguyên query VNPay tới backend; client chỉ hiển thị kết quả sau khi server xác minh chữ ký và đối chiếu attempt.
-export async function verifyVnpayReturn(
+// Gửi nguyên query Pay2S tới backend; client chỉ hiển thị kết quả sau khi server xác minh chữ ký và đối chiếu attempt.
+export async function verifyPay2sReturn(
     rawQueryString: string,
-): Promise<VnpayReturnResponse> {
-    const response = await authorizedAxios.get<VnpayReturnResponse>(
-        `${VNPAY_RETURN}${rawQueryString}`,
+): Promise<Pay2sReturnResponse> {
+    const response = await authorizedAxios.get<Pay2sReturnResponse>(
+        `${PAY2S_RETURN}${rawQueryString}`,
     );
     return response.data;
 }
@@ -79,7 +81,7 @@ export interface OrderQuoteResponse {
     subtotal: string;
     shippingFee: string;
     totalAmount: string;
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentMethod: 'COD' | 'PAY2S';
     shippingFeeBreakdown: Array<{
         shopId: string;
         provider: string;
@@ -92,7 +94,7 @@ export interface OrderQuoteResponse {
 export async function getOrderQuote(
     shippingAddressId: string,
     cartItemId?: string,
-    paymentMethod: 'COD' | 'VNPAY' = 'COD',
+    paymentMethod: 'COD' | 'PAY2S' = 'COD',
 ): Promise<OrderQuoteResponse> {
     const response = await authorizedAxios.post<OrderQuoteResponse>(
         `${ORDERS}/quote`,
@@ -130,7 +132,7 @@ export interface CustomerOrderListItem {
         | 'PAID'
         | 'REFUND_PENDING'
         | 'REFUNDED';
-    paymentMethod: 'COD' | 'VNPAY';
+    paymentMethod: 'COD' | 'PAY2S';
     totalAmount: string;
     itemCount: number;
     previewItems: Array<{
@@ -234,10 +236,15 @@ export interface OrderReturnResponse {
     description: string | null;
     evidence: Array<{ assetId: string; url: string; type: 'image' | 'video' }>;
     refundAmount: string;
+    estimatedRefundAmount: string;
     refundItemAmount: string;
     refundShippingAmount: string;
     returnShippingFee: string;
+    returnShippingEstimatedCost: string;
     returnShippingCost: string;
+    returnShippingPayer: 'CUSTOMER' | 'SELLER' | null;
+    returnShippingFinalizedAt: string | null;
+    customerReturnShippingReceivableAmount: string;
     reviewNote: string | null;
     inspectionPassed: boolean | null;
     inspectionNote: string | null;

@@ -9,10 +9,10 @@ import { toast } from 'sonner';
 import {
     authService,
     getUserAddressesQueryKey,
+    toAddressPayload,
     type CreateAddressPayload,
     type UserAddress,
 } from '@/services/auth';
-import { toAddressPayload } from '../utils/address-payload';
 
 interface SaveAddressVariables {
     payload: CreateAddressPayload;

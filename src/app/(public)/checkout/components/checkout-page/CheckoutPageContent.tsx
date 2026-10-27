@@ -73,6 +73,7 @@ export function CheckoutPageContent() {
         createAddressMutation,
         updateAddressMutation,
         deleteAddressMutation,
+        setDefaultAddressMutation,
         orderMutation,
     } = useCheckout();
     const [selectedAddressId, setSelectedAddressId] = useState('');
@@ -82,7 +83,7 @@ export function CheckoutPageContent() {
         null,
     );
     const [note, setNote] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'VNPAY'>('COD');
+    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'PAY2S'>('COD');
     const router = useRouter();
     const searchParams = useSearchParams();
     const buyNowCartItemId = searchParams.get('cartItemId') ?? undefined;
@@ -96,7 +97,11 @@ export function CheckoutPageContent() {
         [addresses],
     );
     const activeAddressId = selectedAddressId || fallbackAddressId;
-    const quoteQuery = useCheckoutQuote(activeAddressId, buyNowCartItemId, paymentMethod);
+    const quoteQuery = useCheckoutQuote(
+        activeAddressId,
+        buyNowCartItemId,
+        paymentMethod,
+    );
 
     // Chỉ chặn guest sau khi initAuth hoàn tất; nếu chạy sớm hơn, refresh checkout sẽ redirect sai trước khi cookie được restore.
     useEffect(() => {
@@ -169,17 +174,32 @@ export function CheckoutPageContent() {
             );
             return;
         }
+        const selectedCartItems = (cartQuery.data?.items ?? [])
+            .filter((item) => !buyNowCartItemId || item.id === buyNowCartItemId)
+            .map(({ id, productId, variantId, quantity }) => ({
+                id,
+                productId,
+                variantId,
+                quantity,
+            }))
+            .sort((left, right) => left.id.localeCompare(right.id));
+
+        // Dấu vân tay cart làm key đổi khi sản phẩm/số lượng đổi, nhưng giữ nguyên khi retry cùng checkout.
         orderMutation.mutate(
             {
-                shippingAddressId: activeAddressId,
-                cartItemId: buyNowCartItemId,
-                note: note.trim() || undefined,
-                paymentMethod,
+                order: {
+                    shippingAddressId: activeAddressId,
+                    cartItemId: buyNowCartItemId,
+                    note: note.trim() || undefined,
+                    paymentMethod,
+                },
+                cartFingerprint: JSON.stringify(selectedCartItems),
             },
             {
                 // Chuyển thẳng đến detail order vừa tạo để khách hàng thấy ngay mã đơn, trạng thái và snapshot giao hàng.
                 onSuccess: (order) => {
-                    if (order.paymentUrl) window.location.assign(order.paymentUrl);
+                    if (order.paymentUrl)
+                        window.location.assign(order.paymentUrl);
                     else router.replace(`/profile/orders/${order.id}`);
                 },
             },
@@ -348,9 +368,23 @@ export function CheckoutPageContent() {
                                             onDelete={() =>
                                                 setDeletingAddress(address)
                                             }
+                                            onSetDefault={() => {
+                                                setSelectedAddressId(
+                                                    address.id,
+                                                );
+                                                setDefaultAddressMutation.mutate(
+                                                    address,
+                                                );
+                                            }}
                                             deleting={
                                                 deleteAddressMutation.isPending &&
                                                 deleteAddressMutation.variables ===
+                                                    address.id
+                                            }
+                                            settingDefault={
+                                                setDefaultAddressMutation.isPending &&
+                                                setDefaultAddressMutation
+                                                    .variables?.id ===
                                                     address.id
                                             }
                                             formatAddress={formatAddress}
@@ -482,18 +516,64 @@ export function CheckoutPageContent() {
                                         Phương thức thanh toán
                                     </h2>
                                     <p className="mt-0.5 text-sm text-zinc-500">
-                                        Chọn COD hoặc thanh toán trực tuyến qua VNPay.
+                                        Chọn COD hoặc thanh toán trực tuyến qua
+                                        Pay2S.
                                     </p>
                                 </div>
                             </div>
-                            <div className="mt-4 grid gap-2 sm:grid-cols-2" role="group" aria-label="Phương thức thanh toán">
-                                <Button type="button" variant="outline" aria-pressed={paymentMethod === 'COD'} onClick={() => setPaymentMethod('COD')} className={paymentMethod === 'COD' ? 'h-auto justify-start gap-3 whitespace-normal border-2 border-zinc-950 bg-zinc-50 p-3 text-left' : 'h-auto justify-start gap-3 whitespace-normal p-3 text-left'}>
-                                    <Truck className="size-5 shrink-0" aria-hidden="true" />
-                                    <span><span className="block font-semibold text-zinc-950">Thanh toán khi nhận hàng (COD)</span><span className="mt-1 block text-sm font-normal text-zinc-500">Trả tiền trực tiếp cho đơn vị giao hàng.</span></span>
+                            <div
+                                className="mt-4 grid gap-2 sm:grid-cols-2"
+                                role="group"
+                                aria-label="Phương thức thanh toán"
+                            >
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    aria-pressed={paymentMethod === 'COD'}
+                                    onClick={() => setPaymentMethod('COD')}
+                                    className={
+                                        paymentMethod === 'COD'
+                                            ? 'h-auto justify-start gap-3 whitespace-normal border-2 border-zinc-950 bg-zinc-50 p-3 text-left'
+                                            : 'h-auto justify-start gap-3 whitespace-normal p-3 text-left'
+                                    }
+                                >
+                                    <Truck
+                                        className="size-5 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <span>
+                                        <span className="block font-semibold text-zinc-950">
+                                            Thanh toán khi nhận hàng (COD)
+                                        </span>
+                                        <span className="mt-1 block text-sm font-normal text-zinc-500">
+                                            Trả tiền trực tiếp cho đơn vị giao
+                                            hàng.
+                                        </span>
+                                    </span>
                                 </Button>
-                                <Button type="button" variant="outline" aria-pressed={paymentMethod === 'VNPAY'} onClick={() => setPaymentMethod('VNPAY')} className={paymentMethod === 'VNPAY' ? 'h-auto justify-start gap-3 whitespace-normal border-2 border-zinc-950 bg-zinc-50 p-3 text-left' : 'h-auto justify-start gap-3 whitespace-normal p-3 text-left'}>
-                                    <CreditCard className="size-5 shrink-0" aria-hidden="true" />
-                                    <span><span className="block font-semibold text-zinc-950">Ví/Ngân hàng qua VNPay</span><span className="mt-1 block text-sm font-normal text-zinc-500">Chuyển đến cổng thanh toán bảo mật.</span></span>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    aria-pressed={paymentMethod === 'PAY2S'}
+                                    onClick={() => setPaymentMethod('PAY2S')}
+                                    className={
+                                        paymentMethod === 'PAY2S'
+                                            ? 'h-auto justify-start gap-3 whitespace-normal border-2 border-zinc-950 bg-zinc-50 p-3 text-left'
+                                            : 'h-auto justify-start gap-3 whitespace-normal p-3 text-left'
+                                    }
+                                >
+                                    <CreditCard
+                                        className="size-5 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <span>
+                                        <span className="block font-semibold text-zinc-950">
+                                            Ví/Ngân hàng qua Pay2S
+                                        </span>
+                                        <span className="mt-1 block text-sm font-normal text-zinc-500">
+                                            Chuyển đến cổng thanh toán bảo mật.
+                                        </span>
+                                    </span>
                                 </Button>
                             </div>
                             <label className="mt-4 block">
@@ -660,7 +740,9 @@ export function CheckoutPageContent() {
                                 </>
                             ) : (
                                 <>
-                                    {paymentMethod === 'COD' ? 'Đặt hàng COD' : 'Thanh toán qua VNPay'}{' '}
+                                    {paymentMethod === 'COD'
+                                        ? 'Đặt hàng COD'
+                                        : 'Thanh toán qua Pay2S'}{' '}
                                     <Check
                                         className="size-4"
                                         aria-hidden="true"

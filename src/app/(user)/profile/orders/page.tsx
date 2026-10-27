@@ -29,11 +29,11 @@ import {
     useCustomerOrders,
     useLegacyOrderPreviewImages,
 } from './hooks/use-customer-orders';
-import { verifyVnpayReturn } from '@/services/order';
+import { verifyPay2sReturn } from '@/services/order';
 import { CustomerOrderActions } from './components/customer-order-actions';
 import { CustomerOrderTabs } from './components/customer-order-tabs';
-import { VnpayPaymentSuccessDialog } from './components/VnpayPaymentSuccessDialog';
-import type { VnpayPaymentSuccessDetails } from './types/vnpay-payment-success.types';
+import { Pay2sPaymentSuccessDialog } from './components/Pay2sPaymentSuccessDialog';
+import type { Pay2sPaymentSuccessDetails } from './types/pay2s-payment-success.types';
 
 // Định dạng thời gian tại UI, dữ liệu ISO vẫn giữ nguyên từ API.
 function formatDate(value: string): string {
@@ -73,15 +73,15 @@ function readFilter(params: URLSearchParams): CustomerOrderFilter {
     };
 }
 
-// Render lịch sử đơn và xử lý VNPay Return; chỉ mở biên nhận khi backend xác nhận PAID.
+// Render lịch sử đơn và xử lý Pay2S Return; chỉ mở biên nhận khi backend xác nhận PAID.
 export default function ProfileOrdersPage() {
     const router = useRouter();
     const pathname = usePathname();
     const params = useSearchParams();
-    const handledVnpayReturn = useRef(false);
+    const handledPay2sReturn = useRef(false);
     const [verifiedPayment, setVerifiedPayment] =
-        useState<VnpayPaymentSuccessDetails | null>(null);
-    const hasVnpayReturn = params.has('vnp_TxnRef');
+        useState<Pay2sPaymentSuccessDetails | null>(null);
+    const hasPay2sReturn = params.has('orderId');
     const filter = readFilter(params);
     const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
     const ordersQuery = useCustomerOrders(filter, page);
@@ -91,50 +91,68 @@ export default function ProfileOrdersPage() {
     const refetchOrders = ordersQuery.refetch;
 
     // Chỉ gửi callback lên backend một lần; backend xác minh chữ ký trước khi mở biên nhận và trả orderId đã lưu.
-    // ID trả về là đích điều hướng chi tiết; sau đó làm mới danh sách và xóa query VNPay để refresh không phát lại callback.
+    // ID trả về là đích điều hướng chi tiết; sau đó làm mới danh sách và xóa query Pay2S để refresh không phát lại callback.
     useEffect(() => {
-        if (handledVnpayReturn.current || !hasVnpayReturn) return;
-        handledVnpayReturn.current = true;
+        if (handledPay2sReturn.current || !hasPay2sReturn) return;
+        handledPay2sReturn.current = true;
 
         const rawQueryString = window.location.search;
-        void verifyVnpayReturn(rawQueryString)
+        void verifyPay2sReturn(rawQueryString)
             .then((result) => {
                 const { status } = result;
                 if (status === 'PAID') {
                     const callback = new URLSearchParams(rawQueryString);
-                    const callbackAmount = Number(callback.get('vnp_Amount'));
-                    const orderInfo = callback.get('vnp_OrderInfo') ?? '';
+                    const callbackAmount = Number(callback.get('amount'));
+                    const orderInfo = callback.get('orderInfo') ?? '';
                     const orderNumber = orderInfo
                         .match(/(?:don|đơn)\s+(.+)$/i)?.[1]
                         ?.trim();
-                    const transactionNumber = callback.get('vnp_TransactionNo');
+                    const transactionNumber = callback.get('transId');
 
-                    // Backend đã xác minh callback; thiếu số tiền hoặc mã thì ẩn trường đó.
+                    // Backend đã xác minh callback; Pay2S trả amount theo VND nguyên nên không chia theo đơn vị cent.
+                    // Thiếu số tiền hoặc mã thì ẩn trường đó để không hiển thị dữ liệu suy diễn từ query.
                     setVerifiedPayment({
                         orderId: result.orderId,
                         ...(Number.isSafeInteger(callbackAmount) &&
                         callbackAmount > 0
-                            ? { amount: callbackAmount / 100 }
+                            ? { amount: callbackAmount }
                             : {}),
                         ...(orderNumber ? { orderNumber } : {}),
                         ...(transactionNumber ? { transactionNumber } : {}),
                     });
                     void refetchOrders();
                 } else if (status === 'REFUND_PENDING') {
-                    toast.info('Giao dịch đến muộn; hệ thống đang xử lý hoàn tiền.');
+                    toast.info(
+                        'Giao dịch đến muộn; hệ thống đang xử lý hoàn tiền.',
+                    );
                 } else if (status === 'REFUNDED') {
                     toast.info('Giao dịch đã được hoàn tiền.');
                 } else if (status === 'FAILED') {
-                    toast.error('Thanh toán chưa thành công. Bạn có thể thử lại.');
+                    toast.error(
+                        'Thanh toán chưa thành công. Bạn có thể thử lại.',
+                    );
                 } else if (status === 'PENDING') {
-                    toast.info('Đang chờ VNPay xác nhận giao dịch.');
+                    toast.info('Đang chờ Pay2S xác nhận giao dịch.');
                 } else {
-                    toast.error('Không xác minh được kết quả thanh toán VNPay.');
+                    toast.error(
+                        'Không xác minh được kết quả thanh toán Pay2S.',
+                    );
                 }
 
                 const cleaned = new URLSearchParams(window.location.search);
                 for (const key of [...cleaned.keys()]) {
-                    if (key.startsWith('vnp_')) cleaned.delete(key);
+                    if (
+                        [
+                            'orderId',
+                            'resultCode',
+                            'amount',
+                            'orderInfo',
+                            'transId',
+                            'm2signature',
+                            'signature',
+                        ].includes(key)
+                    )
+                        cleaned.delete(key);
                 }
                 router.replace(
                     `${pathname}${cleaned.size ? `?${cleaned}` : ''}`,
@@ -142,12 +160,12 @@ export default function ProfileOrdersPage() {
                 );
             })
             .catch(() => {
-                handledVnpayReturn.current = false;
+                handledPay2sReturn.current = false;
                 toast.error(
                     'Không thể xác minh thanh toán lúc này. Vui lòng tải lại trang.',
                 );
             });
-    }, [hasVnpayReturn, pathname, refetchOrders, router]);
+    }, [hasPay2sReturn, pathname, refetchOrders, router]);
 
     // Đổi tab hoặc trang qua URL để browser back/refresh giữ đúng ngữ cảnh.
     function navigate(nextFilter: CustomerOrderFilter, nextPage = 1): void {
@@ -160,7 +178,7 @@ export default function ProfileOrdersPage() {
 
     return (
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-            <VnpayPaymentSuccessDialog
+            <Pay2sPaymentSuccessDialog
                 payment={verifiedPayment}
                 onClose={() => setVerifiedPayment(null)}
             />
@@ -270,10 +288,14 @@ export default function ProfileOrdersPage() {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                {/* Tab và trạng thái đơn thể hiện tiến trình; nhãn này chỉ nêu phương thức trả tiền. */}
+                                                {/* Nêu trạng thái tiền riêng để khách không nhầm đơn Pay2S chưa trả với đơn đã xác nhận. */}
                                                 <span className="text-sm text-zinc-500">
-                                                    {order.paymentMethod === 'VNPAY'
-                                                        ? 'VNPay'
+                                                    {order.paymentMethod ===
+                                                    'PAY2S'
+                                                        ? order.paymentStatus ===
+                                                          'PENDING'
+                                                            ? 'Pay2S · Chờ thanh toán'
+                                                            : 'Pay2S'
                                                         : 'COD'}
                                                 </span>
                                             </div>

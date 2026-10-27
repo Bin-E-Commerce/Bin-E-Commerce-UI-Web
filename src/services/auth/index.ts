@@ -3,4 +3,5 @@ export * from './auth.facade';
 export * from './access';
 export * from './types/auth.types';
 export * from './query-keys/address.query-key';
+export * from './utils/address-payload';
 export * from './utils/user-display-name';
