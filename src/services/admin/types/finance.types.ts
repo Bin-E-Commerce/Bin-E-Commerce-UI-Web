@@ -28,6 +28,7 @@ export interface AdminFinanceWithdrawal {
 
 export interface AdminFinanceDeposit {
     id: string;
+    shopId: string;
     amount: string;
     status: string;
     createdAt: string;
@@ -41,7 +42,7 @@ export interface AdminFinanceSnapshot {
     shippingFundBalance: string;
     customerReturnShippingReceivable: string;
     pendingWithdrawals: number;
-    sandboxDepositTotal: string;
+    depositTotal: string;
     ledger: AdminFinanceLedgerEntry[];
     withdrawals: AdminFinanceWithdrawal[];
     deposits: AdminFinanceDeposit[];
@@ -55,18 +56,17 @@ export interface AdminFinanceWithdrawalDetail extends AdminFinanceWithdrawal {
     accountNumber: string;
     sellerUserId: string;
     transferMemo: string;
+    pay2sTransactionId: string | null;
+    pay2sTransactionNumber: string | null;
+    pay2sTransferAmount: string | null;
+    pay2sTransferDetectedAt: string | null;
+    recipientConfirmedBy: string | null;
+    recipientConfirmedAt: string | null;
 }
 
 export interface AdminPayoutReadiness {
     ready: boolean;
-    missing: Array<'CLIENT_ID' | 'API_KEY' | 'CHECKSUM_KEY'>;
-    balance: string | null;
-}
-
-export interface AdminSellerPayoutResult {
-    status: 'PROCESSING' | 'PAID' | 'FAILED';
-    approvalState: string | null;
-    transactionState: string | null;
+    missing: Array<'WEBHOOK_TOKEN' | 'SOURCE_ACCOUNT_NUMBER'>;
 }
 
 // Contract hiển thị COD khách đã trả và đơn đã hoàn tất, còn chờ admin xác nhận tiền thu hộ.
@@ -81,15 +81,4 @@ export interface AdminFinanceCodRemittance {
 export interface AdminFinancePage<T> {
     items: T[];
     total: number;
-}
-
-// Contract gửi bằng chứng hoàn thủ công; backend kiểm tra lại amount và trạng thái trước khi ghi sổ.
-export interface AdminFinanceRefundRequest {
-    amount: string;
-    reference: string;
-    proof: {
-        assetId: string;
-        url: string;
-        type: 'image';
-    };
 }

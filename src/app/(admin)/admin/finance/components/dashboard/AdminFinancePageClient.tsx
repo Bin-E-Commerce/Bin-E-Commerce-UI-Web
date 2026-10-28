@@ -1,97 +1,114 @@
-// Trang vận hành dòng tiền: admin gửi payout seller qua payOS Kênh Chi và theo dõi trạng thái provider.
+// Trang vận hành dòng tiền: admin chuyển thủ công và theo dõi đối soát giao dịch OUT Pay2S.
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
+import { BookOpenText, Landmark, RefreshCw, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
-    confirmAdminPay2sLateRefund,
-    confirmAdminPay2sRefund,
     createAdminSettlementBatch,
+    confirmAdminWithdrawalTransfer,
     getAdminFinance,
+    getAdminLedger,
     getAdminPayoutReadiness,
     getAdminWithdrawal,
-    processAdminWithdrawalPayout,
+    getAdminWithdrawals,
     rejectAdminWithdrawal,
     reconcileAdminSettlementBatch,
-    syncAdminWithdrawalPayout,
+    startAdminWithdrawalProcessing,
 } from '@/services/admin/api/finance.api';
 import type { AdminFinanceLedgerEntry } from '@/services/admin/types/finance.types';
 import { FinanceContextCards } from './FinanceContextCards';
 import { FinanceMetrics } from './FinanceMetrics';
 import { PlatformLedgerSection } from '../ledger/PlatformLedgerSection';
-import { ManualRefundSection } from '../refunds/ManualRefundSection';
 import { SellerWithdrawalsSection } from '../withdrawals/SellerWithdrawalsSection';
 import { WithdrawalDialog } from '../withdrawals/WithdrawalDialog';
-import type {
-    AdminFinanceRefundInput,
-    AdminFinanceWithdrawalActionInput,
-} from '../../types/admin-finance.types';
+import type { AdminFinanceWithdrawalActionInput } from '../../types/payouts/seller-withdrawals.types';
 import { CodRemittanceSection } from '../cod-remittance/CodRemittanceSection';
+import { FINANCE_TABLE_PAGE_SIZE } from '../../constants/finance-pagination.constant';
 
-// Trang chỉ dùng dữ liệu finance đã được backend giới hạn quyền; số dư và ledger luôn lấy từ snapshot API.
-// State tại đây chỉ giữ thao tác tạm của admin, còn payout/refund/đối soát được backend xác thực và ghi sổ.
+// Trang giữ số liệu tài chính tóm tắt ở đầu và dùng tab để tránh xếp chồng các bảng dài.
+// Dữ liệu finance do backend giới hạn quyền; số dư và ledger luôn lấy từ API có phân trang.
+// State tại đây chỉ giữ thao tác payout/đối soát; backend xác thực và ghi sổ mọi thay đổi tài chính.
 // Raw account number chỉ được tải khi admin mở chi tiết payout để tránh lộ thông tin trong snapshot chung.
 export function AdminFinancePageClient() {
     const queryClient = useQueryClient();
     const [withdrawalId, setWithdrawalId] = useState<string | null>(null);
+    const [manualTransferAcknowledged, setManualTransferAcknowledged] =
+        useState(false);
+    const [recipientConfirmed, setRecipientConfirmed] = useState(false);
     const [selectedLedgerIds, setSelectedLedgerIds] = useState<string[]>([]);
     const [adminNote, setAdminNote] = useState('');
-    const [refundCaseType, setRefundCaseType] =
-        useState<AdminFinanceRefundInput['caseType']>('RETURN');
-    const [refundTargetId, setRefundTargetId] = useState('');
-    const [refundAmount, setRefundAmount] = useState('');
-    const [refundReference, setRefundReference] = useState('');
-    const [refundProofUrl, setRefundProofUrl] = useState('');
-    const [refundProofAssetId, setRefundProofAssetId] = useState('');
     const [settlementBatchId, setSettlementBatchId] = useState<string | null>(
         null,
     );
+    const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+    const [ledgerPage, setLedgerPage] = useState(1);
     const overviewQuery = useQuery({
-        queryKey: ['admin-finance', 1],
-        queryFn: () => getAdminFinance(1, 50),
+        queryKey: ['admin-finance', 'overview'],
+        queryFn: () => getAdminFinance(1, 1),
+        staleTime: 15_000,
+    });
+    // Mỗi bảng dùng query key và page độc lập để đổi trang không tải lại dữ liệu của bảng còn lại.
+    const withdrawalsQuery = useQuery({
+        queryKey: [
+            'admin-finance',
+            'withdrawals',
+            withdrawalsPage,
+            FINANCE_TABLE_PAGE_SIZE,
+        ],
+        queryFn: () =>
+            getAdminWithdrawals(withdrawalsPage, FINANCE_TABLE_PAGE_SIZE),
+        staleTime: 15_000,
+    });
+    const ledgerQuery = useQuery({
+        queryKey: [
+            'admin-finance',
+            'ledger',
+            ledgerPage,
+            FINANCE_TABLE_PAGE_SIZE,
+        ],
+        queryFn: () => getAdminLedger(ledgerPage, FINANCE_TABLE_PAGE_SIZE),
         staleTime: 15_000,
     });
     const withdrawalQuery = useQuery({
         queryKey: ['admin-finance-withdrawal', withdrawalId],
         queryFn: () => getAdminWithdrawal(withdrawalId!),
         enabled: Boolean(withdrawalId),
-        refetchInterval: false,
+        refetchInterval: (query) =>
+            query.state.data?.status === 'PROCESSING' ? 5_000 : false,
     });
     const payoutReadinessQuery = useQuery({
         queryKey: ['admin-finance-payout-readiness'],
         queryFn: getAdminPayoutReadiness,
         enabled: Boolean(withdrawalId),
     });
-    const payoutStatusQuery = useQuery({
-        queryKey: ['admin-finance-withdrawal-payout-status', withdrawalId],
-        queryFn: () => syncAdminWithdrawalPayout(withdrawalId!),
-        enabled: Boolean(
-            withdrawalId &&
-            withdrawalQuery.data?.status === 'PROCESSING' &&
-            withdrawalQuery.data.transferReference?.startsWith('PAYOS:'),
-        ),
-        refetchInterval: (query) =>
-            query.state.status === 'error' ||
-            query.state.data?.status === 'PROCESSING'
-                ? 5_000
-                : false,
-    });
 
-    // Retry chỉ gửi lại payload với idempotency key ổn định; từ chối vẫn là thao tác riêng trước khi bắt đầu payout.
+    // Mỗi action là một bước riêng: mở xử lý, xác nhận đã chuyển đúng người nhận hoặc từ chối trước khi chuyển.
     const withdrawalMutation = useMutation({
         mutationFn: async (input: AdminFinanceWithdrawalActionInput) => {
-            if (input.action === 'payout')
-                return processAdminWithdrawalPayout(
-                    input.withdrawalId,
-                    input.note,
-                );
-            await rejectAdminWithdrawal(input.withdrawalId, input.note);
-            return null;
+            switch (input.action) {
+                case 'start':
+                    return startAdminWithdrawalProcessing(
+                        input.withdrawalId,
+                        input.acknowledged === true,
+                        input.note,
+                    );
+                case 'confirm':
+                    return confirmAdminWithdrawalTransfer(
+                        input.withdrawalId,
+                        input.acknowledged === true,
+                        input.note,
+                    );
+                case 'reject':
+                    // Nhánh từ chối luôn mang lý do bắt buộc theo kiểu input trước khi gọi API.
+                    await rejectAdminWithdrawal(input.withdrawalId, input.note);
+                    return null;
+            }
         },
-        onSuccess: async (result) => {
+        onSuccess: async (_result, input) => {
             await queryClient.invalidateQueries({
                 queryKey: ['admin-finance'],
             });
@@ -99,16 +116,15 @@ export function AdminFinancePageClient() {
                 queryKey: ['admin-finance-withdrawal'],
             });
             setAdminNote('');
-            if (result?.status === 'PAID')
-                toast.success('payOS xác nhận đã chuyển tiền cho seller.');
-            else if (result?.status === 'FAILED')
-                toast.error(
-                    'payOS xác nhận lệnh chi thất bại; tiền giữ chỗ đã được hoàn lại cho seller.',
-                );
-            else if (result?.status === 'PROCESSING')
+            setManualTransferAcknowledged(false);
+            setRecipientConfirmed(false);
+            if (input.action === 'start')
                 toast.success(
-                    'payOS đã nhận lệnh hoặc đang xử lý; hệ thống sẽ tự cập nhật trạng thái.',
+                    'Yêu cầu đã chuyển sang xử lý. Hãy chuyển tiền bằng app ngân hàng và giữ nguyên memo.',
                 );
+            else if (input.action === 'confirm')
+                toast.success('Đã ghi nhận chuyển tiền cho seller.');
+            else toast.success('Đã từ chối yêu cầu rút tiền.');
         },
     });
     const batchMutation = useMutation({
@@ -130,63 +146,13 @@ export function AdminFinancePageClient() {
             });
         },
     });
-    const refundMutation = useMutation({
-        mutationFn: (input: AdminFinanceRefundInput) => {
-            const body = {
-                amount: input.amount,
-                reference: input.reference,
-                proof: {
-                    assetId: input.proofAssetId,
-                    url: input.proofUrl,
-                    type: 'image' as const,
-                },
-            };
-            return input.caseType === 'RETURN'
-                ? confirmAdminPay2sRefund(input.targetId, body)
-                : confirmAdminPay2sLateRefund(input.targetId, body);
-        },
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({
-                queryKey: ['admin-finance'],
-            });
-            setRefundTargetId('');
-            setRefundAmount('');
-            setRefundReference('');
-            setRefundProofUrl('');
-            setRefundProofAssetId('');
-        },
-    });
     const overview = overviewQuery.data;
     const detail = withdrawalQuery.data;
-    const isPayosWithdrawal = Boolean(
-        detail?.transferReference?.startsWith('PAYOS:'),
-    );
-    const hasEnoughPayoutBalance = Boolean(
-        detail &&
-        payoutReadinessQuery.data?.ready &&
-        Number(payoutReadinessQuery.data.balance ?? 0) >= Number(detail.amount),
-    );
-
-    // Đồng bộ payOS có thể chốt PAID/FAILED trong lúc dialog mở; cập nhật lại dashboard và danh sách sau đó.
+    // Reset checkbox khi đổi yêu cầu hoặc candidate để không tái sử dụng xác nhận cho giao dịch khác.
     useEffect(() => {
-        if (
-            detail?.status === 'PAID' ||
-            payoutStatusQuery.data?.status === 'PAID' ||
-            payoutStatusQuery.data?.status === 'FAILED'
-        )
-            void queryClient.invalidateQueries({
-                queryKey: ['admin-finance'],
-            });
-    }, [detail?.status, payoutStatusQuery.data?.status, queryClient]);
-
-    const canSubmitRefund = Boolean(
-        refundTargetId.trim() &&
-        refundAmount.trim() &&
-        refundReference.trim() &&
-        refundProofUrl.trim() &&
-        refundProofAssetId.trim() &&
-        !refundMutation.isPending,
-    );
+        setManualTransferAcknowledged(false);
+        setRecipientConfirmed(false);
+    }, [withdrawalId, detail?.pay2sTransactionId]);
 
     // Checkbox chỉ thay đổi selection cục bộ; batch API sẽ kiểm tra các dòng đó chưa được nhóm.
     function toggleLedgerSelection(
@@ -200,11 +166,21 @@ export function AdminFinancePageClient() {
         );
     }
 
-    // Xóa ghi chú tạm trước khi đóng để không gắn nhầm nội dung với yêu cầu payout tiếp theo.
+    // Xóa ghi chú và xác nhận tạm trước khi đóng để không gắn nhầm thao tác với yêu cầu tiếp theo.
     function closeWithdrawalDialog(open: boolean) {
         if (open) return;
         setWithdrawalId(null);
         setAdminNote('');
+        setManualTransferAcknowledged(false);
+        setRecipientConfirmed(false);
+    }
+
+    // Mỗi request mở đầu với ghi chú và xác nhận sạch để không mang lý do payout trước sang yêu cầu khác.
+    function openWithdrawalDialog(id: string) {
+        setAdminNote('');
+        setManualTransferAcknowledged(false);
+        setRecipientConfirmed(false);
+        setWithdrawalId(id);
     }
 
     // Sao chép nguyên memo do server tạo; nếu trình duyệt chặn clipboard thì admin vẫn có thể chọn và copy thủ công.
@@ -256,14 +232,18 @@ export function AdminFinancePageClient() {
                         Quản lý dòng tiền
                     </h1>
                     <p className="mt-1 text-sm text-zinc-500">
-                        Sổ mô phỏng nền tảng, nạp ví Sandbox và yêu cầu rút tiền
-                        do admin gửi trực tiếp qua Kênh Chi payOS.
+                        Quản lý dòng tiền nền tảng, tiền nạp ví seller và yêu
+                        cầu rút do admin chuyển thủ công, đối soát qua Pay2S.
                     </p>
                 </div>
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => void overviewQuery.refetch()}
+                    onClick={() =>
+                        void queryClient.invalidateQueries({
+                            queryKey: ['admin-finance'],
+                        })
+                    }
                 >
                     <RefreshCw aria-hidden="true" /> Làm mới
                 </Button>
@@ -271,55 +251,96 @@ export function AdminFinancePageClient() {
 
             <FinanceMetrics overview={overview} />
 
-            <CodRemittanceSection />
+            <section className="space-y-3" aria-label="Các bảng tài chính">
+                <Tabs defaultValue="withdrawals" className="gap-3">
+                    {/* Cho list tự cao theo các trigger để active tab không tràn khỏi nền khi dùng dạng grid. */}
+                    <TabsList
+                        aria-label="Danh sách giao dịch tài chính"
+                        className="group-data-horizontal/tabs:h-auto grid h-auto w-full grid-cols-3 items-stretch gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/80 p-1.5 shadow-sm"
+                    >
+                        <TabsTrigger
+                            value="withdrawals"
+                            className="h-12 min-w-0 flex-col gap-1.5 rounded-lg px-2 text-center text-xs font-medium text-zinc-600 transition-colors hover:bg-white/70 hover:text-zinc-950 data-active:border-zinc-200 data-active:bg-white data-active:text-zinc-950 data-active:shadow-sm sm:h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+                        >
+                            <Landmark
+                                className="size-4 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <span className="truncate">Rút tiền seller</span>
+                            {withdrawalsQuery.data ? (
+                                <span className="hidden rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-500 sm:inline-flex">
+                                    {withdrawalsQuery.data.total}
+                                </span>
+                            ) : null}
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="cod"
+                            className="h-12 min-w-0 flex-col gap-1.5 rounded-lg px-2 text-center text-xs font-medium text-zinc-600 transition-colors hover:bg-white/70 hover:text-zinc-950 data-active:border-zinc-200 data-active:bg-white data-active:text-zinc-950 data-active:shadow-sm sm:h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+                        >
+                            <Truck
+                                className="size-4 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <span className="truncate">COD đối soát</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="ledger"
+                            className="h-12 min-w-0 flex-col gap-1.5 rounded-lg px-2 text-center text-xs font-medium text-zinc-600 transition-colors hover:bg-white/70 hover:text-zinc-950 data-active:border-zinc-200 data-active:bg-white data-active:text-zinc-950 data-active:shadow-sm sm:h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+                        >
+                            <BookOpenText
+                                className="size-4 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <span className="truncate">Sổ tiền nền tảng</span>
+                            {ledgerQuery.data ? (
+                                <span className="hidden rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-500 sm:inline-flex">
+                                    {ledgerQuery.data.total}
+                                </span>
+                            ) : null}
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="withdrawals" className="mt-0">
+                        <SellerWithdrawalsSection
+                            withdrawals={withdrawalsQuery.data?.items ?? []}
+                            pendingWithdrawals={overview.pendingWithdrawals}
+                            page={withdrawalsPage}
+                            pageSize={FINANCE_TABLE_PAGE_SIZE}
+                            total={withdrawalsQuery.data?.total ?? 0}
+                            isLoading={withdrawalsQuery.isPending}
+                            isFetching={withdrawalsQuery.isFetching}
+                            isError={withdrawalsQuery.isError}
+                            onPageChange={setWithdrawalsPage}
+                            onSelectWithdrawal={openWithdrawalDialog}
+                        />
+                    </TabsContent>
+                    <TabsContent value="cod" keepMounted className="mt-0">
+                        <CodRemittanceSection />
+                    </TabsContent>
+                    <TabsContent value="ledger" className="mt-0">
+                        <PlatformLedgerSection
+                            ledger={ledgerQuery.data?.items ?? []}
+                            page={ledgerPage}
+                            pageSize={FINANCE_TABLE_PAGE_SIZE}
+                            total={ledgerQuery.data?.total ?? 0}
+                            isLoading={ledgerQuery.isPending}
+                            isFetching={ledgerQuery.isFetching}
+                            isError={ledgerQuery.isError}
+                            onPageChange={setLedgerPage}
+                            selectedLedgerIds={selectedLedgerIds}
+                            settlementBatchId={settlementBatchId}
+                            isBatchPending={batchMutation.isPending}
+                            isReconcilePending={reconcileMutation.isPending}
+                            onToggleLedgerSelection={toggleLedgerSelection}
+                            onCreateBatch={() => batchMutation.mutate()}
+                            onReconcileBatch={(batchId) =>
+                                reconcileMutation.mutate(batchId)
+                            }
+                        />
+                    </TabsContent>
+                </Tabs>
+            </section>
 
-            <SellerWithdrawalsSection
-                withdrawals={overview.withdrawals}
-                pendingWithdrawals={overview.pendingWithdrawals}
-                onSelectWithdrawal={setWithdrawalId}
-            />
-
-            <PlatformLedgerSection
-                ledger={overview.ledger}
-                selectedLedgerIds={selectedLedgerIds}
-                settlementBatchId={settlementBatchId}
-                isBatchPending={batchMutation.isPending}
-                isReconcilePending={reconcileMutation.isPending}
-                onToggleLedgerSelection={toggleLedgerSelection}
-                onCreateBatch={() => batchMutation.mutate()}
-                onReconcileBatch={(batchId) =>
-                    reconcileMutation.mutate(batchId)
-                }
-            />
-
-            <section className="grid gap-4 xl:grid-cols-2">
-                <ManualRefundSection
-                    refundCaseType={refundCaseType}
-                    setRefundCaseType={setRefundCaseType}
-                    refundTargetId={refundTargetId}
-                    setRefundTargetId={setRefundTargetId}
-                    refundAmount={refundAmount}
-                    setRefundAmount={setRefundAmount}
-                    refundReference={refundReference}
-                    setRefundReference={setRefundReference}
-                    refundProofAssetId={refundProofAssetId}
-                    setRefundProofAssetId={setRefundProofAssetId}
-                    refundProofUrl={refundProofUrl}
-                    setRefundProofUrl={setRefundProofUrl}
-                    canSubmitRefund={canSubmitRefund}
-                    isRefundError={refundMutation.isError}
-                    isRefundPending={refundMutation.isPending}
-                    onSubmitRefund={() =>
-                        refundMutation.mutate({
-                            caseType: refundCaseType,
-                            targetId: refundTargetId.trim(),
-                            amount: refundAmount.trim(),
-                            reference: refundReference.trim(),
-                            proofUrl: refundProofUrl.trim(),
-                            proofAssetId: refundProofAssetId.trim(),
-                        })
-                    }
-                />
+            <section>
                 <FinanceContextCards deposits={overview.deposits} />
             </section>
 
@@ -329,32 +350,46 @@ export function AdminFinancePageClient() {
                 isLoading={withdrawalQuery.isPending}
                 isError={withdrawalQuery.isError}
                 detail={detail}
-                isPayosWithdrawal={isPayosWithdrawal}
                 payoutReadiness={payoutReadinessQuery.data}
-                payoutStatus={payoutStatusQuery.data}
+                manualTransferAcknowledged={manualTransferAcknowledged}
+                recipientConfirmed={recipientConfirmed}
                 adminNote={adminNote}
                 onAdminNoteChange={setAdminNote}
+                onManualTransferAcknowledgedChange={
+                    setManualTransferAcknowledged
+                }
+                onRecipientConfirmedChange={setRecipientConfirmed}
                 isWithdrawalPending={withdrawalMutation.isPending}
                 isWithdrawalError={withdrawalMutation.isError}
                 isReadinessPending={payoutReadinessQuery.isPending}
                 isReadinessError={payoutReadinessQuery.isError}
-                isPayoutStatusError={payoutStatusQuery.isError}
-                hasEnoughPayoutBalance={hasEnoughPayoutBalance}
                 onCopyMemo={() => void copyWithdrawalMemo()}
-                onPayout={() => {
+                onStartProcessing={() => {
                     if (!detail) return;
                     withdrawalMutation.mutate({
                         withdrawalId: detail.id,
-                        action: 'payout',
+                        action: 'start',
+                        acknowledged: manualTransferAcknowledged,
+                        note: adminNote,
+                    });
+                }}
+                onConfirmTransfer={() => {
+                    if (!detail) return;
+                    withdrawalMutation.mutate({
+                        withdrawalId: detail.id,
+                        action: 'confirm',
+                        acknowledged: recipientConfirmed,
                         note: adminNote,
                     });
                 }}
                 onReject={() => {
-                    if (!detail) return;
+                    // Không gửi yêu cầu từ chối nếu lý do rỗng sau khi bỏ khoảng trắng.
+                    const rejectionReason = adminNote.trim();
+                    if (!detail || !rejectionReason) return;
                     withdrawalMutation.mutate({
                         withdrawalId: detail.id,
                         action: 'reject',
-                        note: adminNote,
+                        note: rejectionReason,
                     });
                 }}
             />

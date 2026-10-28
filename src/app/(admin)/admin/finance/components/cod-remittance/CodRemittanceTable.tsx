@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { CodRemittanceTableProps } from '../../types/admin-finance-page.types';
+import type { CodRemittanceTableProps } from '../../types/cod-remittance/cod-remittance.types';
 
 // Giữ nguyên định dạng COD hiện tại để tránh thay đổi cách hiển thị dữ liệu API.
 function formatCodMoney(amount: string): string {

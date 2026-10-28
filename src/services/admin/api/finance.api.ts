@@ -4,17 +4,16 @@ import authorizedAxios from '@/utils/authorizedAxios';
 import type {
     AdminFinancePage,
     AdminFinanceCodRemittance,
+    AdminFinanceLedgerEntry,
     AdminFinanceSnapshot,
     AdminFinanceWithdrawal,
     AdminFinanceWithdrawalDetail,
-    AdminFinanceRefundRequest,
-    AdminSellerPayoutResult,
     AdminPayoutReadiness,
 } from '@/services/admin/types/finance.types';
 
 const financeUrl = `${API_BASE_URL}${API_VERSION}/admin/finance`;
 
-// Đọc khả năng truy cập Kênh Chi và số dư payout payOS mà không tải khóa cấu hình về browser.
+// Đọc trạng thái cấu hình webhook Pay2S mà không tải bearer token về browser.
 export async function getAdminPayoutReadiness(): Promise<AdminPayoutReadiness> {
     const response = await authorizedAxios.get<AdminPayoutReadiness>(
         `${financeUrl}/payout-readiness`,
@@ -34,15 +33,28 @@ export async function getAdminFinance(
     return response.data;
 }
 
-// Tải danh sách payout theo trạng thái; response chỉ có account number đã mask.
+// Tải trang payout theo trạng thái; response chỉ có account number đã mask.
 export async function getAdminWithdrawals(
+    page = 1,
+    pageSize = 20,
     status?: string,
 ): Promise<AdminFinancePage<AdminFinanceWithdrawal>> {
     const response = await authorizedAxios.get<
         AdminFinancePage<AdminFinanceWithdrawal>
     >(`${financeUrl}/withdrawals`, {
-        params: { page: 1, pageSize: 50, status },
+        params: { page, pageSize, status },
     });
+    return response.data;
+}
+
+// Tải một trang ledger nền tảng; dữ liệu tài khoản seller không nằm trong response này.
+export async function getAdminLedger(
+    page = 1,
+    pageSize = 20,
+): Promise<AdminFinancePage<AdminFinanceLedgerEntry>> {
+    const response = await authorizedAxios.get<
+        AdminFinancePage<AdminFinanceLedgerEntry>
+    >(`${financeUrl}/ledger`, { params: { page, pageSize } });
     return response.data;
 }
 
@@ -78,32 +90,34 @@ export async function getAdminWithdrawal(
     return response.data;
 }
 
-// Yêu cầu backend chi payout qua payOS; mọi retry dùng cùng mã tham chiếu và idempotency key theo withdrawal.
-export async function processAdminWithdrawalPayout(
+// Chuyển yêu cầu sang PROCESSING trước khi admin tự chuyển bằng app ngân hàng; endpoint không gửi tiền.
+export async function startAdminWithdrawalProcessing(
     withdrawalId: string,
+    manualTransferAcknowledged: boolean,
     note?: string,
-): Promise<AdminSellerPayoutResult> {
-    const response = await authorizedAxios.post<AdminSellerPayoutResult>(
-        `${financeUrl}/withdrawals/${withdrawalId}/payout`,
-        { note },
+): Promise<void> {
+    await authorizedAxios.post(
+        `${financeUrl}/withdrawals/${withdrawalId}/processing`,
+        { manualTransferAcknowledged, note },
     );
-    return response.data;
 }
 
-// Đồng bộ trạng thái lệnh đang chạy; endpoint không tạo thêm giao dịch khi payOS chưa tìm thấy lệnh.
-export async function syncAdminWithdrawalPayout(
+// Chốt payout sau khi webhook có event OUT và admin xác nhận đã kiểm tra đúng tài khoản nhận.
+export async function confirmAdminWithdrawalTransfer(
     withdrawalId: string,
-): Promise<AdminSellerPayoutResult> {
-    const response = await authorizedAxios.post<AdminSellerPayoutResult>(
-        `${financeUrl}/withdrawals/${withdrawalId}/payout/sync`,
+    recipientConfirmed: boolean,
+    note?: string,
+): Promise<void> {
+    await authorizedAxios.post(
+        `${financeUrl}/withdrawals/${withdrawalId}/transfer-confirmation`,
+        { recipientConfirmed, note },
     );
-    return response.data;
 }
 
 // Từ chối yêu cầu trước khi payout bắt đầu để backend hoàn khoản giữ chỗ cho seller đúng một lần.
 export async function rejectAdminWithdrawal(
     withdrawalId: string,
-    note?: string,
+    note: string,
 ): Promise<void> {
     await authorizedAxios.post(
         `${financeUrl}/withdrawals/${withdrawalId}/reject`,
@@ -129,27 +143,5 @@ export async function reconcileAdminSettlementBatch(
 ): Promise<void> {
     await authorizedAxios.post(
         `${financeUrl}/settlement-batches/${batchId}/reconcile`,
-    );
-}
-
-// Xác nhận refund của return request; Order Service kiểm tra payment method, amount và idempotency.
-export async function confirmAdminPay2sRefund(
-    returnRequestId: string,
-    body: AdminFinanceRefundRequest,
-): Promise<void> {
-    await authorizedAxios.post(
-        `${financeUrl}/refunds/${returnRequestId}/confirmation`,
-        body,
-    );
-}
-
-// Xác nhận refund cho payment đến muộn sau khi order đã hủy; không reverse seller wallet.
-export async function confirmAdminPay2sLateRefund(
-    orderId: string,
-    body: AdminFinanceRefundRequest,
-): Promise<void> {
-    await authorizedAxios.post(
-        `${financeUrl}/late-refunds/${orderId}/confirmation`,
-        body,
     );
 }

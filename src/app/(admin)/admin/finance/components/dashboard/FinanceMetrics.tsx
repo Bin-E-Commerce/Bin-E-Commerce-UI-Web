@@ -8,7 +8,7 @@ import {
     Truck,
     WalletCards,
 } from 'lucide-react';
-import type { FinanceMetricsProps } from '../../types/admin-finance-page.types';
+import type { FinanceMetricsProps } from '../../types/dashboard/finance-dashboard.types';
 import { formatMoney } from '../../utils/format-finance-money';
 
 // Hiển thị sáu chỉ số dòng tiền từ snapshot và giữ quy tắc định dạng số tiền thống nhất.
@@ -20,7 +20,7 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
         >
             {[
                 {
-                    label: 'Số dư nền tảng mô phỏng',
+                    label: 'Số dư nền tảng',
                     value: overview.platformBalance,
                     icon: Landmark,
                     highlight: true,
@@ -39,8 +39,6 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                     label: 'Quỹ vận chuyển đang giữ',
                     value: overview.shippingFundBalance ?? '0',
                     icon: Truck,
-                    description:
-                        'Tạm tính theo phí thu khách, cần đối chiếu GHN.',
                 },
                 {
                     label: 'Phí hoàn khách còn phải trả',
@@ -48,18 +46,30 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                     icon: CircleDollarSign,
                 },
                 {
-                    label: 'Tổng nạp Pay2S Sandbox',
-                    value: overview.sandboxDepositTotal,
+                    label: 'Tổng nạp ví seller',
+                    value: overview.depositTotal,
                     icon: CircleDollarSign,
                 },
             ].map((metric) => (
                 <article
                     key={metric.label}
-                    className={`group relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${'highlight' in metric ? 'border-zinc-900 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-800 text-white' : 'border-zinc-200 bg-white text-zinc-950'}`}
+                    className={`group relative isolate min-w-0 overflow-hidden rounded-xl border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${'highlight' in metric ? 'border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 text-white' : 'border-zinc-200 bg-white text-zinc-950'}`}
                 >
-                    <div className="flex min-h-9 items-center gap-2.5">
+                    {'highlight' in metric ? (
+                        <>
+                            <div
+                                aria-hidden="true"
+                                className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full border border-white/20"
+                            />
+                            <div
+                                aria-hidden="true"
+                                className="pointer-events-none absolute -right-1 top-4 size-20 rounded-full bg-white/10 blur-2xl"
+                            />
+                        </>
+                    ) : null}
+                    <div className="relative z-10 flex min-h-9 items-center gap-2.5">
                         <span
-                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${'highlight' in metric ? 'bg-white/10 text-white' : 'bg-zinc-950 text-white'}`}
+                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${'highlight' in metric ? 'border border-white/10 bg-white/10 text-white' : 'bg-zinc-950 text-white'}`}
                         >
                             <metric.icon
                                 className="size-3.5"
@@ -73,15 +83,10 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                         </span>
                     </div>
                     <p
-                        className={`mt-3 text-xl font-semibold tracking-tight tabular-nums ${'highlight' in metric ? 'text-white' : 'text-zinc-950'}`}
+                        className={`relative z-10 mt-3 text-xl font-semibold tracking-tight tabular-nums ${'highlight' in metric ? 'text-white' : 'text-zinc-950'}`}
                     >
                         {formatMoney(metric.value)}
                     </p>
-                    {'description' in metric ? (
-                        <p className="mt-1 text-[11px] leading-4 text-zinc-500">
-                            {metric.description}
-                        </p>
-                    ) : null}
                 </article>
             ))}
         </section>
