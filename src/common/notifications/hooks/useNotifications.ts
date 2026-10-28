@@ -33,9 +33,11 @@ export function useNotifications(
         initialPageParam: undefined as string | undefined,
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         enabled: Boolean(accessToken && userId) && enabled,
-        // Feed phải được xem là stale ngay để lần mở chuông tiếp theo luôn đối chiếu lại nguồn dữ liệu REST.
+        // Feed luôn đối chiếu REST khi mở lại; khi popup đang mở, polling bù tín hiệu socket bị mất.
         staleTime: 0,
         refetchOnMount: 'always',
+        refetchOnReconnect: true,
+        refetchInterval: enabled ? 30_000 : false,
     });
 }
 

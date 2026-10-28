@@ -28,8 +28,8 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
             return;
         }
 
+        // Dùng transport mặc định của Socket.IO để polling có thể tiếp quản nếu WebSocket bị proxy chặn.
         const socket = io(`${API_BASE_URL}/notifications`, {
-            transports: ['websocket'],
             auth: { token: accessToken },
             reconnection: true,
             reconnectionDelay: 1_000,

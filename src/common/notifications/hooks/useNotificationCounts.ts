@@ -15,8 +15,10 @@ export function useNotificationCounts() {
         queryKey: notificationQueryKeys.counts(userId),
         queryFn: () => notificationService.getUnreadCounts(),
         enabled: Boolean(accessToken && userId),
-        staleTime: 30_000,
-        // Polling chậm là lớp dự phòng khi WebSocket bị proxy/firewall ngắt; socket vẫn là đường cập nhật tức thời chính.
-        refetchInterval: 60_000,
+        staleTime: 15_000,
+        // Đồng bộ lại badge định kỳ khi Redis/socket rớt; focus và reconnect mạng cập nhật ngay, còn tab nền không poll.
+        refetchInterval: 30_000,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
     });
 }
