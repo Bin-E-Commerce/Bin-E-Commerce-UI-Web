@@ -1,4 +1,4 @@
-// Hero chi tiet san pham seller; hien thi thong tin van hanh can thiet ma khong lo ID noi bo.
+// Phần đầu trang chi tiết seller hiển thị thông tin quản lý và liên kết slug sang trang sản phẩm công khai.
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,7 +31,7 @@ interface SellerProductDetailHeroProps {
     onChangeStatus: (status: SellerProductPublicationStatus) => void;
 }
 
-// Trình bày phần quan trọng nhất của sản phẩm: media, trạng thái, giá và các chỉ số seller cần quét nhanh.
+// Trình bày media, trạng thái, giá và chỉ số để seller quét nhanh; slug luôn trỏ tới route sản phẩm công khai.
 export function SellerProductDetailHero({
     product,
     totalStock,
@@ -108,9 +108,13 @@ export function SellerProductDetailHero({
                     <h1 className="mt-3 max-w-3xl text-xl font-bold tracking-tight text-zinc-950 sm:text-2xl">
                         {product.name}
                     </h1>
-                    <p className="mt-1.5 break-all text-xs text-zinc-500 sm:text-sm">
+                    <Link
+                        href={`/products/${encodeURIComponent(product.slug)}`}
+                        className="mt-1.5 block w-fit break-all text-xs text-zinc-500 underline-offset-4 transition-colors hover:text-zinc-950 hover:underline sm:text-sm"
+                        aria-label={`Mở trang sản phẩm ${product.name}`}
+                    >
                         /{product.slug}
-                    </p>
+                    </Link>
                     <p className="mt-2.5 max-w-2xl text-sm leading-5 text-zinc-600">
                         {product.shortDescription ||
                             'Chưa có mô tả ngắn cho sản phẩm này.'}
@@ -156,10 +160,11 @@ export function SellerProductDetailHero({
                     </div>
 
                     <div className="mt-auto grid gap-x-4 gap-y-2 border-t border-zinc-100 pt-4 sm:grid-cols-2">
+                        {/* Danh sách sản phẩm dùng SKU của phân loại đầu tiên làm SKU đại diện; giữ cùng nguồn ở trang chi tiết để hai màn hình không lệch dữ liệu. */}
                         <MetaItem
                             icon={Hash}
-                            label="SKU quản lý"
-                            value={product.sellerSku || 'Chưa thiết lập'}
+                            label="SKU đại diện"
+                            value={product.variants[0]?.sku || 'Chưa có SKU'}
                         />
                         <MetaItem
                             icon={CalendarClock}
