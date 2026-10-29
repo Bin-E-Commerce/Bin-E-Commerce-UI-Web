@@ -94,7 +94,7 @@ export function SellerProductDeleteDialog({
                             event.preventDefault();
                             onConfirm();
                         }}
-                        className="bg-red-600 text-white hover:bg-red-700"
+                        className="border-red-600 bg-red-600 text-white hover:border-red-700 hover:bg-red-700"
                     >
                         {loading ? 'Đang xóa…' : 'Xóa sản phẩm'}
                     </AlertDialogAction>
