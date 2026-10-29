@@ -110,7 +110,7 @@ export function AdminSellerApplicationDetailClient({
     );
 }
 
-// Render hồ sơ và gom thao tác quản trị vào menu gọn.
+// Render hồ sơ theo từng hàng nghiệp vụ để phần định danh và trạng thái duyệt đều có đủ chiều ngang.
 // Trạng thái dialog được giữ ở đây để menu có thể đóng ngay sau khi chọn mà không unmount bước xác nhận.
 // Nút duyệt/từ chối chỉ xuất hiện ở trạng thái chờ; dialog tiếp tục khóa thao tác khi mutation đang chạy.
 function AdminSellerApplicationDetailContent({
@@ -240,11 +240,11 @@ function AdminSellerApplicationDetailContent({
                 onOpenChange={setRejectDialogOpen}
             />
 
-            <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-4">
                 <IdentityReviewSection application={application} />
                 <ReviewTimelineSection application={application} />
 
-                <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:col-span-2 xl:col-start-1">
+                <div className="grid min-w-0 gap-3 lg:grid-cols-2">
                     <ShopInformationSection application={application} />
                     <PickupAddressSection application={application} />
                     <div className="lg:col-span-2">
@@ -735,7 +735,9 @@ function PayoutSection({ application }: ApplicationSectionProps) {
     );
 }
 
-// Timeline trạng thái giúp admin biết hồ sơ được tạo, gửi và xử lý vào thời điểm nào.
+// Timeline trạng thái chiếm trọn một hàng để trạng thái và các mốc thời gian dễ quét.
+// Hai thông tin chính nằm trên nửa hàng đầu; bốn mốc ngày chia đều hàng kế tiếp trên desktop.
+// Ghi chú và nội dung cần chỉnh sửa luôn chiếm toàn chiều ngang để không bị bó hẹp.
 function ReviewTimelineSection({ application }: ApplicationSectionProps) {
     return (
         <AdminSellerApplicationDetailSection
@@ -743,7 +745,7 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
             description="Theo dõi các mốc thời gian quan trọng của hồ sơ."
             icon={Clock3}
         >
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 <AdminSellerApplicationDetailField
                     label="Trạng thái hiện tại"
                     className="sm:col-span-2"
@@ -778,12 +780,12 @@ function ReviewTimelineSection({ application }: ApplicationSectionProps) {
                     label="Ghi chú duyệt"
                     value={formatNullableText(application.reviewNote)}
                     muted={!application.reviewNote}
-                    className="sm:col-span-2"
+                    className="sm:col-span-2 xl:col-span-4"
                 />
                 {application.correctionTargets.length > 0 ? (
                     <AdminSellerApplicationDetailField
                         label="Nội dung cần chỉnh sửa"
-                        className="sm:col-span-2"
+                        className="sm:col-span-2 xl:col-span-4"
                         value={
                             <div className="flex flex-wrap gap-2">
                                 {application.correctionTargets.includes(
