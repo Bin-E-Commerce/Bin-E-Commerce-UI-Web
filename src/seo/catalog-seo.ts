@@ -26,14 +26,14 @@ async function fetchPublicJson<T>(url: string): Promise<T | null> {
     }
 }
 
-// Lấy product public bằng ID đúng với route hiện tại `/products/[id]`.
-// Request không cần authentication để crawler, Facebook hoặc Zalo có thể đọc
-// được title, mô tả và ảnh khi người dùng chia sẻ liên kết sản phẩm.
+// Lấy product public bằng UUID cũ hoặc slug đúng với route `/products/[id]`.
+// Request không cần authentication để crawler, Facebook hoặc Zalo đọc được
+// title, mô tả và ảnh khi người dùng chia sẻ liên kết sản phẩm.
 export async function fetchProductForSeo(
-    productId: string,
+    productIdentifier: string,
 ): Promise<ProductDetail | null> {
     return fetchPublicJson<ProductDetail>(
-        `${API_BASE_URL}${API_VERSION}/products/${encodeURIComponent(productId)}`,
+        `${API_BASE_URL}${API_VERSION}/products/${encodeURIComponent(productIdentifier)}`,
     );
 }
 

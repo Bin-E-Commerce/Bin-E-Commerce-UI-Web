@@ -13,7 +13,7 @@ interface OrderImageCandidate {
     imageUrl: string | null;
 }
 
-// Chỉ gọi Product Service cho item thiếu ảnh và cache theo productId để không tạo request lặp.
+// Chỉ gọi Product Service cho item thiếu ảnh; order vẫn đưa UUID, còn adapter mới hỗ trợ thêm slug cho trang public.
 export function useOrderProductImages(items: OrderImageCandidate[]) {
     const productIds = Array.from(
         new Set(
@@ -26,7 +26,7 @@ export function useOrderProductImages(items: OrderImageCandidate[]) {
     const productQueries = useQueries({
         queries: productIds.map((productId) => ({
             queryKey: ['order-product-preview', productId],
-            queryFn: () => productService.getProductById(productId),
+            queryFn: () => productService.getProductByIdentifier(productId),
             select: getProductThumbnail,
             staleTime: 5 * 60_000,
             retry: 1,

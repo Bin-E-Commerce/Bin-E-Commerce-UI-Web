@@ -7,6 +7,16 @@ import type {
     PublicProduct,
 } from '@/services/product';
 
+// Props của route product detail; segment URL có thể chứa UUID cũ hoặc slug public.
+export interface ProductDetailRouteProps {
+    params: Promise<{ id: string }>;
+}
+
+// Định danh truyền từ route vào client detail trước khi API phân giải thành product UUID.
+export interface ProductDetailPageContentProps {
+    productIdentifier: string;
+}
+
 export interface ProductDetailData {
     product: ProductDetail;
     shopProducts: PublicProduct[];

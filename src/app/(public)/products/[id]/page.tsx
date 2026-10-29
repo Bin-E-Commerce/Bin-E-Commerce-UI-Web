@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { JsonLd } from '@/components/seo/JsonLd';
 import { SITE_NAME } from '@/config/site.config';
+import type { ProductDetailRouteProps } from '../../product-detail/types/product-detail.types';
 import {
     buildAbsoluteUrl,
     buildProductJsonLd,
@@ -12,16 +13,12 @@ import {
 
 import { ProductDetailPageContent } from '../../product-detail/ProductDetailPageContent';
 
-interface ProductDetailPageProps {
-    params: Promise<{ id: string }>;
-}
-
-// Tạo metadata và structured data từ read model public để crawler thấy nội dung
+// Tạo metadata và structured data từ read model public theo UUID hoặc slug để crawler thấy nội dung
 // sản phẩm ngay trong HTML, trong khi component client vẫn giữ nguyên trải nghiệm
 // query/cache hiện tại cho người dùng.
 export async function generateMetadata({
     params,
-}: ProductDetailPageProps): Promise<Metadata> {
+}: ProductDetailRouteProps): Promise<Metadata> {
     const { id } = await params;
     const product = await fetchProductForSeo(id);
 
@@ -32,7 +29,7 @@ export async function generateMetadata({
         };
     }
 
-    const canonicalUrl = buildAbsoluteUrl(`/products/${product.id}`);
+    const canonicalUrl = buildAbsoluteUrl(`/products/${product.slug}`);
     const description = buildSeoDescription(
         product.shortDescription ?? product.description,
         'Khám phá sản phẩm chất lượng tại Bin E-Commerce.',
@@ -60,20 +57,20 @@ export async function generateMetadata({
     };
 }
 
-// Đọc product ID từ dynamic route rồi chuyển phần UI cho feature client.
+// Đọc UUID hoặc slug từ dynamic route rồi chuyển phần UI cho feature client.
 export default async function ProductDetailPage({
     params,
-}: ProductDetailPageProps) {
+}: ProductDetailRouteProps) {
     const { id } = await params;
     const product = await fetchProductForSeo(id);
-    const canonicalUrl = buildAbsoluteUrl(`/products/${id}`);
+    const canonicalUrl = buildAbsoluteUrl(`/products/${product?.slug ?? id}`);
 
     return (
         <>
             {product ? (
                 <JsonLd data={buildProductJsonLd(product, canonicalUrl)} />
             ) : null}
-            <ProductDetailPageContent productId={id} />
+            <ProductDetailPageContent productIdentifier={id} />
         </>
     );
 }

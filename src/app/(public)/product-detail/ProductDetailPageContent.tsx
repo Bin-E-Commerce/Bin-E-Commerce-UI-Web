@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 
 import { trackRecommendationInteraction } from '@/services/recommendation';
 import { useRecommendationSessionId } from '@/services/recommendation/hooks/use-recommendation-session';
+import type { ProductDetailPageContentProps } from './types/product-detail.types';
 
 import { ProductDescriptionSection } from './components/content/ProductDescriptionSection';
 import { ProductSpecificationsSection } from './components/content/ProductSpecificationsSection';
@@ -22,15 +23,11 @@ import { ProductDetailSkeleton } from './components/states/ProductDetailSkeleton
 import { useProductDetail } from './hooks/useProductDetail';
 import { getProductBreadcrumbs } from './utils/product-detail-presentation';
 
-interface ProductDetailPageContentProps {
-    productId: string;
-}
-
-// Điều phối dữ liệu và các section của trang chi tiết, giữ route chỉ chịu trách nhiệm đọc tham số URL.
+// Điều phối dữ liệu và các section của trang chi tiết; route có thể truyền UUID hoặc slug nhưng component không tự phân giải định danh.
 export function ProductDetailPageContent({
-    productId,
+    productIdentifier,
 }: ProductDetailPageContentProps) {
-    const productQuery = useProductDetail(productId);
+    const productQuery = useProductDetail(productIdentifier);
     const recommendationSessionId = useRecommendationSessionId();
     const viewedProductIdRef = useRef<string | null>(null);
 

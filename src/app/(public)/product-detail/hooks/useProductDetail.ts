@@ -64,33 +64,34 @@ function mapRecommendationItems(
 }
 
 // Tách product chính, recommendation và shop catalog thành các query độc lập để lỗi một nguồn không chặn hai nguồn còn lại.
-// Recommendation chỉ chạy khi guest session sẵn sàng; shop catalog chạy theo snapshot product và lấy dư một item để loại self.
-// Data trả về luôn có mảng rỗng an toàn cho hai section phụ, còn lỗi product chính vẫn được route hiển thị bằng error state.
-export function useProductDetail(productId: string) {
+// Route có thể nhận slug nên recommendation chỉ chạy sau khi product được phân giải và dùng UUID thật mà service này yêu cầu.
+// Shop catalog cũng bám theo product đã tải; lỗi query phụ trả mảng rỗng còn lỗi product chính đi tới error state của route.
+export function useProductDetail(productIdentifier: string) {
     const initialized = useAppSelector((state) => state.auth.initialized);
     const userId = useAppSelector((state) => state.auth.user?.id ?? 'guest');
     const recommendationSessionId = useRecommendationSessionId();
 
     const productQuery = useQuery({
-        queryKey: ['products', 'detail', productId],
-        queryFn: () => productService.getProductById(productId),
-        enabled: Boolean(productId) && initialized,
+        queryKey: ['products', 'detail', productIdentifier],
+        queryFn: () => productService.getProductByIdentifier(productIdentifier),
+        enabled: Boolean(productIdentifier) && initialized,
         staleTime: 0,
         refetchOnWindowFocus: true,
     });
 
+    const currentProduct = productQuery.data;
     const recommendationQuery = useQuery({
         queryKey: [
             'recommendations',
             'product-detail',
-            productId,
+            currentProduct?.id ?? productIdentifier,
             userId,
             recommendationSessionId ?? 'pending',
         ],
-        queryFn: () => fetchProductRecommendations(productId),
-        // Chờ session chỉ cho query phụ; product detail không bị phụ thuộc vào việc tạo guest session ở browser.
+        queryFn: () => fetchProductRecommendations(currentProduct!.id),
+        // Route có thể nhận slug nên chỉ gọi recommendation sau khi product đã phân giải; service gợi ý vẫn cần UUID chuẩn.
         enabled:
-            Boolean(productId) &&
+            Boolean(currentProduct?.id) &&
             initialized &&
             Boolean(recommendationSessionId),
         staleTime: 60_000,
@@ -98,7 +99,6 @@ export function useProductDetail(productId: string) {
         retry: 0,
     });
 
-    const currentProduct = productQuery.data;
     const categoryAttributesQuery = useQuery({
         queryKey: [
             'catalog',

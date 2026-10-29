@@ -23,10 +23,12 @@ export const productService = {
             )
             .then((response) => response.data),
 
-    // Lấy đầy đủ quan hệ của một sản phẩm; authorizedAxios vẫn cho phép anonymous nhưng gửi identity nếu customer đã đăng nhập để biết like của mình.
-    getProductById: (productId: string) =>
+    // Đọc chi tiết bằng UUID cũ hoặc slug public; identity tùy chọn chỉ giúp API đánh dấu review người dùng đã thích.
+    getProductByIdentifier: (identifier: string) =>
         authorizedAxios
-            .get<ProductDetail>(`${API_VERSION}/products/${productId}`)
+            .get<ProductDetail>(
+                `${API_VERSION}/products/${encodeURIComponent(identifier)}`,
+            )
             .then((response) => response.data),
 
     // Lấy summary của shop qua Product Service để header không phải suy luận từ trang hiện tại.
