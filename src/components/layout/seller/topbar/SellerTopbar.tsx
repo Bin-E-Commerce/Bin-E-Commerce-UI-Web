@@ -25,27 +25,27 @@ import type { AppDispatch } from '@/store';
 import { logoutUser } from '@/store/slices/authSlice';
 
 interface SellerTopbarProps {
-    userName: string;
     avatarUrl?: string | null;
     shopLogoUrl?: string | null;
     onOpenSidebar: () => void;
 }
 
-// Topbar kết hợp lời chào nhận diện người bán với các hành động thường dùng khi cuộn nội dung.
+// Topbar dùng tên shop cho lời chào và menu; ảnh đại diện cùng thao tác tài khoản vẫn theo session hiện tại.
 export function SellerTopbar({
-    userName,
     avatarUrl,
     shopLogoUrl,
     onOpenSidebar,
 }: SellerTopbarProps) {
     const dispatch = useDispatch<AppDispatch>();
 
-    // Lấy slug thật của shop để nút mở đúng public storefront, còn fallback giữ seller không bị kẹt khi profile đang tải.
+    // Dùng cùng hồ sơ shop để tên hiển thị và liên kết storefront luôn thuộc đúng shop của phiên đăng nhập.
     const profileQuery = useQuery({
         queryKey: ['seller', 'shop-profile', 'topbar'],
         queryFn: shopProfileService.getMine,
         staleTime: 60_000,
     });
+    // Khi hồ sơ đang tải hoặc thiếu tên shop, dùng nhãn chung thay vì hiển thị nhầm tên tài khoản.
+    const shopName = profileQuery.data?.shop.name.trim() || 'Shop của bạn';
     const shopHref = profileQuery.data?.shop.slug
         ? `/shop/${profileQuery.data.shop.slug}`
         : '/seller/shop';
@@ -56,8 +56,7 @@ export function SellerTopbar({
             : currentHour < 18
               ? 'Chào buổi chiều'
               : 'Chào buổi tối';
-    // Seller Center ưu tiên nhận diện bằng logo shop; avatar cá nhân chỉ là fallback khi shop chưa có ảnh đại diện.
-    // Ưu tiên ảnh cá nhân; fallback sang logo shop từ Auth hoặc profile shop hiện tại.
+    // Avatar cá nhân được ưu tiên; logo shop thay thế khi tài khoản chưa có ảnh đại diện.
     const displayAvatarUrl =
         avatarUrl || shopLogoUrl || profileQuery.data?.shop.logoUrl;
 
@@ -80,7 +79,7 @@ export function SellerTopbar({
                         <span className="font-medium text-zinc-500">
                             {greeting},{' '}
                         </span>
-                        {userName}
+                        {shopName}
                     </p>
                     <Smile
                         className="size-4 shrink-0 text-pink-500"
@@ -117,7 +116,7 @@ export function SellerTopbar({
                                     )}
                                 </span>
                                 <span className="hidden max-w-36 truncate text-sm font-medium text-zinc-800 sm:block">
-                                    {userName}
+                                    {shopName}
                                 </span>
                                 <ChevronDown className="size-4 text-zinc-400 transition-transform group-data-[state=open]:rotate-180" />
                             </Button>
@@ -130,10 +129,10 @@ export function SellerTopbar({
                             >
                                 <div className="border-b border-zinc-100 px-3 pb-3 pt-2">
                                     <p className="truncate text-sm font-semibold text-zinc-950">
-                                        {userName}
+                                        {shopName}
                                     </p>
                                     <p className="mt-1 text-xs text-zinc-500">
-                                        Không gian quản trị người bán
+                                        Shop đang quản lý
                                     </p>
                                 </div>
                                 <DropdownMenu.Item asChild>

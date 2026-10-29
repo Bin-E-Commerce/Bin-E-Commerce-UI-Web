@@ -215,7 +215,6 @@ export function SellerLayoutShell({ children }: SellerLayoutShellProps) {
                 )}
             >
                 <SellerTopbar
-                    userName={user.name}
                     avatarUrl={user.avatarUrl}
                     shopLogoUrl={user.shopLogoUrl}
                     onOpenSidebar={() => setSidebarOpen(true)}
