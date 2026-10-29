@@ -4,9 +4,9 @@
 'use client';
 
 import {
+    Area,
+    AreaChart,
     CartesianGrid,
-    Line,
-    LineChart,
     Tooltip,
     XAxis,
     YAxis,
@@ -20,6 +20,12 @@ import {
     formatDashboardNumber,
 } from '../utils/dashboard-formatters';
 
+// Dùng sắc đen và tím khói nhất quán giữa đường, vùng tô, tooltip và chú giải.
+const REVENUE_CHART_COLORS = {
+    revenue: '#18181b',
+    orders: '#6b4e71',
+} as const;
+
 interface SellerDashboardRevenueChartProps {
     snapshot: SellerDashboardSnapshot;
 }
@@ -31,7 +37,7 @@ interface ChartTooltipProps {
     }>;
 }
 
-// Tooltip gom hai series về cùng một ngày và định dạng riêng tiền tệ với số lượng đơn.
+// Tooltip gom hai series về cùng một ngày, định dạng riêng đơn vị và khớp màu với đường biểu đồ.
 function DashboardChartTooltip({ active, payload }: ChartTooltipProps) {
     if (!active || !payload?.length || !payload[0]?.payload) return null;
 
@@ -44,7 +50,12 @@ function DashboardChartTooltip({ active, payload }: ChartTooltipProps) {
             <div className="grid gap-1.5">
                 <p className="flex items-center justify-between gap-4 text-zinc-600">
                     <span className="inline-flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-zinc-950" />
+                        <span
+                            className="size-2 rounded-full"
+                            style={{
+                                backgroundColor: REVENUE_CHART_COLORS.revenue,
+                            }}
+                        />
                         Doanh thu
                     </span>
                     <span className="font-medium tabular-nums text-zinc-950">
@@ -53,7 +64,12 @@ function DashboardChartTooltip({ active, payload }: ChartTooltipProps) {
                 </p>
                 <p className="flex items-center justify-between gap-4 text-zinc-600">
                     <span className="inline-flex items-center gap-2">
-                        <span className="size-2 rounded-full bg-zinc-400" />
+                        <span
+                            className="size-2 rounded-full"
+                            style={{
+                                backgroundColor: REVENUE_CHART_COLORS.orders,
+                            }}
+                        />
                         Số đơn
                     </span>
                     <span className="font-medium tabular-nums text-zinc-950">
@@ -65,18 +81,66 @@ function DashboardChartTooltip({ active, payload }: ChartTooltipProps) {
     );
 }
 
-// Vẽ hai đường độc lập; trục số đơn ẩn bên phải giữ đúng tỷ lệ mà không chen thêm nhãn gây rối.
-function RevenueOrdersLineChart({
+// Vẽ hai vùng độc lập với gradient riêng; trục số đơn ẩn bên phải giữ đúng tỷ lệ mà không chen nhãn.
+function RevenueOrdersAreaChart({
     data,
 }: {
     data: SellerDashboardSnapshot['revenueTrend'];
 }) {
     return (
-        <LineChart
+        <AreaChart
             accessibilityLayer
             data={data}
             margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
         >
+            <defs>
+                <linearGradient
+                    id="seller-revenue-area-gradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                >
+                    <stop
+                        offset="5%"
+                        stopColor={REVENUE_CHART_COLORS.revenue}
+                        stopOpacity={0.55}
+                    />
+                    <stop
+                        offset="52%"
+                        stopColor={REVENUE_CHART_COLORS.revenue}
+                        stopOpacity={0.25}
+                    />
+                    <stop
+                        offset="95%"
+                        stopColor={REVENUE_CHART_COLORS.revenue}
+                        stopOpacity={0.05}
+                    />
+                </linearGradient>
+                <linearGradient
+                    id="seller-orders-area-gradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                >
+                    <stop
+                        offset="5%"
+                        stopColor={REVENUE_CHART_COLORS.orders}
+                        stopOpacity={0.55}
+                    />
+                    <stop
+                        offset="52%"
+                        stopColor={REVENUE_CHART_COLORS.orders}
+                        stopOpacity={0.25}
+                    />
+                    <stop
+                        offset="95%"
+                        stopColor={REVENUE_CHART_COLORS.orders}
+                        stopOpacity={0.05}
+                    />
+                </linearGradient>
+            </defs>
             <CartesianGrid
                 strokeDasharray="3 3"
                 vertical={false}
@@ -106,25 +170,33 @@ function RevenueOrdersLineChart({
             />
             <YAxis yAxisId="orders" orientation="right" hide />
             <Tooltip content={<DashboardChartTooltip />} cursor={false} />
-            <Line
+            <Area
                 yAxisId="revenue"
                 type="monotone"
                 dataKey="grossRevenue"
-                stroke="#18181b"
+                stroke={REVENUE_CHART_COLORS.revenue}
                 strokeWidth={2}
+                fill="url(#seller-revenue-area-gradient)"
                 dot={false}
-                activeDot={{ r: 4, fill: '#18181b' }}
+                activeDot={{
+                    r: 4,
+                    fill: REVENUE_CHART_COLORS.revenue,
+                }}
             />
-            <Line
+            <Area
                 yAxisId="orders"
                 dataKey="orderCount"
                 type="monotone"
-                stroke="#a1a1aa"
+                stroke={REVENUE_CHART_COLORS.orders}
                 strokeWidth={2}
+                fill="url(#seller-orders-area-gradient)"
                 dot={false}
-                activeDot={{ r: 4, fill: '#a1a1aa' }}
+                activeDot={{
+                    r: 4,
+                    fill: REVENUE_CHART_COLORS.orders,
+                }}
             />
-        </LineChart>
+        </AreaChart>
     );
 }
 
@@ -141,8 +213,8 @@ export function SellerDashboardRevenueChart({
             size="sm"
             className="border-slate-200 bg-gradient-to-br from-white via-white to-slate-50/90 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
         >
-            <CardHeader className="flex-row items-start justify-between gap-3 border-b border-slate-200/80 px-4 pb-3 pt-3">
-                <div>
+            <CardHeader className="grid-cols-1 items-center gap-3 border-b border-slate-200/80 px-4 pb-3 pt-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="min-w-0">
                     <CardTitle className="text-base font-semibold text-zinc-950">
                         Doanh thu và đơn hàng
                     </CardTitle>
@@ -151,13 +223,23 @@ export function SellerDashboardRevenueChart({
                         {snapshot.range.key.replace('d', ' ngày')}
                     </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2.5 text-[11px] text-zinc-500">
+                <div className="flex shrink-0 items-center gap-2.5 text-[11px] text-zinc-500 sm:justify-self-end">
                     <span className="inline-flex items-center gap-1.5">
-                        <span className="size-2 rounded-full bg-zinc-950" />
+                        <span
+                            className="size-2 rounded-full"
+                            style={{
+                                backgroundColor: REVENUE_CHART_COLORS.revenue,
+                            }}
+                        />
                         Doanh thu
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                        <span className="size-2 rounded-full bg-zinc-400" />
+                        <span
+                            className="size-2 rounded-full"
+                            style={{
+                                backgroundColor: REVENUE_CHART_COLORS.orders,
+                            }}
+                        />
                         Số đơn
                     </span>
                 </div>
@@ -165,7 +247,7 @@ export function SellerDashboardRevenueChart({
             <CardContent className="px-4 pb-4 pt-3">
                 {hasData ? (
                     <ChartContainer className="h-[220px]">
-                        <RevenueOrdersLineChart data={snapshot.revenueTrend} />
+                        <RevenueOrdersAreaChart data={snapshot.revenueTrend} />
                     </ChartContainer>
                 ) : (
                     <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/60 text-center">
