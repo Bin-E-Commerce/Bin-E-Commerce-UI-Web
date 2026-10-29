@@ -21,6 +21,13 @@ export interface ListSellerApplicationsResponse {
     };
 }
 
+// Chỉ chứa số hồ sơ đã gửi theo ngày; không trả nội dung đăng ký hay dữ liệu định danh.
+export interface SellerApplicationActivityResponse {
+    from: string;
+    to: string;
+    daily: Array<{ day: string; count: number }>;
+}
+
 export interface RejectSellerApplicationPayload {
     reason: string;
     correctionTargets: SellerApplicationCorrectionTarget[];

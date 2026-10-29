@@ -8,6 +8,7 @@ import type {
     AdminFinanceSnapshot,
     AdminFinanceWithdrawal,
     AdminFinanceWithdrawalDetail,
+    AdminWalletActivityResponse,
     AdminPayoutReadiness,
 } from '@/services/admin/types/finance.types';
 
@@ -29,6 +30,18 @@ export async function getAdminFinance(
     const response = await authorizedAxios.get<AdminFinanceSnapshot>(
         `${financeUrl}/overview`,
         { params: { page, pageSize } },
+    );
+    return response.data;
+}
+
+// Lấy hoạt động ví theo ngày trực tiếp từ aggregate phía Order Service, không suy ra từ ledger đã phân trang.
+export async function getAdminWalletActivity(range: {
+    from: string;
+    to: string;
+}): Promise<AdminWalletActivityResponse> {
+    const response = await authorizedAxios.get<AdminWalletActivityResponse>(
+        `${financeUrl}/activity`,
+        { params: range },
     );
     return response.data;
 }

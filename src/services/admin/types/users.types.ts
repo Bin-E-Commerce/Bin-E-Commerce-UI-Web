@@ -1,6 +1,13 @@
 export type AdminUserRole = 'CUSTOMER' | 'SELLER' | 'SUPPORT_AGENT' | 'ADMIN';
 export type AdminUserStatus = 'ACTIVE' | 'BANNED';
 
+// Thống kê user mới đã loại staff và không chứa thông tin nhận dạng cá nhân.
+export interface AdminUserActivityResponse {
+    from: string;
+    to: string;
+    daily: Array<{ day: string; count: number }>;
+}
+
 export interface AdminUserListItem {
     id: string;
     name: string;

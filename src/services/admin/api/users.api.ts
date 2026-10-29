@@ -2,6 +2,7 @@ import { API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 import type {
     AdminUserAuditResponse,
+    AdminUserActivityResponse,
     AdminUserMutationResponse,
     AdminUserResponse,
     AdminUserRole,
@@ -14,6 +15,14 @@ import type {
 const baseUrl = `${API_VERSION}/admin/users`;
 
 export const adminUsersService = {
+    // Lấy số user CUSTOMER/SELLER mới theo ngày cho dashboard vận hành.
+    getActivity: (range: { from: string; to: string }) =>
+        authorizedAxios
+            .get<AdminUserActivityResponse>(`${baseUrl}/activity`, {
+                params: range,
+            })
+            .then((response) => response.data),
+
     list: (params: ListAdminUsersParams = {}) =>
         authorizedAxios
             .get<ListAdminUsersResponse>(baseUrl, { params })

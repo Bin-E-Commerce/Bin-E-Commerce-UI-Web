@@ -69,6 +69,14 @@ export interface AdminPayoutReadiness {
     missing: Array<'WEBHOOK_TOKEN' | 'SOURCE_ACCOUNT_NUMBER'>;
 }
 
+// Chuỗi nạp ví đã xác nhận và yêu cầu rút mới theo ngày, phục vụ dashboard admin.
+export interface AdminWalletActivityResponse {
+    from: string;
+    to: string;
+    deposits: Array<{ day: string; count: number }>;
+    withdrawalRequests: Array<{ day: string; count: number }>;
+}
+
 // Contract hiển thị COD khách đã trả và đơn đã hoàn tất, còn chờ admin xác nhận tiền thu hộ.
 export interface AdminFinanceCodRemittance {
     orderId: string;

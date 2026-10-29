@@ -2,6 +2,7 @@ import { API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 
 import type {
+    SellerApplicationActivityResponse,
     ListSellerApplicationsParams,
     ListSellerApplicationsResponse,
     RejectSellerApplicationPayload,
@@ -29,6 +30,15 @@ function buildListSellerApplicationsParams(
 }
 
 export const adminSellerApplicationsService = {
+    // Tải số lượt hồ sơ đã gửi theo ngày cho dashboard, độc lập với danh sách hồ sơ phân trang.
+    activity: (range: { from: string; to: string }) =>
+        authorizedAxios
+            .get<SellerApplicationActivityResponse>(
+                `${API_VERSION}/seller/applications/admin/activity`,
+                { params: range },
+            )
+            .then((response) => response.data),
+
     // Lấy danh sách hồ sơ đăng ký người bán cho admin, có phân trang và filter nhẹ.
     list: (params: ListSellerApplicationsParams = {}) =>
         authorizedAxios
