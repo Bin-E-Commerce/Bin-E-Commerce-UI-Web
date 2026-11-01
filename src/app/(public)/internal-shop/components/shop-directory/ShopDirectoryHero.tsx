@@ -1,6 +1,6 @@
 // Hero giới thiệu mục shop nội bộ; component chỉ sở hữu nội dung định hướng và không gọi dữ liệu.
 
-// Giải thích giá trị của shop nội bộ và giới hạn dữ liệu để người dùng hiểu đúng trước khi khám phá.
+// Giới thiệu các gian hàng seller đã mở công khai trước khi khách khám phá catalog.
 export function ShopDirectoryHero() {
     return (
         <section className="rounded-3xl border border-zinc-200 bg-white shadow-sm motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-700">
@@ -15,15 +15,13 @@ export function ShopDirectoryHero() {
                     </p>
                 </div>
                 <div className="grid gap-0 rounded-2xl border border-zinc-200 bg-zinc-50/70 sm:grid-cols-3 sm:divide-x sm:divide-zinc-200 lg:ml-2 lg:border-0 lg:bg-transparent">
-                    <InfoItem number="01" title="Vì sao crawl dữ liệu?">
-                        Bổ sung nhiều <strong>ngành hàng</strong> để kiểm thử{' '}
-                        <strong>tìm kiếm</strong> và{' '}
-                        <strong>gợi ý sản phẩm</strong> sát thực tế hơn.
+                    <InfoItem number="01" title="Gian hàng chính thức">
+                        Mỗi gian hàng được vận hành bởi một{' '}
+                        <strong>seller đã đăng ký</strong> trên Bin E-Commerce.
                     </InfoItem>
                     <InfoItem number="02" title="Phạm vi dữ liệu">
-                        Có <strong>sản phẩm</strong> và <strong>shop</strong>;
-                        chưa có tài khoản người bán, tồn kho, thanh toán và vận
-                        chuyển thực tế.
+                        Catalog, giá và tồn kho được quản lý từ{' '}
+                        <strong>hồ sơ shop</strong>.
                     </InfoItem>
                     <InfoItem number="03" title="Test đơn hàng">
                         Chọn <strong>shop nội bộ</strong> để trải nghiệm từ{' '}

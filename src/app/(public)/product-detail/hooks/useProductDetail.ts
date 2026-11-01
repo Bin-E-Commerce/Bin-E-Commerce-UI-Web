@@ -125,10 +125,7 @@ export function useProductDetail(productIdentifier: string) {
             'detail',
             'shop-products',
             currentProduct?.id,
-            currentProduct?.originType,
             currentProduct?.sellerShopId,
-            currentProduct?.externalShop?.id,
-            currentProduct?.externalShopId,
         ],
         queryFn: async () => {
             if (!currentProduct) return [];

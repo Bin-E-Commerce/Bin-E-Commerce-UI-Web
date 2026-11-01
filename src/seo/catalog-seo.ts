@@ -37,8 +37,7 @@ export async function fetchProductForSeo(
     );
 }
 
-// Lấy shop nội bộ trước, sau đó thử external shop để cùng một route `/shop/[slug]`
-// hỗ trợ cả hai loại shop mà không làm lộ thông tin riêng tư của seller.
+// Chỉ lấy shop seller đang công khai; lỗi API trả null để route dùng metadata mặc định.
 export async function fetchShopForSeo(
     slug: string,
 ): Promise<PublicShopResponse | null> {
@@ -46,12 +45,7 @@ export async function fetchShopForSeo(
     const internalShop = await fetchPublicJson<PublicShopResponse>(
         `${API_BASE_URL}${API_VERSION}/shops/${encodedSlug}`,
     );
-
-    if (internalShop) return internalShop;
-
-    return fetchPublicJson<PublicShopResponse>(
-        `${API_BASE_URL}${API_VERSION}/products/external-shops/${encodedSlug}`,
-    );
+    return internalShop;
 }
 
 // Chuyển mô tả có thể chứa HTML thành đoạn text ngắn, an toàn cho meta description.

@@ -2,34 +2,16 @@
 
 import type { PublicProduct } from '@/services/product';
 
-// Lấy định danh shop theo origin và fallback theo relation object để response external cũ không bị mất shop carousel.
-function getShopIdentity(product: PublicProduct): string | null {
-    // Một số response cũ có thể thiếu originType; chỉ fallback sang external khi không có origin rõ ràng.
-    if (
-        product.originType === 'EXTERNAL' ||
-        (!product.originType &&
-            (product.externalShop || product.externalShopId))
-    ) {
-        return product.externalShop?.id ?? product.externalShopId ?? null;
-    }
-
-    return product.sellerShopId ?? null;
-}
-
-// Tạo đúng query param theo namespace shop; externalShopId và sellerShopId không được dùng thay thế cho nhau.
+// Seller shop ID là namespace duy nhất cho catalog sản phẩm trên trang chi tiết.
 export function getProductShopFilter(
     product: PublicProduct,
-): { sellerShopId: string } | { externalShopId: string } | null {
-    const shopId = getShopIdentity(product);
-    if (!shopId) return null;
+): { sellerShopId: string } | null {
+    return product.sellerShopId ? { sellerShopId: product.sellerShopId } : null;
+}
 
-    const isExternalProduct =
-        product.originType === 'EXTERNAL' ||
-        (!product.originType &&
-            Boolean(product.externalShop || product.externalShopId));
-    return isExternalProduct
-        ? { externalShopId: shopId }
-        : { sellerShopId: shopId };
+// Trả về shop seller để các bộ lọc cùng shop không phụ thuộc nguồn dữ liệu cũ.
+function getShopIdentity(product: PublicProduct): string | null {
+    return product.sellerShopId ?? null;
 }
 
 // Loại sản phẩm hiện tại và giữ tối đa sáu card cùng shop cho carousel catalog.

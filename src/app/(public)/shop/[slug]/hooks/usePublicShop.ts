@@ -21,17 +21,7 @@ export function usePublicShopProfile(slug: string) {
 
     return useQuery({
         queryKey: ['shops', 'public', slug, viewerId],
-        queryFn: async () => {
-            try {
-                const response = await publicShopService.getBySlug(slug);
-                return { ...response, shopType: 'INTERNAL' as const };
-            } catch {
-                // Seller shop không tồn tại thì thử read model external; cả hai loại shop đều chạy trên route public nội bộ.
-                const response =
-                    await productService.getExternalShopBySlug(slug);
-                return { ...response, shopType: 'EXTERNAL' as const };
-            }
-        },
+        queryFn: () => publicShopService.getBySlug(slug),
         enabled: Boolean(slug),
         staleTime: 60_000,
     });
@@ -42,22 +32,16 @@ export function usePublicShopCatalog(
     shopId: string | undefined,
     filters: ShopCatalogFilters,
     enabled: boolean,
-    shopType: 'INTERNAL' | 'EXTERNAL' = 'INTERNAL',
 ) {
     return useQuery({
-        queryKey: ['shops', 'catalog', shopType, shopId, filters],
+        queryKey: ['shops', 'catalog', shopId, filters],
         queryFn: async () => {
             if (!shopId) throw new Error('Thiếu shopId để tải catalog.');
-            const shopFilter =
-                shopType === 'EXTERNAL'
-                    ? { externalShopId: shopId }
-                    : { sellerShopId: shopId };
-
             return productService.listProducts({
                 page: filters.page,
                 pageSize: 12,
                 search: filters.search || undefined,
-                ...shopFilter,
+                sellerShopId: shopId,
                 minRating: filters.minRating,
                 minPrice: filters.minPrice,
                 maxPrice: filters.maxPrice,
@@ -76,15 +60,12 @@ export function usePublicShopCatalog(
 export function usePublicShopSummary(
     shopId: string | undefined,
     enabled: boolean,
-    shopType: 'INTERNAL' | 'EXTERNAL' = 'INTERNAL',
 ) {
     return useQuery({
-        queryKey: ['shops', 'summary', shopType, shopId],
+        queryKey: ['shops', 'summary', shopId],
         queryFn: async () => {
             if (!shopId) throw new Error('Thiếu shopId để tải summary.');
-            return shopType === 'EXTERNAL'
-                ? productService.getExternalShopSummary(shopId)
-                : productService.getShopSummary(shopId);
+            return productService.getShopSummary(shopId);
         },
         enabled: Boolean(shopId) && enabled,
         staleTime: 60_000,

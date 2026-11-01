@@ -4,7 +4,6 @@
 export type PublicShopStatus = 'active' | 'suspended' | 'closed';
 
 export interface PublicShopResponse {
-    shopType?: 'INTERNAL' | 'EXTERNAL';
     shop: {
         id: string;
         slug: string;

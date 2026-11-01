@@ -16,7 +16,6 @@ import { ProductBreadcrumbs } from './components/navigation/ProductBreadcrumbs';
 import { ProductPurchasePanel } from './components/purchase/ProductPurchasePanel';
 import { ProductRecommendationsSection } from './components/recommendations/ProductRecommendationsSection';
 import { ProductReviewsSection } from './components/reviews/ProductReviewsSection';
-import { ProductShopPanel } from './components/shop/ProductShopPanel';
 import { InternalProductShopPanel } from './components/shop/InternalProductShopPanel';
 import { ProductDetailErrorState } from './components/states/ProductDetailErrorState';
 import { ProductDetailSkeleton } from './components/states/ProductDetailSkeleton';
@@ -83,9 +82,7 @@ export function ProductDetailPageContent({
                 </div>
             </div>
 
-            {product.externalShop ? (
-                <ProductShopPanel shop={product.externalShop} />
-            ) : product.sellerShopId ? (
+            {product.sellerShopId ? (
                 <InternalProductShopPanel shopId={product.sellerShopId} />
             ) : null}
 
@@ -108,11 +105,9 @@ export function ProductDetailPageContent({
                 shopProducts={shopProducts}
                 products={recommendations}
                 shopHref={
-                    product.externalShop?.slug
-                        ? `/shop/${product.externalShop.slug}`
-                        : product.sellerShopId
-                          ? `/shop/${product.sellerShopId}`
-                          : null
+                    product.sellerShopId
+                        ? `/shop/${product.sellerShopId}`
+                        : null
                 }
             />
         </div>

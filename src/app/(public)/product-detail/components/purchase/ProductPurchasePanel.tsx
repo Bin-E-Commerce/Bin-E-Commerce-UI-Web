@@ -5,7 +5,6 @@
 
 import {
     Heart,
-    Info,
     RotateCcw,
     ShieldCheck,
     ShoppingCart,
@@ -16,16 +15,6 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button, buttonVariants } from '@/components/ui/button';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import {
     calculateDiscountPercent,
     formatProductPrice,
@@ -59,7 +48,6 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     const router = useRouter();
     const { isAuthenticated, getProtectedHref } = useCartAuthRedirect();
     const [isFavorite, setIsFavorite] = useState(false);
-    const [isExternalNoticeOpen, setIsExternalNoticeOpen] = useState(false);
     const rating = getProductRating(product);
     const currentPrice = purchase.selectedVariant?.price ?? product.minPrice;
     const originalPrice = purchase.selectedVariant?.originalPrice;
@@ -68,11 +56,9 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         originalPrice,
     );
     const productPath = pathname ?? `/products/${product.id}`;
-    const isExternalProduct =
-        product.originType === 'EXTERNAL' || Boolean(product.externalShop);
     const canAddToCart =
         Boolean(purchase.selectedVariant) &&
-        (isExternalProduct || purchase.availableStock > 0) &&
+        purchase.availableStock > 0 &&
         (!isAuthenticated || !cartQuery.isLoading);
     const isBuyNowPending =
         buyNowAddCartItemMutation.isPending || updateCartItemMutation.isPending;
@@ -86,11 +72,6 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             variantId: purchase.selectedVariant.id,
             quantity: purchase.quantity,
         });
-    }
-
-    // Mở modal giải thích nguồn dữ liệu crawl và dẫn customer sang shop nội bộ để test checkout.
-    function handleExternalPurchaseAttempt(): void {
-        setIsExternalNoticeOpen(true);
     }
 
     // Điều hướng sang checkout với đúng cartItemId mà Cart Service trả về sau mutation.
@@ -274,16 +255,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     </Button>
                 )}
 
-                {isExternalProduct ? (
-                    <Button
-                        type="button"
-                        size="lg"
-                        onClick={handleExternalPurchaseAttempt}
-                        className="h-12 bg-zinc-950 hover:bg-zinc-800"
-                    >
-                        Mua ngay
-                    </Button>
-                ) : !isAuthenticated ? (
+                {!isAuthenticated ? (
                     <Link
                         href={getProtectedHref(productPath)}
                         className={buttonVariants({
@@ -305,130 +277,6 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     </Button>
                 )}
             </div>
-
-            {isExternalProduct && product.externalShop ? (
-                <Link
-                    href={`/shop/${product.externalShop.slug}`}
-                    className="mt-3 inline-flex w-full items-center justify-center gap-2 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
-                >
-                    Xem shop dữ liệu tham khảo
-                    <span aria-hidden="true">→</span>
-                </Link>
-            ) : null}
-
-            <AlertDialog
-                open={isExternalNoticeOpen}
-                onOpenChange={setIsExternalNoticeOpen}
-            >
-                <AlertDialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-                    <AlertDialogHeader className="border-b border-zinc-100 px-6 pb-5 pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700">
-                                <Info className="h-5 w-5" />
-                            </div>
-                            <AlertDialogTitle className="text-lg leading-7">
-                                Sản phẩm dữ liệu tham khảo
-                            </AlertDialogTitle>
-                        </div>
-                        <AlertDialogDescription className="max-w-md leading-6">
-                            Đây là dữ liệu được crawl để phục vụ{' '}
-                            <strong className="font-semibold text-zinc-700">
-                                gợi ý sản phẩm
-                            </strong>
-                            ,{' '}
-                            <strong className="font-semibold text-zinc-700">
-                                tìm kiếm
-                            </strong>{' '}
-                            và{' '}
-                            <strong className="font-semibold text-zinc-700">
-                                phân tích hành vi
-                            </strong>{' '}
-                            trên hệ thống.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-
-                    <div className="space-y-3 px-6 py-5">
-                        <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3.5">
-                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                                Vì sao có dữ liệu từ nguồn khác?
-                            </p>
-                            <p className="mt-1 text-sm leading-6 text-zinc-700">
-                                Hệ thống crawl thêm sản phẩm và shop từ nguồn
-                                công khai để có nhiều ngành hàng, mức giá và bối
-                                cảnh mua sắm đa dạng hơn. Nhờ đó, các tính năng{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    tìm kiếm
-                                </strong>{' '}
-                                và{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    gợi ý sản phẩm
-                                </strong>{' '}
-                                được đánh giá gần với dữ liệu thực tế hơn.
-                            </p>
-                        </div>
-                        <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5">
-                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                                Phạm vi dữ liệu
-                            </p>
-                            <p className="mt-1 text-sm leading-6 text-zinc-700">
-                                Đã có{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    thông tin sản phẩm
-                                </strong>{' '}
-                                và{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    thông tin shop
-                                </strong>
-                                . Chưa đồng bộ{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    tài khoản người bán
-                                </strong>
-                                ,{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    tồn kho thực tế
-                                </strong>
-                                ,{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    thanh toán
-                                </strong>{' '}
-                                và{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    vận chuyển
-                                </strong>
-                                .
-                            </p>
-                        </div>
-                        <div className="flex gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3.5 text-sm leading-6 text-zinc-700">
-                            <ShoppingCart className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
-                            <p>
-                                Để trải nghiệm đầy đủ từ{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    thêm vào giỏ
-                                </strong>{' '}
-                                đến{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    đặt đơn
-                                </strong>
-                                , hãy chọn sản phẩm thuộc{' '}
-                                <strong className="font-semibold text-zinc-900">
-                                    shop nội bộ
-                                </strong>
-                                .
-                            </p>
-                        </div>
-                    </div>
-
-                    <AlertDialogFooter className="border-t border-zinc-100 bg-zinc-50/70 px-6 py-4">
-                        <AlertDialogCancel>Để sau</AlertDialogCancel>
-                        <AlertDialogAction
-                            asChild
-                            className="bg-zinc-950 text-white hover:bg-zinc-800"
-                        >
-                            <Link href="/internal-shop">Chọn shop nội bộ</Link>
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </section>
     );
 }

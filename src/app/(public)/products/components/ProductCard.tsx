@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PackageOpen, Star } from 'lucide-react';
 
 import type { PublicProduct } from '@/services/product';
@@ -34,7 +34,10 @@ interface ProductCardProps {
     recommendationReason?: string;
 }
 
-// Trình bày ảnh, giá, ưu đãi và tín hiệu tin cậy trong một card gọn; card không hiển thị thương hiệu hoặc shop.
+// Trình bày ảnh, giá và tín hiệu tin cậy; card không sở hữu dữ liệu sản phẩm hay logic mua hàng.
+// Ảnh thumbnail được thử trước rồi đến các ảnh còn lại; từng URL lỗi chỉ bị bỏ qua một lần.
+// Khi toàn bộ ảnh lỗi, card giữ nguyên thông tin sản phẩm và hiển thị biểu tượng thay thế.
+// Impression và click vẫn gửi attribution như cũ, không phụ thuộc trạng thái tải ảnh.
 export function ProductCard({
     product,
     compact = false,
@@ -44,7 +47,19 @@ export function ProductCard({
     recommendationReason,
 }: ProductCardProps) {
     const cardRef = useRef<HTMLAnchorElement>(null);
-    const imageUrl = getProductThumbnail(product);
+    // Thử thumbnail trước, sau đó lần lượt dùng ảnh khác; loại URL trùng để lỗi ảnh không tạo vòng lặp.
+    const imageUrls = Array.from(
+        new Set(
+            [
+                getProductThumbnail(product),
+                ...(product.images ?? []).map((image) => image.imageUrl),
+            ].filter((url): url is string => Boolean(url)),
+        ),
+    );
+    const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(
+        () => new Set(),
+    );
+    const imageUrl = imageUrls.find((url) => !failedImageUrls.has(url)) ?? null;
     const rating = getProductRating(product);
     const hasPriceRange = product.minPrice !== product.maxPrice;
     const displayPrice = product.displayPrice ?? product.minPrice;
@@ -63,6 +78,18 @@ export function ProductCard({
         trackingContext?.recommendationPolicyVersion;
     const recommendationRankingMode =
         trackingContext?.recommendationRankingMode;
+
+    // Bỏ URL hiện tại khỏi lượt hiển thị để React thử ảnh kế tiếp hoặc chuyển sang biểu tượng thay thế.
+    const handleImageError = () => {
+        if (!imageUrl) return;
+
+        // Functional update giữ lại mọi URL đã lỗi nếu trình duyệt báo nhiều lỗi liên tiếp.
+        setFailedImageUrls((previous) => {
+            const next = new Set(previous);
+            next.add(imageUrl);
+            return next;
+        });
+    };
 
     useEffect(() => {
         const cardElement = cardRef.current;
@@ -153,9 +180,14 @@ export function ProductCard({
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                         className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
+                        onError={handleImageError}
                     />
                 ) : (
-                    <div className="flex h-full items-center justify-center text-zinc-300">
+                    <div
+                        role="img"
+                        aria-label="Ảnh sản phẩm không khả dụng"
+                        className="flex h-full items-center justify-center text-zinc-300"
+                    >
                         <PackageOpen className="h-10 w-10" />
                     </div>
                 )}

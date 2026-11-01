@@ -39,7 +39,6 @@ export interface RecommendationAdminOverview {
         productId: string;
         productName: string | null;
         imageUrl: string | null;
-        originType: 'INTERNAL' | 'EXTERNAL' | null;
         events: number;
         clicks: number;
         cartAdds: number;

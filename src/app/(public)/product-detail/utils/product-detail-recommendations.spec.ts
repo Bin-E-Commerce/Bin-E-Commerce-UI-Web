@@ -5,14 +5,12 @@ import type { PublicProduct } from '@/services/product';
 import {
     filterRecommendationProducts,
     filterShopProducts,
-    getProductShopFilter,
 } from './product-detail-recommendations';
 
-// Tạo product tối thiểu để test tập trung vào origin/shop identity thay vì chi tiết hiển thị của card.
+// Tạo product tối thiểu để test phạm vi shop thay vì chi tiết hiển thị của card.
 function product(id: string, shopId = 'shop-1'): PublicProduct {
     return {
         id,
-        originType: 'INTERNAL',
         sellerShopId: shopId,
         name: id,
         slug: id,
@@ -78,38 +76,6 @@ describe('product detail recommendation helpers', () => {
         );
     });
 
-    // Kiểm tra externalShopId được tách namespace với sellerShopId khi lọc catalog crawl.
-    it('should filter external shop products by external shop identity', () => {
-        // Arrange
-        const current = {
-            ...product('external-current'),
-            originType: 'EXTERNAL' as const,
-            sellerShopId: null,
-            externalShopId: 'external-shop-1',
-        };
-        const candidates = [
-            current,
-            {
-                ...product('external-same'),
-                originType: 'EXTERNAL' as const,
-                sellerShopId: null,
-                externalShopId: 'external-shop-1',
-            },
-            {
-                ...product('external-other'),
-                originType: 'EXTERNAL' as const,
-                sellerShopId: null,
-                externalShopId: 'external-shop-2',
-            },
-        ];
-
-        // Act
-        const result = filterShopProducts(candidates, current);
-
-        // Assert
-        expect(result.map((item) => item.id)).toEqual(['external-same']);
-    });
-
     // Đảm bảo response lặp product không tạo card trùng trong carousel shop.
     it('should deduplicate products before applying the carousel limit', () => {
         // Arrange
@@ -128,19 +94,5 @@ describe('product detail recommendation helpers', () => {
             'shop-product',
             'shop-product-2',
         ]);
-    });
-
-    // Đảm bảo product external dùng đúng query namespace, không bị gửi nhầm sellerShopId.
-    it('should build an external shop filter from the external shop id', () => {
-        const current = {
-            ...product('external-current'),
-            originType: 'EXTERNAL' as const,
-            sellerShopId: 'seller-shop-with-same-value',
-            externalShopId: 'external-shop-1',
-        };
-
-        expect(getProductShopFilter(current)).toEqual({
-            externalShopId: 'external-shop-1',
-        });
     });
 });

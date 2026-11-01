@@ -9,19 +9,6 @@ export interface ProductBrand {
     countryName?: string | null;
 }
 
-export interface ProductExternalShop {
-    id: string;
-    name: string;
-    slug: string;
-    avatarUrl?: string | null;
-    sourcePlatform: string;
-    description?: string | null;
-    sourceUrl?: string | null;
-    ratingAvg?: string | null;
-    reviewCount?: number;
-    followerCount?: number;
-}
-
 export interface ProductImage {
     id: string;
     imageUrl: string;
@@ -132,9 +119,7 @@ export interface OrderReviewStatusResponse {
 
 export interface PublicProduct {
     id: string;
-    originType?: 'INTERNAL' | 'EXTERNAL';
     sellerShopId?: string | null;
-    externalShopId?: string | null;
     name: string;
     slug: string;
     shortDescription?: string | null;
@@ -145,10 +130,7 @@ export interface PublicProduct {
     totalSold: number;
     ratingAvg?: string | null;
     reviewCount: number;
-    sourcePlatform?: string | null;
-    sourceUrl?: string | null;
     brand?: ProductBrand | null;
-    externalShop?: ProductExternalShop | null;
     images?: ProductImage[];
 }
 
@@ -172,10 +154,8 @@ export interface ListProductsParams {
     page?: number;
     pageSize?: number;
     search?: string;
-    originType?: 'INTERNAL' | 'EXTERNAL';
     status?: 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
     sellerShopId?: string;
-    externalShopId?: string;
     minPrice?: number;
     maxPrice?: number;
     minRating?: number;
