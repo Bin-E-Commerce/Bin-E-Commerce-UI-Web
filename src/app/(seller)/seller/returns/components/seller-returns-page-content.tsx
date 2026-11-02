@@ -37,11 +37,16 @@ import { SellerReturnDetailModal } from './seller-return-detail-modal';
 import { SellerReturnRejectDialog } from './seller-return-reject-dialog';
 
 type ReturnQueueFilter =
-    'ALL' | 'REQUESTED' | 'AWAITING_SHIPMENT' | 'RECEIVED' | 'RESOLVED';
+    | 'ALL'
+    | 'REQUESTED'
+    | 'AWAITING_SHIPMENT'
+    | 'RECEIVED'
+    | 'RESOLVED';
 
 const ACTIONABLE_STATUSES = new Set([
     'REQUESTED',
     'AWAITING_SHIPMENT',
+    'SHIPMENT_FAILED',
     'RECEIVED',
 ]);
 
@@ -54,9 +59,12 @@ function getReturnStatusLabel(status: string): string {
     const labels: Record<string, string> = {
         REQUESTED: 'Chờ shop duyệt',
         AWAITING_SHIPMENT: 'Chờ khách gửi hàng',
+        SHIPMENT_FAILED: 'Vận chuyển lỗi · có thể tạo lại vận đơn',
         IN_TRANSIT: 'Đang hoàn về shop',
         RECEIVED: 'Chờ kiểm tra hàng',
         REFUND_PENDING: 'Đã kiểm tra đạt · Chờ hoàn tiền',
+        REFUND_FAILED: 'Chuyển khoản hoàn lỗi · cần xử lý lại',
+        REFUNDED: 'Đã hoàn tiền',
         REJECTED: 'Đã từ chối',
         INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
     };
@@ -72,7 +80,9 @@ function matchesReturnFilter(
     if (filter === 'ALL') return true;
     if (filter === 'REQUESTED') return status === 'REQUESTED';
     if (filter === 'AWAITING_SHIPMENT') {
-        return ['AWAITING_SHIPMENT', 'IN_TRANSIT'].includes(status);
+        return ['AWAITING_SHIPMENT', 'IN_TRANSIT', 'SHIPMENT_FAILED'].includes(
+            status,
+        );
     }
     if (filter === 'RECEIVED') return status === 'RECEIVED';
     return !ACTIONABLE_STATUSES.has(status);
@@ -514,7 +524,9 @@ function SellerReturnRequestCard({
                             <h3 className="font-semibold text-zinc-950">
                                 Yêu cầu #{item.id.slice(0, 8)}
                             </h3>
-                            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700">
+                            <span
+                                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${['SHIPMENT_FAILED', 'REFUND_FAILED'].includes(item.status) ? 'bg-red-50 text-red-800' : 'bg-zinc-100 text-zinc-700'}`}
+                            >
                                 {getReturnStatusLabel(item.status)}
                             </span>
                         </div>
@@ -593,6 +605,14 @@ function SellerReturnRequestCard({
                         </p>
                     ) : null}
                 </div>
+
+                {item.shipmentFailureNote || item.refundFailureNote ? (
+                    <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm text-red-800">
+                        {item.shipmentFailureNote
+                            ? `Lỗi vận đơn: ${item.shipmentFailureNote}`
+                            : `Lỗi chuyển khoản hoàn: ${item.refundFailureNote}`}
+                    </p>
+                ) : null}
 
                 {item.description ? (
                     <p className="mt-3 line-clamp-2 text-sm text-zinc-600">
@@ -686,7 +706,9 @@ function SellerReturnRequestCard({
                         </Button>
                     </>
                 ) : null}
-                {item.status === 'AWAITING_SHIPMENT' ? (
+                {['AWAITING_SHIPMENT', 'SHIPMENT_FAILED'].includes(
+                    item.status,
+                ) ? (
                     <Button
                         variant="ghost"
                         type="button"
@@ -694,7 +716,10 @@ function SellerReturnRequestCard({
                         disabled={shipmentPending}
                         onClick={onCreateShipment}
                     >
-                        <PackageCheck className="size-4" /> Tạo vận đơn hoàn
+                        <PackageCheck className="size-4" />
+                        {item.status === 'SHIPMENT_FAILED'
+                            ? 'Tạo lại vận đơn hoàn'
+                            : 'Tạo vận đơn hoàn'}
                     </Button>
                 ) : null}
                 {item.status === 'IN_TRANSIT' ? (

@@ -102,6 +102,8 @@ const RETURN_PROGRESS_RANK: Record<OrderReturnResponse['status'], number> = {
     SHIPMENT_FAILED: 3,
     RECEIVED: 4,
     REFUND_PENDING: 5,
+    REFUND_FAILED: 5,
+    REFUNDED: 6,
     INSPECTION_FAILED: 5,
 };
 
@@ -554,19 +556,19 @@ export default function ProfileOrderDetailPage() {
                                     </span>
                                 </div>
                                 {order.cancelledAt ? (
-                                    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs leading-5 text-zinc-600">
-                                        <p className="font-semibold text-zinc-950">
+                                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-800">
+                                        <p className="font-semibold text-red-900">
                                             Đơn hàng đã hủy
                                         </p>
                                         <p className="mt-1">
                                             Đã hủy lúc{' '}
                                             {formatDate(order.cancelledAt)}
                                         </p>
-                                        <div className="mt-2 border-t border-zinc-200 pt-2">
-                                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                                        <div className="mt-2 border-t border-red-200 pt-2">
+                                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-red-700">
                                                 Lý do hủy đơn hàng
                                             </p>
-                                            <p className="mt-1 text-sm leading-5 text-zinc-700">
+                                            <p className="mt-1 text-sm leading-5 text-red-900">
                                                 {order.cancelReason?.trim() ||
                                                     'Chưa có lý do hủy được cung cấp.'}
                                             </p>

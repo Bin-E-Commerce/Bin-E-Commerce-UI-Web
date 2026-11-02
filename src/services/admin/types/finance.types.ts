@@ -86,6 +86,41 @@ export interface AdminFinanceCodRemittance {
     createdAt: string;
 }
 
+// Hồ sơ chờ chuyển hoàn thủ công; amount và nguồn do Order Service chốt, UI không tự tính lại.
+export interface AdminFinanceRefund {
+    sourceType: 'PAYMENT_ATTEMPT' | 'ORDER_RETURN' | 'DELIVERY_ISSUE';
+    id: string;
+    orderId: string;
+    orderNumber: string;
+    paymentMethod: 'COD' | 'PAY2S';
+    status: 'REFUND_PENDING' | 'REFUND_FAILED';
+    amount: string;
+    reason: string;
+    providerTransactionId: string | null;
+    refundFailureNote: string | null;
+    createdAt: string;
+}
+
+// Khiếu nại chưa nhận hàng chờ admin phân xử; evidence chỉ chứa URL đã upload và loại media.
+export interface AdminFinanceDeliveryIssue {
+    id: string;
+    orderId: string;
+    orderNumber: string;
+    paymentStatus:
+        | 'COD_PENDING_COLLECTION'
+        | 'PENDING'
+        | 'FAILED'
+        | 'PAID'
+        | 'REFUND_PENDING'
+        | 'REFUNDED';
+    reason: string;
+    itemIds: string[];
+    note: string | null;
+    evidence: Array<{ assetId: string; url: string; type: 'image' | 'video' }>;
+    returnRequestId: string | null;
+    createdAt: string;
+}
+
 export interface AdminFinancePage<T> {
     items: T[];
     total: number;

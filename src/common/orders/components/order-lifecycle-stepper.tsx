@@ -496,27 +496,55 @@ export function OrderLifecycleStepper({
                 </ol>
 
                 {isTerminal ? (
-                    <div className="relative mt-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                    <div
+                        className={cn(
+                            'relative mt-4 overflow-hidden rounded-xl p-3 sm:p-4',
+                            isCancelled
+                                ? 'border-red-200 bg-red-50/70'
+                                : 'border-slate-200 bg-slate-50',
+                        )}
+                    >
                         <div>
-                            <p className="text-sm font-semibold text-black">
+                            <p
+                                className={cn(
+                                    'text-sm font-semibold',
+                                    isCancelled
+                                        ? 'text-red-900'
+                                        : 'text-black',
+                                )}
+                            >
                                 {terminalTitle}
                             </p>
-                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                            <p
+                                className={cn(
+                                    'mt-1 text-xs leading-5',
+                                    isCancelled
+                                        ? 'text-red-700'
+                                        : 'text-slate-500',
+                                )}
+                            >
                                 {terminalDescription}
                             </p>
                             {isCancelled ? (
-                                <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3">
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                <div className="mt-3 rounded-xl border border-red-200 bg-white px-3.5 py-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-red-600">
                                         Lý do hủy đơn hàng
                                     </p>
-                                    <p className="mt-1 text-sm leading-6 text-slate-700">
+                                    <p className="mt-1 text-sm leading-6 text-red-900">
                                         {cancelReason?.trim() ||
                                             'Chưa có lý do hủy được cung cấp.'}
                                     </p>
                                 </div>
                             ) : null}
                             {cancelledAt ? (
-                                <p className="mt-2 text-[11px] text-slate-400">
+                                <p
+                                    className={cn(
+                                        'mt-2 text-[11px]',
+                                        isCancelled
+                                            ? 'text-red-700'
+                                            : 'text-slate-400',
+                                    )}
+                                >
                                     Đã hủy lúc{' '}
                                     {formatLifecycleDate(cancelledAt)}
                                 </p>

@@ -151,6 +151,7 @@ export function DeliveryConfirmationCard({
         return () => window.cancelAnimationFrame(frame);
     }, [issueOpen]);
 
+    // Tạo yêu cầu hoàn trước, sau đó gắn đúng ID vào khiếu nại để hai lịch sử không bị tách rời.
     const issueMutation = useMutation({
         mutationFn: async () => {
             if (!reason) throw new Error('Vui lòng chọn vấn đề của đơn hàng.');
@@ -169,6 +170,7 @@ export function DeliveryConfirmationCard({
 
             let uploadedAssets: ReviewMediaCleanupAsset[] = [];
             let returnCreated = false;
+            let returnRequestId: string | undefined;
             try {
                 const media =
                     images.length || videos.length
@@ -180,19 +182,21 @@ export function DeliveryConfirmationCard({
                 uploadedAssets = media.uploadedAssets;
 
                 if (isReturnRequest) {
-                    await createOrderReturn(order.id, {
+                    const returnRequest = await createOrderReturn(order.id, {
                         itemIds: selectedItemIds,
                         reason: reason as OrderReturnReason,
                         description: note.trim() || undefined,
                         evidence: media.evidence,
                     });
                     returnCreated = true;
+                    returnRequestId = returnRequest.id;
                 }
 
                 const updatedOrder = await confirmOrderDelivery(order.id, {
                     decision: 'ISSUE',
                     reason,
                     itemIds: selectedItemIds,
+                    returnRequestId,
                     note: note.trim() || undefined,
                     evidence: media.evidence,
                 });

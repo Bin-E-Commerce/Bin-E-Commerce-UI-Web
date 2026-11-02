@@ -10,6 +10,8 @@ import type {
     AdminFinanceWithdrawalDetail,
     AdminWalletActivityResponse,
     AdminPayoutReadiness,
+    AdminFinanceRefund,
+    AdminFinanceDeliveryIssue,
 } from '@/services/admin/types/finance.types';
 
 const financeUrl = `${API_BASE_URL}${API_VERSION}/admin/finance`;
@@ -80,6 +82,79 @@ export async function getPendingAdminCodRemittances(
         AdminFinancePage<AdminFinanceCodRemittance>
     >(`${financeUrl}/cod-remittances`, { params: { page, pageSize } });
     return response.data;
+}
+
+// Tải hàng đợi hoàn đang chờ hoặc lỗi để admin xử lý lại theo snapshot server.
+export async function getAdminRefunds(
+    page = 1,
+    pageSize = 20,
+): Promise<AdminFinancePage<AdminFinanceRefund>> {
+    const response = await authorizedAxios.get<
+        AdminFinancePage<AdminFinanceRefund>
+    >(`${financeUrl}/refunds`, { params: { page, pageSize } });
+    return response.data;
+}
+
+// Tải các khiếu nại chưa nhận hàng cần quyết định trước khi hoàn hoặc trả về bước xác nhận.
+export async function getAdminDeliveryIssues(): Promise<
+    AdminFinanceDeliveryIssue[]
+> {
+    const response = await authorizedAxios.get<AdminFinanceDeliveryIssue[]>(
+        `${financeUrl}/delivery-issues`,
+    );
+    return response.data;
+}
+
+// Ghi nhận quyết định admin; chỉ REFUND mới đưa issue vào hàng đợi chuyển khoản.
+export async function resolveAdminDeliveryIssue(
+    issueId: string,
+    decision: 'REFUND' | 'REJECT',
+    note: string,
+): Promise<void> {
+    await authorizedAxios.post(
+        `${financeUrl}/delivery-issues/${issueId}/resolution`,
+        { decision, note },
+    );
+}
+
+// Xác nhận tiền đã chuyển bên ngoài rồi gửi bằng chứng; amount lấy nguyên từ API.
+export async function confirmAdminRefund(input: {
+    sourceType: AdminFinanceRefund['sourceType'];
+    id: string;
+    amount: string;
+    reference: string;
+    proof: Record<string, unknown>;
+}): Promise<void> {
+    const pathBySource = {
+        PAYMENT_ATTEMPT: 'payment-attempts',
+        ORDER_RETURN: 'returns',
+        DELIVERY_ISSUE: 'delivery-issues',
+    } as const;
+    await authorizedAxios.post(
+        `${financeUrl}/refunds/${pathBySource[input.sourceType]}/${input.id}/confirmation`,
+        {
+            amount: input.amount,
+            reference: input.reference,
+            proof: input.proof,
+        },
+    );
+}
+
+// Đưa lần chuyển tiền lỗi về trạng thái retry kèm lý do kiểm tra được trong admin queue.
+export async function failAdminRefund(input: {
+    sourceType: AdminFinanceRefund['sourceType'];
+    id: string;
+    note: string;
+}): Promise<void> {
+    const pathBySource = {
+        PAYMENT_ATTEMPT: 'payment-attempts',
+        ORDER_RETURN: 'returns',
+        DELIVERY_ISSUE: 'delivery-issues',
+    } as const;
+    await authorizedAxios.post(
+        `${financeUrl}/refunds/${pathBySource[input.sourceType]}/${input.id}/failure`,
+        { note: input.note },
+    );
 }
 
 // Ghi mã đối soát sau khi admin kiểm tra tiền COD đã về; backend sẽ mở khóa ví seller đúng một lần.

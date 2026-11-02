@@ -69,6 +69,7 @@ const REASONS: Array<{
 const RETURN_SHIPPING_LIMIT_REJECTION_PREFIX =
     'Phí hoàn GHN vượt giá trị hàng hoàn.';
 
+// Chuyển state return thành nội dung khách hiểu được, bao gồm lỗi vận chuyển và kết quả hoàn tiền.
 function statusLabel(status: OrderReturnResponse['status']): string {
     const labels: Record<OrderReturnResponse['status'], string> = {
         REQUESTED: 'Chờ shop xử lý',
@@ -81,14 +82,20 @@ function statusLabel(status: OrderReturnResponse['status']): string {
         RECEIVED: 'Shop đã nhận hàng',
         INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
         REFUND_PENDING: 'Đã kiểm tra đạt · Chờ hoàn tiền',
+        REFUND_FAILED: 'Chuyển khoản hoàn lỗi · đang được xử lý lại',
+        REFUNDED: 'Đã hoàn tiền',
     };
     return labels[status];
 }
 
+// Giữ request failed trong activeRequest để khách không tạo yêu cầu trùng khi shop/admin còn phải xử lý.
 function isTerminal(status: OrderReturnResponse['status']): boolean {
-    return ['CUSTOMER_CANCELLED', 'REJECTED', 'INSPECTION_FAILED'].includes(
-        status,
-    );
+    return [
+        'CUSTOMER_CANCELLED',
+        'REJECTED',
+        'INSPECTION_FAILED',
+        'REFUNDED',
+    ].includes(status);
 }
 
 // Chuẩn hóa evidence từ API thành media item để modal dùng chung được cả ảnh và video.
@@ -320,7 +327,17 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
                                     <p className="text-sm font-semibold text-zinc-950">
-                                        {statusLabel(item.status)}
+                                        <span
+                                            className={
+                                                item.status ===
+                                                    'SHIPMENT_FAILED' ||
+                                                item.status === 'REFUND_FAILED'
+                                                    ? 'font-semibold text-red-700'
+                                                    : undefined
+                                            }
+                                        >
+                                            {statusLabel(item.status)}
+                                        </span>
                                     </p>
                                     <p className="mt-1 text-xs text-zinc-500">
                                         {item.status === 'REJECTED'
@@ -474,6 +491,18 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                             'Shop chưa bổ sung lý do từ chối.'}
                                     </p>
                                 </div>
+                            ) : null}
+                            {item.shipmentFailureNote ? (
+                                <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
+                                    Vận chuyển hoàn gặp lỗi:{' '}
+                                    {item.shipmentFailureNote}
+                                </p>
+                            ) : null}
+                            {item.refundFailureNote ? (
+                                <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
+                                    Chuyển khoản hoàn gặp lỗi:{' '}
+                                    {item.refundFailureNote}
+                                </p>
                             ) : null}
                         </div>
                     ))}

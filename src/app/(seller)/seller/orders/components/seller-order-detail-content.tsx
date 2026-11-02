@@ -1,4 +1,4 @@
-// Nội dung detail Seller làm nổi bật trạng thái và thao tác xử lý; sản phẩm, doanh thu và người nhận được tách thành ba card có header đồng nhất.
+// Nội dung detail Seller giữ snapshot đơn đã hủy để đối chiếu; sản phẩm, số tiền và người nhận nằm ở các card riêng.
 
 'use client';
 
@@ -42,7 +42,7 @@ function formatShippingAddress(address: Record<string, string>): string {
         .join(', ');
 }
 
-// Trình bày ba khu vực chi tiết Seller với kiểu chữ và khoảng cách gọn để dễ quét mà không đổi dữ liệu đơn.
+// Trình bày chi tiết Seller mà không đổi dữ liệu đơn; đơn hủy giữ giá trị lúc đặt nhưng không hiển thị như doanh thu đã ghi nhận.
 export function SellerOrderDetailContent({
     orderId,
 }: SellerOrderDetailContentProps) {
@@ -92,6 +92,9 @@ export function SellerOrderDetailContent({
     }
 
     const order = orderQuery.data;
+    // Dùng cả order status và fulfillment để nhận diện dữ liệu cũ chỉ cập nhật một trong hai trường.
+    const isCancelled =
+        order.status === 'CANCELLED' || order.fulfillmentStatus === 'CANCELLED';
     // Chỉ coi yêu cầu có orderId trùng khớp là nội dung thuộc card của đơn hiện tại;
     // khi danh sách đang tải hoặc lỗi, ẩn cả lối tắt lẫn card để không tạo điểm đến giả.
     const orderReturns = (returnsQuery.data ?? []).filter(
@@ -199,7 +202,7 @@ export function SellerOrderDetailContent({
 
             <section
                 id="order-products"
-                aria-label="Chi tiết sản phẩm, doanh thu và địa chỉ đơn hàng"
+                aria-label="Chi tiết sản phẩm, số tiền và địa chỉ đơn hàng"
                 className="scroll-mt-24"
             >
                 <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.45fr)_minmax(245px,0.75fr)_minmax(260px,0.82fr)]">
@@ -275,10 +278,14 @@ export function SellerOrderDetailContent({
                             </div>
                             <div>
                                 <h2 className="text-[13px] font-semibold text-zinc-950">
-                                    Tổng tiền shop
+                                    {isCancelled
+                                        ? 'Đơn hàng đã hủy'
+                                        : 'Tổng tiền shop'}
                                 </h2>
                                 <p className="mt-0.5 text-[11px] text-zinc-500">
-                                    Chi tiết doanh thu đơn hàng
+                                    {isCancelled
+                                        ? 'Giá trị lúc đặt được giữ để đối chiếu'
+                                        : 'Chi tiết doanh thu đơn hàng'}
                                 </p>
                             </div>
                         </div>
@@ -291,10 +298,24 @@ export function SellerOrderDetailContent({
                                     {formatSellerMoney(order.shopItemTotal)}
                                 </span>
                             </div>
-                            <div className="rounded-xl bg-zinc-950 px-3.5 py-3 text-white">
+                            <div
+                                className={
+                                    isCancelled
+                                        ? 'rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3 text-zinc-700'
+                                        : 'rounded-xl bg-zinc-950 px-3.5 py-3 text-white'
+                                }
+                            >
                                 <div className="flex flex-col items-start gap-1.5">
-                                    <span className="text-xs font-medium text-zinc-300">
-                                        Doanh thu shop
+                                    <span
+                                        className={
+                                            isCancelled
+                                                ? 'text-xs font-medium text-zinc-500'
+                                                : 'text-xs font-medium text-zinc-300'
+                                        }
+                                    >
+                                        {isCancelled
+                                            ? 'Giá trị sản phẩm lúc đặt'
+                                            : 'Doanh thu shop'}
                                     </span>
                                     <span className="text-lg font-extrabold tracking-tight tabular-nums">
                                         {formatSellerMoney(order.shopItemTotal)}
@@ -302,8 +323,9 @@ export function SellerOrderDetailContent({
                                 </div>
                             </div>
                             <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] leading-5 text-zinc-500">
-                                Số tiền trên chỉ bao gồm các sản phẩm thuộc shop
-                                của bạn.
+                                {isCancelled
+                                    ? 'Đơn đã hủy; đây là giá trị sản phẩm được lưu tại thời điểm đặt, không phải doanh thu đã ghi nhận.'
+                                    : 'Số tiền trên chỉ bao gồm các sản phẩm thuộc shop của bạn.'}
                             </div>
                         </div>
                     </section>

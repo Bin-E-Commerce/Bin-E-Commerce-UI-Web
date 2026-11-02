@@ -35,12 +35,17 @@ export async function verifyPay2sReturn(
 }
 
 export type DeliveryIssueReason =
-    'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
+    | 'NOT_RECEIVED'
+    | 'DAMAGED'
+    | 'WRONG_ITEM'
+    | 'MISSING_ITEM'
+    | 'OTHER';
 
 export interface DeliveryConfirmationInput {
     decision: 'RECEIVED' | 'ISSUE';
     reason?: DeliveryIssueReason;
     itemIds?: string[];
+    returnRequestId?: string;
     note?: string;
     evidence?: Array<{ assetId: string; url: string; type: 'image' | 'video' }>;
 }
@@ -217,7 +222,9 @@ export type OrderReturnStatus =
     | 'SHIPMENT_FAILED'
     | 'RECEIVED'
     | 'INSPECTION_FAILED'
-    | 'REFUND_PENDING';
+    | 'REFUND_PENDING'
+    | 'REFUND_FAILED'
+    | 'REFUNDED';
 export type OrderReturnReason =
     | 'DAMAGED'
     | 'WRONG_ITEM'
@@ -246,6 +253,8 @@ export interface OrderReturnResponse {
     returnShippingFinalizedAt: string | null;
     customerReturnShippingReceivableAmount: string;
     reviewNote: string | null;
+    shipmentFailureNote: string | null;
+    refundFailureNote: string | null;
     inspectionPassed: boolean | null;
     inspectionNote: string | null;
     inspectedAt: string | null;

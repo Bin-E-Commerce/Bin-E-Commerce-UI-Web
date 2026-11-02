@@ -17,7 +17,8 @@ interface SellerOrderCardProps {
     legacyImages: ReadonlyMap<string, string | null>;
 }
 
-// Giữ card là vùng mở chi tiết; phương thức thanh toán hiển thị gọn ở header, không gắn nhãn riêng cho Sandbox.
+// Giữ card mở được chi tiết và giữ snapshot đơn trong lịch sử shop.
+// Đơn đã hủy vẫn hiển thị giá trị lúc đặt để đối chiếu, nhưng không gọi số đó là doanh thu.
 export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
     // Ưu tiên fulfillment stage vì đây là trạng thái vận hành mà Seller cần xử lý.
     const lifecycleStatus = order.fulfillmentStatus ?? order.status;
@@ -95,8 +96,17 @@ export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
 
                 <div className="flex shrink-0 items-center justify-between gap-5 sm:justify-end">
                     <div className="text-left sm:text-right">
-                        <p className="text-xs text-zinc-500">Doanh thu shop</p>
-                        <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-950 sm:text-base">
+                        <p className="text-xs text-zinc-500">
+                            {isCancelled
+                                ? 'Giá trị sản phẩm lúc đặt'
+                                : 'Doanh thu shop'}
+                        </p>
+                        <p
+                            className={cn(
+                                'mt-0.5 text-sm font-bold tabular-nums sm:text-base',
+                                isCancelled ? 'text-zinc-500' : 'text-zinc-950',
+                            )}
+                        >
                             {formatSellerMoney(order.shopItemTotal)}
                         </p>
                     </div>

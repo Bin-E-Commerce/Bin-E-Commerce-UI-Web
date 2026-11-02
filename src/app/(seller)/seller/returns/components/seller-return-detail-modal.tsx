@@ -52,6 +52,8 @@ function getReturnLabel(value: string): string {
         RECEIVED: 'Chờ kiểm tra hàng',
         INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
         REFUND_PENDING: 'Đã kiểm tra đạt · Chờ hoàn tiền',
+        REFUND_FAILED: 'Chuyển khoản hoàn lỗi · cần xử lý lại',
+        REFUNDED: 'Đã hoàn tiền',
     };
 
     return labels[value] ?? value;
@@ -340,6 +342,26 @@ export function SellerReturnDetailModal({
                                             </p>
                                             <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-amber-900">
                                                 {request.reviewNote}
+                                            </p>
+                                        </div>
+                                    ) : null}
+                                    {request.shipmentFailureNote ? (
+                                        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-4">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-red-700">
+                                                Vận chuyển hoàn gặp lỗi
+                                            </p>
+                                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-red-900">
+                                                {request.shipmentFailureNote}
+                                            </p>
+                                        </div>
+                                    ) : null}
+                                    {request.refundFailureNote ? (
+                                        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-4">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-red-700">
+                                                Chuyển khoản hoàn gặp lỗi
+                                            </p>
+                                            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-red-900">
+                                                {request.refundFailureNote}
                                             </p>
                                         </div>
                                     ) : null}

@@ -27,6 +27,7 @@ import { SellerWithdrawalsSection } from '../withdrawals/SellerWithdrawalsSectio
 import { WithdrawalDialog } from '../withdrawals/WithdrawalDialog';
 import type { AdminFinanceWithdrawalActionInput } from '../../types/payouts/seller-withdrawals.types';
 import { CodRemittanceSection } from '../cod-remittance/CodRemittanceSection';
+import { RefundQueueSection } from '../refunds/RefundQueueSection';
 import { FINANCE_TABLE_PAGE_SIZE } from '../../constants/finance-pagination.constant';
 
 // Trang giữ số liệu tài chính tóm tắt ở đầu và dùng tab để tránh xếp chồng các bảng dài.
@@ -256,7 +257,7 @@ export function AdminFinancePageClient() {
                     {/* Cho list tự cao theo các trigger để active tab không tràn khỏi nền khi dùng dạng grid. */}
                     <TabsList
                         aria-label="Danh sách giao dịch tài chính"
-                        className="group-data-horizontal/tabs:h-auto grid h-auto w-full grid-cols-3 items-stretch gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/80 p-1.5 shadow-sm"
+                        className="group-data-horizontal/tabs:h-auto grid h-auto w-full grid-cols-2 items-stretch gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/80 p-1.5 shadow-sm sm:grid-cols-4"
                     >
                         <TabsTrigger
                             value="withdrawals"
@@ -272,6 +273,16 @@ export function AdminFinancePageClient() {
                                     {withdrawalsQuery.data.total}
                                 </span>
                             ) : null}
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="refunds"
+                            className="h-12 min-w-0 flex-col gap-1.5 rounded-lg px-2 text-center text-xs font-medium text-zinc-600 transition-colors hover:bg-white/70 hover:text-zinc-950 data-active:border-zinc-200 data-active:bg-white data-active:text-zinc-950 data-active:shadow-sm sm:h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-sm"
+                        >
+                            <RefreshCw
+                                className="size-4 shrink-0"
+                                aria-hidden="true"
+                            />
+                            <span className="truncate">Hoàn tiền</span>
                         </TabsTrigger>
                         <TabsTrigger
                             value="cod"
@@ -315,6 +326,9 @@ export function AdminFinancePageClient() {
                     </TabsContent>
                     <TabsContent value="cod" keepMounted className="mt-0">
                         <CodRemittanceSection />
+                    </TabsContent>
+                    <TabsContent value="refunds" keepMounted className="mt-0">
+                        <RefundQueueSection />
                     </TabsContent>
                     <TabsContent value="ledger" className="mt-0">
                         <PlatformLedgerSection

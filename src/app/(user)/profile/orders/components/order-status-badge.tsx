@@ -1,3 +1,4 @@
+// Hiển thị nhãn trạng thái dùng chung cho danh sách và chi tiết đơn; màu sắc chỉ phản ánh trạng thái, không quyết định nghiệp vụ.
 import { cn } from '@/lib/utils';
 import type { CustomerOrderStatus } from '@/services/order';
 
@@ -11,7 +12,7 @@ const STATUS_LABELS: Record<CustomerOrderStatus, string> = {
 const STATUS_STYLES: Record<CustomerOrderStatus, string> = {
     PENDING: 'bg-amber-50 text-amber-700 ring-amber-200',
     CONFIRMED: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-    CANCELLED: 'bg-zinc-100 text-zinc-600 ring-zinc-200',
+    CANCELLED: 'bg-red-50 text-red-700 ring-red-200',
     FAILED: 'bg-red-50 text-red-700 ring-red-200',
 };
 
