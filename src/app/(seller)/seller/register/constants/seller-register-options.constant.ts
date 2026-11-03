@@ -1,5 +1,6 @@
+// Tùy chọn hồ sơ đăng ký shop; danh mục ngân hàng dùng chung để mã bank không bị lệch giữa các luồng.
 import type { SellerComboboxOption } from '../components/shared/SellerCombobox';
-export { BANK_OPTIONS } from '@/app/(seller)/seller/banking/constants/bank-options.constant';
+export { BANK_OPTIONS } from '@/constants/bank-options.constant';
 
 export const BUSINESS_MODEL_OPTIONS: SellerComboboxOption[] = [
     {

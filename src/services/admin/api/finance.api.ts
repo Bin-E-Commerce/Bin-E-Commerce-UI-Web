@@ -12,6 +12,7 @@ import type {
     AdminPayoutReadiness,
     AdminFinanceRefund,
     AdminFinanceDeliveryIssue,
+    AdminRefundRecipientAccountInput,
 } from '@/services/admin/types/finance.types';
 
 const financeUrl = `${API_BASE_URL}${API_VERSION}/admin/finance`;
@@ -117,13 +118,11 @@ export async function resolveAdminDeliveryIssue(
     );
 }
 
-// Xác nhận tiền đã chuyển bên ngoài rồi gửi bằng chứng; amount lấy nguyên từ API.
+// Xác nhận tiền đã chuyển; amount lấy nguyên từ snapshot do API trả về.
 export async function confirmAdminRefund(input: {
     sourceType: AdminFinanceRefund['sourceType'];
     id: string;
     amount: string;
-    reference: string;
-    proof: Record<string, unknown>;
 }): Promise<void> {
     const pathBySource = {
         PAYMENT_ATTEMPT: 'payment-attempts',
@@ -134,9 +133,18 @@ export async function confirmAdminRefund(input: {
         `${financeUrl}/refunds/${pathBySource[input.sourceType]}/${input.id}/confirmation`,
         {
             amount: input.amount,
-            reference: input.reference,
-            proof: input.proof,
         },
+    );
+}
+
+// Lưu tài khoản nhận đã được admin xác minh cho khoản Pay2S đang chờ hoặc cần thử lại.
+export async function updateAdminRefundRecipientAccount(input: {
+    paymentAttemptId: string;
+    account: AdminRefundRecipientAccountInput;
+}): Promise<void> {
+    await authorizedAxios.patch(
+        `${financeUrl}/refunds/payment-attempts/${input.paymentAttemptId}/recipient-account`,
+        input.account,
     );
 }
 

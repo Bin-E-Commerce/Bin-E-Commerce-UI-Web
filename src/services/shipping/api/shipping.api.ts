@@ -79,6 +79,22 @@ export async function createSellerReturnShipment(
     return response.data;
 }
 
+// Lấy vận đơn hoàn của một yêu cầu; 404 chỉ nghĩa là Seller chưa tạo vận đơn.
+export async function getSellerReturnShipment(
+    returnId: string,
+): Promise<ShipmentResponse | null> {
+    try {
+        const response = await authorizedAxios.get<ShipmentResponse>(
+            `${SELLER_ORDERS}/returns/${returnId}/shipment`,
+        );
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404)
+            return null;
+        throw error;
+    }
+}
+
 // Lấy shipment của seller hiện tại; 404 chỉ nghĩa là shop chưa tạo vận đơn.
 export async function getSellerShipment(
     orderId: string,

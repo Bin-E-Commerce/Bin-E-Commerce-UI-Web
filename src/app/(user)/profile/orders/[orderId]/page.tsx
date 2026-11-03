@@ -295,6 +295,9 @@ export default function ProfileOrderDetailPage() {
     const canCancel =
         order.status === 'CONFIRMED' &&
         (!order.fulfillmentStatus || order.fulfillmentStatus === 'TO_SHIP');
+    // Chỉ yêu cầu thông tin nhận hoàn khi Pay2S đã xác nhận thu tiền; đơn COD hoặc chưa thanh toán không cần nhập.
+    const requiresRefundBankAccount =
+        order.paymentMethod === 'PAY2S' && order.paymentStatus === 'PAID';
     // Chỉ hiện lối tắt xác nhận khi card nghiệp vụ có thể xuất hiện cho đơn vừa được giao.
     const showDeliveryConfirmation =
         order.fulfillmentStatus === 'DELIVERED' &&
@@ -368,10 +371,11 @@ export default function ProfileOrderDetailPage() {
                             {canCancel ? (
                                 <CancelOrderDialog
                                     loading={cancelMutation.isPending}
-                                    onConfirm={async (reason) => {
-                                        await cancelMutation.mutateAsync(
-                                            reason,
-                                        );
+                                    requiresRefundBankAccount={
+                                        requiresRefundBankAccount
+                                    }
+                                    onConfirm={async (input) => {
+                                        await cancelMutation.mutateAsync(input);
                                     }}
                                 />
                             ) : null}

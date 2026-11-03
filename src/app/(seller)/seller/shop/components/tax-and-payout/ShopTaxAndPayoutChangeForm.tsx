@@ -1,3 +1,4 @@
+// Biểu mẫu thay đổi thông tin thuế và tài khoản nhận tiền của shop; danh mục ngân hàng dùng chung để giữ mã nhất quán.
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +10,7 @@ import { SellerCombobox } from '@/app/(seller)/seller/register/components/shared
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { BANK_OPTIONS } from '@/app/(seller)/seller/banking/constants/bank-options.constant';
+import { BANK_OPTIONS } from '@/constants/bank-options.constant';
 import { cn } from '@/lib/utils';
 import type { ShopProfileDto } from '@/services/seller';
 import {

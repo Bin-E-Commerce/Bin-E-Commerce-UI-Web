@@ -97,8 +97,20 @@ export interface AdminFinanceRefund {
     amount: string;
     reason: string;
     providerTransactionId: string | null;
+    refundBankCode: string | null;
+    refundBankName: string | null;
+    refundAccountHolder: string | null;
+    refundAccountNumber: string | null;
     refundFailureNote: string | null;
     createdAt: string;
+}
+
+// Thông tin tài khoản đã được admin xác minh với khách để nhận tiền hoàn Pay2S.
+export interface AdminRefundRecipientAccountInput {
+    bankCode: string;
+    bankName: string;
+    accountHolder: string;
+    accountNumber: string;
 }
 
 // Khiếu nại chưa nhận hàng chờ admin phân xử; evidence chỉ chứa URL đã upload và loại media.

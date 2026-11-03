@@ -31,17 +31,17 @@ import {
     listSellerReturns,
     reviewSellerReturn,
 } from '@/services/order';
-import { createSellerReturnShipment } from '@/services/shipping';
+import {
+    createSellerReturnShipment,
+    getSellerReturnShipment,
+    type ShipmentResponse,
+} from '@/services/shipping';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { SellerReturnDetailModal } from './seller-return-detail-modal';
 import { SellerReturnRejectDialog } from './seller-return-reject-dialog';
 
 type ReturnQueueFilter =
-    | 'ALL'
-    | 'REQUESTED'
-    | 'AWAITING_SHIPMENT'
-    | 'RECEIVED'
-    | 'RESOLVED';
+    'ALL' | 'REQUESTED' | 'AWAITING_SHIPMENT' | 'RECEIVED' | 'RESOLVED';
 
 const ACTIONABLE_STATUSES = new Set([
     'REQUESTED',
@@ -70,6 +70,26 @@ function getReturnStatusLabel(status: string): string {
     };
 
     return labels[status] ?? status;
+}
+
+// Đổi status carrier sang nhãn đúng chiều hoàn để không mô tả kiện
+// như thể shop đang gửi hàng cho khách.
+function getReturnShipmentStatusLabel(
+    status: ShipmentResponse['status'],
+): string {
+    const labels: Record<ShipmentResponse['status'], string> = {
+        READY_TO_SHIP: 'Chờ khách gửi hàng',
+        PICKUP_ASSIGNED: 'Chờ shipper đến lấy hàng',
+        PICKED_UP: 'Shipper đã nhận hàng',
+        IN_TRANSIT: 'Đang hoàn về shop',
+        DELIVERED: 'Đã giao hàng',
+        FAILED: 'Vận chuyển lỗi',
+        CANCELLED: 'Vận đơn đã hủy',
+        RETURNING: 'Đang hoàn về shop',
+        RETURNED: 'Shop đã nhận hàng',
+    };
+
+    return labels[status];
 }
 
 // Lọc queue theo nhóm thao tác để Seller tập trung xử lý việc cần làm trước.
@@ -111,7 +131,8 @@ function getReturnReasonLabel(reason: string): string {
     return labels[reason] ?? reason;
 }
 
-// Điều phối query, bộ lọc và các mutation xử lý hoàn hàng trong workspace riêng của Seller.
+// Điều phối queue và cache vận đơn để thao tác tạo shipment cập nhật card ngay.
+// Cache hiển thị response POST tức thì; GET khôi phục dữ liệu sau khi tải lại.
 export function SellerReturnsPageContent() {
     const queryClient = useQueryClient();
     const [filter, setFilter] = useState<ReturnQueueFilter>('ALL');
@@ -161,7 +182,21 @@ export function SellerReturnsPageContent() {
     });
     const shipmentMutation = useMutation({
         mutationFn: createSellerReturnShipment,
-        onSuccess: () => invalidateReturnQueries(queryClient),
+        // Hủy GET đang bay trước khi ghi kết quả POST, tránh response 404 cũ
+        // ghi đè shipment vừa tạo trong cache.
+        onSuccess: async (shipment) => {
+            if (shipment.returnRequestId) {
+                const shipmentQueryKey = [
+                    'seller-return-shipment',
+                    shipment.returnRequestId,
+                ];
+                await queryClient.cancelQueries({
+                    queryKey: shipmentQueryKey,
+                });
+                queryClient.setQueryData(shipmentQueryKey, shipment);
+            }
+            invalidateReturnQueries(queryClient);
+        },
     });
     const items = returnsQuery.data ?? [];
     const actionableCount = items.filter((item) =>
@@ -498,7 +533,7 @@ interface SellerReturnRequestCardProps {
     onViewDetails: () => void;
 }
 
-// Hiển thị thông tin request và chỉ mở đúng action tương ứng với trạng thái hiện tại.
+// Hiển thị request và shipment đã lưu; nút tạo chỉ xuất hiện khi chưa có vận đơn.
 function SellerReturnRequestCard({
     item,
     reviewPending,
@@ -512,6 +547,19 @@ function SellerReturnRequestCard({
     const [otherReasonPayer, setOtherReasonPayer] = useState<
         'CUSTOMER' | 'SELLER' | ''
     >('');
+    // Chỉ đọc shipment cho request chờ khách gửi; trạng thái khác không cần
+    // thêm request mạng.
+    const returnShipmentQuery = useQuery({
+        queryKey: ['seller-return-shipment', item.id],
+        queryFn: () => getSellerReturnShipment(item.id),
+        enabled: item.status === 'AWAITING_SHIPMENT',
+        staleTime: 15_000,
+    });
+    const returnShipment = returnShipmentQuery.data;
+    const canRetryReturnShipment =
+        item.status === 'SHIPMENT_FAILED' ||
+        returnShipment?.status === 'FAILED' ||
+        returnShipment?.status === 'CANCELLED';
     return (
         <article className="grid gap-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-8">
             <div className="min-w-0">
@@ -706,9 +754,7 @@ function SellerReturnRequestCard({
                         </Button>
                     </>
                 ) : null}
-                {['AWAITING_SHIPMENT', 'SHIPMENT_FAILED'].includes(
-                    item.status,
-                ) ? (
+                {item.status === 'SHIPMENT_FAILED' ? (
                     <Button
                         variant="ghost"
                         type="button"
@@ -717,10 +763,74 @@ function SellerReturnRequestCard({
                         onClick={onCreateShipment}
                     >
                         <PackageCheck className="size-4" />
-                        {item.status === 'SHIPMENT_FAILED'
-                            ? 'Tạo lại vận đơn hoàn'
-                            : 'Tạo vận đơn hoàn'}
+                        Tạo lại vận đơn hoàn
                     </Button>
+                ) : null}
+                {item.status === 'AWAITING_SHIPMENT' ? (
+                    returnShipmentQuery.isPending ? (
+                        <span className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-zinc-100 px-3 text-xs font-medium text-zinc-600 sm:w-64">
+                            Đang kiểm tra vận đơn...
+                        </span>
+                    ) : returnShipmentQuery.isError ? (
+                        <Button
+                            variant="ghost"
+                            type="button"
+                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 transition hover:border-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                            disabled={returnShipmentQuery.isFetching}
+                            onClick={() => void returnShipmentQuery.refetch()}
+                        >
+                            <RefreshCw className="size-3.5" />
+                            Tải lại trạng thái vận đơn
+                        </Button>
+                    ) : returnShipment ? (
+                        <>
+                            <div className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 sm:w-64">
+                                <div className="flex items-center gap-2 text-zinc-800">
+                                    <PackageCheck
+                                        className="size-4 shrink-0"
+                                        aria-hidden="true"
+                                    />
+                                    <p className="text-xs font-semibold">
+                                        Vận đơn hoàn đã tạo
+                                    </p>
+                                </div>
+                                <p className="mt-1 text-xs text-zinc-600">
+                                    {getReturnShipmentStatusLabel(
+                                        returnShipment.status,
+                                    )}
+                                </p>
+                                <p className="mt-1 break-all text-xs text-zinc-500">
+                                    Mã vận đơn:{' '}
+                                    <span className="font-semibold text-zinc-800">
+                                        {returnShipment.trackingCode}
+                                    </span>
+                                </p>
+                            </div>
+                            {canRetryReturnShipment ? (
+                                <Button
+                                    variant="ghost"
+                                    type="button"
+                                    className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                                    disabled={shipmentPending}
+                                    onClick={onCreateShipment}
+                                >
+                                    <PackageCheck className="size-4" />
+                                    Tạo lại vận đơn hoàn
+                                </Button>
+                            ) : null}
+                        </>
+                    ) : (
+                        <Button
+                            variant="ghost"
+                            type="button"
+                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                            disabled={shipmentPending}
+                            onClick={onCreateShipment}
+                        >
+                            <PackageCheck className="size-4" />
+                            Tạo vận đơn hoàn
+                        </Button>
+                    )
                 ) : null}
                 {item.status === 'IN_TRANSIT' ? (
                     <span className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-zinc-100 px-3 text-xs font-semibold text-zinc-700 sm:w-auto">

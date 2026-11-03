@@ -6,10 +6,13 @@
 import { useEffect, useState } from 'react';
 import {
     AlertCircle,
+    CalendarDays,
     CheckCircle2,
+    CircleDollarSign,
     ImagePlus,
     RotateCcw,
     SkipForward,
+    Truck,
     Upload,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -131,7 +134,9 @@ function createLocalMediaPreviews(
     ];
 }
 
-// Quản lý yêu cầu hoàn; phần chọn sản phẩm giữ đủ chiều rộng và form được trình bày gọn trên cùng card.
+// Quản lý yêu cầu hoàn và cập nhật danh sách sau các thao tác của khách hàng.
+// Phần tóm tắt giữ nguyên số tiền/ai chịu phí từ API, đồng thời phân biệt rõ ước tính với số đã chốt.
+// UI dùng tông trung tính và màu trạng thái tiết chế để thông tin tài chính dễ quét trên desktop lẫn mobile.
 export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     const queryClient = useQueryClient();
     const returnsQuery = useQuery({
@@ -311,7 +316,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                     </p>
                 </div>
             </div>
-            <div className="border-b border-blue-100 bg-blue-50/70 px-4 py-3 text-xs leading-5 text-blue-950 sm:px-5">
+            <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-3 text-xs leading-5 text-zinc-700 sm:px-5">
                 Gửi yêu cầu trong vòng 7 ngày kể từ khi đơn hoàn tất. Phí GHN
                 đang hiển thị là ước tính, chưa bị thu; phí thực tế chỉ chốt khi
                 hãng vận chuyển nhận kiện. Lỗi hàng shop chịu phí, đổi ý khách
@@ -319,193 +324,245 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
             </div>
             {returnsQuery.data?.length ? (
                 <div className="space-y-3 border-b border-zinc-100 px-5 py-4 sm:px-6">
-                    {returnsQuery.data.map((item) => (
-                        <div
-                            key={item.id}
-                            className="rounded-2xl bg-zinc-50 px-4 py-3"
-                        >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-sm font-semibold text-zinc-950">
+                    {returnsQuery.data.map((item) => {
+                        // Chỉ dùng số hoàn cuối cùng khi vận chuyển đã chốt;
+                        // trước thời điểm đó luôn ghi nhãn dự kiến.
+                        const isRejected = item.status === 'REJECTED';
+                        const isShippingFinalized = Boolean(
+                            item.returnShippingFinalizedAt,
+                        );
+                        const isFailure = [
+                            'SHIPMENT_FAILED',
+                            'REFUND_FAILED',
+                            'INSPECTION_FAILED',
+                        ].includes(item.status);
+                        const refundAmount = Number(
+                            isRejected
+                                ? 0
+                                : isShippingFinalized
+                                  ? item.refundAmount
+                                  : item.estimatedRefundAmount,
+                        );
+                        const shippingAmount = Number(
+                            isShippingFinalized
+                                ? item.returnShippingCost
+                                : item.returnShippingEstimatedCost,
+                        );
+                        // Yêu cầu bị từ chối không thu phí; các yêu cầu còn lại
+                        // thể hiện người chịu phí theo quyết định hiện tại.
+                        const shippingPayerLabel = isRejected
+                            ? 'Không thu phí'
+                            : item.returnShippingPayer === 'CUSTOMER'
+                              ? isShippingFinalized
+                                  ? 'Khách chịu phí'
+                                  : 'Khách dự kiến chịu phí'
+                              : item.returnShippingPayer === 'SELLER'
+                                ? 'Shop chịu phí'
+                                : 'Shop đang phân loại';
+                        const statusTone =
+                            isRejected || isFailure
+                                ? 'border-red-200 bg-red-50 text-red-700'
+                                : item.status === 'REQUESTED'
+                                  ? 'border-amber-200 bg-amber-50 text-amber-800'
+                                  : item.status === 'REFUNDED'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                    : 'border-zinc-200 bg-zinc-50 text-zinc-700';
+
+                        return (
+                            <article
+                                key={item.id}
+                                className="rounded-2xl border border-zinc-200 bg-white p-3.5 shadow-sm sm:p-4"
+                            >
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                                         <span
-                                            className={
-                                                item.status ===
-                                                    'SHIPMENT_FAILED' ||
-                                                item.status === 'REFUND_FAILED'
-                                                    ? 'font-semibold text-red-700'
-                                                    : undefined
-                                            }
+                                            className={`inline-flex h-7 items-center rounded-full border px-3 text-xs font-semibold ${statusTone}`}
                                         >
                                             {statusLabel(item.status)}
                                         </span>
-                                    </p>
-                                    <p className="mt-1 text-xs text-zinc-500">
-                                        {item.status === 'REJECTED'
-                                            ? 'Không phát sinh hoàn tiền'
-                                            : item.returnShippingFinalizedAt
-                                              ? 'Hoàn cuối cùng'
-                                              : 'Hoàn dự kiến'}{' '}
+                                    </div>
+                                    {item.status === 'REQUESTED' ? (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="h-8 rounded-lg border-zinc-200 bg-white px-3 text-xs text-zinc-700 hover:bg-zinc-50"
+                                            disabled={cancelMutation.isPending}
+                                            onClick={() =>
+                                                cancelMutation.mutate(item.id)
+                                            }
+                                        >
+                                            Hủy yêu cầu
+                                        </Button>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
+                                            <CalendarDays
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            <time dateTime={item.updatedAt}>
+                                                {new Date(
+                                                    item.updatedAt,
+                                                ).toLocaleDateString('vi-VN')}
+                                            </time>
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                    <div className="min-w-0 rounded-xl border border-zinc-100 bg-zinc-50/80 p-3">
+                                        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                                            <CircleDollarSign
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            {isRejected
+                                                ? 'Không phát sinh hoàn tiền'
+                                                : isShippingFinalized
+                                                  ? 'Hoàn thực tế'
+                                                  : 'Hoàn dự kiến'}
+                                        </p>
+                                        <p className="mt-1 text-lg font-bold leading-6 tracking-tight text-zinc-950">
+                                            {refundAmount.toLocaleString(
+                                                'vi-VN',
+                                            )}{' '}
+                                            đ
+                                        </p>
+                                    </div>
+
+                                    <div className="min-w-0 rounded-xl border border-zinc-100 bg-zinc-50/80 p-3">
+                                        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                                            <Truck
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            {isRejected
+                                                ? 'Phí hoàn hàng dự kiến (không thu)'
+                                                : `Phí hoàn hàng ${isShippingFinalized ? 'thực tế' : 'dự kiến'}`}
+                                        </p>
+                                        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                            <p className="text-base font-semibold leading-6 text-zinc-900">
+                                                {shippingAmount.toLocaleString(
+                                                    'vi-VN',
+                                                )}{' '}
+                                                đ
+                                            </p>
+                                            <span className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                                                {shippingPayerLabel}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {Number(
+                                    item.customerReturnShippingReceivableAmount ??
+                                        0,
+                                ) > 0 ? (
+                                    <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                                        Phí khách còn phải trả (chưa thu):{' '}
                                         {Number(
-                                            item.status === 'REJECTED'
-                                                ? 0
-                                                : item.returnShippingFinalizedAt
-                                                  ? item.refundAmount
-                                                  : item.estimatedRefundAmount,
+                                            item.customerReturnShippingReceivableAmount,
                                         ).toLocaleString('vi-VN')}{' '}
                                         đ
                                     </p>
-                                    <p className="mt-1 text-xs text-zinc-500">
-                                        {item.status === 'REJECTED'
-                                            ? 'Phí hoàn hàng dự kiến (không thu)'
-                                            : `Phí hoàn hàng ${item.returnShippingFinalizedAt ? 'thực tế' : 'dự kiến'}`}{' '}
-                                        {Number(
-                                            item.returnShippingFinalizedAt
-                                                ? item.returnShippingCost
-                                                : item.returnShippingEstimatedCost,
-                                        ).toLocaleString('vi-VN')}{' '}
-                                        đ ·{' '}
-                                        {item.status === 'REJECTED'
-                                            ? 'không phát sinh phí vì yêu cầu đã bị từ chối'
-                                            : item.returnShippingPayer ===
-                                                'CUSTOMER'
-                                              ? item.returnShippingFinalizedAt
-                                                  ? 'khách chịu phí'
-                                                  : 'khách dự kiến chịu phí'
-                                              : item.returnShippingPayer ===
-                                                  'SELLER'
-                                                ? 'shop chịu phí'
-                                                : 'shop đang phân loại'}
-                                    </p>
-                                    {Number(
-                                        item.customerReturnShippingReceivableAmount ??
-                                            0,
-                                    ) > 0 ? (
-                                        <p className="mt-1 text-xs font-medium text-amber-800">
-                                            Phí khách còn phải trả (ghi nhận,
-                                            chưa thu):{' '}
-                                            {Number(
-                                                item.customerReturnShippingReceivableAmount,
-                                            ).toLocaleString('vi-VN')}{' '}
-                                            đ
-                                        </p>
-                                    ) : null}
-                                </div>
-                                {item.status === 'REQUESTED' ? (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="h-8 rounded-lg bg-white text-xs"
-                                        disabled={cancelMutation.isPending}
-                                        onClick={() =>
-                                            cancelMutation.mutate(item.id)
-                                        }
-                                    >
-                                        Hủy yêu cầu
-                                    </Button>
-                                ) : (
-                                    <span className="text-xs text-zinc-500">
-                                        {new Date(
-                                            item.updatedAt,
-                                        ).toLocaleDateString('vi-VN')}
-                                    </span>
-                                )}
-                            </div>
-                            {(() => {
-                                const returnShipment = returnShipments.find(
-                                    (shipment) =>
-                                        shipment.returnRequestId === item.id,
-                                );
-                                if (!returnShipment) return null;
-                                const shipmentFinished = [
-                                    'RETURNED',
-                                    'CANCELLED',
-                                    'FAILED',
-                                ].includes(returnShipment.status);
-                                return (
-                                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2">
-                                        <div className="min-w-0 text-xs text-zinc-600">
-                                            <p className="font-semibold text-zinc-900">
-                                                Vận đơn hoàn
-                                            </p>
-                                            <p className="mt-1">
-                                                {returnShipment.statusLabel}
-                                            </p>
-                                        </div>
-                                        {!shipmentFinished &&
-                                        returnShipment.demoAdvancementEnabled ? (
-                                            <Button
-                                                type="button"
-                                                className="h-8 rounded-lg bg-zinc-950 px-3 text-xs text-white hover:bg-zinc-800"
-                                                disabled={
-                                                    advanceReturnDemoMutation.isPending
-                                                }
-                                                onClick={() =>
-                                                    advanceReturnDemoMutation.mutate(
-                                                        item.id,
-                                                    )
-                                                }
-                                            >
-                                                <SkipForward className="size-3.5" />
-                                                Bỏ qua bước demo
-                                            </Button>
-                                        ) : null}
-                                    </div>
-                                );
-                            })()}
-                            {item.evidence?.length ? (
-                                <div className="mt-3 border-t border-zinc-200/70 pt-3">
-                                    <p className="mb-2 text-xs font-medium text-zinc-500">
-                                        Media đã gửi
-                                    </p>
-                                    <div className="flex flex-wrap gap-3">
-                                        {mapReturnEvidenceToMedia(item).map(
-                                            (media, index) => (
-                                                <ImageLightboxThumbnail
-                                                    key={`${item.id}-evidence-${index}`}
-                                                    item={media}
-                                                    onClick={() =>
-                                                        setActiveMedia({
-                                                            items: mapReturnEvidenceToMedia(
-                                                                item,
-                                                            ),
-                                                            index,
-                                                        })
+                                ) : null}
+                                {(() => {
+                                    const returnShipment = returnShipments.find(
+                                        (shipment) =>
+                                            shipment.returnRequestId ===
+                                            item.id,
+                                    );
+                                    if (!returnShipment) return null;
+                                    const shipmentFinished = [
+                                        'RETURNED',
+                                        'CANCELLED',
+                                        'FAILED',
+                                    ].includes(returnShipment.status);
+                                    return (
+                                        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2">
+                                            <div className="min-w-0 text-xs text-zinc-600">
+                                                <p className="font-semibold text-zinc-900">
+                                                    Vận đơn hoàn
+                                                </p>
+                                                <p className="mt-1">
+                                                    {returnShipment.statusLabel}
+                                                </p>
+                                            </div>
+                                            {!shipmentFinished &&
+                                            returnShipment.demoAdvancementEnabled ? (
+                                                <Button
+                                                    type="button"
+                                                    className="h-8 rounded-lg bg-zinc-950 px-3 text-xs text-white hover:bg-zinc-800"
+                                                    disabled={
+                                                        advanceReturnDemoMutation.isPending
                                                     }
-                                                />
-                                            ),
-                                        )}
+                                                    onClick={() =>
+                                                        advanceReturnDemoMutation.mutate(
+                                                            item.id,
+                                                        )
+                                                    }
+                                                >
+                                                    <SkipForward className="size-3.5" />
+                                                    Bỏ qua bước demo
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    );
+                                })()}
+                                {item.evidence?.length ? (
+                                    <div className="mt-3 border-t border-zinc-200/70 pt-3">
+                                        <p className="mb-2 text-xs font-medium text-zinc-500">
+                                            Media đã gửi
+                                        </p>
+                                        <div className="flex flex-wrap gap-3">
+                                            {mapReturnEvidenceToMedia(item).map(
+                                                (media, index) => (
+                                                    <ImageLightboxThumbnail
+                                                        key={`${item.id}-evidence-${index}`}
+                                                        item={media}
+                                                        onClick={() =>
+                                                            setActiveMedia({
+                                                                items: mapReturnEvidenceToMedia(
+                                                                    item,
+                                                                ),
+                                                                index,
+                                                            })
+                                                        }
+                                                    />
+                                                ),
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ) : null}
-                            {item.status === 'REJECTED' ? (
-                                <div className="mt-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-3 text-sm text-zinc-700">
-                                    <p className="font-semibold text-red-900">
-                                        {item.reviewNote?.startsWith(
-                                            RETURN_SHIPPING_LIMIT_REJECTION_PREFIX,
-                                        )
-                                            ? 'Yêu cầu hoàn bị từ chối do phí GHN'
-                                            : 'Shop đã từ chối yêu cầu hoàn hàng'}
+                                ) : null}
+                                {item.status === 'REJECTED' ? (
+                                    <div className="mt-3 rounded-xl border border-red-100 bg-red-50/45 px-3 py-3 text-sm text-zinc-700">
+                                        <p className="font-semibold text-red-900">
+                                            {item.reviewNote?.startsWith(
+                                                RETURN_SHIPPING_LIMIT_REJECTION_PREFIX,
+                                            )
+                                                ? 'Yêu cầu hoàn bị từ chối do phí GHN'
+                                                : 'Shop đã từ chối yêu cầu hoàn hàng'}
+                                        </p>
+                                        <p className="mt-1 leading-5">
+                                            {item.reviewNote?.trim() ||
+                                                'Shop chưa bổ sung lý do từ chối.'}
+                                        </p>
+                                    </div>
+                                ) : null}
+                                {item.shipmentFailureNote ? (
+                                    <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
+                                        Vận chuyển hoàn gặp lỗi:{' '}
+                                        {item.shipmentFailureNote}
                                     </p>
-                                    <p className="mt-1 leading-5">
-                                        {item.reviewNote?.trim() ||
-                                            'Shop chưa bổ sung lý do từ chối.'}
+                                ) : null}
+                                {item.refundFailureNote ? (
+                                    <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
+                                        Chuyển khoản hoàn gặp lỗi:{' '}
+                                        {item.refundFailureNote}
                                     </p>
-                                </div>
-                            ) : null}
-                            {item.shipmentFailureNote ? (
-                                <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
-                                    Vận chuyển hoàn gặp lỗi:{' '}
-                                    {item.shipmentFailureNote}
-                                </p>
-                            ) : null}
-                            {item.refundFailureNote ? (
-                                <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-800">
-                                    Chuyển khoản hoàn gặp lỗi:{' '}
-                                    {item.refundFailureNote}
-                                </p>
-                            ) : null}
-                        </div>
-                    ))}
+                                ) : null}
+                            </article>
+                        );
+                    })}
                 </div>
             ) : null}
             {canCreate &&

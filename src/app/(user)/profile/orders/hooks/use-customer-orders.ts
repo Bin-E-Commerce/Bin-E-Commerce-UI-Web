@@ -16,6 +16,7 @@ import {
     listOrders,
     type CustomerOrderListItem,
     type CustomerOrderFilter,
+    type CancelOrderInput,
 } from '@/services/order';
 import { useOrderProductImages } from '@/hooks/orders/use-order-product-images';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -77,7 +78,7 @@ export function useCancelCustomerOrder(orderId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (reason?: string) => cancelOrder(orderId, reason),
+        mutationFn: (input: CancelOrderInput) => cancelOrder(orderId, input),
         onSuccess: async (order) => {
             queryClient.setQueryData(['customer-order', orderId], order);
             await queryClient.invalidateQueries({

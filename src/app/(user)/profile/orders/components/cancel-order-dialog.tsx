@@ -1,12 +1,24 @@
 'use client';
 
-// File này quản lý nút và hộp thoại xác nhận hủy đơn COD của Customer.
+// File này quản lý hộp thoại hủy đơn Customer và thông tin nhận hoàn khi Pay2S đã thu tiền.
 
 import { useState } from 'react';
 import { Check, LoaderCircle, XCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { BANK_OPTIONS } from '@/constants/bank-options.constant';
+import type { CancelOrderInput } from '@/services/order/types/cancel-order.types';
+import type { CancelOrderDialogProps } from '../types/cancel-order-dialog.types';
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -16,11 +28,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-type CancelOrderDialogProps = {
-    loading: boolean;
-    onConfirm: (reason?: string) => Promise<void>;
-};
 
 // Chọn lựa nhanh giúp Customer hoàn tất lý do hủy bằng một lần chạm trên mobile hoặc desktop.
 function QuickReasonOption({
@@ -55,16 +62,23 @@ function QuickReasonOption({
 // Hộp thoại hủy đơn cho phép chọn lý do có sẵn, nhập thêm ghi chú và chờ API hoàn tất trước khi đóng.
 export function CancelOrderDialog({
     loading,
+    requiresRefundBankAccount,
     onConfirm,
 }: CancelOrderDialogProps) {
     const [open, setOpen] = useState(false);
     const [selectedReason, setSelectedReason] = useState('');
     const [reason, setReason] = useState('');
+    const [bankCode, setBankCode] = useState('');
+    const [accountHolder, setAccountHolder] = useState('');
+    const [accountNumber, setAccountNumber] = useState('');
 
-    // Reset lựa chọn cũ khi Customer đóng dialog để lần mở tiếp theo luôn bắt đầu sạch và dễ hiểu.
+    // Xóa cả lý do lẫn tài khoản nhạy cảm khi dialog đóng để không giữ dữ liệu ngoài lượt xác nhận hiện tại.
     function resetForm() {
         setSelectedReason('');
         setReason('');
+        setBankCode('');
+        setAccountHolder('');
+        setAccountNumber('');
     }
 
     // Chọn lý do có sẵn sẽ dùng trực tiếp làm reason; lựa chọn Khác mở vùng nhập chi tiết riêng.
@@ -75,8 +89,34 @@ export function CancelOrderDialog({
 
     // Gửi lý do đã chọn hoặc nội dung tùy chọn, chỉ đóng dialog sau khi mutation xác nhận thành công.
     async function confirm() {
-        const normalizedReason = reason.trim() || undefined;
-        await onConfirm(normalizedReason);
+        const selectedBank = BANK_OPTIONS.find(
+            (option) => option.value === bankCode,
+        );
+        const normalizedAccountHolder = accountHolder.trim();
+        const normalizedAccountNumber = accountNumber.trim();
+        // Không gửi yêu cầu hủy khi tài khoản nhận hoàn chưa đủ; backend vẫn xác minh trạng thái và dữ liệu lần cuối.
+        if (
+            requiresRefundBankAccount &&
+            (!selectedBank ||
+                normalizedAccountHolder.length < 2 ||
+                !/^\d{6,30}$/.test(normalizedAccountNumber))
+        ) {
+            return;
+        }
+        const input: CancelOrderInput = {
+            ...(reason.trim() ? { reason: reason.trim() } : {}),
+            ...(requiresRefundBankAccount
+                ? {
+                      refundBankAccount: {
+                          bankCode,
+                          bankName: selectedBank!.label,
+                          accountHolder: normalizedAccountHolder,
+                          accountNumber: normalizedAccountNumber,
+                      },
+                  }
+                : {}),
+        };
+        await onConfirm(input);
         setOpen(false);
         resetForm();
     }
@@ -179,12 +219,12 @@ export function CancelOrderDialog({
 
                         {selectedReason === 'Khác' ? (
                             <div>
-                                <label
+                                <Label
                                     htmlFor="cancel-reason"
                                     className="text-sm font-semibold text-zinc-950"
                                 >
                                     Mô tả thêm
-                                </label>
+                                </Label>
                                 <Textarea
                                     id="cancel-reason"
                                     value={reason}
@@ -204,6 +244,94 @@ export function CancelOrderDialog({
                                 </div>
                             </div>
                         ) : null}
+
+                        {requiresRefundBankAccount ? (
+                            <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                                <div>
+                                    <p className="text-sm font-semibold text-zinc-950">
+                                        Tài khoản nhận lại tiền
+                                    </p>
+                                    <p className="mt-1 text-xs leading-5 text-zinc-600">
+                                        Đơn đã thanh toán qua Pay2S. Admin sẽ
+                                        dùng thông tin này để chuyển khoản hoàn
+                                        tiền sau khi kiểm tra.
+                                    </p>
+                                </div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="grid gap-1.5 sm:col-span-2">
+                                        <Label htmlFor="refund-bank-name">
+                                            Ngân hàng
+                                        </Label>
+                                        <Select
+                                            value={bankCode}
+                                            onValueChange={(value) => {
+                                                // Lưu mã ngân hàng chuẩn cùng nhãn để QR admin không phải suy đoán từ chuỗi tự nhập.
+                                                setBankCode(value ?? '');
+                                            }}
+                                        >
+                                            <SelectTrigger
+                                                id="refund-bank-name"
+                                                className="h-10 w-full rounded-xl border-zinc-200 bg-white"
+                                            >
+                                                <SelectValue placeholder="Chọn ngân hàng nhận tiền" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {BANK_OPTIONS.map((option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid gap-1.5 sm:col-span-2">
+                                        <Label htmlFor="refund-account-holder">
+                                            Tên chủ tài khoản
+                                        </Label>
+                                        <Input
+                                            id="refund-account-holder"
+                                            autoComplete="name"
+                                            maxLength={100}
+                                            value={accountHolder}
+                                            onChange={(event) => {
+                                                // Giữ tên chủ tài khoản trong giới hạn schema để không gửi dữ liệu bị cắt ngầm ở server.
+                                                setAccountHolder(
+                                                    event.target.value.slice(
+                                                        0,
+                                                        100,
+                                                    ),
+                                                );
+                                            }}
+                                            placeholder="Tên in trên tài khoản ngân hàng"
+                                        />
+                                    </div>
+                                    <div className="grid gap-1.5 sm:col-span-2">
+                                        <Label htmlFor="refund-account-number">
+                                            Số tài khoản
+                                        </Label>
+                                        <Input
+                                            id="refund-account-number"
+                                            inputMode="numeric"
+                                            autoComplete="off"
+                                            maxLength={30}
+                                            value={accountNumber}
+                                            onChange={(event) => {
+                                                // Chuẩn hóa số tài khoản chỉ còn chữ số để chấp nhận thao tác dán có khoảng trắng hoặc dấu phân cách.
+                                                setAccountNumber(
+                                                    event.target.value
+                                                        .replace(/\D/g, '')
+                                                        .slice(0, 30),
+                                                );
+                                            }}
+                                            placeholder="Nhập từ 6 đến 30 chữ số"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
 
                     <AlertDialogFooter className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 sm:px-7">
@@ -215,7 +343,13 @@ export function CancelOrderDialog({
                         </AlertDialogCancel>
                         <Button
                             variant="destructive"
-                            disabled={loading}
+                            disabled={
+                                loading ||
+                                (requiresRefundBankAccount &&
+                                    (!bankCode ||
+                                        accountHolder.trim().length < 2 ||
+                                        !/^\d{6,30}$/.test(accountNumber)))
+                            }
                             onClick={() => void confirm()}
                             className="h-10 cursor-pointer rounded-xl px-4 text-sm shadow-sm"
                         >

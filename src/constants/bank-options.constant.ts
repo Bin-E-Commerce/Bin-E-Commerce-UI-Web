@@ -1,10 +1,10 @@
+// Danh mục ngân hàng dùng chung cho việc nhập tài khoản nhận và hiển thị tài khoản chuyển tiền.
 export interface BankOption {
     value: string;
     label: string;
 }
 
-// Dùng chung danh mục demo cho onboarding và đổi tài khoản.
-// Danh sách này không xác nhận khả năng chi hộ của một cổng thanh toán.
+// Mã value phải ổn định vì được lưu cùng tài khoản và dùng để dựng VietQR ở phía trình duyệt.
 export const BANK_OPTIONS: BankOption[] = [
     { value: 'vietcombank', label: 'Vietcombank' },
     { value: 'techcombank', label: 'Techcombank' },

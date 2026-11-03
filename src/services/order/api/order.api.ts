@@ -7,6 +7,7 @@ import type {
     CreateCodOrderInput,
     OrderResponse,
 } from '@/app/(public)/checkout/types/checkout.types';
+import type { CancelOrderInput } from '@/services/order/types/cancel-order.types';
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
 const PAY2S_RETURN = `${API_BASE_URL}${API_VERSION}/payments/pay2s/return`;
@@ -35,11 +36,7 @@ export async function verifyPay2sReturn(
 }
 
 export type DeliveryIssueReason =
-    | 'NOT_RECEIVED'
-    | 'DAMAGED'
-    | 'WRONG_ITEM'
-    | 'MISSING_ITEM'
-    | 'OTHER';
+    'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
 
 export interface DeliveryConfirmationInput {
     decision: 'RECEIVED' | 'ISSUE';
@@ -198,15 +195,30 @@ export async function listOrders(
     return response.data;
 }
 
-// Hủy order COD; backend là nơi quyết định trạng thái và release tồn kho.
+// Hủy order; backend quyết định trạng thái, tồn kho và có yêu cầu thông tin nhận hoàn hay không.
 export async function cancelOrder(
     orderId: string,
-    reason?: string,
+    input: CancelOrderInput = {},
 ): Promise<OrderResponse> {
     const response = await authorizedAxios.post<OrderResponse>(
         `${ORDERS}/${orderId}/cancel`,
         {
-            ...(reason?.trim() ? { reason: reason.trim() } : {}),
+            ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
+            ...(input.refundBankAccount
+                ? {
+                      refundBankAccount: {
+                          // Gửi mã chuẩn để Order Service lưu đúng định danh ngân hàng cho bước hoàn tiền.
+                          bankCode: input.refundBankAccount.bankCode
+                              .trim()
+                              .toLowerCase(),
+                          bankName: input.refundBankAccount.bankName.trim(),
+                          accountHolder:
+                              input.refundBankAccount.accountHolder.trim(),
+                          accountNumber:
+                              input.refundBankAccount.accountNumber.trim(),
+                      },
+                  }
+                : {}),
         },
     );
     return response.data;
