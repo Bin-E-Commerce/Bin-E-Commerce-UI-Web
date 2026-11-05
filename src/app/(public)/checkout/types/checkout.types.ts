@@ -1,6 +1,7 @@
 // File này chứa các type trình bày của checkout, tách khỏi entity và DTO backend.
 
 import type { UserAddress } from '@/services/auth';
+import type { RefundBankAccountInput } from '@/services/order/types/cancel-order.types';
 
 // Input form checkout được hook chuyển thành request Order API có idempotency key.
 // Phương thức được chọn chỉ ảnh hưởng điều hướng; backend vẫn tự chốt giá và tổng tiền.
@@ -70,6 +71,7 @@ export interface OrderResponse {
     > & { label?: string };
     items: OrderItemResponse[];
     cancelReason: string | null;
+    refundBankAccount?: RefundBankAccountInput | null;
     cancelledAt: string | null;
     statusHistory: OrderStatusHistoryResponse[];
     warnings: string[];

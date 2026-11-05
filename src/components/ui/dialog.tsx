@@ -46,18 +46,20 @@ function DialogOverlay({
     );
 }
 
-// Ghép portal, overlay và popup; nút đóng luôn có nhãn trợ năng rõ ràng.
+// Ghép portal, overlay và popup; hỗ trợ đổi tone nền theo ngữ cảnh và giữ nút đóng có nhãn trợ năng.
 function DialogContent({
     className,
+    overlayClassName,
     children,
     showCloseButton = true,
     ...props
 }: DialogPrimitive.Popup.Props & {
+    overlayClassName?: string;
     showCloseButton?: boolean;
 }) {
     return (
         <DialogPortal>
-            <DialogOverlay />
+            <DialogOverlay className={overlayClassName} />
             <DialogPrimitive.Popup
                 data-slot="dialog-content"
                 className={cn(

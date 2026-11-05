@@ -14,12 +14,30 @@ import {
     cancelOrder,
     getOrder,
     listOrders,
+    updateCancellationDetails,
     type CustomerOrderListItem,
     type CustomerOrderFilter,
     type CancelOrderInput,
 } from '@/services/order';
+import { authService } from '@/services/auth';
 import { useOrderProductImages } from '@/hooks/orders/use-order-product-images';
+import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getRefundBankAccountQueryKey } from '../../hooks/useRefundBankAccount';
+
+// Lưu hồ sơ sau khi đơn đã được cập nhật; lỗi hồ sơ không được làm giao diện báo nhầm rằng thao tác order thất bại.
+async function syncRefundBankAccountToProfile(
+    input: CancelOrderInput,
+): Promise<boolean | null> {
+    if (!input.refundBankAccount) return null;
+
+    try {
+        await authService.updateRefundBankAccount(input.refundBankAccount);
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 // Query danh sách giữ dữ liệu trang trước trong lúc chuyển trang để giao diện không bị nhấp nháy.
 export function useCustomerOrders(
@@ -73,18 +91,69 @@ export function useCustomerOrder(orderId: string, enabled = true) {
     });
 }
 
-// Mutation hủy đơn làm mới cả detail và mọi biến thể list filter của Customer.
+// Hủy đơn trước, sau đó lưu cùng tài khoản vào hồ sơ; lỗi đồng bộ hồ sơ được báo riêng vì order đã commit.
 export function useCancelCustomerOrder(orderId: string) {
     const queryClient = useQueryClient();
+    // Cache tài khoản nhận hoàn phải theo chủ tài khoản, cùng key với trang hồ sơ.
+    const userId = useAppSelector((state) => state.auth.user?.id ?? '');
 
     return useMutation({
-        mutationFn: (input: CancelOrderInput) => cancelOrder(orderId, input),
-        onSuccess: async (order) => {
+        mutationFn: async (input: CancelOrderInput) => {
+            const order = await cancelOrder(orderId, input);
+            const accountSaved = await syncRefundBankAccountToProfile(input);
+            return { order, accountSaved };
+        },
+        onSuccess: async ({ order, accountSaved }, input) => {
             queryClient.setQueryData(['customer-order', orderId], order);
+            if (accountSaved && input.refundBankAccount) {
+                queryClient.setQueryData(
+                    getRefundBankAccountQueryKey(userId),
+                    input.refundBankAccount,
+                );
+            }
             await queryClient.invalidateQueries({
                 queryKey: ['customer-orders'],
             });
-            toast.success('Đã hủy đơn hàng.');
+            toast.success('Đã gửi yêu cầu hủy đơn hàng.');
+            if (accountSaved === false) {
+                toast.error(
+                    'Đơn đã hủy nhưng tài khoản chưa được lưu vào hồ sơ. Bạn có thể bấm “Chỉnh sửa thông tin hủy” để lưu lại.',
+                );
+            }
+        },
+        onError: (error) => toast.error(getErrorMessage(error)),
+    });
+}
+
+// Cập nhật snapshot lý do/tài khoản của đơn đã hủy và đồng bộ tài khoản mặc định để lần sau được điền sẵn.
+export function useUpdateCustomerCancellation(orderId: string) {
+    const queryClient = useQueryClient();
+    // Đơn và hồ sơ được cập nhật riêng, nhưng cache vẫn phải thuộc đúng user đang đăng nhập.
+    const userId = useAppSelector((state) => state.auth.user?.id ?? '');
+
+    return useMutation({
+        mutationFn: async (input: CancelOrderInput) => {
+            const order = await updateCancellationDetails(orderId, input);
+            const accountSaved = await syncRefundBankAccountToProfile(input);
+            return { order, accountSaved };
+        },
+        onSuccess: async ({ order, accountSaved }, input) => {
+            queryClient.setQueryData(['customer-order', orderId], order);
+            if (accountSaved && input.refundBankAccount) {
+                queryClient.setQueryData(
+                    getRefundBankAccountQueryKey(userId),
+                    input.refundBankAccount,
+                );
+            }
+            await queryClient.invalidateQueries({
+                queryKey: ['customer-orders'],
+            });
+            toast.success('Đã cập nhật thông tin hủy đơn.');
+            if (accountSaved === false) {
+                toast.error(
+                    'Thông tin đơn đã cập nhật nhưng chưa lưu được tài khoản vào hồ sơ. Hãy thử lưu lại.',
+                );
+            }
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });

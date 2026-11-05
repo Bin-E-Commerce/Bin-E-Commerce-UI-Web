@@ -4,41 +4,19 @@
 
 'use client';
 
-import type { ReactNode } from 'react';
-
 import { cn } from '@/lib/utils';
+import type {
+    LifecycleStep,
+    OrderLifecycleMode,
+    OrderLifecycleStage,
+    OrderLifecycleStepperProps,
+} from '@/common/orders/types/order-lifecycle-stepper.types';
+import type {
+    LegacyOrderStatus,
+    LifecycleState,
+} from '@/common/orders/types/order-lifecycle-stepper.types';
 import type { OrderReturnStatus } from '@/services/order';
 import type { ShipmentStatus } from '@/services/shipping';
-
-type OrderLifecycleStage =
-    | 'TO_SHIP'
-    | 'SHIPPING'
-    | 'DELIVERED'
-    | 'COMPLETED'
-    | 'CANCELLED'
-    | 'DELIVERY_FAILED'
-    | 'RETURN_REFUND';
-
-type LegacyOrderStatus = 'PENDING' | 'CONFIRMED' | 'FAILED' | 'CANCELLED';
-type OrderLifecycleMode = 'customer' | 'seller';
-type LifecycleState = 'complete' | 'current' | 'upcoming';
-
-interface OrderLifecycleStepperProps {
-    mode: OrderLifecycleMode;
-    currentStage?: OrderLifecycleStage | null;
-    legacyStatus?: LegacyOrderStatus | string | null;
-    cancelledAt?: string | null;
-    cancelReason?: string | null;
-    shipmentStatus?: ShipmentStatus | null;
-    returnStatus?: OrderReturnStatus | null;
-    actionSlot?: ReactNode;
-}
-
-interface LifecycleStep {
-    key: string;
-    title: string;
-    description: string;
-}
 
 const CUSTOMER_STEPS: LifecycleStep[] = [
     {
@@ -261,14 +239,16 @@ function getProgressMessage(
     return 'Shop sẽ cập nhật hành trình và mã vận đơn khi đơn được bàn giao cho đơn vị vận chuyển.';
 }
 
-// Hiển thị tiến trình trong card gọn; actionSlot vẫn nằm cạnh thông điệp để CTA không bị tách khỏi trạng thái.
-// Component chỉ nhận snapshot trạng thái, không gọi API hay tự thay đổi đơn hàng.
+// Hiển thị tiến trình và snapshot trạng thái; cancelActionSlot chỉ xuất hiện trong card hủy đơn phía Customer.
+// Component không gọi API hay tự phân quyền, tài khoản nhận hoàn được mask trước khi đưa lên giao diện.
 export function OrderLifecycleStepper({
     mode,
     currentStage,
     legacyStatus,
     cancelledAt,
     cancelReason,
+    cancelRefundBankAccount,
+    cancelActionSlot,
     shipmentStatus,
     returnStatus,
     actionSlot,
@@ -508,9 +488,7 @@ export function OrderLifecycleStepper({
                             <p
                                 className={cn(
                                     'text-sm font-semibold',
-                                    isCancelled
-                                        ? 'text-red-900'
-                                        : 'text-black',
+                                    isCancelled ? 'text-red-900' : 'text-black',
                                 )}
                             >
                                 {terminalTitle}
@@ -534,6 +512,51 @@ export function OrderLifecycleStepper({
                                         {cancelReason?.trim() ||
                                             'Chưa có lý do hủy được cung cấp.'}
                                     </p>
+                                </div>
+                            ) : null}
+                            {isCancelled && cancelRefundBankAccount ? (
+                                <div className="mt-3 rounded-xl border border-red-200/70 bg-white px-3.5 py-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-red-700">
+                                        Tài khoản nhận hoàn
+                                    </p>
+                                    <dl className="mt-2 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+                                        <div>
+                                            <dt className="text-slate-500">
+                                                Ngân hàng
+                                            </dt>
+                                            <dd className="mt-0.5 font-semibold text-slate-900">
+                                                {
+                                                    cancelRefundBankAccount.bankName
+                                                }
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-slate-500">
+                                                Chủ tài khoản
+                                            </dt>
+                                            <dd className="mt-0.5 font-semibold text-slate-900">
+                                                {
+                                                    cancelRefundBankAccount.accountHolder
+                                                }
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-slate-500">
+                                                Số tài khoản
+                                            </dt>
+                                            <dd className="mt-0.5 font-semibold tracking-wide text-slate-900">
+                                                ••••{' '}
+                                                {cancelRefundBankAccount.accountNumber.slice(
+                                                    -4,
+                                                )}
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                            ) : null}
+                            {isCancelled && cancelActionSlot ? (
+                                <div className="mt-3 flex justify-end">
+                                    {cancelActionSlot}
                                 </div>
                             ) : null}
                             {cancelledAt ? (

@@ -224,6 +224,34 @@ export async function cancelOrder(
     return response.data;
 }
 
+// Cập nhật lý do và tài khoản của đơn đã hủy; Order Service kiểm tra quyền sở hữu và trạng thái hoàn tiền.
+export async function updateCancellationDetails(
+    orderId: string,
+    input: CancelOrderInput,
+): Promise<OrderResponse> {
+    const response = await authorizedAxios.put<OrderResponse>(
+        `${ORDERS}/${orderId}/cancellation`,
+        {
+            ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
+            ...(input.refundBankAccount
+                ? {
+                      refundBankAccount: {
+                          bankCode: input.refundBankAccount.bankCode
+                              .trim()
+                              .toLowerCase(),
+                          bankName: input.refundBankAccount.bankName.trim(),
+                          accountHolder:
+                              input.refundBankAccount.accountHolder.trim(),
+                          accountNumber:
+                              input.refundBankAccount.accountNumber.trim(),
+                      },
+                  }
+                : {}),
+        },
+    );
+    return response.data;
+}
+
 export type OrderReturnStatus =
     | 'REQUESTED'
     | 'CUSTOMER_CANCELLED'

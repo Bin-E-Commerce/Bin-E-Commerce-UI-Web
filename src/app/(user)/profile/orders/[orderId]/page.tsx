@@ -33,6 +33,7 @@ import {
     useCancelCustomerOrder,
     useCustomerOrder,
     useMissingProductImages,
+    useUpdateCustomerCancellation,
 } from '../hooks/use-customer-orders';
 import { CancelOrderDialog } from '../components/cancel-order-dialog';
 import { CustomerShipmentPanel } from '@/common/shipping';
@@ -184,7 +185,7 @@ function getCustomerReturnStatus(
         : requestStatus;
 }
 
-// Trang ưu tiên tiến trình đơn, tách rõ ba khu vực chi tiết và gợi ý đánh giá sau khi server xác nhận COMPLETED.
+// Trang ưu tiên tiến trình đơn, cho Customer sửa yêu cầu hủy khi khoản hoàn còn chờ xử lý.
 // Bố cục co từ một cột sang hai rồi ba cột để thông tin vẫn dễ quét ở màn hình nhỏ.
 // Phương thức ở phần thanh toán chỉ nêu Pay2S/COD, tránh lặp trạng thái đã hiển thị trên đầu trang.
 export default function ProfileOrderDetailPage() {
@@ -193,6 +194,7 @@ export default function ProfileOrderDetailPage() {
     const orderId = params.orderId;
     const orderQuery = useCustomerOrder(orderId);
     const cancelMutation = useCancelCustomerOrder(orderId);
+    const updateCancellationMutation = useUpdateCustomerCancellation(orderId);
     const trackingStage =
         orderQuery.data?.fulfillmentStatus ?? orderQuery.data?.status;
     const trackingEnabled =
@@ -298,6 +300,12 @@ export default function ProfileOrderDetailPage() {
     // Chỉ yêu cầu thông tin nhận hoàn khi Pay2S đã xác nhận thu tiền; đơn COD hoặc chưa thanh toán không cần nhập.
     const requiresRefundBankAccount =
         order.paymentMethod === 'PAY2S' && order.paymentStatus === 'PAID';
+    const canEditCancellation =
+        order.status === 'CANCELLED' && order.paymentStatus !== 'REFUNDED';
+    const requiresRefundBankAccountForEdit =
+        order.paymentMethod === 'PAY2S' &&
+        (order.paymentStatus === 'PAID' ||
+            order.paymentStatus === 'REFUND_PENDING');
     // Chỉ hiện lối tắt xác nhận khi card nghiệp vụ có thể xuất hiện cho đơn vừa được giao.
     const showDeliveryConfirmation =
         order.fulfillmentStatus === 'DELIVERED' &&
@@ -396,6 +404,29 @@ export default function ProfileOrderDetailPage() {
                         legacyStatus={order.status}
                         cancelledAt={order.cancelledAt}
                         cancelReason={order.cancelReason}
+                        cancelRefundBankAccount={order.refundBankAccount}
+                        cancelActionSlot={
+                            canEditCancellation ? (
+                                <CancelOrderDialog
+                                    loading={
+                                        updateCancellationMutation.isPending
+                                    }
+                                    mode="edit"
+                                    initialReason={order.cancelReason}
+                                    initialRefundBankAccount={
+                                        order.refundBankAccount
+                                    }
+                                    requiresRefundBankAccount={
+                                        requiresRefundBankAccountForEdit
+                                    }
+                                    onConfirm={async (input) => {
+                                        await updateCancellationMutation.mutateAsync(
+                                            input,
+                                        );
+                                    }}
+                                />
+                            ) : undefined
+                        }
                         shipmentStatus={shipmentStatus}
                         returnStatus={customerReturnStatus}
                     />
@@ -559,26 +590,6 @@ export default function ProfileOrderDetailPage() {
                                             : 'COD'}
                                     </span>
                                 </div>
-                                {order.cancelledAt ? (
-                                    <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-800">
-                                        <p className="font-semibold text-red-900">
-                                            Đơn hàng đã hủy
-                                        </p>
-                                        <p className="mt-1">
-                                            Đã hủy lúc{' '}
-                                            {formatDate(order.cancelledAt)}
-                                        </p>
-                                        <div className="mt-2 border-t border-red-200 pt-2">
-                                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-red-700">
-                                                Lý do hủy đơn hàng
-                                            </p>
-                                            <p className="mt-1 text-sm leading-5 text-red-900">
-                                                {order.cancelReason?.trim() ||
-                                                    'Chưa có lý do hủy được cung cấp.'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ) : null}
                             </div>
                         </section>
 

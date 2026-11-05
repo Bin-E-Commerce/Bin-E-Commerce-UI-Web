@@ -1,9 +1,16 @@
+// File này quản lý giao diện hủy đơn và thu thập thông tin nhận hoàn khi đơn đã thanh toán.
+// Trạng thái đơn và mutation thuộc feature đơn hàng; component chỉ kiểm tra đầu vào và chuyển dữ liệu qua callback.
+
 'use client';
 
-// File này quản lý hộp thoại hủy đơn Customer và thông tin nhận hoàn khi Pay2S đã thu tiền.
-
-import { useState } from 'react';
-import { Check, LoaderCircle, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+    Check,
+    CreditCard,
+    LoaderCircle,
+    PencilLine,
+    XCircle,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,28 +24,66 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { BANK_OPTIONS } from '@/constants/bank-options.constant';
+import { useAppSelector } from '@/store/hooks';
 import type { CancelOrderInput } from '@/services/order/types/cancel-order.types';
-import type { CancelOrderDialogProps } from '../types/cancel-order-dialog.types';
+import type {
+    CancelOrderDialogProps,
+    QuickReasonOptionProps,
+} from '../types/cancel-order-dialog.types';
+import { useSavedRefundBankAccount } from '../../hooks/useRefundBankAccount';
 import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+
+// Tên chủ tài khoản nhận chữ Unicode, khoảng trắng và ba dấu thường có trong tên ngân hàng lưu.
+const REFUND_ACCOUNT_HOLDER_PATTERN =
+    /^\p{L}[\p{L}\p{M}]*(?:[ .'-][\p{L}\p{M}]+)*$/u;
+
+// Chuẩn hóa Unicode, gom khoảng trắng và viết hoa trước khi hiển thị/lưu tên.
+// Không tự xóa ký tự sai để người dùng thấy lỗi và sửa thay vì gửi nhầm tên khác.
+function normalizeRefundAccountHolder(value: string): string {
+    return value
+        .normalize('NFC')
+        .trim()
+        .replace(/\s+/gu, ' ')
+        .toLocaleUpperCase('vi-VN');
+}
+
+// Kiểm tra đúng giới hạn và tập ký tự trước khi cho phép gửi tài khoản hoàn.
+function isValidRefundAccountHolder(value: string): boolean {
+    const normalized = normalizeRefundAccountHolder(value);
+    return (
+        normalized.length >= 2 &&
+        normalized.length <= 100 &&
+        REFUND_ACCOUNT_HOLDER_PATTERN.test(normalized)
+    );
+}
+
+// Giữ lựa chọn quick reason khi mở sửa; lý do tự nhập được đưa về mục Khác để hiện lại trong textarea.
+function getReasonSelection(reason: string | null | undefined): string {
+    if (!reason) return '';
+    return [
+        'Tôi đặt nhầm sản phẩm',
+        'Muốn thay đổi thông tin nhận hàng',
+        'Muốn đổi phương thức thanh toán',
+        'Tìm được sản phẩm tốt hơn',
+        'Không còn nhu cầu mua',
+    ].includes(reason)
+        ? reason
+        : 'Khác';
+}
 
 // Chọn lựa nhanh giúp Customer hoàn tất lý do hủy bằng một lần chạm trên mobile hoặc desktop.
 function QuickReasonOption({
     value,
     selected,
     onSelect,
-}: {
-    value: string;
-    selected: boolean;
-    onSelect: (value: string) => void;
-}) {
+}: QuickReasonOptionProps) {
     return (
         <Button
             variant="ghost"
@@ -59,46 +104,111 @@ function QuickReasonOption({
     );
 }
 
-// Hộp thoại hủy đơn cho phép chọn lý do có sẵn, nhập thêm ghi chú và chờ API hoàn tất trước khi đóng.
+// Dùng chung form cho gửi yêu cầu và sửa yêu cầu đã hủy; luôn prefill từ snapshot của đơn khi đang sửa.
+// Khi tạo mới, dữ liệu hồ sơ chỉ được áp dụng nếu người dùng chưa bắt đầu sửa form; mọi kiểm tra vẫn được backend xác nhận.
 export function CancelOrderDialog({
     loading,
     requiresRefundBankAccount,
+    mode = 'cancel',
+    initialReason,
+    initialRefundBankAccount,
     onConfirm,
 }: CancelOrderDialogProps) {
+    const isEditing = mode === 'edit';
     const [open, setOpen] = useState(false);
     const [selectedReason, setSelectedReason] = useState('');
     const [reason, setReason] = useState('');
     const [bankCode, setBankCode] = useState('');
     const [accountHolder, setAccountHolder] = useState('');
+    const [accountHolderTouched, setAccountHolderTouched] = useState(false);
     const [accountNumber, setAccountNumber] = useState('');
+    const [accountEdited, setAccountEdited] = useState(false);
+    // Ràng buộc query hồ sơ với user hiện tại để tránh dùng nhầm cache sau khi đổi tài khoản.
+    const userId = useAppSelector((state) => state.auth.user?.id ?? '');
+    const savedBankAccountQuery = useSavedRefundBankAccount(
+        open && !isEditing && requiresRefundBankAccount,
+        userId,
+    );
+    const normalizedAccountHolder = normalizeRefundAccountHolder(accountHolder);
+    const isAccountHolderValid = isValidRefundAccountHolder(
+        normalizedAccountHolder,
+    );
+    const showAccountHolderError =
+        accountHolderTouched && !isAccountHolderValid;
 
-    // Xóa cả lý do lẫn tài khoản nhạy cảm khi dialog đóng để không giữ dữ liệu ngoài lượt xác nhận hiện tại.
+    // Chỉ áp dụng query hồ sơ đến trễ khi người dùng chưa chạm vào trường ngân hàng để tránh ghi đè dữ liệu đang nhập.
+    useEffect(() => {
+        const savedAccount = savedBankAccountQuery.data;
+        if (
+            !open ||
+            isEditing ||
+            !requiresRefundBankAccount ||
+            accountEdited ||
+            !savedAccount
+        ) {
+            return;
+        }
+        setBankCode(savedAccount.bankCode);
+        setAccountHolder(savedAccount.accountHolder);
+        setAccountNumber(savedAccount.accountNumber);
+    }, [
+        accountEdited,
+        isEditing,
+        open,
+        requiresRefundBankAccount,
+        savedBankAccountQuery.data,
+    ]);
+
+    // Xóa form khi đóng để không giữ dữ liệu nhạy cảm ngoài lượt làm việc hiện tại.
     function resetForm() {
         setSelectedReason('');
         setReason('');
         setBankCode('');
         setAccountHolder('');
+        setAccountHolderTouched(false);
         setAccountNumber('');
+        setAccountEdited(false);
     }
 
-    // Chọn lý do có sẵn sẽ dùng trực tiếp làm reason; lựa chọn Khác mở vùng nhập chi tiết riêng.
+    // Chọn lý do có sẵn sẽ dùng trực tiếp làm reason; ở chế độ sửa, textarea luôn giữ bản reason hiện tại.
     function selectReason(value: string) {
         setSelectedReason(value);
         setReason(value === 'Khác' ? '' : value);
     }
 
-    // Gửi lý do đã chọn hoặc nội dung tùy chọn, chỉ đóng dialog sau khi mutation xác nhận thành công.
+    // Mở form với snapshot của yêu cầu đang sửa hoặc tài khoản hồ sơ đã lưu cho yêu cầu hủy mới.
+    // Khi đóng, xóa dữ liệu nhạy cảm khỏi state; lúc đang gửi thì bỏ qua thao tác đóng để không mất trạng thái mutation.
+    function handleOpenChange(nextOpen: boolean) {
+        if (loading && !nextOpen) return;
+        if (nextOpen && !open) {
+            const startingAccount = isEditing
+                ? initialRefundBankAccount
+                : savedBankAccountQuery.data;
+            setSelectedReason(
+                isEditing ? getReasonSelection(initialReason) : '',
+            );
+            setReason(isEditing ? (initialReason ?? '') : '');
+            setBankCode(startingAccount?.bankCode ?? '');
+            setAccountHolder(startingAccount?.accountHolder ?? '');
+            setAccountNumber(startingAccount?.accountNumber ?? '');
+            setAccountHolderTouched(false);
+            setAccountEdited(false);
+        }
+        setOpen(nextOpen);
+        if (!nextOpen) resetForm();
+    }
+
+    // Gửi lý do và tài khoản đã chuẩn hóa; chỉ đóng form sau khi order đã được tạo hoặc cập nhật thành công.
     async function confirm() {
         const selectedBank = BANK_OPTIONS.find(
             (option) => option.value === bankCode,
         );
-        const normalizedAccountHolder = accountHolder.trim();
         const normalizedAccountNumber = accountNumber.trim();
         // Không gửi yêu cầu hủy khi tài khoản nhận hoàn chưa đủ; backend vẫn xác minh trạng thái và dữ liệu lần cuối.
         if (
             requiresRefundBankAccount &&
             (!selectedBank ||
-                normalizedAccountHolder.length < 2 ||
+                !isAccountHolderValid ||
                 !/^\d{6,30}$/.test(normalizedAccountNumber))
         ) {
             return;
@@ -121,26 +231,33 @@ export function CancelOrderDialog({
         resetForm();
     }
 
-    // Không cho đóng dialog giữa lúc request đang chạy để tránh Customer tưởng thao tác đã hoàn tất.
-    function handleOpenChange(nextOpen: boolean) {
-        if (loading && !nextOpen) return;
-        setOpen(nextOpen);
-        if (!nextOpen) resetForm();
-    }
-
     return (
         <>
             <Button
                 variant="outline"
                 className="group h-9 cursor-pointer gap-2 rounded-full border-zinc-200 bg-white px-3.5 text-xs font-semibold text-zinc-600 shadow-sm hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                onClick={() => setOpen(true)}
+                onClick={() => handleOpenChange(true)}
             >
-                <XCircle className="size-4 text-current" aria-hidden="true" />
-                Hủy đơn
+                {isEditing ? (
+                    <PencilLine
+                        className="size-4 text-current"
+                        aria-hidden="true"
+                    />
+                ) : (
+                    <XCircle
+                        className="size-4 text-current"
+                        aria-hidden="true"
+                    />
+                )}
+                {isEditing ? 'Chỉnh sửa thông tin hủy' : 'Hủy đơn'}
             </Button>
-            <AlertDialog open={open} onOpenChange={handleOpenChange}>
-                <AlertDialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-                    <AlertDialogHeader className="border-b border-zinc-100 bg-gradient-to-br from-red-50/70 via-white to-white px-6 py-6 text-left sm:px-7">
+            <Dialog open={open} onOpenChange={handleOpenChange}>
+                <DialogContent
+                    showCloseButton={false}
+                    overlayClassName="bg-black/45 backdrop-blur-sm"
+                    className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0 shadow-xl sm:max-w-lg"
+                >
+                    <DialogHeader className="shrink-0 border-b border-zinc-100 bg-gradient-to-br from-red-50/70 via-white to-white px-6 py-6 text-left sm:px-7">
                         <div className="flex items-start gap-3">
                             <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-500 ring-1 ring-red-100">
                                 <XCircle
@@ -149,18 +266,21 @@ export function CancelOrderDialog({
                                 />
                             </div>
                             <div className="pt-0.5">
-                                <AlertDialogTitle className="text-lg">
-                                    Hủy đơn hàng?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="mt-1.5 leading-5">
-                                    Vui lòng chọn lý do để chúng tôi cải thiện
-                                    trải nghiệm mua sắm của bạn.
-                                </AlertDialogDescription>
+                                <DialogTitle className="text-lg">
+                                    {isEditing
+                                        ? 'Cập nhật yêu cầu hủy'
+                                        : 'Hủy đơn hàng?'}
+                                </DialogTitle>
+                                <DialogDescription className="mt-1.5 leading-5">
+                                    {isEditing
+                                        ? 'Sửa lý do hoặc thông tin nhận hoàn. Thông tin đã lưu sẽ được cập nhật cho yêu cầu này.'
+                                        : 'Vui lòng chọn lý do để chúng tôi cải thiện trải nghiệm mua sắm của bạn.'}
+                                </DialogDescription>
                             </div>
                         </div>
-                    </AlertDialogHeader>
+                    </DialogHeader>
 
-                    <div className="space-y-6 px-6 py-6 sm:px-7">
+                    <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6 sm:px-7">
                         <div>
                             <p className="mb-3.5 text-sm font-semibold text-zinc-950">
                                 Vì sao bạn muốn hủy đơn?
@@ -217,13 +337,15 @@ export function CancelOrderDialog({
                             </div>
                         </div>
 
-                        {selectedReason === 'Khác' ? (
+                        {selectedReason === 'Khác' || isEditing ? (
                             <div>
                                 <Label
                                     htmlFor="cancel-reason"
                                     className="text-sm font-semibold text-zinc-950"
                                 >
-                                    Mô tả thêm
+                                    {isEditing
+                                        ? 'Lý do hủy đơn hàng'
+                                        : 'Mô tả thêm'}
                                 </Label>
                                 <Textarea
                                     id="cancel-reason"
@@ -234,7 +356,11 @@ export function CancelOrderDialog({
                                         )
                                     }
                                     maxLength={500}
-                                    placeholder="Chia sẻ thêm lý do hủy đơn của bạn..."
+                                    placeholder={
+                                        isEditing
+                                            ? 'Nhập lý do hủy đơn hàng'
+                                            : 'Chia sẻ thêm lý do hủy đơn của bạn...'
+                                    }
                                     className="mt-2 min-h-28 resize-none rounded-xl border-zinc-200 bg-white"
                                     autoFocus
                                 />
@@ -246,36 +372,76 @@ export function CancelOrderDialog({
                         ) : null}
 
                         {requiresRefundBankAccount ? (
-                            <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
-                                <div>
-                                    <p className="text-sm font-semibold text-zinc-950">
-                                        Tài khoản nhận lại tiền
-                                    </p>
-                                    <p className="mt-1 text-xs leading-5 text-zinc-600">
-                                        Đơn đã thanh toán qua Pay2S. Admin sẽ
-                                        dùng thông tin này để chuyển khoản hoàn
-                                        tiền sau khi kiểm tra.
-                                    </p>
+                            <section className="relative overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-50/60 p-4 shadow-sm ring-1 ring-amber-100/70 sm:p-5">
+                                <div
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full bg-amber-100/50 blur-2xl"
+                                />
+                                <div className="relative flex items-start gap-3">
+                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/80">
+                                        <CreditCard
+                                            className="size-5"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-sm font-semibold text-zinc-950">
+                                                Tài khoản nhận lại tiền
+                                            </p>
+                                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                                                Cần cung cấp
+                                            </span>
+                                        </div>
+                                        <p className="mt-1 text-xs leading-5 text-zinc-600">
+                                            Đơn đã thanh toán qua Pay2S. Admin
+                                            sẽ dùng thông tin này để chuyển
+                                            khoản hoàn tiền sau khi kiểm tra.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <div className="grid gap-1.5 sm:col-span-2">
-                                        <Label htmlFor="refund-bank-name">
-                                            Ngân hàng
+                                {!isEditing && savedBankAccountQuery.data ? (
+                                    <p className="relative mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
+                                        Tài khoản đã lưu trong hồ sơ được điền
+                                        sẵn. Bạn có thể chỉnh lại trước khi gửi.
+                                    </p>
+                                ) : null}
+                                {!isEditing && savedBankAccountQuery.isError ? (
+                                    <p className="relative mt-3 rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs leading-5 text-amber-800">
+                                        Chưa tải được tài khoản đã lưu; bạn vẫn
+                                        có thể nhập thông tin mới.
+                                    </p>
+                                ) : null}
+                                <div className="relative mt-5 grid gap-4">
+                                    <div className="grid gap-1.5">
+                                        <Label
+                                            htmlFor="refund-bank-name"
+                                            className="text-xs font-semibold text-zinc-700"
+                                        >
+                                            Ngân hàng{' '}
+                                            <span
+                                                aria-hidden="true"
+                                                className="text-red-600"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Select
                                             value={bankCode}
                                             onValueChange={(value) => {
                                                 // Lưu mã ngân hàng chuẩn cùng nhãn để QR admin không phải suy đoán từ chuỗi tự nhập.
                                                 setBankCode(value ?? '');
+                                                setAccountEdited(true);
                                             }}
                                         >
                                             <SelectTrigger
                                                 id="refund-bank-name"
-                                                className="h-10 w-full rounded-xl border-zinc-200 bg-white"
+                                                aria-required="true"
+                                                className="h-11 w-full rounded-xl border-zinc-200 bg-white shadow-sm transition-colors focus-visible:border-amber-400 focus-visible:ring-amber-300/30 data-[size=default]:h-11"
                                             >
                                                 <SelectValue placeholder="Chọn ngân hàng nhận tiền" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="max-h-64">
                                                 {BANK_OPTIONS.map((option) => (
                                                     <SelectItem
                                                         key={option.value}
@@ -287,37 +453,101 @@ export function CancelOrderDialog({
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="grid gap-1.5 sm:col-span-2">
-                                        <Label htmlFor="refund-account-holder">
-                                            Tên chủ tài khoản
+                                    <div className="grid gap-1.5">
+                                        <Label
+                                            htmlFor="refund-account-holder"
+                                            className="text-xs font-semibold text-zinc-700"
+                                        >
+                                            Tên chủ tài khoản{' '}
+                                            <span
+                                                aria-hidden="true"
+                                                className="text-red-600"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="refund-account-holder"
+                                            required
+                                            aria-invalid={
+                                                showAccountHolderError
+                                            }
+                                            aria-describedby={
+                                                showAccountHolderError
+                                                    ? 'refund-account-holder-hint refund-account-holder-error'
+                                                    : 'refund-account-holder-hint'
+                                            }
                                             autoComplete="name"
                                             maxLength={100}
                                             value={accountHolder}
+                                            className="h-11 rounded-xl border-zinc-200 bg-white shadow-sm transition-colors placeholder:text-zinc-400 focus-visible:border-amber-400 focus-visible:ring-amber-300/30"
                                             onChange={(event) => {
-                                                // Giữ tên chủ tài khoản trong giới hạn schema để không gửi dữ liệu bị cắt ngầm ở server.
+                                                // Giữ chữ người dùng nhập để báo lỗi thay vì âm thầm xóa ký tự có thể làm sai tên ngân hàng.
                                                 setAccountHolder(
                                                     event.target.value.slice(
                                                         0,
                                                         100,
                                                     ),
                                                 );
+                                                setAccountEdited(true);
+                                            }}
+                                            onBlur={(event) => {
+                                                // Chuẩn hóa khoảng trắng ở lúc rời trường, sau khi người dùng đã hoàn tất nhập tên.
+                                                setAccountHolder(
+                                                    normalizeRefundAccountHolder(
+                                                        event.target.value,
+                                                    ),
+                                                );
+                                                setAccountHolderTouched(true);
                                             }}
                                             placeholder="Tên in trên tài khoản ngân hàng"
                                         />
+                                        <p
+                                            id="refund-account-holder-hint"
+                                            className="text-xs text-zinc-500"
+                                        >
+                                            Nhập đúng tên ngân hàng hiển thị; hệ
+                                            thống chuẩn hóa chữ hoa và khoảng
+                                            trắng, đồng thời chấp nhận dấu chấm
+                                            (.), nháy đơn (&apos;) và gạch nối
+                                            (-) nếu tên có các dấu này.
+                                        </p>
+                                        {showAccountHolderError ? (
+                                            <p
+                                                id="refund-account-holder-error"
+                                                role="alert"
+                                                className="text-xs text-red-600"
+                                            >
+                                                {normalizedAccountHolder.length <
+                                                    2 ||
+                                                normalizedAccountHolder.length >
+                                                    100
+                                                    ? 'Tên chủ tài khoản phải có từ 2 đến 100 ký tự.'
+                                                    : "Chỉ dùng chữ cái, khoảng trắng, dấu chấm (.), dấu nháy đơn ('), hoặc dấu gạch nối (-). Hãy nhập đúng tên ngân hàng hiển thị."}
+                                            </p>
+                                        ) : null}
                                     </div>
-                                    <div className="grid gap-1.5 sm:col-span-2">
-                                        <Label htmlFor="refund-account-number">
-                                            Số tài khoản
+                                    <div className="grid gap-1.5">
+                                        <Label
+                                            htmlFor="refund-account-number"
+                                            className="text-xs font-semibold text-zinc-700"
+                                        >
+                                            Số tài khoản{' '}
+                                            <span
+                                                aria-hidden="true"
+                                                className="text-red-600"
+                                            >
+                                                *
+                                            </span>
                                         </Label>
                                         <Input
                                             id="refund-account-number"
+                                            required
                                             inputMode="numeric"
                                             autoComplete="off"
                                             maxLength={30}
                                             value={accountNumber}
+                                            className="h-11 rounded-xl border-zinc-200 bg-white shadow-sm transition-colors placeholder:text-zinc-400 focus-visible:border-amber-400 focus-visible:ring-amber-300/30"
                                             onChange={(event) => {
                                                 // Chuẩn hóa số tài khoản chỉ còn chữ số để chấp nhận thao tác dán có khoảng trắng hoặc dấu phân cách.
                                                 setAccountNumber(
@@ -325,29 +555,33 @@ export function CancelOrderDialog({
                                                         .replace(/\D/g, '')
                                                         .slice(0, 30),
                                                 );
+                                                setAccountEdited(true);
                                             }}
                                             placeholder="Nhập từ 6 đến 30 chữ số"
                                         />
                                     </div>
                                 </div>
-                            </div>
+                            </section>
                         ) : null}
                     </div>
 
-                    <AlertDialogFooter className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 sm:px-7">
-                        <AlertDialogCancel
+                    <DialogFooter className="mx-0 mb-0 shrink-0 border-t border-zinc-100 bg-zinc-50/50 px-6 py-4 sm:px-7">
+                        <Button
+                            type="button"
+                            variant="outline"
                             disabled={loading}
+                            onClick={() => handleOpenChange(false)}
                             className="h-10 cursor-pointer rounded-xl border-zinc-200 bg-white px-4 text-sm shadow-sm"
                         >
-                            Giữ lại đơn
-                        </AlertDialogCancel>
+                            {isEditing ? 'Đóng' : 'Giữ lại đơn'}
+                        </Button>
                         <Button
-                            variant="destructive"
+                            variant={isEditing ? 'default' : 'destructive'}
                             disabled={
                                 loading ||
                                 (requiresRefundBankAccount &&
                                     (!bankCode ||
-                                        accountHolder.trim().length < 2 ||
+                                        !isAccountHolderValid ||
                                         !/^\d{6,30}$/.test(accountNumber)))
                             }
                             onClick={() => void confirm()}
@@ -359,15 +593,17 @@ export function CancelOrderDialog({
                                         className="size-4 animate-spin"
                                         aria-hidden="true"
                                     />
-                                    Đang hủy...
+                                    {isEditing ? 'Đang lưu...' : 'Đang hủy...'}
                                 </>
+                            ) : isEditing ? (
+                                'Lưu thay đổi'
                             ) : (
                                 'Xác nhận hủy đơn'
                             )}
                         </Button>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
