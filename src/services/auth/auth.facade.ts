@@ -1,11 +1,18 @@
 // File này gom các Auth API thành facade ổn định cho các feature frontend.
 
+// Facade gom các API Auth theo contract ổn định để feature không phụ thuộc đường dẫn transport.
+
 import {
     changePassword,
     forgotPassword,
     resetPassword,
 } from './api/password.api';
-import { getMe, updateProfile } from './api/profile.api';
+import {
+    getMe,
+    getRefundBankAccount,
+    updateProfile,
+    updateRefundBankAccount,
+} from './api/profile.api';
 import { getViewer, login, refresh } from './api/login.api';
 import { logout } from './api/logout.api';
 import { registerInitiate, registerVerify } from './api/register.api';
@@ -23,7 +30,6 @@ import {
     updateAddress,
 } from './api/address.api';
 
-// Facade auth gom các endpoint theo một contract ổn định để UI không phải biết cấu trúc API nội bộ.
 export const authService = {
     login,
     refresh,
@@ -38,6 +44,8 @@ export const authService = {
     socialCallback,
     getMe,
     updateProfile,
+    getRefundBankAccount,
+    updateRefundBankAccount,
     getSessions,
     revokeSession,
     revokeOtherSessions,

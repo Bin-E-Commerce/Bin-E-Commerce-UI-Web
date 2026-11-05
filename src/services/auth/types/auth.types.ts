@@ -126,6 +126,14 @@ export interface UpdateProfilePayload {
     phone?: string | null;
 }
 
+// Tài khoản nhận hoàn mặc định chỉ được tải qua endpoint riêng của hồ sơ.
+export interface RefundBankAccountProfile {
+    bankCode: string;
+    bankName: string;
+    accountHolder: string;
+    accountNumber: string;
+}
+
 // Địa chỉ giao hàng dùng chung cho trang profile và checkout; Order Service sẽ snapshot lại khi tạo đơn.
 export interface UserAddress {
     id: string;

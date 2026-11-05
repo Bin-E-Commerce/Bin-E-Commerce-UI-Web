@@ -1,3 +1,4 @@
+// Trang tổng quan hồ sơ chỉ trình bày dữ liệu đã xác thực; chỉnh sửa được giao cho dialog riêng.
 'use client';
 
 import { Calendar, Mail, Phone, User } from 'lucide-react';
@@ -7,8 +8,10 @@ import { ProfileSidebar } from '@/components/layout/user/profile-sidebar';
 import type { RootState } from '@/store';
 
 import { getAvatarVariantUrls } from './avatar/utils/avatar-image';
+import { ProfileEditDialog } from './components/ProfileEditDialog';
+import { RefundBankAccountCard } from './components/RefundBankAccountCard';
 
-// Hiển thị thông tin tài khoản và dùng srcSet cho avatar để browser chọn đúng ảnh resize.
+// Hiển thị hồ sơ đồng bộ với Auth state, còn thay đổi dữ liệu được xác nhận qua Auth Service.
 export default function ProfilePage() {
     const { user } = useSelector((state: RootState) => state.auth);
 
@@ -58,59 +61,85 @@ export default function ProfilePage() {
                         </div>
                     </section>
 
-                    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                        <h2 className="mb-4 font-semibold text-zinc-900">
-                            Thông tin cá nhân
-                        </h2>
-                        <dl className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <User className="h-4 w-4 text-zinc-400" />
-                                <dt className="w-32 text-sm text-zinc-500">
-                                    Họ và tên
-                                </dt>
-                                <dd className="text-sm font-medium text-zinc-900">
-                                    {user.name}
-                                </dd>
+                    <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 className="font-semibold text-zinc-900">
+                                    Thông tin cá nhân
+                                </h2>
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    Quản lý tên và số điện thoại liên hệ của
+                                    bạn.
+                                </p>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <Mail className="h-4 w-4 text-zinc-400" />
-                                <dt className="w-32 text-sm text-zinc-500">
-                                    Email
-                                </dt>
-                                <dd className="text-sm font-medium text-zinc-900">
-                                    {user.email}
-                                </dd>
+                            <ProfileEditDialog
+                                user={{
+                                    name: user.name,
+                                    email: user.email,
+                                    phone: user.phone,
+                                }}
+                            />
+                        </div>
+
+                        <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+                            <div className="flex min-w-0 items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50/70 p-4">
+                                <User className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                <div className="min-w-0">
+                                    <dt className="text-xs font-medium text-zinc-500">
+                                        Họ và tên
+                                    </dt>
+                                    <dd className="mt-1 break-words text-sm font-medium text-zinc-900">
+                                        {user.name}
+                                    </dd>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <Phone className="h-4 w-4 text-zinc-400" />
-                                <dt className="w-32 text-sm text-zinc-500">
-                                    Điện thoại
-                                </dt>
-                                <dd className="text-sm font-medium text-zinc-900">
-                                    {user.phone ?? (
-                                        <span className="text-zinc-400">
-                                            Chưa cập nhật
-                                        </span>
-                                    )}
-                                </dd>
+                            <div className="flex min-w-0 items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50/70 p-4">
+                                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                <div className="min-w-0">
+                                    <dt className="text-xs font-medium text-zinc-500">
+                                        Email
+                                    </dt>
+                                    <dd className="mt-1 break-all text-sm font-medium text-zinc-900">
+                                        {user.email}
+                                    </dd>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <Calendar className="h-4 w-4 text-zinc-400" />
-                                <dt className="w-32 text-sm text-zinc-500">
-                                    Ngày tham gia
-                                </dt>
-                                <dd className="text-sm font-medium text-zinc-900">
-                                    {new Date(
-                                        user.createdAt,
-                                    ).toLocaleDateString('vi-VN', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    })}
-                                </dd>
+                            <div className="flex min-w-0 items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50/70 p-4">
+                                <Phone className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                <div className="min-w-0">
+                                    <dt className="text-xs font-medium text-zinc-500">
+                                        Điện thoại
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-medium text-zinc-900">
+                                        {user.phone || (
+                                            <span className="font-normal text-zinc-400">
+                                                Chưa cập nhật
+                                            </span>
+                                        )}
+                                    </dd>
+                                </div>
+                            </div>
+                            <div className="flex min-w-0 items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50/70 p-4">
+                                <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
+                                <div className="min-w-0">
+                                    <dt className="text-xs font-medium text-zinc-500">
+                                        Ngày tham gia
+                                    </dt>
+                                    <dd className="mt-1 text-sm font-medium text-zinc-900">
+                                        {new Date(
+                                            user.createdAt,
+                                        ).toLocaleDateString('vi-VN', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        })}
+                                    </dd>
+                                </div>
                             </div>
                         </dl>
                     </section>
+
+                    <RefundBankAccountCard userId={user.id} />
                 </main>
             </div>
         </div>
