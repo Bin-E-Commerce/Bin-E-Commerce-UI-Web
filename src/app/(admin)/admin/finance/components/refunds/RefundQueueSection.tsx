@@ -52,6 +52,8 @@ export function RefundQueueSection() {
         ],
         queryFn: () => getAdminRefunds(refundPage, FINANCE_TABLE_PAGE_SIZE),
         staleTime: 10_000,
+        refetchInterval: 5_000,
+        refetchIntervalInBackground: false,
     });
     const issuesQuery = useQuery({
         queryKey: ['admin-finance', 'delivery-issues'],

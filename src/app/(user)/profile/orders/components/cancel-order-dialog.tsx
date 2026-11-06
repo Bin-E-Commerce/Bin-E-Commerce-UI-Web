@@ -25,12 +25,13 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { BANK_OPTIONS } from '@/constants/bank-options.constant';
 import { useAppSelector } from '@/store/hooks';
+import type { RefundBankAccountProfile } from '@/services/auth';
 import type { CancelOrderInput } from '@/services/order/types/cancel-order.types';
 import type {
     CancelOrderDialogProps,
     QuickReasonOptionProps,
 } from '../types/cancel-order-dialog.types';
-import { useSavedRefundBankAccount } from '../../hooks/useRefundBankAccount';
+import { useSavedRefundBankAccounts } from '../../hooks/useRefundBankAccount';
 import {
     Dialog,
     DialogContent,
@@ -40,9 +41,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
-// Tên chủ tài khoản nhận chữ Unicode, khoảng trắng và ba dấu thường có trong tên ngân hàng lưu.
+// Tên chủ tài khoản chỉ nhận chữ Unicode và khoảng trắng giữa các phần tên.
 const REFUND_ACCOUNT_HOLDER_PATTERN =
-    /^\p{L}[\p{L}\p{M}]*(?:[ .'-][\p{L}\p{M}]+)*$/u;
+    /^\p{L}[\p{L}\p{M}]*(?: \p{L}[\p{L}\p{M}]*)*$/u;
+const EMPTY_REFUND_BANK_ACCOUNTS: RefundBankAccountProfile[] = [];
 
 // Chuẩn hóa Unicode, gom khoảng trắng và viết hoa trước khi hiển thị/lưu tên.
 // Không tự xóa ký tự sai để người dùng thấy lỗi và sửa thay vì gửi nhầm tên khác.
@@ -118,44 +120,80 @@ export function CancelOrderDialog({
     const [open, setOpen] = useState(false);
     const [selectedReason, setSelectedReason] = useState('');
     const [reason, setReason] = useState('');
+    const [reasonTouched, setReasonTouched] = useState(false);
     const [bankCode, setBankCode] = useState('');
     const [accountHolder, setAccountHolder] = useState('');
     const [accountHolderTouched, setAccountHolderTouched] = useState(false);
     const [accountNumber, setAccountNumber] = useState('');
     const [accountEdited, setAccountEdited] = useState(false);
+    const [savedBankAccountId, setSavedBankAccountId] = useState('');
     // Ràng buộc query hồ sơ với user hiện tại để tránh dùng nhầm cache sau khi đổi tài khoản.
     const userId = useAppSelector((state) => state.auth.user?.id ?? '');
-    const savedBankAccountQuery = useSavedRefundBankAccount(
-        open && !isEditing && requiresRefundBankAccount,
+    const savedBankAccountQuery = useSavedRefundBankAccounts(
+        open && requiresRefundBankAccount,
         userId,
     );
+    const savedBankAccounts =
+        savedBankAccountQuery.data ?? EMPTY_REFUND_BANK_ACCOUNTS;
     const normalizedAccountHolder = normalizeRefundAccountHolder(accountHolder);
     const isAccountHolderValid = isValidRefundAccountHolder(
         normalizedAccountHolder,
     );
     const showAccountHolderError =
         accountHolderTouched && !isAccountHolderValid;
+    const showReasonError = reasonTouched && !reason.trim();
 
-    // Chỉ áp dụng query hồ sơ đến trễ khi người dùng chưa chạm vào trường ngân hàng để tránh ghi đè dữ liệu đang nhập.
+    // Dùng mặc định khi form mới tải danh sách trễ; khi sửa, nối ID nếu snapshot đơn khớp một bản lưu sẵn.
     useEffect(() => {
-        const savedAccount = savedBankAccountQuery.data;
         if (
             !open ||
-            isEditing ||
             !requiresRefundBankAccount ||
             accountEdited ||
-            !savedAccount
+            !savedBankAccountQuery.data
         ) {
             return;
         }
-        setBankCode(savedAccount.bankCode);
-        setAccountHolder(savedAccount.accountHolder);
-        setAccountNumber(savedAccount.accountNumber);
+
+        if (isEditing) {
+            const matchingAccount = savedBankAccounts.find(
+                (account) =>
+                    account.bankCode === bankCode &&
+                    account.accountHolder === accountHolder &&
+                    account.accountNumber === accountNumber,
+            );
+            setSavedBankAccountId(matchingAccount?.id ?? '');
+            return;
+        }
+
+        if (!bankCode && !accountHolder && !accountNumber) {
+            const defaultAccount =
+                savedBankAccounts.find((account) => account.isDefault) ??
+                savedBankAccounts[0];
+            if (defaultAccount) {
+                setSavedBankAccountId(defaultAccount.id);
+                setBankCode(defaultAccount.bankCode);
+                setAccountHolder(defaultAccount.accountHolder);
+                setAccountNumber(defaultAccount.accountNumber);
+            }
+            return;
+        }
+
+        const matchingAccount = savedBankAccounts.find(
+            (account) =>
+                account.bankCode === bankCode &&
+                account.accountHolder === accountHolder &&
+                account.accountNumber === accountNumber,
+        );
+        setSavedBankAccountId(matchingAccount?.id ?? '');
     }, [
         accountEdited,
+        accountHolder,
+        accountNumber,
         isEditing,
+        bankCode,
         open,
         requiresRefundBankAccount,
+        savedBankAccounts,
         savedBankAccountQuery.data,
     ]);
 
@@ -163,34 +201,51 @@ export function CancelOrderDialog({
     function resetForm() {
         setSelectedReason('');
         setReason('');
+        setReasonTouched(false);
         setBankCode('');
         setAccountHolder('');
         setAccountHolderTouched(false);
         setAccountNumber('');
         setAccountEdited(false);
+        setSavedBankAccountId('');
     }
 
-    // Chọn lý do có sẵn sẽ dùng trực tiếp làm reason; ở chế độ sửa, textarea luôn giữ bản reason hiện tại.
+    // Chọn lý do có sẵn sẽ điền thẳng vào trường bắt buộc; chọn “Khác” để xóa nội dung và nhập lời giải thích riêng.
     function selectReason(value: string) {
         setSelectedReason(value);
         setReason(value === 'Khác' ? '' : value);
+        setReasonTouched(value === 'Khác');
     }
 
-    // Mở form với snapshot của yêu cầu đang sửa hoặc tài khoản hồ sơ đã lưu cho yêu cầu hủy mới.
+    // Mở form với snapshot của đơn hoặc tài khoản mặc định đã lưu; không giữ ID account từ lần mở trước.
     // Khi đóng, xóa dữ liệu nhạy cảm khỏi state; lúc đang gửi thì bỏ qua thao tác đóng để không mất trạng thái mutation.
     function handleOpenChange(nextOpen: boolean) {
         if (loading && !nextOpen) return;
         if (nextOpen && !open) {
             const startingAccount = isEditing
                 ? initialRefundBankAccount
-                : savedBankAccountQuery.data;
+                : (savedBankAccounts.find((account) => account.isDefault) ??
+                  savedBankAccounts[0]);
             setSelectedReason(
                 isEditing ? getReasonSelection(initialReason) : '',
             );
             setReason(isEditing ? (initialReason ?? '') : '');
+            setReasonTouched(false);
             setBankCode(startingAccount?.bankCode ?? '');
             setAccountHolder(startingAccount?.accountHolder ?? '');
             setAccountNumber(startingAccount?.accountNumber ?? '');
+            const matchingSavedAccount = savedBankAccounts.find(
+                (account) =>
+                    account.bankCode === startingAccount?.bankCode &&
+                    account.accountHolder === startingAccount?.accountHolder &&
+                    account.accountNumber === startingAccount?.accountNumber,
+            );
+            setSavedBankAccountId(
+                isEditing
+                    ? (matchingSavedAccount?.id ?? '')
+                    : ((startingAccount as RefundBankAccountProfile | undefined)
+                          ?.id ?? ''),
+            );
             setAccountHolderTouched(false);
             setAccountEdited(false);
         }
@@ -200,6 +255,12 @@ export function CancelOrderDialog({
 
     // Gửi lý do và tài khoản đã chuẩn hóa; chỉ đóng form sau khi order đã được tạo hoặc cập nhật thành công.
     async function confirm() {
+        const normalizedReason = reason.trim();
+        // Chặn lý do rỗng hoặc chỉ có khoảng trắng trước khi gọi mutation; API cũng kiểm tra lại ở HTTP boundary.
+        if (!normalizedReason) {
+            setReasonTouched(true);
+            return;
+        }
         const selectedBank = BANK_OPTIONS.find(
             (option) => option.value === bankCode,
         );
@@ -214,7 +275,7 @@ export function CancelOrderDialog({
             return;
         }
         const input: CancelOrderInput = {
-            ...(reason.trim() ? { reason: reason.trim() } : {}),
+            reason: normalizedReason,
             ...(requiresRefundBankAccount
                 ? {
                       refundBankAccount: {
@@ -223,6 +284,9 @@ export function CancelOrderDialog({
                           accountHolder: normalizedAccountHolder,
                           accountNumber: normalizedAccountNumber,
                       },
+                      ...(savedBankAccountId
+                          ? { savedRefundBankAccountId: savedBankAccountId }
+                          : {}),
                   }
                 : {}),
         };
@@ -255,7 +319,7 @@ export function CancelOrderDialog({
                 <DialogContent
                     showCloseButton={false}
                     overlayClassName="bg-black/45 backdrop-blur-sm"
-                    className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0 shadow-xl sm:max-w-lg"
+                    className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl flex-col gap-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-0 shadow-xl sm:max-w-3xl"
                 >
                     <DialogHeader className="shrink-0 border-b border-zinc-100 bg-gradient-to-br from-red-50/70 via-white to-white px-6 py-6 text-left sm:px-7">
                         <div className="flex items-start gap-3">
@@ -283,10 +347,16 @@ export function CancelOrderDialog({
                     <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6 sm:px-7">
                         <div>
                             <p className="mb-3.5 text-sm font-semibold text-zinc-950">
-                                Vì sao bạn muốn hủy đơn?
-                                <span className="ml-1 font-normal text-zinc-400">
-                                    (không bắt buộc)
+                                Vì sao bạn muốn hủy đơn?{' '}
+                                <span
+                                    aria-hidden="true"
+                                    className="text-red-600"
+                                >
+                                    *
                                 </span>
+                            </p>
+                            <p className="mb-3.5 text-xs text-zinc-500">
+                                Chọn một lý do bên dưới hoặc nhập lý do cụ thể.
                             </p>
                             <div className="grid gap-2 sm:grid-cols-2">
                                 <QuickReasonOption
@@ -337,39 +407,62 @@ export function CancelOrderDialog({
                             </div>
                         </div>
 
-                        {selectedReason === 'Khác' || isEditing ? (
-                            <div>
-                                <Label
-                                    htmlFor="cancel-reason"
-                                    className="text-sm font-semibold text-zinc-950"
+                        <div>
+                            <Label
+                                htmlFor="cancel-reason"
+                                className="text-sm font-semibold text-zinc-950"
+                            >
+                                Lý do hủy đơn hàng{' '}
+                                <span
+                                    aria-hidden="true"
+                                    className="text-red-600"
                                 >
-                                    {isEditing
-                                        ? 'Lý do hủy đơn hàng'
-                                        : 'Mô tả thêm'}
-                                </Label>
-                                <Textarea
-                                    id="cancel-reason"
-                                    value={reason}
-                                    onChange={(event) =>
-                                        setReason(
-                                            event.target.value.slice(0, 500),
-                                        )
-                                    }
-                                    maxLength={500}
-                                    placeholder={
-                                        isEditing
-                                            ? 'Nhập lý do hủy đơn hàng'
-                                            : 'Chia sẻ thêm lý do hủy đơn của bạn...'
-                                    }
-                                    className="mt-2 min-h-28 resize-none rounded-xl border-zinc-200 bg-white"
-                                    autoFocus
-                                />
-                                <div className="mt-1.5 flex items-center justify-between text-xs text-zinc-400">
-                                    <span>Tối đa 500 ký tự</span>
-                                    <span>{reason.length}/500</span>
-                                </div>
+                                    *
+                                </span>
+                            </Label>
+                            <Textarea
+                                id="cancel-reason"
+                                required
+                                aria-required="true"
+                                aria-invalid={showReasonError}
+                                aria-describedby={
+                                    showReasonError
+                                        ? 'cancel-reason-error'
+                                        : 'cancel-reason-hint'
+                                }
+                                value={reason}
+                                onChange={(event) => {
+                                    // Ghi nhận thao tác nhập để báo lỗi ngay khi người dùng xóa hết lý do đã chọn.
+                                    setReason(event.target.value.slice(0, 500));
+                                    setSelectedReason('Khác');
+                                    setReasonTouched(true);
+                                }}
+                                maxLength={500}
+                                placeholder="Nhập lý do hủy đơn hàng"
+                                className={`mt-2 min-h-28 resize-none rounded-xl border-zinc-200 bg-white ${showReasonError ? 'border-red-300 focus-visible:ring-red-300/30' : ''}`}
+                            />
+                            {showReasonError ? (
+                                <p
+                                    id="cancel-reason-error"
+                                    role="alert"
+                                    className="mt-1.5 text-xs text-red-600"
+                                >
+                                    Vui lòng chọn hoặc nhập lý do hủy đơn hàng.
+                                </p>
+                            ) : (
+                                <p
+                                    id="cancel-reason-hint"
+                                    className="mt-1.5 text-xs text-zinc-500"
+                                >
+                                    Bắt buộc. Có thể sửa nội dung đã được điền
+                                    từ lý do chọn nhanh.
+                                </p>
+                            )}
+                            <div className="mt-1.5 flex items-center justify-between text-xs text-zinc-400">
+                                <span>Tối đa 500 ký tự</span>
+                                <span>{reason.length}/500</span>
                             </div>
-                        ) : null}
+                        </div>
 
                         {requiresRefundBankAccount ? (
                             <section className="relative overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-50/60 p-4 shadow-sm ring-1 ring-amber-100/70 sm:p-5">
@@ -400,19 +493,104 @@ export function CancelOrderDialog({
                                         </p>
                                     </div>
                                 </div>
-                                {!isEditing && savedBankAccountQuery.data ? (
+                                {savedBankAccounts.length > 0 ? (
                                     <p className="relative mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
-                                        Tài khoản đã lưu trong hồ sơ được điền
-                                        sẵn. Bạn có thể chỉnh lại trước khi gửi.
+                                        Chọn tài khoản đã lưu hoặc thêm thông
+                                        tin mới. Tài khoản mới sẽ được lưu vào
+                                        hồ sơ sau khi gửi yêu cầu thành công.
                                     </p>
                                 ) : null}
-                                {!isEditing && savedBankAccountQuery.isError ? (
+                                {savedBankAccountQuery.isError ? (
                                     <p className="relative mt-3 rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs leading-5 text-amber-800">
                                         Chưa tải được tài khoản đã lưu; bạn vẫn
                                         có thể nhập thông tin mới.
                                     </p>
                                 ) : null}
                                 <div className="relative mt-5 grid gap-4">
+                                    <div className="grid gap-1.5">
+                                        <Label
+                                            htmlFor="saved-refund-bank-account"
+                                            className="text-xs font-semibold text-zinc-700"
+                                        >
+                                            Tài khoản đã lưu
+                                        </Label>
+                                        <Select
+                                            value={savedBankAccountId}
+                                            onValueChange={(value) => {
+                                                if (
+                                                    value === '__new_account__'
+                                                ) {
+                                                    setSavedBankAccountId('');
+                                                    setBankCode('');
+                                                    setAccountHolder('');
+                                                    setAccountNumber('');
+                                                    setAccountEdited(true);
+                                                    return;
+                                                }
+                                                const account =
+                                                    savedBankAccounts.find(
+                                                        (saved) =>
+                                                            saved.id === value,
+                                                    );
+                                                if (!account) return;
+                                                setSavedBankAccountId(
+                                                    account.id,
+                                                );
+                                                setBankCode(account.bankCode);
+                                                setAccountHolder(
+                                                    account.accountHolder,
+                                                );
+                                                setAccountNumber(
+                                                    account.accountNumber,
+                                                );
+                                                setAccountEdited(false);
+                                            }}
+                                        >
+                                            <SelectTrigger
+                                                id="saved-refund-bank-account"
+                                                className="h-11 w-full rounded-xl border-zinc-200 bg-white shadow-sm data-[size=default]:h-11"
+                                            >
+                                                <SelectValue
+                                                    placeholder={
+                                                        isEditing &&
+                                                        initialRefundBankAccount
+                                                            ? 'Tài khoản đang dùng trên đơn'
+                                                            : 'Chọn tài khoản nhận hoàn'
+                                                    }
+                                                />
+                                            </SelectTrigger>
+                                            <SelectContent className="max-h-64">
+                                                {savedBankAccounts.map(
+                                                    (account) => (
+                                                        <SelectItem
+                                                            key={account.id}
+                                                            value={account.id}
+                                                        >
+                                                            {account.bankName} ·{' '}
+                                                            {
+                                                                account.accountHolder
+                                                            }{' '}
+                                                            ·{' '}
+                                                            {account.accountNumber.slice(
+                                                                -4,
+                                                            )}
+                                                            {account.isDefault
+                                                                ? ' · Mặc định'
+                                                                : ''}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                                <SelectItem value="__new_account__">
+                                                    Nhập tài khoản khác
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs leading-5 text-zinc-500">
+                                            Chọn để điền nhanh. Nếu đổi thông
+                                            tin bên dưới, tài khoản mới sẽ được
+                                            lưu riêng sau khi gửi yêu cầu.
+                                        </p>
+                                    </div>
                                     <div className="grid gap-1.5">
                                         <Label
                                             htmlFor="refund-bank-name"
@@ -432,6 +610,7 @@ export function CancelOrderDialog({
                                                 // Lưu mã ngân hàng chuẩn cùng nhãn để QR admin không phải suy đoán từ chuỗi tự nhập.
                                                 setBankCode(value ?? '');
                                                 setAccountEdited(true);
+                                                setSavedBankAccountId('');
                                             }}
                                         >
                                             <SelectTrigger
@@ -490,6 +669,7 @@ export function CancelOrderDialog({
                                                     ),
                                                 );
                                                 setAccountEdited(true);
+                                                setSavedBankAccountId('');
                                             }}
                                             onBlur={(event) => {
                                                 // Chuẩn hóa khoảng trắng ở lúc rời trường, sau khi người dùng đã hoàn tất nhập tên.
@@ -508,9 +688,7 @@ export function CancelOrderDialog({
                                         >
                                             Nhập đúng tên ngân hàng hiển thị; hệ
                                             thống chuẩn hóa chữ hoa và khoảng
-                                            trắng, đồng thời chấp nhận dấu chấm
-                                            (.), nháy đơn (&apos;) và gạch nối
-                                            (-) nếu tên có các dấu này.
+                                            trắng.
                                         </p>
                                         {showAccountHolderError ? (
                                             <p
@@ -523,7 +701,7 @@ export function CancelOrderDialog({
                                                 normalizedAccountHolder.length >
                                                     100
                                                     ? 'Tên chủ tài khoản phải có từ 2 đến 100 ký tự.'
-                                                    : "Chỉ dùng chữ cái, khoảng trắng, dấu chấm (.), dấu nháy đơn ('), hoặc dấu gạch nối (-). Hãy nhập đúng tên ngân hàng hiển thị."}
+                                                    : 'Chỉ dùng chữ cái và khoảng trắng. Hãy nhập đúng tên ngân hàng hiển thị.'}
                                             </p>
                                         ) : null}
                                     </div>
@@ -556,6 +734,7 @@ export function CancelOrderDialog({
                                                         .slice(0, 30),
                                                 );
                                                 setAccountEdited(true);
+                                                setSavedBankAccountId('');
                                             }}
                                             placeholder="Nhập từ 6 đến 30 chữ số"
                                         />
@@ -579,6 +758,7 @@ export function CancelOrderDialog({
                             variant={isEditing ? 'default' : 'destructive'}
                             disabled={
                                 loading ||
+                                !reason.trim() ||
                                 (requiresRefundBankAccount &&
                                     (!bankCode ||
                                         !isAccountHolderValid ||

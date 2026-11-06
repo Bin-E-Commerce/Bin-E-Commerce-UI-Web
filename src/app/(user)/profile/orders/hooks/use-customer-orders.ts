@@ -23,16 +23,18 @@ import { authService } from '@/services/auth';
 import { useOrderProductImages } from '@/hooks/orders/use-order-product-images';
 import { useAppSelector } from '@/store/hooks';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { getRefundBankAccountQueryKey } from '../../hooks/useRefundBankAccount';
+import { getRefundBankAccountsQueryKey } from '../../hooks/useRefundBankAccount';
 
 // Lưu hồ sơ sau khi đơn đã được cập nhật; lỗi hồ sơ không được làm giao diện báo nhầm rằng thao tác order thất bại.
 async function syncRefundBankAccountToProfile(
     input: CancelOrderInput,
 ): Promise<boolean | null> {
     if (!input.refundBankAccount) return null;
+    // Tài khoản đã chọn từ danh sách hồ sơ chỉ cần snapshot vào đơn; dữ liệu mới được thêm vào hồ sơ sau khi order commit.
+    if (input.savedRefundBankAccountId) return true;
 
     try {
-        await authService.updateRefundBankAccount(input.refundBankAccount);
+        await authService.createRefundBankAccount(input.refundBankAccount);
         return true;
     } catch {
         return false;
@@ -106,10 +108,9 @@ export function useCancelCustomerOrder(orderId: string) {
         onSuccess: async ({ order, accountSaved }, input) => {
             queryClient.setQueryData(['customer-order', orderId], order);
             if (accountSaved && input.refundBankAccount) {
-                queryClient.setQueryData(
-                    getRefundBankAccountQueryKey(userId),
-                    input.refundBankAccount,
-                );
+                await queryClient.invalidateQueries({
+                    queryKey: getRefundBankAccountsQueryKey(userId),
+                });
             }
             await queryClient.invalidateQueries({
                 queryKey: ['customer-orders'],
@@ -140,10 +141,9 @@ export function useUpdateCustomerCancellation(orderId: string) {
         onSuccess: async ({ order, accountSaved }, input) => {
             queryClient.setQueryData(['customer-order', orderId], order);
             if (accountSaved && input.refundBankAccount) {
-                queryClient.setQueryData(
-                    getRefundBankAccountQueryKey(userId),
-                    input.refundBankAccount,
-                );
+                await queryClient.invalidateQueries({
+                    queryKey: getRefundBankAccountsQueryKey(userId),
+                });
             }
             await queryClient.invalidateQueries({
                 queryKey: ['customer-orders'],

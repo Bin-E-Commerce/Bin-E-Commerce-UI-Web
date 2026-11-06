@@ -36,7 +36,11 @@ export async function verifyPay2sReturn(
 }
 
 export type DeliveryIssueReason =
-    'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
+    | 'NOT_RECEIVED'
+    | 'DAMAGED'
+    | 'WRONG_ITEM'
+    | 'MISSING_ITEM'
+    | 'OTHER';
 
 export interface DeliveryConfirmationInput {
     decision: 'RECEIVED' | 'ISSUE';
@@ -198,12 +202,12 @@ export async function listOrders(
 // Hủy order; backend quyết định trạng thái, tồn kho và có yêu cầu thông tin nhận hoàn hay không.
 export async function cancelOrder(
     orderId: string,
-    input: CancelOrderInput = {},
+    input: CancelOrderInput,
 ): Promise<OrderResponse> {
     const response = await authorizedAxios.post<OrderResponse>(
         `${ORDERS}/${orderId}/cancel`,
         {
-            ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
+            reason: input.reason.trim(),
             ...(input.refundBankAccount
                 ? {
                       refundBankAccount: {
@@ -232,7 +236,7 @@ export async function updateCancellationDetails(
     const response = await authorizedAxios.put<OrderResponse>(
         `${ORDERS}/${orderId}/cancellation`,
         {
-            ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
+            reason: input.reason.trim(),
             ...(input.refundBankAccount
                 ? {
                       refundBankAccount: {

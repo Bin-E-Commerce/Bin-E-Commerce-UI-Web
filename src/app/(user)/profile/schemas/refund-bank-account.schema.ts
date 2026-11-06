@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { BANK_OPTIONS } from '@/constants/bank-options.constant';
 
-const ACCOUNT_HOLDER_PATTERN = /^\p{L}[\p{L}\p{M}]*(?:[ .'-][\p{L}\p{M}]+)*$/u;
+const ACCOUNT_HOLDER_PATTERN = /^\p{L}[\p{L}\p{M}]*(?: \p{L}[\p{L}\p{M}]*)*$/u;
 
 // Giới hạn tên theo bộ ký tự Auth Service chấp nhận; vẫn phải nhập khớp tên ngân hàng hiển thị.
 export const refundBankAccountSchema = z.object({
@@ -27,7 +27,7 @@ export const refundBankAccountSchema = z.object({
                         .replace(/\s+/gu, ' ')
                         .toLocaleUpperCase('vi-VN'),
                 ),
-            "Tên chỉ gồm chữ cái, khoảng trắng, dấu chấm (.), dấu nháy đơn ('), hoặc dấu gạch nối (-).",
+            'Tên chỉ gồm chữ cái có dấu và khoảng trắng giữa các từ.',
         ),
     accountNumber: z
         .string()

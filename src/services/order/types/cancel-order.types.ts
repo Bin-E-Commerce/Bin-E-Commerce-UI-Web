@@ -1,7 +1,8 @@
-// Payload customer gửi khi hủy order; tài khoản ngân hàng chỉ dùng cho khoản Pay2S đã thanh toán.
+// Payload customer gửi khi hủy hoặc sửa đơn; lý do bắt buộc còn tài khoản chỉ dùng cho Pay2S đã thanh toán.
 export interface CancelOrderInput {
-    reason?: string;
+    reason: string;
     refundBankAccount?: RefundBankAccountInput;
+    savedRefundBankAccountId?: string;
 }
 
 // Thông tin nhận tiền tối thiểu để admin chuyển hoàn ngoài hệ thống.

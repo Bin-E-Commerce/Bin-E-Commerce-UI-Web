@@ -6,6 +6,7 @@ import type {
     ApiResponse,
     AuthUser,
     RefundBankAccountProfile,
+    RefundBankAccountPayload,
     UpdateProfilePayload,
 } from '../types/auth.types';
 
@@ -25,21 +26,50 @@ export function updateProfile(payload: UpdateProfilePayload) {
         .then((response) => response.data);
 }
 
-// Lấy tài khoản nhận hoàn đã lưu; null cho biết user chưa dùng chức năng hoàn tiền trước đây.
-export function getRefundBankAccount() {
+// Lấy danh sách tài khoản nhận hoàn đã lưu qua endpoint hồ sơ riêng tư.
+export function getRefundBankAccounts() {
     return authorizedAxios
-        .get<ApiResponse<RefundBankAccountProfile | null>>(
-            `${USERS}/me/refund-bank-account`,
-        )
+        .get<
+            ApiResponse<RefundBankAccountProfile[]>
+        >(`${USERS}/me/refund-bank-accounts`)
         .then((response) => response.data);
 }
 
-// Ghi đè tài khoản nhận hoàn mặc định sau khi người dùng xác nhận thông tin mới.
-export function updateRefundBankAccount(payload: RefundBankAccountProfile) {
+// Tạo tài khoản mới; server đánh dấu mặc định khi user chưa có tài khoản nào.
+export function createRefundBankAccount(payload: RefundBankAccountPayload) {
     return authorizedAxios
-        .put<ApiResponse<RefundBankAccountProfile>>(
-            `${USERS}/me/refund-bank-account`,
-            payload,
-        )
+        .post<
+            ApiResponse<RefundBankAccountProfile>
+        >(`${USERS}/me/refund-bank-accounts`, payload)
+        .then((response) => response.data);
+}
+
+// Cập nhật tài khoản theo ID, trong khi server vẫn kiểm tra ID thuộc user hiện tại.
+export function updateRefundBankAccount(
+    accountId: string,
+    payload: RefundBankAccountPayload,
+) {
+    return authorizedAxios
+        .put<
+            ApiResponse<RefundBankAccountProfile>
+        >(`${USERS}/me/refund-bank-accounts/${accountId}`, payload)
+        .then((response) => response.data);
+}
+
+// Xóa tài khoản đã lưu; server tự chọn lại mặc định nếu vừa xóa tài khoản chính.
+export function deleteRefundBankAccount(accountId: string) {
+    return authorizedAxios
+        .delete<
+            ApiResponse<null>
+        >(`${USERS}/me/refund-bank-accounts/${accountId}`)
+        .then((response) => response.data);
+}
+
+// Đặt một tài khoản làm mặc định cho các lần nhập thông tin hoàn tiền sau.
+export function setDefaultRefundBankAccount(accountId: string) {
+    return authorizedAxios
+        .put<
+            ApiResponse<RefundBankAccountProfile>
+        >(`${USERS}/me/refund-bank-accounts/${accountId}/default`)
         .then((response) => response.data);
 }

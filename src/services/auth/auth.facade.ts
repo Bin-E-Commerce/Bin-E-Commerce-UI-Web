@@ -8,8 +8,11 @@ import {
     resetPassword,
 } from './api/password.api';
 import {
+    createRefundBankAccount,
+    deleteRefundBankAccount,
     getMe,
-    getRefundBankAccount,
+    getRefundBankAccounts,
+    setDefaultRefundBankAccount,
     updateProfile,
     updateRefundBankAccount,
 } from './api/profile.api';
@@ -44,8 +47,11 @@ export const authService = {
     socialCallback,
     getMe,
     updateProfile,
-    getRefundBankAccount,
+    getRefundBankAccounts,
+    createRefundBankAccount,
     updateRefundBankAccount,
+    deleteRefundBankAccount,
+    setDefaultRefundBankAccount,
     getSessions,
     revokeSession,
     revokeOtherSessions,

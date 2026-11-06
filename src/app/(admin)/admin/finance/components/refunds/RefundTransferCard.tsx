@@ -1,7 +1,7 @@
 // Thẻ quản lý thông tin nhận hoàn và VietQR; không tự gửi tiền hay chuyển dữ liệu tài khoản ra ngoài trình duyệt.
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     AlertCircle,
     BadgeCheck,
@@ -67,6 +67,17 @@ export function RefundTransferCard({
     const recipientMissing =
         refund.sourceType === 'PAYMENT_ATTEMPT' && !refund.refundAccountNumber;
 
+    // Làm mới draft form khi refund queue nhận snapshot mới từ server, để thao tác admin không ghi đè dữ liệu customer vừa sửa.
+    useEffect(() => {
+        setBankCode(refund.refundBankCode ?? '');
+        setAccountHolder(refund.refundAccountHolder ?? '');
+        setAccountNumber(refund.refundAccountNumber ?? '');
+    }, [
+        refund.refundAccountHolder,
+        refund.refundAccountNumber,
+        refund.refundBankCode,
+    ]);
+
     // Chuẩn hóa dữ liệu trước khi gửi và lấy nhãn từ danh mục cố định để tránh lưu tên ngân hàng do nhập tùy ý.
     function saveRecipientAccount(): void {
         const normalizedAccountHolder = accountHolder.trim();
@@ -127,14 +138,14 @@ export function RefundTransferCard({
             </header>
 
             {refund.refundAccountNumber ? (
-                <div className="grid min-w-0 gap-4 p-4 md:grid-cols-[minmax(190px,220px)_minmax(0,1fr)]">
+                <div className="grid min-w-0 gap-4 p-4 md:grid-cols-[minmax(240px,256px)_minmax(0,1fr)]">
                     <div className="space-y-3">
                         {transfer?.result.ok ? (
                             <div className="rounded-2xl border border-zinc-100 bg-zinc-50/60 p-3.5 text-center">
-                                <div className="mx-auto grid w-fit place-items-center rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
+                                <div className="mx-auto grid w-fit place-items-center rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
                                     <QRCodeSVG
                                         value={transfer.result.payload}
-                                        size={160}
+                                        size={208}
                                         level="M"
                                         includeMargin
                                         title={`VietQR hoàn tiền đơn ${refund.orderNumber}`}

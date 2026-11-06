@@ -25,7 +25,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { BANK_OPTIONS } from '@/constants/bank-options.constant';
-import type { RefundBankAccountProfile } from '@/services/auth';
+import type { RefundBankAccountPayload } from '@/services/auth';
 import { refundBankAccountSchema } from '../schemas/refund-bank-account.schema';
 import type {
     RefundBankAccountDialogProps,
@@ -88,7 +88,7 @@ export function RefundBankAccountDialog({
             .trim()
             .replace(/\s+/gu, ' ')
             .toLocaleUpperCase('vi-VN');
-        const payload: RefundBankAccountProfile = {
+        const payload: RefundBankAccountPayload = {
             bankCode: bank.value,
             bankName: bank.label,
             accountHolder: normalizedHolder,
@@ -143,7 +143,7 @@ export function RefundBankAccountDialog({
                                     <SelectTrigger
                                         id="refund-bank"
                                         aria-invalid={Boolean(errors.bankCode)}
-                                        className="h-11 w-full rounded-xl"
+                                        className="h-11 w-full rounded-xl data-[size=default]:h-11"
                                     >
                                         <SelectValue placeholder="Chọn ngân hàng" />
                                     </SelectTrigger>
@@ -202,8 +202,7 @@ export function RefundBankAccountDialog({
                                 className="text-xs text-zinc-500"
                             >
                                 Nhập đúng tên ngân hàng hiển thị, không viết
-                                tắt. Hệ thống chấp nhận dấu chấm (.), nháy đơn
-                                (&apos;) và gạch nối (-) nếu tên có các dấu này.
+                                tắt. Chỉ dùng chữ cái và khoảng trắng.
                             </p>
                         )}
                     </div>

@@ -1,55 +1,124 @@
-// Hook sở hữu truy vấn và cập nhật tài khoản nhận hoàn trong hồ sơ Customer.
+// Hook sở hữu query, cache và mutation của danh sách tài khoản nhận hoàn trong hồ sơ Customer.
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { authService, type RefundBankAccountProfile } from '@/services/auth';
+import {
+    authService,
+    type RefundBankAccountPayload,
+    type RefundBankAccountProfile,
+} from '@/services/auth';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import type { SaveRefundBankAccountVariables } from '../types/refund-bank-account.type';
 
-// Đưa userId vào key để tránh tái sử dụng dữ liệu ngân hàng giữa hai phiên tài khoản trên cùng trình duyệt.
-export function getRefundBankAccountQueryKey(userId: string) {
-    return ['profile-refund-bank-account', userId] as const;
+// Đưa userId vào key để dữ liệu ngân hàng không được dùng lại giữa hai tài khoản trên cùng trình duyệt.
+export function getRefundBankAccountsQueryKey(userId: string) {
+    return ['profile-refund-bank-accounts', userId] as const;
 }
 
-// Chỉ truy vấn khi đã có userId; dữ liệu nhạy cảm được giữ trong cache thời gian ngắn và không lưu vào Redux.
-export function useRefundBankAccount(userId: string) {
+// Tải danh sách riêng tư và đồng bộ các thao tác CRUD về cache dùng chung với form hủy đơn.
+export function useRefundBankAccounts(userId: string) {
     const queryClient = useQueryClient();
-    const queryKey = getRefundBankAccountQueryKey(userId);
+    const queryKey = getRefundBankAccountsQueryKey(userId);
     const query = useQuery({
         queryKey,
-        queryFn: async () => (await authService.getRefundBankAccount()).data,
+        queryFn: async () => (await authService.getRefundBankAccounts()).data,
         enabled: Boolean(userId),
         staleTime: 30_000,
         gcTime: 30_000,
     });
-    const mutation = useMutation({
-        mutationFn: (payload: RefundBankAccountProfile) =>
-            authService.updateRefundBankAccount(payload),
-        // Ghi đè cache theo đúng chủ tài khoản để trang hồ sơ và luồng hủy đơn cùng thấy dữ liệu mới nhất.
-        onSuccess: (response) => {
-            queryClient.setQueryData(queryKey, response.data);
+
+    const saveMutation = useMutation({
+        mutationFn: ({ payload, accountId }: SaveRefundBankAccountVariables) =>
+            accountId
+                ? authService.updateRefundBankAccount(accountId, payload)
+                : authService.createRefundBankAccount(payload),
+        onSuccess: async (response, variables) => {
+            queryClient.setQueryData<RefundBankAccountProfile[]>(
+                queryKey,
+                (accounts = []) =>
+                    variables.accountId
+                        ? accounts.map((account) =>
+                              account.id === response.data.id
+                                  ? response.data
+                                  : account,
+                          )
+                        : [...accounts, response.data],
+            );
+            await queryClient.invalidateQueries({ queryKey });
             toast.success('Đã lưu tài khoản nhận hoàn.');
         },
-        // Giữ dialog mở để người dùng sửa hoặc gửi lại khi API từ chối dữ liệu.
         onError: (error) => toast.error(getErrorMessage(error)),
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: (accountId: string) =>
+            authService.deleteRefundBankAccount(accountId),
+        onSuccess: async (_response, deletedAccountId) => {
+            queryClient.setQueryData<RefundBankAccountProfile[]>(
+                queryKey,
+                (accounts = []) =>
+                    accounts.filter(
+                        (account) => account.id !== deletedAccountId,
+                    ),
+            );
+            await queryClient.invalidateQueries({ queryKey });
+            toast.success('Đã xóa tài khoản ngân hàng.');
+        },
+        onError: (error) => toast.error(getErrorMessage(error)),
+    });
+
+    const defaultMutation = useMutation({
+        mutationFn: (accountId: string) =>
+            authService.setDefaultRefundBankAccount(accountId),
+        onSuccess: async (response) => {
+            queryClient.setQueryData<RefundBankAccountProfile[]>(
+                queryKey,
+                (accounts = []) =>
+                    accounts.map((account) =>
+                        account.id === response.data.id
+                            ? response.data
+                            : { ...account, isDefault: false },
+                    ),
+            );
+            await queryClient.invalidateQueries({ queryKey });
+            toast.success('Đã đổi tài khoản nhận hoàn mặc định.');
+        },
+        onError: (error) => toast.error(getErrorMessage(error)),
+    });
+
+    // Chuyển lỗi mutation về caller để dialog chỉ đóng khi server đã lưu thành công.
+    async function saveAccount(
+        payload: RefundBankAccountPayload,
+        accountId?: string,
+    ): Promise<void> {
+        await saveMutation.mutateAsync({ payload, accountId });
+    }
+
     return {
-        account: query.data ?? null,
+        accounts: query.data ?? [],
         isLoading: query.isLoading,
         isError: query.isError,
         refetch: query.refetch,
-        isSaving: mutation.isPending,
-        saveAccount: mutation.mutateAsync,
+        isSaving: saveMutation.isPending,
+        isDeleting: deleteMutation.isPending,
+        isSettingDefault: defaultMutation.isPending,
+        deletingAccountId: deleteMutation.isPending
+            ? deleteMutation.variables
+            : undefined,
+        saveAccount,
+        deleteAccount: (accountId: string) => deleteMutation.mutate(accountId),
+        setDefaultAccount: (accountId: string) =>
+            defaultMutation.mutate(accountId),
     };
 }
 
-// Tải hồ sơ trong dialog hủy đơn bằng cùng cache/user boundary với trang profile.
-export function useSavedRefundBankAccount(enabled: boolean, userId: string) {
+// Chia sẻ cùng cache/user boundary với trang profile và tải account list khi dialog hoàn tiền được mở.
+export function useSavedRefundBankAccounts(enabled: boolean, userId: string) {
     return useQuery({
-        queryKey: getRefundBankAccountQueryKey(userId || 'anonymous'),
-        queryFn: async () => (await authService.getRefundBankAccount()).data,
+        queryKey: getRefundBankAccountsQueryKey(userId || 'anonymous'),
+        queryFn: async () => (await authService.getRefundBankAccounts()).data,
         enabled: Boolean(userId) && enabled,
         staleTime: 30_000,
         gcTime: 30_000,
