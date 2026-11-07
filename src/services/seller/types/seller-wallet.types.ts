@@ -18,6 +18,15 @@ export interface SellerWalletSnapshot {
     total: number;
     page: number;
     pageSize: number;
+    debt?: {
+        debtBalance: string;
+        debtLimit: string;
+        debtDueDays: number;
+        dueAt: string | null;
+        isAtLimit: boolean;
+        isOverdue: boolean;
+        shopLocked: boolean;
+    };
 }
 
 // Danh sách rút chỉ gồm snapshot tài khoản đã mask và trạng thái xử lý.

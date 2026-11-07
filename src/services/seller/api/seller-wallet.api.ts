@@ -11,10 +11,11 @@ import type {
 export async function getSellerWallet(
     page = 1,
     pageSize = 20,
+    search?: string,
 ): Promise<SellerWalletSnapshot> {
     const response = await authorizedAxios.get<SellerWalletSnapshot>(
         `${API_BASE_URL}${API_VERSION}/seller/finance/wallet`,
-        { params: { page, pageSize } },
+        { params: { page, pageSize, search } },
     );
     return response.data;
 }
@@ -45,12 +46,13 @@ export async function createSellerWalletWithdrawal(
 export async function getSellerWalletWithdrawals(
     page = 1,
     pageSize = 20,
+    search?: string,
 ): Promise<{ items: SellerWalletWithdrawal[]; total: number }> {
     const response = await authorizedAxios.get<{
         items: SellerWalletWithdrawal[];
         total: number;
     }>(`${API_BASE_URL}${API_VERSION}/seller/finance/wallet/withdrawals`, {
-        params: { page, pageSize },
+        params: { page, pageSize, search },
     });
     return response.data;
 }

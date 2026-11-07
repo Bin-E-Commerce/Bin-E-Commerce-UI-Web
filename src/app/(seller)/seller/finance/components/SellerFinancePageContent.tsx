@@ -14,6 +14,7 @@ import {
     ArrowDownToLine,
     ArrowUpFromLine,
     Banknote,
+    CircleAlert,
     Check,
     ChevronLeft,
     ChevronRight,
@@ -49,6 +50,7 @@ import {
     SELLER_WALLET_HISTORY_PAGE_SIZE,
     SELLER_WITHDRAWALS_PAGE_SIZE,
 } from '../constants/finance-pagination.constant';
+import { SellerFinanceSearch } from './shared/SellerFinanceSearch';
 
 // Định dạng VND không làm thay đổi số tiền decimal do backend lưu dưới dạng chuỗi.
 function formatMoney(amount: string): string {
@@ -57,6 +59,14 @@ function formatMoney(amount: string): string {
         currency: 'VND',
         maximumFractionDigits: 0,
     }).format(Number(amount));
+}
+
+// Hiển thị mốc đến hạn theo giờ Việt Nam để seller biết chính xác thời điểm cần bù công nợ.
+function formatDebtDueAt(value: string): string {
+    return new Intl.DateTimeFormat('vi-VN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(new Date(value));
 }
 
 // Chuyển ledger kind thành nhãn dành cho seller, giữ nguyên mã loại khi gặp dữ liệu mới.
@@ -111,17 +121,38 @@ export function SellerFinancePageContent() {
         useState<SellerWalletWithdrawal | null>(null);
     const [walletPage, setWalletPage] = useState(1);
     const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+    const [walletSearch, setWalletSearch] = useState('');
+    const [withdrawalsSearch, setWithdrawalsSearch] = useState('');
+
+    // Khi từ khóa đổi, về trang đầu vì tổng số trang và kết quả đã được lọc tại backend.
+    function handleWalletSearchChange(value: string): void {
+        setWalletSearch(value);
+        setWalletPage(1);
+    }
+
+    // Không giữ trang cũ sau khi lọc để tránh trang hiện tại vượt tổng kết quả mới.
+    function handleWithdrawalsSearchChange(value: string): void {
+        setWithdrawalsSearch(value);
+        setWithdrawalsPage(1);
+    }
+
     const walletQuery = useQuery({
         queryKey: [
             'seller-wallet',
             walletPage,
             SELLER_WALLET_HISTORY_PAGE_SIZE,
+            walletSearch,
         ],
         queryFn: () =>
-            getSellerWallet(walletPage, SELLER_WALLET_HISTORY_PAGE_SIZE),
+            getSellerWallet(
+                walletPage,
+                SELLER_WALLET_HISTORY_PAGE_SIZE,
+                walletSearch || undefined,
+            ),
         // Giữ dữ liệu trang trước để số dư không nhấp nháy toàn trang trong khi truy vấn trang mới.
         placeholderData: keepPreviousData,
         staleTime: 30_000,
+        refetchInterval: 60_000,
     });
     const profileQuery = useQuery({
         queryKey: ['seller', 'shop-profile'],
@@ -133,11 +164,13 @@ export function SellerFinancePageContent() {
             'seller-wallet-withdrawals',
             withdrawalsPage,
             SELLER_WITHDRAWALS_PAGE_SIZE,
+            withdrawalsSearch,
         ],
         queryFn: () =>
             getSellerWalletWithdrawals(
                 withdrawalsPage,
                 SELLER_WITHDRAWALS_PAGE_SIZE,
+                withdrawalsSearch || undefined,
             ),
         // Giữ bảng đang xem trong khi tải trang kế để tránh nhảy layout toàn khu vực ví.
         placeholderData: keepPreviousData,
@@ -220,35 +253,80 @@ export function SellerFinancePageContent() {
                 className="flex min-w-0 gap-3 overflow-x-auto pb-1"
                 aria-label="Tổng quan tài chính shop"
             >
-                <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-3.5 text-white shadow-md shadow-zinc-900/10">
-                    <div
-                        aria-hidden="true"
-                        className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full border border-white/20"
-                    />
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 items-center gap-2">
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/10">
-                                <WalletCards
-                                    className="size-3.5 text-zinc-200"
-                                    aria-hidden="true"
-                                />
-                            </span>
-                            <span className="line-clamp-2 min-w-0 text-xs font-medium leading-4 text-zinc-200">
-                                Số dư khả dụng
+                {Number(wallet?.debt?.debtBalance ?? 0) > 0 ? (
+                    <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-rose-300 bg-gradient-to-br from-rose-700 via-rose-600 to-red-500 p-3.5 text-white shadow-md shadow-rose-900/15">
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full border border-white/25"
+                        />
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/10">
+                                    <CircleAlert
+                                        className="size-3.5 text-white"
+                                        aria-hidden="true"
+                                    />
+                                </span>
+                                <span className="line-clamp-2 min-w-0 text-xs font-semibold leading-4 text-white">
+                                    Công nợ cần thanh toán
+                                </span>
+                            </div>
+                            <span className="shrink-0 whitespace-nowrap rounded-full border border-white/25 bg-white/15 px-2 py-0.5 text-[9px] font-semibold text-white">
+                                {wallet?.debt?.shopLocked
+                                    ? 'Shop đang tạm khóa'
+                                    : wallet?.debt?.isAtLimit
+                                      ? 'Đã chạm hạn mức'
+                                      : 'Cần thanh toán'}
                             </span>
                         </div>
-                        <span className="shrink-0 whitespace-nowrap rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-zinc-200">
-                            Có thể sử dụng
-                        </span>
-                    </div>
-                    <p className="mt-3 text-2xl font-bold tracking-tight">
-                        {formatMoney(wallet?.availableBalance ?? '0')}
-                    </p>
-                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-300">
-                        Có thể rút hoặc sử dụng; khoản đang chờ admin chuyển
-                        được tách riêng.
-                    </p>
-                </article>
+                        <p className="mt-3 text-2xl font-bold tracking-tight">
+                            {formatMoney(wallet?.debt?.debtBalance ?? '0')}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-rose-50">
+                            {wallet?.debt?.isOverdue
+                                ? 'Đã quá hạn thanh toán; gian hàng sẽ bị tạm khóa đến khi hết công nợ.'
+                                : wallet?.debt?.shopLocked
+                                  ? 'Gian hàng tạm khóa do chạm hạn mức công nợ 500.000₫.'
+                                  : `Thanh toán trong ${wallet?.debt?.debtDueDays ?? 3} ngày. Chạm 500.000₫ sẽ tạm khóa gian hàng.`}
+                        </p>
+                        {wallet?.debt?.dueAt ? (
+                            <p className="mt-1 text-[10px] leading-4 text-rose-50/90">
+                                Hạn thanh toán:{' '}
+                                {formatDebtDueAt(wallet.debt.dueAt)}
+                            </p>
+                        ) : null}
+                    </article>
+                ) : (
+                    <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-3.5 text-white shadow-md shadow-zinc-900/10">
+                        <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full border border-white/20"
+                        />
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 items-center gap-2">
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/10">
+                                    <WalletCards
+                                        className="size-3.5 text-zinc-200"
+                                        aria-hidden="true"
+                                    />
+                                </span>
+                                <span className="line-clamp-2 min-w-0 text-xs font-medium leading-4 text-zinc-200">
+                                    Số dư khả dụng
+                                </span>
+                            </div>
+                            <span className="shrink-0 whitespace-nowrap rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-zinc-200">
+                                Có thể sử dụng
+                            </span>
+                        </div>
+                        <p className="mt-3 text-2xl font-bold tracking-tight">
+                            {formatMoney(wallet?.availableBalance ?? '0')}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-300">
+                            Có thể rút hoặc sử dụng; khoản đang chờ admin chuyển
+                            được tách riêng.
+                        </p>
+                    </article>
+                )}
 
                 <article className="relative min-w-[280px] flex-1 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-white via-zinc-50 to-slate-100 p-3.5 shadow-sm">
                     <div className="flex items-start justify-between gap-2">
@@ -746,6 +824,12 @@ export function SellerFinancePageContent() {
                               : `${withdrawalsQuery.data?.total ?? 0} yêu cầu`}
                     </span>
                 </header>
+                <SellerFinanceSearch
+                    value={withdrawalsSearch}
+                    label="Tìm yêu cầu rút tiền"
+                    placeholder="Tìm ngân hàng, chủ tài khoản, số tài khoản đã che hoặc mã yêu cầu"
+                    onSearchChange={handleWithdrawalsSearchChange}
+                />
                 {withdrawalsQuery.isError ? (
                     <p
                         role="alert"
@@ -874,10 +958,14 @@ export function SellerFinancePageContent() {
                             />
                         </span>
                         <p className="mt-3 text-sm font-medium text-zinc-800">
-                            Bạn chưa gửi yêu cầu rút tiền nào
+                            {withdrawalsSearch
+                                ? 'Không tìm thấy yêu cầu rút phù hợp'
+                                : 'Bạn chưa gửi yêu cầu rút tiền nào'}
                         </p>
                         <p className="mt-1 text-xs text-zinc-500">
-                            Yêu cầu mới sẽ được theo dõi tại đây.
+                            {withdrawalsSearch
+                                ? 'Thử đổi từ khóa tìm kiếm.'
+                                : 'Yêu cầu mới sẽ được theo dõi tại đây.'}
                         </p>
                     </div>
                 )}
@@ -969,6 +1057,12 @@ export function SellerFinancePageContent() {
                         {wallet?.total ?? 0} giao dịch
                     </span>
                 </div>
+                <SellerFinanceSearch
+                    value={walletSearch}
+                    label="Tìm giao dịch ví"
+                    placeholder="Tìm theo mã đơn, loại giao dịch, mã hồ sơ hoặc số tiền"
+                    onSearchChange={handleWalletSearchChange}
+                />
                 {!wallet?.transactions.length ? (
                     <div className="flex flex-col items-center px-5 py-12 text-center">
                         <span className="flex size-14 items-center justify-center rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 to-slate-100 text-zinc-600">
@@ -978,12 +1072,14 @@ export function SellerFinancePageContent() {
                             />
                         </span>
                         <p className="mt-4 font-medium text-zinc-900">
-                            Chưa ghi nhận giao dịch nào
+                            {walletSearch
+                                ? 'Không tìm thấy giao dịch phù hợp'
+                                : 'Chưa ghi nhận giao dịch nào'}
                         </p>
                         <p className="mt-1 max-w-md text-sm leading-6 text-zinc-500">
-                            Tiền hàng sẽ xuất hiện sau khi thanh toán được xác
-                            nhận. Đơn COD chỉ được ghi nhận sau khi shop đã đối
-                            soát tiền thu hộ.
+                            {walletSearch
+                                ? 'Thử đổi từ khóa tìm kiếm.'
+                                : 'Tiền hàng sẽ xuất hiện sau khi thanh toán được xác nhận. Đơn COD chỉ được ghi nhận sau khi shop đã đối soát tiền thu hộ.'}
                         </p>
                     </div>
                 ) : (
