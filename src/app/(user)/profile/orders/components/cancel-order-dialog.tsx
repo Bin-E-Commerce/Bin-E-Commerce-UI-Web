@@ -9,6 +9,7 @@ import {
     CreditCard,
     LoaderCircle,
     PencilLine,
+    Plus,
     XCircle,
 } from 'lucide-react';
 
@@ -493,13 +494,6 @@ export function CancelOrderDialog({
                                         </p>
                                     </div>
                                 </div>
-                                {savedBankAccounts.length > 0 ? (
-                                    <p className="relative mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
-                                        Chọn tài khoản đã lưu hoặc thêm thông
-                                        tin mới. Tài khoản mới sẽ được lưu vào
-                                        hồ sơ sau khi gửi yêu cầu thành công.
-                                    </p>
-                                ) : null}
                                 {savedBankAccountQuery.isError ? (
                                     <p className="relative mt-3 rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs leading-5 text-amber-800">
                                         Chưa tải được tài khoản đã lưu; bạn vẫn
@@ -550,46 +544,104 @@ export function CancelOrderDialog({
                                                 id="saved-refund-bank-account"
                                                 className="h-11 w-full rounded-xl border-zinc-200 bg-white shadow-sm data-[size=default]:h-11"
                                             >
-                                                <SelectValue
-                                                    placeholder={
-                                                        isEditing &&
-                                                        initialRefundBankAccount
-                                                            ? 'Tài khoản đang dùng trên đơn'
-                                                            : 'Chọn tài khoản nhận hoàn'
-                                                    }
-                                                />
+                                                <SelectValue className="min-w-0">
+                                                    {(value) => {
+                                                        // Base UI hiển thị raw value mặc định; tra ID trong dữ liệu hồ sơ để trigger chỉ hiện thông tin dễ nhận biết.
+                                                        const account =
+                                                            savedBankAccounts.find(
+                                                                (saved) =>
+                                                                    saved.id ===
+                                                                    value,
+                                                            );
+                                                        if (!account) {
+                                                            // Khi thông tin bị sửa hoặc nhập mới, giữ nhãn trạng thái thay vì in ID hoặc nhãn của snapshot cũ.
+                                                            if (accountEdited) {
+                                                                return 'Nhập tài khoản khác';
+                                                            }
+                                                            return isEditing &&
+                                                                initialRefundBankAccount
+                                                                ? 'Tài khoản đang dùng trên đơn'
+                                                                : 'Chọn tài khoản nhận hoàn';
+                                                        }
+
+                                                        return (
+                                                            <span className="flex min-w-0 flex-1 items-center gap-2">
+                                                                <span className="min-w-0 flex-1 truncate font-medium">
+                                                                    {
+                                                                        account.bankName
+                                                                    }{' '}
+                                                                    ·{' '}
+                                                                    {
+                                                                        account.accountHolder
+                                                                    }
+                                                                </span>
+                                                                <span className="shrink-0 font-mono text-xs text-zinc-500">
+                                                                    ••••{' '}
+                                                                    {account.accountNumber.slice(
+                                                                        -4,
+                                                                    )}
+                                                                </span>
+                                                                {account.isDefault ? (
+                                                                    <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                                                                        Mặc định
+                                                                    </span>
+                                                                ) : null}
+                                                            </span>
+                                                        );
+                                                    }}
+                                                </SelectValue>
                                             </SelectTrigger>
-                                            <SelectContent className="max-h-64">
+                                            <SelectContent className="max-h-72 min-w-[min(36rem,calc(100vw-2rem))] rounded-2xl border border-zinc-200 p-1.5 shadow-xl">
                                                 {savedBankAccounts.map(
                                                     (account) => (
                                                         <SelectItem
                                                             key={account.id}
                                                             value={account.id}
+                                                            className="min-h-16 rounded-xl px-3 py-2.5"
                                                         >
-                                                            {account.bankName} ·{' '}
-                                                            {
-                                                                account.accountHolder
-                                                            }{' '}
-                                                            ·{' '}
-                                                            {account.accountNumber.slice(
-                                                                -4,
-                                                            )}
-                                                            {account.isDefault
-                                                                ? ' · Mặc định'
-                                                                : ''}
+                                                            <span className="flex min-w-0 flex-1 items-center gap-3">
+                                                                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 ring-1 ring-amber-100">
+                                                                    <CreditCard className="size-4" />
+                                                                </span>
+                                                                <span className="grid min-w-0 flex-1 gap-0.5">
+                                                                    <span className="flex min-w-0 items-center gap-2">
+                                                                        <span className="truncate font-semibold text-zinc-900">
+                                                                            {
+                                                                                account.bankName
+                                                                            }
+                                                                        </span>
+                                                                        {account.isDefault ? (
+                                                                            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                                                                                Mặc
+                                                                                định
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </span>
+                                                                    <span className="truncate text-xs text-zinc-500">
+                                                                        {
+                                                                            account.accountHolder
+                                                                        }{' '}
+                                                                        · ••••{' '}
+                                                                        {account.accountNumber.slice(
+                                                                            -4,
+                                                                        )}
+                                                                    </span>
+                                                                </span>
+                                                            </span>
                                                         </SelectItem>
                                                     ),
                                                 )}
-                                                <SelectItem value="__new_account__">
-                                                    Nhập tài khoản khác
+                                                <SelectItem
+                                                    value="__new_account__"
+                                                    className="min-h-11 rounded-xl px-3 py-2 font-medium text-amber-800"
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <Plus className="size-4" />
+                                                        Nhập tài khoản khác
+                                                    </span>
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <p className="text-xs leading-5 text-zinc-500">
-                                            Chọn để điền nhanh. Nếu đổi thông
-                                            tin bên dưới, tài khoản mới sẽ được
-                                            lưu riêng sau khi gửi yêu cầu.
-                                        </p>
                                     </div>
                                     <div className="grid gap-1.5">
                                         <Label
@@ -618,7 +670,14 @@ export function CancelOrderDialog({
                                                 aria-required="true"
                                                 className="h-11 w-full rounded-xl border-zinc-200 bg-white shadow-sm transition-colors focus-visible:border-amber-400 focus-visible:ring-amber-300/30 data-[size=default]:h-11"
                                             >
-                                                <SelectValue placeholder="Chọn ngân hàng nhận tiền" />
+                                                <SelectValue placeholder="Chọn ngân hàng nhận tiền">
+                                                    {BANK_OPTIONS.find(
+                                                        (option) =>
+                                                            option.value ===
+                                                            bankCode,
+                                                    )?.label ??
+                                                        'Chọn ngân hàng nhận tiền'}
+                                                </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent className="max-h-64">
                                                 {BANK_OPTIONS.map((option) => (

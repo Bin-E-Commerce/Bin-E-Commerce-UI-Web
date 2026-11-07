@@ -77,7 +77,7 @@ export function useMissingProductImages(
     return useOrderProductImages(items);
 }
 
-// Query chi tiết đọc theo orderId và polling khi đơn đang vận chuyển để card xác nhận nhận hàng tự xuất hiện sau webhook giao thành công.
+// Query chi tiết theo orderId và chỉ polling khi shipment hoặc khoản hoàn còn chờ backend chốt trạng thái.
 export function useCustomerOrder(orderId: string, enabled = true) {
     return useQuery({
         queryKey: ['customer-order', orderId],
@@ -85,10 +85,12 @@ export function useCustomerOrder(orderId: string, enabled = true) {
         enabled: Boolean(orderId) && enabled,
         staleTime: 30_000,
         refetchInterval: (query) => {
-            // Chỉ poll lúc đơn đang giao; khi đã giao, hoàn tất hoặc hủy thì dừng để tránh request nền vô ích.
-            return query.state.data?.fulfillmentStatus === 'SHIPPING'
-                ? 15_000
-                : false;
+            const order = query.state.data;
+            // Giữ nhịp polling shipment hiện tại để card nhận hàng xuất hiện sau webhook giao thành công.
+            if (order?.fulfillmentStatus === 'SHIPPING') return 15_000;
+            // Đơn chờ hoàn được làm mới đến khi admin xác nhận; trạng thái cuối dừng polling để tránh request nền.
+            if (order?.paymentStatus === 'REFUND_PENDING') return 15_000;
+            return false;
         },
     });
 }

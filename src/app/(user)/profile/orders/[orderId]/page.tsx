@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
     ArrowLeft,
+    BadgeCheck,
     CalendarDays,
     CircleAlert,
     MapPin,
@@ -185,7 +186,8 @@ function getCustomerReturnStatus(
         : requestStatus;
 }
 
-// Trang ưu tiên tiến trình đơn, cho Customer sửa yêu cầu hủy khi khoản hoàn còn chờ xử lý.
+// Trang chi tiết đơn cho Customer theo dõi hoàn tiền, xem xác nhận đã chuyển và sửa yêu cầu khi khoản hoàn còn chờ.
+// Trạng thái hoàn lấy từ payment snapshot hoặc return đã chốt; số tiền hiển thị đúng nguồn đã hoàn gần nhất.
 // Bố cục co từ một cột sang hai rồi ba cột để thông tin vẫn dễ quét ở màn hình nhỏ.
 // Phương thức ở phần thanh toán chỉ nêu Pay2S/COD, tránh lặp trạng thái đã hiển thị trên đầu trang.
 export default function ProfileOrderDetailPage() {
@@ -212,6 +214,14 @@ export default function ProfileOrderDetailPage() {
         queryFn: () => listOrderReturns(orderId),
         staleTime: 15_000,
         refetchOnMount: 'always',
+        refetchInterval: (query) => {
+            // Return đang chờ hoặc cần thử lại vẫn được theo dõi; dừng nền khi mọi khoản hoàn đã có kết quả.
+            return query.state.data?.some((item) =>
+                ['REFUND_PENDING', 'REFUND_FAILED'].includes(item.status),
+            )
+                ? 15_000
+                : false;
+        },
     });
     const legacyItemImages = useMissingProductImages(
         orderQuery.data?.items ?? [],
@@ -290,6 +300,17 @@ export default function ProfileOrderDetailPage() {
         returnsQuery.data,
         trackingQuery.data?.shipments,
     );
+    const latestCompletedReturn = returnsQuery.data
+        ?.filter((item) => item.status === 'REFUNDED')
+        .sort((left, right) =>
+            right.updatedAt.localeCompare(left.updatedAt),
+        )[0];
+    const isRefundCompleted =
+        order.paymentStatus === 'REFUNDED' || Boolean(latestCompletedReturn);
+    const completedRefundAmount =
+        order.paymentStatus === 'REFUNDED'
+            ? order.totalAmount
+            : latestCompletedReturn?.refundAmount;
     const shipmentStatus = getCustomerShipmentStatus(
         trackingQuery.data?.shipments.map((shipment) => shipment.status) ?? [],
     );
@@ -316,11 +337,25 @@ export default function ProfileOrderDetailPage() {
         order.fulfillmentStatus === 'COMPLETED' &&
         order.deliveryConfirmation.status !== 'ISSUE_REPORTED';
     const paymentLabel =
-        order.paymentMethod === 'PAY2S'
-            ? order.paymentStatus === 'PAID'
-                ? 'Đã thanh toán'
-                : 'Chờ xác nhận'
-            : 'COD';
+        order.paymentStatus === 'REFUNDED'
+            ? 'Đã hoàn tiền'
+            : order.paymentStatus === 'REFUND_PENDING'
+              ? 'Đang hoàn tiền'
+              : order.paymentMethod === 'PAY2S'
+                ? order.paymentStatus === 'PAID'
+                    ? 'Đã thanh toán'
+                    : 'Chờ xác nhận'
+                : 'COD';
+    const paymentStatusLabel =
+        order.paymentStatus === 'REFUNDED'
+            ? `${order.paymentMethod === 'PAY2S' ? 'Pay2S' : 'COD'} · Đã hoàn tiền`
+            : order.paymentStatus === 'REFUND_PENDING'
+              ? `${order.paymentMethod === 'PAY2S' ? 'Pay2S' : 'COD'} · Đang hoàn tiền`
+              : order.paymentMethod === 'PAY2S'
+                ? order.paymentStatus === 'PAID'
+                    ? 'Pay2S'
+                    : 'Pay2S · Chờ xác nhận'
+                : 'COD';
     // Chỉ thêm lối tắt hoàn hàng khi card thật sự có thể xuất hiện hoặc đang có yêu cầu cần theo dõi.
     const showReturns =
         (returnsQuery.data?.length ?? 0) > 0 ||
@@ -430,6 +465,56 @@ export default function ProfileOrderDetailPage() {
                         shipmentStatus={shipmentStatus}
                         returnStatus={customerReturnStatus}
                     />
+                    {isRefundCompleted ? (
+                        <section
+                            role="status"
+                            aria-live="polite"
+                            className="mt-4 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-teal-50 shadow-sm"
+                        >
+                            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                                <div className="flex min-w-0 items-start gap-3">
+                                    <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-900/10">
+                                        <BadgeCheck
+                                            className="size-5"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h2 className="text-sm font-bold text-emerald-950 sm:text-base">
+                                                {order.paymentStatus ===
+                                                'REFUNDED'
+                                                    ? 'Đã hoàn tiền'
+                                                    : 'Khoản hoàn đã hoàn tất'}
+                                            </h2>
+                                            <span className="rounded-full border border-emerald-200 bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+                                                Đã xác nhận hoàn
+                                            </span>
+                                        </div>
+                                        <p className="mt-1.5 max-w-2xl text-xs leading-5 text-emerald-900/80 sm:text-sm">
+                                            Khoản tiền hoàn đã được xác nhận
+                                            chuyển khoản. Vui lòng kiểm tra tài
+                                            khoản ngân hàng nhận hoàn đã đăng
+                                            ký.
+                                        </p>
+                                        <p className="mt-1 text-xs font-medium text-emerald-800/70">
+                                            Đơn hàng #{order.orderNumber}
+                                        </p>
+                                    </div>
+                                </div>
+                                {completedRefundAmount ? (
+                                    <div className="shrink-0 rounded-xl border border-emerald-200/80 bg-white/80 px-4 py-3 sm:min-w-40 sm:text-right">
+                                        <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800/70">
+                                            Số tiền hoàn
+                                        </p>
+                                        <p className="mt-1 text-lg font-bold tabular-nums text-emerald-900">
+                                            {formatMoney(completedRefundAmount)}
+                                        </p>
+                                    </div>
+                                ) : null}
+                            </div>
+                        </section>
+                    ) : null}
                 </header>
 
                 <div
@@ -583,11 +668,7 @@ export default function ProfileOrderDetailPage() {
                                         Thanh toán
                                     </span>
                                     <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-800 shadow-sm">
-                                        {order.paymentMethod === 'PAY2S'
-                                            ? order.paymentStatus === 'PAID'
-                                                ? 'Pay2S'
-                                                : 'Pay2S · Chờ xác nhận'
-                                            : 'COD'}
+                                        {paymentStatusLabel}
                                     </span>
                                 </div>
                             </div>

@@ -145,7 +145,12 @@ export function RefundBankAccountDialog({
                                         aria-invalid={Boolean(errors.bankCode)}
                                         className="h-11 w-full rounded-xl data-[size=default]:h-11"
                                     >
-                                        <SelectValue placeholder="Chọn ngân hàng" />
+                                        <SelectValue placeholder="Chọn ngân hàng">
+                                            {BANK_OPTIONS.find(
+                                                (bank) =>
+                                                    bank.value === field.value,
+                                            )?.label ?? 'Chọn ngân hàng'}
+                                        </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {BANK_OPTIONS.map((bank) => (
