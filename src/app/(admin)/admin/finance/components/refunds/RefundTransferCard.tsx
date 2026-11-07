@@ -6,7 +6,6 @@ import {
     AlertCircle,
     BadgeCheck,
     Building2,
-    Check,
     QrCode,
     ScanLine,
     UserRound,
@@ -15,15 +14,7 @@ import { QRCodeSVG } from 'qrcode.react';
 
 import { BANK_OPTIONS } from '@/constants/bank-options.constant';
 import { Button } from '@/components/ui/button';
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -36,15 +27,14 @@ import {
 import type { RefundTransferCardProps } from '../../types/refunds/refund-transfer-card.types';
 import { buildVietQrRefundTransfer } from '../../utils/build-vietqr-refund-transfer.util';
 
-// Trình bày ngân hàng, người nhận, số tiền và nội dung chuyển để admin kiểm tra cùng QR trước khi tự chuyển.
+// Trình bày tài khoản/QR và trạng thái OUT; chuyển xác minh lên dialog cha, không tự chốt refund.
 export function RefundTransferCard({
     refund,
     isSavingRecipientAccount,
-    isConfirmingRefund,
+    recipientConfirmed,
+    onRecipientConfirmedChange,
     onSaveRecipientAccount,
-    onConfirmRefund,
 }: RefundTransferCardProps) {
-    const [confirmOpen, setConfirmOpen] = useState(false);
     const [bankCode, setBankCode] = useState(refund.refundBankCode ?? '');
     const [accountHolder, setAccountHolder] = useState(
         refund.refundAccountHolder ?? '',
@@ -53,6 +43,7 @@ export function RefundTransferCard({
         refund.refundAccountNumber ?? '',
     );
     const transfer = buildVietQrRefundTransfer(refund);
+    const isOutDetected = Boolean(refund.refundOutTransactionId);
     const transferFailureReason =
         transfer?.result.ok === false ? transfer.result.reason : null;
     const selectedBank = BANK_OPTIONS.find(
@@ -98,17 +89,6 @@ export function RefundTransferCard({
         });
     }
 
-    // Chỉ đóng hộp thoại sau khi API ghi nhận hoàn thành công; lỗi được cha thông báo và giữ nguyên để thử lại.
-    async function confirmRefund(): Promise<void> {
-        if (isConfirmingRefund || recipientMissing) return;
-        try {
-            await onConfirmRefund();
-            setConfirmOpen(false);
-        } catch {
-            // Mutation đã hiển thị lỗi bằng toast nên không cần phát sinh thêm thông báo trùng.
-        }
-    }
-
     return (
         <aside className="h-fit min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm shadow-zinc-900/[0.03]">
             <header className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50/80 px-4 py-3.5 sm:px-5">
@@ -137,10 +117,82 @@ export function RefundTransferCard({
                 )}
             </header>
 
+            {/* Khi đã phát hiện OUT, chỉ giữ thông tin tài khoản và đối soát cần thiết; không dựng lại QR. */}
             {refund.refundAccountNumber ? (
-                <div className="grid min-w-0 gap-4 p-4 md:grid-cols-[minmax(240px,256px)_minmax(0,1fr)]">
+                <div
+                    className={`grid min-w-0 items-stretch gap-3 p-4 sm:p-5 ${isOutDetected ? 'md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]' : 'md:grid-cols-[minmax(240px,256px)_minmax(0,1fr)]'}`}
+                >
                     <div className="space-y-3">
-                        {transfer?.result.ok ? (
+                        {isOutDetected ? (
+                            <section className="h-full space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-amber-950">
+                                <div className="flex items-start gap-2.5">
+                                    <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800">
+                                        <BadgeCheck
+                                            className="size-4"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <h4 className="text-sm font-semibold">
+                                            Giao dịch OUT đã khớp
+                                        </h4>
+                                        <p className="mt-1 text-xs leading-5 text-amber-900">
+                                            Đã khớp tài khoản nguồn, mã và số
+                                            tiền. Pay2S không xác minh người
+                                            nhận.
+                                        </p>
+                                    </div>
+                                </div>
+                                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-amber-200/80 pt-3 text-xs">
+                                    <div>
+                                        <dt className="text-amber-800">
+                                            Số tiền OUT
+                                        </dt>
+                                        <dd className="mt-0.5 font-semibold tabular-nums">
+                                            {refund.refundOutAmount
+                                                ? `${Number(refund.refundOutAmount).toLocaleString('vi-VN')} đ`
+                                                : '—'}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-amber-800">
+                                            Thời điểm
+                                        </dt>
+                                        <dd className="mt-0.5 font-medium">
+                                            {refund.refundOutDetectedAt
+                                                ? new Date(
+                                                      refund.refundOutDetectedAt,
+                                                  ).toLocaleString('vi-VN')
+                                                : '—'}
+                                        </dd>
+                                    </div>
+                                    <div className="col-span-2 min-w-0">
+                                        <dt className="text-amber-800">
+                                            Mã giao dịch Pay2S
+                                        </dt>
+                                        <dd className="mt-0.5 break-all font-mono font-semibold">
+                                            {refund.refundOutTransactionNumber ||
+                                                refund.refundOutTransactionId}
+                                        </dd>
+                                    </div>
+                                </dl>
+                                <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-amber-200 bg-white/80 px-3 py-2.5 text-xs leading-5">
+                                    <Checkbox
+                                        checked={recipientConfirmed}
+                                        onCheckedChange={(checked) =>
+                                            onRecipientConfirmedChange(
+                                                checked === true,
+                                            )
+                                        }
+                                        aria-label="Xác nhận đã kiểm tra đúng tài khoản nhận hoàn"
+                                    />
+                                    <span>
+                                        Đã đối chiếu đúng người nhận trong app
+                                        ngân hàng.
+                                    </span>
+                                </label>
+                            </section>
+                        ) : transfer?.result.ok ? (
                             <div className="rounded-2xl border border-zinc-100 bg-zinc-50/60 p-3.5 text-center">
                                 <div className="mx-auto grid w-fit place-items-center rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
                                     <QRCodeSVG
@@ -179,17 +231,21 @@ export function RefundTransferCard({
                             </div>
                         )}
 
-                        <p className="flex items-start gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-xs leading-5 text-zinc-600">
-                            <ScanLine
-                                className="mt-0.5 size-4 shrink-0 text-zinc-700"
-                                aria-hidden="true"
-                            />
-                            QR chỉ điền lệnh, không tự chuyển tiền.
-                        </p>
+                        {!isOutDetected ? (
+                            <p className="flex items-start gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-xs leading-5 text-zinc-600">
+                                <ScanLine
+                                    className="mt-0.5 size-4 shrink-0 text-zinc-700"
+                                    aria-hidden="true"
+                                />
+                                QR chỉ điền lệnh, không tự chuyển tiền.
+                            </p>
+                        ) : null}
                     </div>
 
                     <div className="min-w-0 space-y-3">
-                        <section className="rounded-2xl border border-zinc-200 bg-white p-3.5 sm:p-4">
+                        <section
+                            className={`rounded-2xl border border-zinc-200 bg-white p-3.5 sm:p-4 ${isOutDetected ? 'h-full' : ''}`}
+                        >
                             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-900">
                                 <UserRound
                                     className="size-4 text-zinc-700"
@@ -227,41 +283,43 @@ export function RefundTransferCard({
                             </dl>
                         </section>
 
-                        <section className="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-3.5 sm:p-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2 text-sm text-zinc-600">
-                                    <Building2
-                                        className="size-4 text-zinc-500"
-                                        aria-hidden="true"
-                                    />
-                                    Số tiền hoàn
-                                </div>
-                                <p className="text-lg font-bold tabular-nums text-zinc-800">
-                                    {Number(refund.amount).toLocaleString(
-                                        'vi-VN',
-                                    )}{' '}
-                                    đ
-                                </p>
-                            </div>
-                            {transfer ? (
-                                <div className="mt-3 border-t border-zinc-200 pt-3">
-                                    <p className="text-xs text-zinc-500">
-                                        Nội dung chuyển khoản
-                                    </p>
-                                    <p className="mt-1 break-all rounded-lg border border-zinc-200 bg-white px-2.5 py-2 font-mono text-xs font-semibold text-zinc-800">
-                                        {transfer.transferMemo}
+                        {!isOutDetected ? (
+                            <section className="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-3.5 sm:p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2 text-sm text-zinc-600">
+                                        <Building2
+                                            className="size-4 text-zinc-500"
+                                            aria-hidden="true"
+                                        />
+                                        Số tiền hoàn
+                                    </div>
+                                    <p className="text-lg font-bold tabular-nums text-zinc-800">
+                                        {Number(refund.amount).toLocaleString(
+                                            'vi-VN',
+                                        )}{' '}
+                                        đ
                                     </p>
                                 </div>
-                            ) : null}
-                        </section>
+                                {transfer ? (
+                                    <div className="mt-3 border-t border-zinc-200 pt-3">
+                                        <p className="text-xs text-zinc-500">
+                                            Nội dung chuyển khoản
+                                        </p>
+                                        <p className="mt-1 break-all rounded-lg border border-zinc-200 bg-white px-2.5 py-2 font-mono text-xs font-semibold text-zinc-800">
+                                            {transfer.transferMemo}
+                                        </p>
+                                    </div>
+                                ) : null}
+                            </section>
+                        ) : null}
                     </div>
                 </div>
             ) : refund.sourceType === 'PAYMENT_ATTEMPT' ? (
                 <div className="space-y-4 p-4 sm:p-5">
                     <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 px-4 py-3.5 text-sm leading-5 text-zinc-950">
-                        Hồ sơ chưa lưu tài khoản nhận. Hãy xác minh trực tiếp
-                        với khách rồi nhập chính xác thông tin dưới đây để tạo
-                        QR.
+                        {isOutDetected
+                            ? 'Chưa có tài khoản nhận. Xác minh với khách và nhập đúng thông tin để đối chiếu giao dịch OUT.'
+                            : 'Hồ sơ chưa lưu tài khoản nhận. Hãy xác minh trực tiếp với khách rồi nhập chính xác thông tin dưới đây để tạo QR.'}
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="grid gap-1.5">
@@ -282,7 +340,10 @@ export function RefundTransferCard({
                                     id={`refund-bank-${refund.id}`}
                                     className="h-10 min-h-10 w-full rounded-xl border-zinc-200 bg-white py-0 shadow-none"
                                 >
-                                    <SelectValue placeholder="Chọn ngân hàng" />
+                                    <SelectValue placeholder="Chọn ngân hàng">
+                                        {selectedBank?.label ??
+                                            'Chọn ngân hàng'}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {BANK_OPTIONS.map((option) => (
@@ -344,8 +405,9 @@ export function RefundTransferCard({
                         </div>
                     </div>
                     <p className="text-xs leading-5 text-zinc-500">
-                        Chỉ lưu sau khi đã xác nhận với khách. QR sẽ được tạo
-                        cục bộ sau khi lưu thành công.
+                        {isOutDetected
+                            ? 'Chỉ lưu thông tin khách đã xác nhận để đối chiếu tiền hoàn.'
+                            : 'Chỉ lưu sau khi đã xác nhận với khách. QR sẽ được tạo cục bộ sau khi lưu thành công.'}
                     </p>
                 </div>
             ) : (
@@ -363,108 +425,43 @@ export function RefundTransferCard({
                 </div>
             )}
 
-            <div className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-50/80 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                <div className="min-w-0 space-y-1">
-                    <p className="text-xs leading-5 text-zinc-600">
-                        Chỉ xác nhận sau khi ngân hàng báo chuyển tiền thành
-                        công.
+            {isOutDetected && recipientMissing ? (
+                <section className="space-y-2 border-t border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-950 sm:px-5">
+                    <p className="font-semibold">Giao dịch OUT đã khớp</p>
+                    <p className="text-xs leading-5 text-amber-900">
+                        {refund.refundOutTransactionNumber ||
+                            refund.refundOutTransactionId}{' '}
+                        ·{' '}
+                        {refund.refundOutAmount
+                            ? `${Number(refund.refundOutAmount).toLocaleString('vi-VN')} đ`
+                            : 'Chưa rõ số tiền'}
+                        . Cần lưu tài khoản nhận để admin đối chiếu.
                     </p>
-                    {recipientMissing ? (
-                        <p className="text-xs leading-5 text-amber-800">
-                            Cần lưu tài khoản nhận của khách trước khi xác nhận.
-                        </p>
-                    ) : null}
-                </div>
-                <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:justify-end">
-                    {/* Chỉ hiện nút lưu cạnh nút xác nhận khi payment attempt chưa có tài khoản nhận. */}
-                    {recipientMissing ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="h-10 w-full rounded-xl border-zinc-300 bg-white px-4 text-zinc-800 shadow-sm hover:bg-zinc-100 sm:min-w-44 sm:w-auto"
-                            disabled={
-                                !canSaveRecipientAccount ||
-                                isSavingRecipientAccount
-                            }
-                            onClick={saveRecipientAccount}
-                        >
-                            {isSavingRecipientAccount
-                                ? 'Đang lưu thông tin...'
-                                : 'Lưu tài khoản & tạo QR'}
-                        </Button>
-                    ) : null}
+                </section>
+            ) : null}
+
+            {recipientMissing ? (
+                <div className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-50/80 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                    <p className="text-xs leading-5 text-zinc-600">
+                        Chỉ lưu thông tin đã xác minh trực tiếp với khách.
+                    </p>
                     <Button
                         type="button"
-                        className="h-10 w-full rounded-xl bg-zinc-950 px-4 text-white shadow-sm hover:bg-zinc-800 sm:min-w-44 sm:w-auto"
+                        variant="outline"
+                        className="h-10 w-full rounded-xl border-zinc-300 bg-white px-4 text-zinc-800 shadow-sm hover:bg-zinc-100 sm:min-w-44 sm:w-auto"
                         disabled={
-                            isConfirmingRefund ||
-                            isSavingRecipientAccount ||
-                            recipientMissing
+                            !canSaveRecipientAccount || isSavingRecipientAccount
                         }
-                        onClick={() => setConfirmOpen(true)}
+                        onClick={saveRecipientAccount}
                     >
-                        <Check aria-hidden="true" />
-                        {isConfirmingRefund
-                            ? 'Đang ghi nhận...'
-                            : 'Xác nhận đã chuyển'}
+                        {isSavingRecipientAccount
+                            ? 'Đang lưu thông tin...'
+                            : isOutDetected
+                              ? 'Lưu tài khoản nhận'
+                              : 'Lưu tài khoản & tạo QR'}
                     </Button>
                 </div>
-            </div>
-
-            <AlertDialog
-                open={confirmOpen}
-                onOpenChange={(open) => {
-                    if (!isConfirmingRefund) setConfirmOpen(open);
-                }}
-            >
-                <AlertDialogContent className="max-w-md">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="text-zinc-950">
-                            Xác nhận đã chuyển tiền hoàn?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-2">
-                            <span className="block">
-                                Xác nhận bạn đã chuyển đủ{' '}
-                                <strong className="text-zinc-900">
-                                    {Number(refund.amount).toLocaleString(
-                                        'vi-VN',
-                                    )}{' '}
-                                    đ
-                                </strong>{' '}
-                                cho đơn {refund.orderNumber}.
-                            </span>
-                            <span className="block">
-                                Hệ thống sẽ đóng khoản hoàn và cập nhật sổ tài
-                                chính. Thao tác này không tự chuyển tiền.
-                            </span>
-                            {refund.refundAccountNumber ? (
-                                <span className="block rounded-lg bg-zinc-50 px-3 py-2 font-mono text-xs text-zinc-700">
-                                    {refund.refundBankName} ·{' '}
-                                    {refund.refundAccountNumber}
-                                </span>
-                            ) : null}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel
-                            disabled={isConfirmingRefund}
-                            className="mt-0"
-                        >
-                            Kiểm tra lại
-                        </AlertDialogCancel>
-                        <Button
-                            type="button"
-                            disabled={isConfirmingRefund}
-                            onClick={() => void confirmRefund()}
-                            className="rounded-xl bg-zinc-950 text-white hover:bg-zinc-800"
-                        >
-                            {isConfirmingRefund
-                                ? 'Đang ghi nhận...'
-                                : 'Đã chuyển, xác nhận hoàn'}
-                        </Button>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            ) : null}
         </aside>
     );
 }
