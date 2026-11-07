@@ -10,6 +10,7 @@ import {
     CheckCircle2,
     CircleDollarSign,
     ImagePlus,
+    Pencil,
     RotateCcw,
     SkipForward,
     Truck,
@@ -32,8 +33,10 @@ import {
     cancelOrderReturn,
     createOrderReturn,
     listOrderReturns,
+    updateOrderReturn,
     type OrderReturnReason,
     type OrderReturnResponse,
+    type UpdateOrderReturnInput,
 } from '@/services/order';
 import { mediaService } from '@/services/media';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -43,31 +46,12 @@ import {
     type ImageLightboxMedia,
 } from '@/common/reviews/components/ImageLightbox';
 import { uploadReturnMedia } from '../utils/return-media-upload';
+import { EditOrderReturnDialog } from './edit-order-return-dialog';
+import { RETURN_REASONS } from '../constants/return-reason.constant';
 import {
     useAdvanceDemoCustomerReturnShipment,
     useCustomerTracking,
 } from '@/hooks/shipping/use-shipment';
-
-const REASONS: Array<{
-    value: OrderReturnReason;
-    label: string;
-    needsEvidence: boolean;
-}> = [
-    { value: 'DAMAGED', label: 'Sản phẩm bị hư hỏng', needsEvidence: true },
-    { value: 'WRONG_ITEM', label: 'Giao sai sản phẩm', needsEvidence: true },
-    { value: 'MISSING_ITEM', label: 'Thiếu sản phẩm', needsEvidence: true },
-    {
-        value: 'NOT_AS_DESCRIBED',
-        label: 'Không đúng mô tả',
-        needsEvidence: true,
-    },
-    {
-        value: 'CHANGE_OF_MIND',
-        label: 'Không còn nhu cầu',
-        needsEvidence: false,
-    },
-    { value: 'OTHER', label: 'Lý do khác', needsEvidence: false },
-];
 
 const RETURN_SHIPPING_LIMIT_REJECTION_PREFIX =
     'Phí hoàn GHN vượt giá trị hàng hoàn.';
@@ -159,6 +143,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
         items: ImageLightboxMedia[];
         index: number;
     } | null>(null);
+    const [editingRequest, setEditingRequest] =
+        useState<OrderReturnResponse | null>(null);
 
     // Tạo lại preview khi danh sách file đổi và thu hồi blob URL để không giữ file local trong bộ nhớ.
     useEffect(() => {
@@ -173,6 +159,11 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
 
     const createMutation = useMutation({
         mutationFn: async () => {
+            // Chặn trước upload để không tạo asset rác khi form chưa có bằng chứng bắt buộc.
+            if (images.length + videos.length === 0)
+                throw new Error(
+                    'Vui lòng thêm ít nhất một ảnh hoặc video bằng chứng.',
+                );
             setSubmitting(true);
             const media = await uploadReturnMedia(images, videos);
             try {
@@ -214,6 +205,22 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
         onError: (error) => toast.error(getErrorMessage(error)),
     });
 
+    // Tải lại danh sách để thẻ yêu cầu dùng snapshot mới từ server.
+    const updateMutation = useMutation({
+        mutationFn: (variables: {
+            returnId: string;
+            input: UpdateOrderReturnInput;
+        }) => updateOrderReturn(variables.returnId, variables.input),
+        onSuccess: () => {
+            toast.success('Đã cập nhật yêu cầu hoàn hàng.');
+            void queryClient
+                .invalidateQueries({
+                    queryKey: ['order-returns', order.id],
+                })
+                .catch(() => undefined);
+        },
+    });
+
     const activeRequest = returnsQuery.data?.find(
         (item) => !isTerminal(item.status),
     );
@@ -235,7 +242,9 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
             .map((item) => item.sellerShopId)
             .filter(Boolean),
     );
-    const selectedReason = REASONS.find((item) => item.value === reason)!;
+    const selectedReason = RETURN_REASONS.find(
+        (item) => item.value === reason,
+    )!;
     const canCreate =
         order.fulfillmentStatus === 'DELIVERED' ||
         order.fulfillmentStatus === 'COMPLETED';
@@ -382,17 +391,41 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                         </span>
                                     </div>
                                     {item.status === 'REQUESTED' ? (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="h-8 rounded-lg border-zinc-200 bg-white px-3 text-xs text-zinc-700 hover:bg-zinc-50"
-                                            disabled={cancelMutation.isPending}
-                                            onClick={() =>
-                                                cancelMutation.mutate(item.id)
-                                            }
-                                        >
-                                            Hủy yêu cầu
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="h-8 rounded-lg border-zinc-200 bg-white px-3 text-xs text-zinc-700 hover:bg-zinc-50"
+                                                disabled={
+                                                    updateMutation.isPending
+                                                }
+                                                onClick={() =>
+                                                    setEditingRequest(item)
+                                                }
+                                            >
+                                                <Pencil
+                                                    className="mr-1.5 size-3.5"
+                                                    aria-hidden="true"
+                                                />
+                                                Chỉnh sửa
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="h-8 rounded-lg border-zinc-200 bg-white px-3 text-xs text-zinc-700 hover:bg-zinc-50"
+                                                disabled={
+                                                    cancelMutation.isPending ||
+                                                    updateMutation.isPending
+                                                }
+                                                onClick={() =>
+                                                    cancelMutation.mutate(
+                                                        item.id,
+                                                    )
+                                                }
+                                            >
+                                                Hủy yêu cầu
+                                            </Button>
+                                        </div>
                                     ) : (
                                         <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
                                             <CalendarDays
@@ -623,7 +656,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {REASONS.map((item) => (
+                                    {RETURN_REASONS.map((item) => (
                                         <SelectItem
                                             key={item.value}
                                             value={item.value}
@@ -637,15 +670,9 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                         <div>
                             <p className="text-sm font-medium text-zinc-700">
                                 Bằng chứng{' '}
-                                {selectedReason.needsEvidence ? (
-                                    <span className="text-red-500">
-                                        (bắt buộc ảnh)
-                                    </span>
-                                ) : (
-                                    <span className="font-normal text-zinc-400">
-                                        (không bắt buộc)
-                                    </span>
-                                )}
+                                <span className="text-red-500">
+                                    (bắt buộc ảnh hoặc video)
+                                </span>
                             </p>
                             <div className="mt-1.5 flex flex-wrap gap-2">
                                 <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
@@ -673,7 +700,8 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                 </label>
                             </div>
                             <p className="mt-1 text-xs text-zinc-400">
-                                Tối đa 5 ảnh và 1 video.
+                                Tối đa 5 ảnh và 1 video; cần đính kèm ít nhất
+                                một bằng chứng.
                             </p>
                         </div>
                     </div>
@@ -721,8 +749,7 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                             type="button"
                             disabled={
                                 !selectedItemIds.length ||
-                                (selectedReason.needsEvidence &&
-                                    !images.length) ||
+                                (!images.length && !videos.length) ||
                                 submitting ||
                                 createMutation.isPending
                             }
@@ -743,6 +770,18 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                     onClose={() => setActiveMedia(null)}
                 />
             ) : null}
+            <EditOrderReturnDialog
+                open={Boolean(editingRequest)}
+                request={editingRequest}
+                order={order}
+                isSubmitting={updateMutation.isPending}
+                onOpenChange={(open) => {
+                    if (!open) setEditingRequest(null);
+                }}
+                onSave={async (returnId, input) => {
+                    await updateMutation.mutateAsync({ returnId, input });
+                }}
+            />
         </section>
     );
 }

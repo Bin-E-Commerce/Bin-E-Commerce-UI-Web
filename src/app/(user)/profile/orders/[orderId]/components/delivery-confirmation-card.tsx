@@ -118,13 +118,13 @@ export function DeliveryConfirmationCard({
             .filter(Boolean),
     );
     const isReturnRequest = Boolean(reason && reason !== 'NOT_RECEIVED');
-    const evidenceRequired = ['DAMAGED', 'WRONG_ITEM', 'MISSING_ITEM'].includes(
-        reason,
-    );
+    // NOT_RECEIVED là khiếu nại vận chuyển; mọi lý do còn lại tạo yêu cầu hoàn và phải kèm attachment.
+    const evidenceRequired = isReturnRequest;
+    const hasEvidence = images.length > 0 || videos.length > 0;
     const canSubmitIssue =
         Boolean(reason) &&
         (!isReturnRequest || selectedItemIds.length > 0) &&
-        (!evidenceRequired || images.length > 0);
+        (!evidenceRequired || hasEvidence);
     const localMedia = useMemo(
         () => createLocalMediaPreviews(images, videos),
         [images, videos],
@@ -160,12 +160,11 @@ export function DeliveryConfirmationCard({
             if (isReturnRequest && selectedItemIds.length === 0) {
                 throw new Error('Vui lòng chọn sản phẩm bị ảnh hưởng.');
             }
-            if (
-                isReturnRequest &&
-                ['DAMAGED', 'WRONG_ITEM', 'MISSING_ITEM'].includes(reason) &&
-                images.length === 0
-            ) {
-                throw new Error('Vui lòng thêm ít nhất một ảnh bằng chứng.');
+            // Chặn trước upload/tạo request để không lưu khiếu nại hoàn thiếu chứng cứ.
+            if (isReturnRequest && !hasEvidence) {
+                throw new Error(
+                    'Vui lòng thêm ít nhất một ảnh hoặc video bằng chứng.',
+                );
             }
 
             let uploadedAssets: ReviewMediaCleanupAsset[] = [];
@@ -459,7 +458,7 @@ export function DeliveryConfirmationCard({
                                         Bằng chứng{' '}
                                         {evidenceRequired ? (
                                             <span className="font-normal text-red-500">
-                                                (bắt buộc ảnh)
+                                                (bắt buộc ảnh hoặc video)
                                             </span>
                                         ) : (
                                             <span className="font-normal text-zinc-400">

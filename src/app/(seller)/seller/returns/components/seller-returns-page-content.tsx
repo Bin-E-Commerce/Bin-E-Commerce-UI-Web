@@ -41,7 +41,11 @@ import { SellerReturnDetailModal } from './seller-return-detail-modal';
 import { SellerReturnRejectDialog } from './seller-return-reject-dialog';
 
 type ReturnQueueFilter =
-    'ALL' | 'REQUESTED' | 'AWAITING_SHIPMENT' | 'RECEIVED' | 'RESOLVED';
+    | 'ALL'
+    | 'REQUESTED'
+    | 'AWAITING_SHIPMENT'
+    | 'RECEIVED'
+    | 'RESOLVED';
 
 const ACTIONABLE_STATUSES = new Set([
     'REQUESTED',
@@ -140,11 +144,14 @@ export function SellerReturnsPageContent() {
         useState<SellerReturnRequest | null>(null);
     const [rejectingRequest, setRejectingRequest] =
         useState<SellerReturnRequest | null>(null);
+    // Đồng bộ queue định kỳ để request từ phiên khách khác xuất hiện mà seller không cần tải lại trang.
     const returnsQuery = useQuery({
         queryKey: ['seller-returns'],
         queryFn: () => listSellerReturns(),
         staleTime: 15_000,
         refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+        refetchInterval: 15_000,
     });
     const selectedOrderQuery = useQuery({
         queryKey: ['seller-return-order', selectedRequest?.orderId],
@@ -727,7 +734,7 @@ function SellerReturnRequestCard({
                         <Button
                             variant="ghost"
                             type="button"
-                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             disabled={
                                 reviewPending ||
                                 (item.reason === 'OTHER' && !otherReasonPayer)
@@ -758,7 +765,7 @@ function SellerReturnRequestCard({
                     <Button
                         variant="ghost"
                         type="button"
-                        className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                        className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         disabled={shipmentPending}
                         onClick={onCreateShipment}
                     >
@@ -810,7 +817,7 @@ function SellerReturnRequestCard({
                                 <Button
                                     variant="ghost"
                                     type="button"
-                                    className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                                    className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                                     disabled={shipmentPending}
                                     onClick={onCreateShipment}
                                 >
@@ -823,7 +830,7 @@ function SellerReturnRequestCard({
                         <Button
                             variant="ghost"
                             type="button"
-                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             disabled={shipmentPending}
                             onClick={onCreateShipment}
                         >
@@ -842,7 +849,7 @@ function SellerReturnRequestCard({
                         <Button
                             variant="ghost"
                             type="button"
-                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             disabled={inspectPending}
                             onClick={() => onInspect(true)}
                         >

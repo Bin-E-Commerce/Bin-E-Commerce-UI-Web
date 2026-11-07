@@ -11,6 +11,8 @@ import type { CancelOrderInput } from '@/services/order/types/cancel-order.types
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
 const PAY2S_RETURN = `${API_BASE_URL}${API_VERSION}/payments/pay2s/return`;
+// Verify Pay2S là request ngắn; không để timeout mặc định 10 phút giữ toast loading vô hạn với khách.
+const PAY2S_RETURN_VERIFY_TIMEOUT_MS = 8_000;
 
 export type Pay2sReturnResponse =
     | { status: 'PAID'; orderId: string }
@@ -26,11 +28,13 @@ export type Pay2sReturnResponse =
       };
 
 // Gửi nguyên query Pay2S tới backend; client chỉ hiển thị kết quả sau khi server xác minh chữ ký và đối chiếu attempt.
+// Timeout ngắn giúp hook đóng trạng thái chờ và đưa thông báo có thể thử lại nếu Gateway/Order Service không phản hồi.
 export async function verifyPay2sReturn(
     rawQueryString: string,
 ): Promise<Pay2sReturnResponse> {
     const response = await authorizedAxios.get<Pay2sReturnResponse>(
         `${PAY2S_RETURN}${rawQueryString}`,
+        { timeout: PAY2S_RETURN_VERIFY_TIMEOUT_MS },
     );
     return response.data;
 }
@@ -208,6 +212,10 @@ export async function cancelOrder(
         `${ORDERS}/${orderId}/cancel`,
         {
             reason: input.reason.trim(),
+            // Backend dùng ID để xác minh account thuộc khách và gắn với refund chờ xử lý.
+            ...(input.savedRefundBankAccountId
+                ? { savedRefundBankAccountId: input.savedRefundBankAccountId }
+                : {}),
             ...(input.refundBankAccount
                 ? {
                       refundBankAccount: {
@@ -237,6 +245,10 @@ export async function updateCancellationDetails(
         `${ORDERS}/${orderId}/cancellation`,
         {
             reason: input.reason.trim(),
+            // Giữ liên kết account đã chọn để thay đổi tiếp theo trong hồ sơ đồng bộ vào đúng refund.
+            ...(input.savedRefundBankAccountId
+                ? { savedRefundBankAccountId: input.savedRefundBankAccountId }
+                : {}),
             ...(input.refundBankAccount
                 ? {
                       refundBankAccount: {
@@ -307,6 +319,13 @@ export interface OrderReturnResponse {
     updatedAt: string;
 }
 
+export interface UpdateOrderReturnInput {
+    expectedUpdatedAt: string;
+    reason: OrderReturnReason;
+    description?: string;
+    evidence: OrderReturnResponse['evidence'];
+}
+
 // Tạo return request theo một shop; UI phải tách item nhiều shop thành nhiều request.
 export async function createOrderReturn(
     orderId: string,
@@ -314,7 +333,7 @@ export async function createOrderReturn(
         itemIds: string[];
         reason: OrderReturnReason;
         description?: string;
-        evidence?: OrderReturnResponse['evidence'];
+        evidence: OrderReturnResponse['evidence'];
     },
 ): Promise<OrderReturnResponse> {
     const response = await authorizedAxios.post<OrderReturnResponse>(
@@ -340,6 +359,18 @@ export async function cancelOrderReturn(
 ): Promise<OrderReturnResponse> {
     const response = await authorizedAxios.post<OrderReturnResponse>(
         `${API_BASE_URL}${API_VERSION}/orders/returns/${returnId}/cancellation`,
+    );
+    return response.data;
+}
+
+// Sửa request còn chờ shop; version được gửi để server từ chối dữ liệu form đã cũ.
+export async function updateOrderReturn(
+    returnId: string,
+    input: UpdateOrderReturnInput,
+): Promise<{ updated: true }> {
+    const response = await authorizedAxios.patch<{ updated: true }>(
+        `${API_BASE_URL}${API_VERSION}/orders/returns/${returnId}`,
+        input,
     );
     return response.data;
 }

@@ -45,7 +45,8 @@ export async function uploadReturnMedia(
         })),
     ];
     try {
-        const results = await Promise.all(
+        // Chờ mọi upload hoàn tất để khi một file lỗi vẫn biết đủ asset đã tạo và xóa toàn bộ thay vì bỏ sót upload chạy nền.
+        const results = await Promise.allSettled(
             tasks.map(async ({ file, purpose, type }) => {
                 const presigned = await mediaService.createPresignedUpload({
                     fileName: file.name,
@@ -53,11 +54,12 @@ export async function uploadReturnMedia(
                     fileSize: file.size,
                     purpose,
                 });
+                // Ghi nhận asset ngay sau khi cấp presigned; cleanup được cả asset có upload thất bại giữa chừng.
+                uploadedAssets.push({ assetId: presigned.assetId, purpose });
                 await mediaService.uploadToPresignedPost(
                     presigned.upload,
                     file,
                 );
-                uploadedAssets.push({ assetId: presigned.assetId, purpose });
                 return {
                     assetId: presigned.assetId,
                     url: publicUrl(
@@ -69,7 +71,22 @@ export async function uploadReturnMedia(
                 };
             }),
         );
-        return { evidence: results, uploadedAssets };
+        const failedUpload = results.find(
+            (result): result is PromiseRejectedResult =>
+                result.status === 'rejected',
+        );
+        if (failedUpload) throw failedUpload.reason;
+        return {
+            evidence: results.map(
+                (result) =>
+                    (
+                        result as PromiseFulfilledResult<
+                            ReturnMediaUploadResult['evidence'][number]
+                        >
+                    ).value,
+            ),
+            uploadedAssets,
+        };
     } catch (error) {
         if (uploadedAssets.length > 0)
             await mediaService
