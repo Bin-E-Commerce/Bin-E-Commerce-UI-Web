@@ -54,11 +54,12 @@ export async function getAdminWithdrawals(
     page = 1,
     pageSize = 20,
     status?: string,
+    search?: string,
 ): Promise<AdminFinancePage<AdminFinanceWithdrawal>> {
     const response = await authorizedAxios.get<
         AdminFinancePage<AdminFinanceWithdrawal>
     >(`${financeUrl}/withdrawals`, {
-        params: { page, pageSize, status },
+        params: { page, pageSize, status, search },
     });
     return response.data;
 }
@@ -67,10 +68,14 @@ export async function getAdminWithdrawals(
 export async function getAdminLedger(
     page = 1,
     pageSize = 20,
+    reconciliationStatus?: string,
+    search?: string,
 ): Promise<AdminFinancePage<AdminFinanceLedgerEntry>> {
     const response = await authorizedAxios.get<
         AdminFinancePage<AdminFinanceLedgerEntry>
-    >(`${financeUrl}/ledger`, { params: { page, pageSize } });
+    >(`${financeUrl}/ledger`, {
+        params: { page, pageSize, reconciliationStatus, search },
+    });
     return response.data;
 }
 
@@ -78,10 +83,11 @@ export async function getAdminLedger(
 export async function getPendingAdminCodRemittances(
     page = 1,
     pageSize = 50,
+    search?: string,
 ): Promise<AdminFinancePage<AdminFinanceCodRemittance>> {
     const response = await authorizedAxios.get<
         AdminFinancePage<AdminFinanceCodRemittance>
-    >(`${financeUrl}/cod-remittances`, { params: { page, pageSize } });
+    >(`${financeUrl}/cod-remittances`, { params: { page, pageSize, search } });
     return response.data;
 }
 
@@ -89,10 +95,12 @@ export async function getPendingAdminCodRemittances(
 export async function getAdminRefunds(
     page = 1,
     pageSize = 20,
+    status?: string,
+    search?: string,
 ): Promise<AdminFinancePage<AdminFinanceRefund>> {
     const response = await authorizedAxios.get<
         AdminFinancePage<AdminFinanceRefund>
-    >(`${financeUrl}/refunds`, { params: { page, pageSize } });
+    >(`${financeUrl}/refunds`, { params: { page, pageSize, status, search } });
     return response.data;
 }
 

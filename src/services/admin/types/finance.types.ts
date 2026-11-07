@@ -49,6 +49,11 @@ export interface AdminFinanceSnapshot {
     totalLedger: number;
     page: number;
     pageSize: number;
+    sellerDebtBalance?: string;
+    sellerDebtShopCount?: number;
+    overdueSellerDebtBalance?: string;
+    overdueSellerDebtShopCount?: number;
+    sellerDebtLockedShopCount?: number;
 }
 
 export interface AdminFinanceWithdrawalDetail extends AdminFinanceWithdrawal {
@@ -86,14 +91,14 @@ export interface AdminFinanceCodRemittance {
     createdAt: string;
 }
 
-// Hồ sơ chờ chuyển hoàn thủ công; amount và nguồn do Order Service chốt, UI không tự tính lại.
+// Hồ sơ hoàn từ các nguồn; amount và trạng thái do Order Service chốt, UI chỉ trình bày lịch sử/thao tác.
 export interface AdminFinanceRefund {
     sourceType: 'PAYMENT_ATTEMPT' | 'ORDER_RETURN' | 'DELIVERY_ISSUE';
     id: string;
     orderId: string;
     orderNumber: string;
     paymentMethod: 'COD' | 'PAY2S';
-    status: 'REFUND_PENDING' | 'REFUND_FAILED';
+    status: 'REFUND_PENDING' | 'REFUND_FAILED' | 'REFUNDED';
     amount: string;
     reason: string;
     providerTransactionId: string | null;
@@ -101,7 +106,13 @@ export interface AdminFinanceRefund {
     refundBankName: string | null;
     refundAccountHolder: string | null;
     refundAccountNumber: string | null;
+    refundTransferMemo: string | null;
     refundFailureNote: string | null;
+    refundOutTransactionId: string | null;
+    refundOutTransactionNumber: string | null;
+    refundOutAmount: string | null;
+    refundOutDetectedAt: string | null;
+    refundProcessedAt: string | null;
     createdAt: string;
 }
 

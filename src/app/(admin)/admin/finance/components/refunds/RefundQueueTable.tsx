@@ -1,4 +1,4 @@
-// Danh sách refund dạng bảng có phân trang; phần này chỉ hiển thị tóm tắt và mở chi tiết.
+// Danh sách refund có phân trang; hiển thị cả hồ sơ đang xử lý lẫn lịch sử đã chuyển.
 'use client';
 
 import { AlertCircle, Landmark, RefreshCw, RotateCcw } from 'lucide-react';
@@ -6,7 +6,9 @@ import { AlertCircle, Landmark, RefreshCw, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { AdminFinanceRefund } from '@/services/admin/types/finance.types';
 import type { RefundQueueTableProps } from '../../types/refunds/refund-queue.types';
+import { FinanceSectionHeader } from '../shared/FinanceSectionHeader';
 import { FinanceTablePagination } from '../shared/FinanceTablePagination';
+import { FinanceTableToolbar } from '../shared/FinanceTableToolbar';
 
 // Định dạng số tiền VND từ snapshot API mà không tự tính lại khoản phải hoàn.
 function formatRefundAmount(value: string): string {
@@ -20,7 +22,8 @@ function refundSourceLabel(refund: AdminFinanceRefund): string {
     return 'Khiếu nại chưa nhận hàng';
 }
 
-// Trình bày từng khoản hoàn thành hàng để admin quét nhanh rồi mở popup khi cần thao tác.
+// Trình bày trạng thái và ngày giao dịch của từng khoản hoàn.
+// Hồ sơ đã hoàn chỉ mở xem lịch sử; hồ sơ còn lại mở luồng xử lý.
 export function RefundQueueTable({
     refunds,
     total,
@@ -29,35 +32,28 @@ export function RefundQueueTable({
     isLoading,
     isFetching,
     isError,
+    search,
+    status,
     onRefresh,
+    onSearchChange,
+    onStatusChange,
     onPageChange,
     onSelectRefund,
 }: RefundQueueTableProps) {
     return (
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm shadow-zinc-950/[0.04]">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 bg-gradient-to-r from-white via-white to-zinc-50/80 px-5 py-4 sm:px-6">
-                <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm ring-4 ring-zinc-100">
-                        <RotateCcw className="size-4" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0">
-                        <h2 className="font-semibold tracking-tight text-zinc-950">
-                            Hoàn tiền cần xử lý
-                        </h2>
-                        <p className="mt-1 text-xs leading-5 text-zinc-500">
-                            Chọn một đơn để xem thông tin nhận tiền và ghi nhận
-                            kết quả chuyển khoản.
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="inline-flex shrink-0 items-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm">
-                        {isError
-                            ? 'Không tải được'
-                            : isLoading
-                              ? 'Đang tải…'
-                              : `${total} khoản hoàn`}
-                    </span>
+            <FinanceSectionHeader
+                icon={RotateCcw}
+                title="Danh sách hoàn tiền"
+                description="Theo dõi khoản đang xử lý và lịch sử đã chuyển."
+                countLabel={
+                    isError
+                        ? 'Không tải được'
+                        : isLoading
+                          ? 'Đang tải…'
+                          : `${total} khoản hoàn`
+                }
+                actions={
                     <Button
                         type="button"
                         size="icon"
@@ -72,8 +68,24 @@ export function RefundQueueTable({
                             aria-hidden="true"
                         />
                     </Button>
-                </div>
-            </div>
+                }
+            />
+
+            <FinanceTableToolbar
+                searchValue={search}
+                searchLabel="Tìm khoản hoàn tiền"
+                searchPlaceholder="Tìm theo mã đơn, giao dịch, lý do hoặc mã hồ sơ"
+                onSearchChange={onSearchChange}
+                statusValue={status}
+                statusLabel="Lọc trạng thái hoàn tiền"
+                statusOptions={[
+                    { value: 'ALL', label: 'Tất cả trạng thái' },
+                    { value: 'REFUND_PENDING', label: 'Chờ chuyển khoản' },
+                    { value: 'REFUND_FAILED', label: 'Chuyển khoản thất bại' },
+                    { value: 'REFUNDED', label: 'Đã hoàn' },
+                ]}
+                onStatusChange={onStatusChange}
+            />
 
             {isError ? (
                 <p
@@ -102,10 +114,14 @@ export function RefundQueueTable({
                         <Landmark className="size-5" aria-hidden="true" />
                     </span>
                     <p className="mt-3 text-sm font-medium text-zinc-800">
-                        Không có khoản hoàn nào đang chờ xử lý
+                        {search || status !== 'ALL'
+                            ? 'Không tìm thấy khoản hoàn phù hợp'
+                            : 'Chưa có khoản hoàn tiền nào'}
                     </p>
                     <p className="mt-1 text-xs text-zinc-500">
-                        Các khoản hoàn mới sẽ xuất hiện trong danh sách này.
+                        {search || status !== 'ALL'
+                            ? 'Thử đổi từ khóa hoặc trạng thái lọc.'
+                            : 'Các yêu cầu hoàn mới sẽ xuất hiện trong danh sách này.'}
                     </p>
                 </div>
             ) : (
@@ -117,13 +133,13 @@ export function RefundQueueTable({
                                     Đơn hàng
                                 </th>
                                 <th className="w-[18%] px-5 py-3.5">
-                                    Khoản cần hoàn
+                                    Khoản hoàn
                                 </th>
                                 <th className="w-[20%] px-5 py-3.5">
                                     Trạng thái
                                 </th>
                                 <th className="w-[19%] px-5 py-3.5">
-                                    Ngày phát sinh
+                                    Ngày giao dịch
                                 </th>
                                 <th className="w-[150px] px-5 py-3.5 text-right">
                                     Thao tác
@@ -134,7 +150,14 @@ export function RefundQueueTable({
                             {refunds.map((refund) => {
                                 const isFailed =
                                     refund.status === 'REFUND_FAILED';
-                                const createdAt = new Date(refund.createdAt);
+                                const isRefunded = refund.status === 'REFUNDED';
+                                const isOutDetected = Boolean(
+                                    refund.refundOutTransactionId,
+                                );
+                                const activityAt = new Date(
+                                    refund.refundProcessedAt ??
+                                        refund.createdAt,
+                                );
 
                                 return (
                                     <tr
@@ -144,7 +167,8 @@ export function RefundQueueTable({
                                         <td className="px-5 py-4 align-middle">
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200 transition-colors group-hover:bg-white">
-                                                    {isFailed ? (
+                                                    {isFailed &&
+                                                    !isOutDetected ? (
                                                         <AlertCircle
                                                             className="size-4 text-rose-600"
                                                             aria-hidden="true"
@@ -199,21 +223,25 @@ export function RefundQueueTable({
                                         </td>
                                         <td className="px-5 py-4 align-middle">
                                             <span
-                                                className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11px] font-medium ${isFailed ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}
+                                                className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11px] font-medium ${isRefunded ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : isOutDetected ? 'border-amber-200 bg-amber-50 text-amber-900' : isFailed ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}
                                             >
-                                                {isFailed
-                                                    ? 'Chuyển lần trước thất bại'
-                                                    : 'Chờ chuyển khoản'}
+                                                {isRefunded
+                                                    ? 'Đã chuyển'
+                                                    : isOutDetected
+                                                      ? 'Tiền ra · chờ xác minh'
+                                                      : isFailed
+                                                        ? 'Chuyển lần trước thất bại'
+                                                        : 'Chờ chuyển khoản'}
                                             </span>
                                         </td>
                                         <td className="whitespace-nowrap px-5 py-4 align-middle">
                                             <p className="font-medium text-zinc-700">
-                                                {createdAt.toLocaleDateString(
+                                                {activityAt.toLocaleDateString(
                                                     'vi-VN',
                                                 )}
                                             </p>
                                             <p className="mt-1 text-xs text-zinc-500">
-                                                {createdAt.toLocaleTimeString(
+                                                {activityAt.toLocaleTimeString(
                                                     'vi-VN',
                                                 )}
                                             </p>
@@ -223,13 +251,15 @@ export function RefundQueueTable({
                                                 type="button"
                                                 size="sm"
                                                 variant="outline"
-                                                aria-label={`Xem và xử lý hoàn tiền đơn ${refund.orderNumber}`}
+                                                aria-label={`${isRefunded ? 'Xem lịch sử' : 'Xem và xử lý'} hoàn tiền đơn ${refund.orderNumber}`}
                                                 className="h-9 rounded-lg border-zinc-200 bg-white px-3 text-xs font-medium shadow-sm transition-colors hover:border-zinc-900 hover:bg-zinc-950 hover:text-white"
                                                 onClick={() =>
                                                     onSelectRefund(refund)
                                                 }
                                             >
-                                                Xem / xử lý
+                                                {isRefunded
+                                                    ? 'Xem lịch sử'
+                                                    : 'Xem / xử lý'}
                                             </Button>
                                         </td>
                                     </tr>

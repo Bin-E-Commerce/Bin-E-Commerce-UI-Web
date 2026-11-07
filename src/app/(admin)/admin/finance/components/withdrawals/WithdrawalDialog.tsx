@@ -457,10 +457,13 @@ export function WithdrawalDialog({
                                                 aria-hidden="true"
                                             />
                                             <p>
-                                                Webhook Pay2S không xác minh
-                                                được tài khoản nhận. Hãy kiểm
-                                                tra tiền đã vào đúng tài khoản
-                                                seller trước khi xác nhận.
+                                                Pay2S đã khớp giao dịch OUT theo
+                                                tài khoản nguồn, memo và số
+                                                tiền; webhook không gửi thông
+                                                tin tài khoản thụ hưởng. Hãy đối
+                                                chiếu người nhận trong app ngân
+                                                hàng với tài khoản seller phía
+                                                trên trước khi xác nhận.
                                             </p>
                                         </div>
 

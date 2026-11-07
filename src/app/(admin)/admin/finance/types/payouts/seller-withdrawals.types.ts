@@ -33,6 +33,10 @@ export interface SellerWithdrawalsSectionProps {
     isLoading: boolean;
     isFetching: boolean;
     isError: boolean;
+    search: string;
+    status: string;
+    onSearchChange: (value: string) => void;
+    onStatusChange: (value: string) => void;
     onPageChange: (page: number) => void;
     onSelectWithdrawal: (withdrawalId: string) => void;
 }

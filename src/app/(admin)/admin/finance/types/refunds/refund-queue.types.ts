@@ -14,7 +14,11 @@ export interface RefundQueueTableProps {
     isLoading: boolean;
     isFetching: boolean;
     isError: boolean;
+    search: string;
+    status: string;
     onRefresh: () => void;
+    onSearchChange: (value: string) => void;
+    onStatusChange: (value: string) => void;
     onPageChange: (page: number) => void;
     onSelectRefund: (refund: AdminFinanceRefund) => void;
 }

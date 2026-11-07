@@ -5,7 +5,9 @@ import { Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { SellerWithdrawalsSectionProps } from '../../types/payouts/seller-withdrawals.types';
 import { formatMoney } from '../../utils/format-finance-money';
+import { FinanceSectionHeader } from '../shared/FinanceSectionHeader';
 import { FinanceTablePagination } from '../shared/FinanceTablePagination';
+import { FinanceTableToolbar } from '../shared/FinanceTableToolbar';
 
 // Danh sách rút tiền giữ thông tin tóm tắt, tô xanh giao dịch đã chuyển và phát id để tải chi tiết nhạy cảm.
 export function SellerWithdrawalsSection({
@@ -17,34 +19,44 @@ export function SellerWithdrawalsSection({
     isLoading,
     isFetching,
     isError,
+    search,
+    status,
+    onSearchChange,
+    onStatusChange,
     onPageChange,
     onSelectWithdrawal,
 }: SellerWithdrawalsSectionProps) {
     return (
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm shadow-zinc-950/[0.04]">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 bg-gradient-to-r from-white via-white to-zinc-50/80 px-5 py-4 sm:px-6">
-                <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm ring-4 ring-zinc-100">
-                        <Landmark className="size-4" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0">
-                        <h2 className="font-semibold tracking-tight text-zinc-950">
-                            Yêu cầu rút tiền seller
-                        </h2>
-                        <p className="mt-1 text-xs leading-5 text-zinc-500">
-                            {pendingWithdrawals} yêu cầu đang chờ hoặc xử lý;
-                            tiền đã giữ chỗ trong ví seller.
-                        </p>
-                    </div>
-                </div>
-                <span className="inline-flex shrink-0 items-center rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm">
-                    {isError
+            <FinanceSectionHeader
+                icon={Landmark}
+                title="Yêu cầu rút tiền seller"
+                description={`${pendingWithdrawals} yêu cầu đang chờ hoặc xử lý; tiền đã giữ chỗ trong ví seller.`}
+                countLabel={
+                    isError
                         ? 'Không tải được'
                         : isLoading
                           ? 'Đang tải…'
-                          : `${total} yêu cầu`}
-                </span>
-            </div>
+                          : `${total} yêu cầu`
+                }
+            />
+            <FinanceTableToolbar
+                searchValue={search}
+                searchLabel="Tìm yêu cầu rút tiền"
+                searchPlaceholder="Tìm theo ngân hàng, chủ tài khoản hoặc số tài khoản đã che"
+                onSearchChange={onSearchChange}
+                statusValue={status}
+                statusLabel="Lọc trạng thái yêu cầu rút"
+                statusOptions={[
+                    { value: 'ALL', label: 'Tất cả trạng thái' },
+                    { value: 'REQUESTED', label: 'Chờ xử lý' },
+                    { value: 'PROCESSING', label: 'Đang xử lý' },
+                    { value: 'PAID', label: 'Đã chuyển tiền' },
+                    { value: 'REJECTED', label: 'Đã từ chối' },
+                    { value: 'FAILED', label: 'Thất bại' },
+                ]}
+                onStatusChange={onStatusChange}
+            />
             {/* Giữ riêng trạng thái tải/lỗi để không hiển thị nhầm danh sách trống khi API phân trang chưa trả về. */}
             {isError ? (
                 <p
@@ -72,10 +84,14 @@ export function SellerWithdrawalsSection({
                         <Landmark className="size-5" aria-hidden="true" />
                     </span>
                     <p className="mt-3 text-sm font-medium text-zinc-800">
-                        Chưa có yêu cầu rút tiền
+                        {search || status !== 'ALL'
+                            ? 'Không tìm thấy yêu cầu phù hợp'
+                            : 'Chưa có yêu cầu rút tiền'}
                     </p>
                     <p className="mt-1 text-xs text-zinc-500">
-                        Các yêu cầu mới của seller sẽ xuất hiện tại đây.
+                        {search || status !== 'ALL'
+                            ? 'Thử đổi từ khóa hoặc trạng thái lọc.'
+                            : 'Các yêu cầu mới của seller sẽ xuất hiện tại đây.'}
                     </p>
                 </div>
             ) : (

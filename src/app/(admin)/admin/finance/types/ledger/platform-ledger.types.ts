@@ -1,8 +1,8 @@
-// Kiểu props cho bảng sổ tiền và thao tác nhóm/đối soát của admin.
-// Component chỉ phát lựa chọn; trang cha sở hữu truy vấn và mutation.
+// Kiểu props cho bảng lịch sử dòng tiền chỉ đọc của admin.
+// Component nhận dữ liệu đã phân trang và chuyển yêu cầu tìm kiếm/trang lên trang cha.
 import type { AdminFinanceLedgerEntry } from '@/services/admin/types/finance.types';
 
-// Bảng ledger nhận lựa chọn và callback batch từ trang sở hữu mutation.
+// Bảng ledger chỉ cho phép tra cứu và điều hướng qua các trang dữ liệu.
 export interface PlatformLedgerSectionProps {
     ledger: AdminFinanceLedgerEntry[];
     page: number;
@@ -11,15 +11,7 @@ export interface PlatformLedgerSectionProps {
     isLoading: boolean;
     isFetching: boolean;
     isError: boolean;
+    search: string;
+    onSearchChange: (value: string) => void;
     onPageChange: (page: number) => void;
-    selectedLedgerIds: string[];
-    settlementBatchId: string | null;
-    isBatchPending: boolean;
-    isReconcilePending: boolean;
-    onToggleLedgerSelection: (
-        entry: AdminFinanceLedgerEntry,
-        checked: boolean | 'indeterminate',
-    ) => void;
-    onCreateBatch: () => void;
-    onReconcileBatch: (batchId: string) => void;
 }

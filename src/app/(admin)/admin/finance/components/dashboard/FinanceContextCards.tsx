@@ -3,16 +3,21 @@
 'use client';
 
 import Image from 'next/image';
+import { useState } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { CalendarDays, Store, Wallet } from 'lucide-react';
 import { publicShopService } from '@/services/seller';
 import type { FinanceContextCardsProps } from '../../types/dashboard/finance-dashboard.types';
 import { formatMoney } from '../../utils/format-finance-money';
+import { FinanceSectionHeader } from '../shared/FinanceSectionHeader';
+import { FinanceTableToolbar } from '../shared/FinanceTableToolbar';
 
 // Bố cục shop, trạng thái/thời điểm và số tiền thành ba vùng riêng để admin quét nhanh.
 // Hồ sơ được tải từ API public bằng UUID shop; nếu không lấy được thì dùng mã shop dự phòng.
 // Badge chỉ phản ánh trạng thái do server trả về, không cập nhật hoặc xác nhận giao dịch.
 export function FinanceContextCards({ deposits }: FinanceContextCardsProps) {
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('ALL');
     // Snapshot finance chỉ giữ shopId; truy vấn mỗi shop một lần để các giao dịch dùng chung cache.
     const shopIds = [...new Set(deposits.map((deposit) => deposit.shopId))];
     const shopQueries = useQueries({
@@ -30,31 +35,59 @@ export function FinanceContextCards({ deposits }: FinanceContextCardsProps) {
             shopQueries[index]?.data?.shop,
         ]),
     );
+    // Snapshot overview chỉ giữ 10 khoản gần đây; lọc tại client và nêu rõ phạm vi để không ngụ ý đang tìm toàn lịch sử.
+    const normalizedSearch = search.toLocaleLowerCase('vi-VN');
+    const filteredDeposits = deposits.filter((deposit) => {
+        const shopName = shopsById.get(deposit.shopId)?.name ?? '';
+        const matchesSearch =
+            !normalizedSearch ||
+            [
+                deposit.id,
+                deposit.shopId,
+                deposit.amount,
+                deposit.status,
+                shopName,
+            ]
+                .join(' ')
+                .toLocaleLowerCase('vi-VN')
+                .includes(normalizedSearch);
+        const matchesStatus = status === 'ALL' || deposit.status === status;
+        return matchesSearch && matchesStatus;
+    });
 
     return (
         <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm shadow-zinc-950/[0.04]">
-            <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-100 bg-gradient-to-r from-white via-white to-zinc-50/80 px-5 py-4 sm:px-6">
-                <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white shadow-sm ring-4 ring-zinc-100">
-                        <Wallet className="size-4" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0">
-                        <h2 className="font-semibold tracking-tight text-zinc-950">
-                            Nạp ví seller gần đây
-                        </h2>
-                        <p className="mt-1 text-xs text-zinc-500">
-                            Các khoản nạp ví đã ghi nhận gần đây.
-                        </p>
-                    </div>
-                </div>
-                <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm">
-                    {deposits.length} giao dịch
-                </span>
-            </header>
+            <FinanceSectionHeader
+                icon={Wallet}
+                title="Nạp ví seller gần đây"
+                description="Các khoản nạp ví đã ghi nhận gần đây."
+                countLabel={
+                    filteredDeposits.length === deposits.length
+                        ? `${deposits.length} giao dịch gần đây`
+                        : `${filteredDeposits.length} / ${deposits.length} giao dịch`
+                }
+            />
 
-            {deposits.length ? (
+            <FinanceTableToolbar
+                searchValue={search}
+                searchLabel="Tìm giao dịch nạp ví gần đây"
+                searchPlaceholder="Tìm theo shop, mã giao dịch hoặc số tiền"
+                onSearchChange={setSearch}
+                statusValue={status}
+                statusLabel="Lọc trạng thái giao dịch nạp"
+                statusOptions={[
+                    { value: 'ALL', label: 'Tất cả trạng thái' },
+                    { value: 'PAID', label: 'Đã nạp' },
+                    { value: 'PENDING', label: 'Đang xử lý' },
+                    { value: 'FAILED', label: 'Thất bại' },
+                    { value: 'EXPIRED', label: 'Hết hạn' },
+                ]}
+                onStatusChange={setStatus}
+            />
+
+            {filteredDeposits.length ? (
                 <ul className="divide-y divide-zinc-100">
-                    {deposits.map((deposit) => {
+                    {filteredDeposits.map((deposit) => {
                         const createdAt = new Date(deposit.createdAt);
                         const shop = shopsById.get(deposit.shopId);
                         const shopReference = deposit.shopId
@@ -157,10 +190,14 @@ export function FinanceContextCards({ deposits }: FinanceContextCardsProps) {
                     </span>
                     <div>
                         <p className="text-sm font-medium text-zinc-800">
-                            Chưa có giao dịch nạp
+                            {deposits.length && (search || status !== 'ALL')
+                                ? 'Không tìm thấy giao dịch phù hợp'
+                                : 'Chưa có giao dịch nạp'}
                         </p>
                         <p className="mt-1 text-xs text-zinc-500">
-                            Giao dịch nạp ví của seller sẽ hiển thị tại đây.
+                            {deposits.length && (search || status !== 'ALL')
+                                ? 'Thử đổi từ khóa hoặc trạng thái lọc.'
+                                : 'Chỉ các giao dịch nạp gần đây sẽ hiển thị tại đây.'}
                         </p>
                     </div>
                 </div>

@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { RotateCcw, X } from 'lucide-react';
+import { AlertCircle, RefreshCw, RotateCcw, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import type {
 } from '@/services/admin/types/finance.types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { FINANCE_TABLE_PAGE_SIZE } from '../../constants/finance-pagination.constant';
+import { FinanceSectionHeader } from '../shared/FinanceSectionHeader';
+import { FinanceTableToolbar } from '../shared/FinanceTableToolbar';
 import { RefundProcessingDialog } from './RefundProcessingDialog';
 import { RefundQueueTable } from './RefundQueueTable';
 
@@ -34,12 +36,17 @@ function getRefundKey(
     return `${refund.sourceType}-${refund.id}`;
 }
 
-// Tải hàng đợi hoàn có phân trang; chi tiết và thao tác chỉ xuất hiện sau khi admin mở một đơn.
+// Tải danh sách hoàn phân trang và giữ nguyên snapshot API làm nguồn trạng thái.
+// Hồ sơ đã hoàn vẫn nằm trong danh sách, nhưng popup chỉ cho xem lịch sử.
 export function RefundQueueSection() {
     const queryClient = useQueryClient();
     const [failedNotes, setFailedNotes] = useState<Record<string, string>>({});
     const [issueNotes, setIssueNotes] = useState<Record<string, string>>({});
     const [refundPage, setRefundPage] = useState(1);
+    const [refundSearch, setRefundSearch] = useState('');
+    const [refundStatus, setRefundStatus] = useState('ALL');
+    const [issueSearch, setIssueSearch] = useState('');
+    const [issuePaymentStatus, setIssuePaymentStatus] = useState('ALL');
     const [selectedRefundKey, setSelectedRefundKey] = useState<string | null>(
         null,
     );
@@ -49,8 +56,16 @@ export function RefundQueueSection() {
             'refunds',
             refundPage,
             FINANCE_TABLE_PAGE_SIZE,
+            refundStatus,
+            refundSearch,
         ],
-        queryFn: () => getAdminRefunds(refundPage, FINANCE_TABLE_PAGE_SIZE),
+        queryFn: () =>
+            getAdminRefunds(
+                refundPage,
+                FINANCE_TABLE_PAGE_SIZE,
+                refundStatus === 'ALL' ? undefined : refundStatus,
+                refundSearch || undefined,
+            ),
         staleTime: 10_000,
         refetchInterval: 5_000,
         refetchIntervalInBackground: false,
@@ -60,7 +75,16 @@ export function RefundQueueSection() {
         queryFn: getAdminDeliveryIssues,
         staleTime: 10_000,
     });
-    const refunds = refundsQuery.data?.items ?? [];
+    // Ưu tiên thời điểm hoàn tất; hồ sơ đang mở dùng ngày phát sinh.
+    // Sắp lại trang hiện tại để chống thứ tự sai từ replica cũ.
+    const refunds = [...(refundsQuery.data?.items ?? [])].sort(
+        (left, right) => {
+            const newestFirst =
+                Date.parse(right.refundProcessedAt ?? right.createdAt) -
+                Date.parse(left.refundProcessedAt ?? left.createdAt);
+            return newestFirst || right.id.localeCompare(left.id);
+        },
+    );
     const refundTotal = refundsQuery.data?.total ?? 0;
     const refundTotalPages = Math.max(
         1,
@@ -211,6 +235,34 @@ export function RefundQueueSection() {
     }
 
     const issues = issuesQuery.data ?? [];
+    // Khiếu nại API chỉ trả các hồ sơ đang mở; lọc theo trạng thái thanh toán để quyết định khả năng hoàn nhanh hơn.
+    const normalizedIssueSearch = issueSearch.toLocaleLowerCase('vi-VN');
+    const filteredIssues = issues.filter((issue) => {
+        const matchesSearch =
+            !normalizedIssueSearch ||
+            [issue.orderNumber, issue.note ?? '', issue.reason, issue.id]
+                .join(' ')
+                .toLocaleLowerCase('vi-VN')
+                .includes(normalizedIssueSearch);
+        const matchesPaymentStatus =
+            issuePaymentStatus === 'ALL' ||
+            issue.paymentStatus === issuePaymentStatus;
+        return matchesSearch && matchesPaymentStatus;
+    });
+
+    // Mỗi thay đổi bộ lọc quay về trang đầu và đóng popup cũ để không thao tác nhầm hồ sơ ngoài kết quả hiện tại.
+    function updateRefundSearch(value: string): void {
+        setSelectedRefundKey(null);
+        setRefundPage(1);
+        setRefundSearch(value);
+    }
+
+    // Trạng thái mới có thể làm thay đổi tổng trang, nên làm sạch lựa chọn trước khi tải lại danh sách.
+    function updateRefundStatus(value: string): void {
+        setSelectedRefundKey(null);
+        setRefundPage(1);
+        setRefundStatus(value);
+    }
 
     return (
         <div className="space-y-5">
@@ -222,7 +274,11 @@ export function RefundQueueSection() {
                 isLoading={refundsQuery.isPending}
                 isFetching={refundsQuery.isFetching}
                 isError={refundsQuery.isError}
+                search={refundSearch}
+                status={refundStatus}
                 onRefresh={() => void refundsQuery.refetch()}
+                onSearchChange={updateRefundSearch}
+                onStatusChange={updateRefundStatus}
                 onPageChange={changeRefundPage}
                 onSelectRefund={selectRefund}
             />
@@ -264,15 +320,60 @@ export function RefundQueueSection() {
             />
 
             <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <div className="border-b border-zinc-100 px-5 py-4">
-                    <h2 className="font-semibold text-zinc-950">
-                        Khiếu nại chưa nhận hàng
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-500">
-                        Kiểm tra bằng chứng trước khi đóng khiếu nại hoặc đưa
-                        khoản đã thu vào hàng đợi hoàn.
-                    </p>
-                </div>
+                {/* Giữ trạng thái lỗi riêng để không báo số 0 như thể danh sách đã tải xong. */}
+                <FinanceSectionHeader
+                    icon={AlertCircle}
+                    title="Khiếu nại chưa nhận hàng"
+                    description="Kiểm tra bằng chứng trước khi đóng khiếu nại hoặc đưa khoản đã thu vào hàng đợi hoàn."
+                    countLabel={
+                        issuesQuery.isError
+                            ? 'Không tải được'
+                            : issuesQuery.isPending
+                              ? 'Đang tải…'
+                              : `${issues.length} khiếu nại`
+                    }
+                    actions={
+                        <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            aria-label="Làm mới danh sách khiếu nại giao hàng"
+                            className="size-9 rounded-xl border-zinc-200 bg-white text-zinc-700 shadow-sm hover:bg-zinc-50"
+                            onClick={() => void issuesQuery.refetch()}
+                            disabled={issuesQuery.isFetching}
+                        >
+                            <RefreshCw
+                                className={
+                                    issuesQuery.isFetching
+                                        ? 'animate-spin'
+                                        : undefined
+                                }
+                                aria-hidden="true"
+                            />
+                        </Button>
+                    }
+                />
+                <FinanceTableToolbar
+                    searchValue={issueSearch}
+                    searchLabel="Tìm khiếu nại giao hàng"
+                    searchPlaceholder="Tìm theo mã đơn, nội dung hoặc mã khiếu nại"
+                    onSearchChange={setIssueSearch}
+                    statusValue={issuePaymentStatus}
+                    statusLabel="Lọc trạng thái thanh toán khiếu nại"
+                    statusOptions={[
+                        { value: 'ALL', label: 'Mọi trạng thái thanh toán' },
+                        { value: 'PAID', label: 'Đã thanh toán' },
+                        {
+                            value: 'COD_PENDING_COLLECTION',
+                            label: 'COD chưa thu',
+                        },
+                        { value: 'PENDING', label: 'Chờ thanh toán' },
+                        { value: 'FAILED', label: 'Thanh toán thất bại' },
+                        { value: 'REFUND_PENDING', label: 'Chờ hoàn' },
+                        { value: 'REFUNDED', label: 'Đã hoàn' },
+                    ]}
+                    onStatusChange={setIssuePaymentStatus}
+                />
                 {issuesQuery.isPending ? (
                     <p className="px-5 py-8 text-sm text-zinc-500">
                         Đang tải khiếu nại...
@@ -282,13 +383,15 @@ export function RefundQueueSection() {
                         Không thể tải khiếu nại giao hàng. Hãy thử làm mới dữ
                         liệu tài chính.
                     </div>
-                ) : issues.length === 0 ? (
+                ) : filteredIssues.length === 0 ? (
                     <p className="px-5 py-8 text-sm text-zinc-500">
-                        Không có khiếu nại giao hàng đang chờ phân xử.
+                        {issues.length
+                            ? 'Không tìm thấy khiếu nại phù hợp.'
+                            : 'Không có khiếu nại giao hàng đang chờ phân xử.'}
                     </p>
                 ) : (
                     <div className="divide-y divide-zinc-100">
-                        {issues.map((issue) => {
+                        {filteredIssues.map((issue) => {
                             const note = issueNotes[issue.id]?.trim() ?? '';
                             const isPaid = issue.paymentStatus === 'PAID';
                             return (

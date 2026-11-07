@@ -3,6 +3,7 @@
 
 import {
     Banknote,
+    BadgeAlert,
     CircleDollarSign,
     Landmark,
     Truck,
@@ -11,11 +12,11 @@ import {
 import type { FinanceMetricsProps } from '../../types/dashboard/finance-dashboard.types';
 import { formatMoney } from '../../utils/format-finance-money';
 
-// Hiển thị sáu chỉ số dòng tiền từ snapshot và giữ quy tắc định dạng số tiền thống nhất.
+// Hiển thị chỉ số dòng tiền và công nợ seller từ snapshot, dùng kiểu cảnh báo riêng cho khoản phải thu.
 export function FinanceMetrics({ overview }: FinanceMetricsProps) {
     return (
         <section
-            className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6"
+            className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7"
             aria-label="Tổng quan dòng tiền"
         >
             {[
@@ -29,6 +30,13 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                     label: 'Khoản phải trả seller',
                     value: overview.sellerPayableBalance,
                     icon: WalletCards,
+                },
+                {
+                    label: 'Công nợ seller',
+                    value: overview.sellerDebtBalance ?? '0',
+                    icon: BadgeAlert,
+                    danger: true,
+                    caption: `${overview.sellerDebtShopCount ?? 0} shop nợ · ${formatMoney(overview.overdueSellerDebtBalance ?? '0')} quá hạn · ${overview.overdueSellerDebtShopCount ?? 0} shop · ${overview.sellerDebtLockedShopCount ?? 0} đang khóa`,
                 },
                 {
                     label: 'Đang giữ cho yêu cầu rút',
@@ -53,7 +61,7 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
             ].map((metric) => (
                 <article
                     key={metric.label}
-                    className={`group relative isolate min-w-0 overflow-hidden rounded-xl border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${'highlight' in metric ? 'border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 text-white' : 'border-zinc-200 bg-white text-zinc-950'}`}
+                    className={`group relative isolate min-w-0 overflow-hidden rounded-xl border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${'highlight' in metric ? 'border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 text-white' : 'danger' in metric ? 'border-rose-200 bg-gradient-to-br from-rose-50 to-white text-rose-950' : 'border-zinc-200 bg-white text-zinc-950'}`}
                 >
                     {'highlight' in metric ? (
                         <>
@@ -69,7 +77,7 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                     ) : null}
                     <div className="relative z-10 flex min-h-9 items-center gap-2.5">
                         <span
-                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${'highlight' in metric ? 'border border-white/10 bg-white/10 text-white' : 'bg-zinc-950 text-white'}`}
+                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${'highlight' in metric ? 'border border-white/10 bg-white/10 text-white' : 'danger' in metric ? 'bg-rose-600 text-white' : 'bg-zinc-950 text-white'}`}
                         >
                             <metric.icon
                                 className="size-3.5"
@@ -77,16 +85,21 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                             />
                         </span>
                         <span
-                            className={`text-xs font-medium leading-4 ${'highlight' in metric ? 'text-zinc-200' : 'text-zinc-600'}`}
+                            className={`text-xs font-medium leading-4 ${'highlight' in metric ? 'text-zinc-200' : 'danger' in metric ? 'text-rose-800' : 'text-zinc-600'}`}
                         >
                             {metric.label}
                         </span>
                     </div>
                     <p
-                        className={`relative z-10 mt-3 text-xl font-semibold tracking-tight tabular-nums ${'highlight' in metric ? 'text-white' : 'text-zinc-950'}`}
+                        className={`relative z-10 mt-3 text-xl font-semibold tracking-tight tabular-nums ${'highlight' in metric ? 'text-white' : 'danger' in metric ? 'text-rose-700' : 'text-zinc-950'}`}
                     >
                         {formatMoney(metric.value)}
                     </p>
+                    {'caption' in metric ? (
+                        <p className="relative z-10 mt-1 text-[10px] leading-4 text-rose-700/80">
+                            {metric.caption}
+                        </p>
+                    ) : null}
                 </article>
             ))}
         </section>
