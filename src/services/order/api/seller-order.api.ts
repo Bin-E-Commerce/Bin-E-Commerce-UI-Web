@@ -4,6 +4,7 @@ import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
 import type { CustomerOrderStage, CustomerOrderStatus } from './order.api';
 import type { OrderReturnResponse, OrderReturnStatus } from './order.api';
+import type { SellerReturnFinancePreview } from '../types/seller-order.types';
 
 const SELLER_ORDERS = `${API_BASE_URL}${API_VERSION}/seller/orders`;
 
@@ -152,6 +153,18 @@ export async function listSellerReturns(
         {
             params: status ? { status } : undefined,
         },
+    );
+    return response.data;
+}
+
+// Lấy số dư và ngưỡng nợ tối thiểu cho một request đang chờ duyệt; response không chứa lịch sử ví.
+export async function getSellerReturnFinancePreview(
+    returnId: string,
+    returnShippingPayer: 'CUSTOMER' | 'SELLER',
+): Promise<SellerReturnFinancePreview> {
+    const response = await authorizedAxios.get<SellerReturnFinancePreview>(
+        `${SELLER_ORDERS}/returns/${returnId}/finance-preview`,
+        { params: { returnShippingPayer } },
     );
     return response.data;
 }

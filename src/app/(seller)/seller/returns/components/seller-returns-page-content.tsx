@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 
 import {
     getSellerOrder,
+    getSellerReturnFinancePreview,
     inspectSellerReturn,
     listSellerReturns,
     reviewSellerReturn,
@@ -38,14 +39,18 @@ import {
 } from '@/services/shipping';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { SellerReturnDetailModal } from './seller-return-detail-modal';
+import { SellerReturnApprovalDialog } from './seller-return-approval-dialog';
 import { SellerReturnRejectDialog } from './seller-return-reject-dialog';
-
-type ReturnQueueFilter =
-    | 'ALL'
-    | 'REQUESTED'
-    | 'AWAITING_SHIPMENT'
-    | 'RECEIVED'
-    | 'RESOLVED';
+import type {
+    InspectReturnMutationInput,
+    ReturnQueueFilter,
+    ReturnFilterButtonProps,
+    ReviewReturnMutationInput,
+    SellerReturnApprovalContext,
+    SellerReturnRequest,
+    SellerReturnRequestCardProps,
+    SellerReturnSummaryCardProps,
+} from '../types/seller-return.types';
 
 const ACTIONABLE_STATUSES = new Set([
     'REQUESTED',
@@ -53,10 +58,12 @@ const ACTIONABLE_STATUSES = new Set([
     'SHIPMENT_FAILED',
     'RECEIVED',
 ]);
-
-type SellerReturnRequest = Awaited<
-    ReturnType<typeof listSellerReturns>
->[number];
+const SELLER_FAULT_RETURN_REASONS = new Set([
+    'DAMAGED',
+    'WRONG_ITEM',
+    'MISSING_ITEM',
+    'NOT_AS_DESCRIBED',
+]);
 
 // Chuyển trạng thái kỹ thuật thành nhãn nghiệp vụ để Seller biết chính xác bước cần làm tiếp theo.
 function getReturnStatusLabel(status: string): string {
@@ -71,6 +78,7 @@ function getReturnStatusLabel(status: string): string {
         REFUNDED: 'Đã hoàn tiền',
         REJECTED: 'Đã từ chối',
         INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
+        CUSTOMER_CANCELLED: 'Khách đã hủy yêu cầu',
     };
 
     return labels[status] ?? status;
@@ -96,7 +104,7 @@ function getReturnShipmentStatusLabel(
     return labels[status];
 }
 
-// Lọc queue theo nhóm thao tác để Seller tập trung xử lý việc cần làm trước.
+// Tách yêu cầu khách hủy khỏi nhóm đã xử lý để lịch sử shop phản ánh đúng người kết thúc luồng.
 function matchesReturnFilter(
     status: string,
     filter: ReturnQueueFilter,
@@ -109,7 +117,12 @@ function matchesReturnFilter(
         );
     }
     if (filter === 'RECEIVED') return status === 'RECEIVED';
-    return !ACTIONABLE_STATUSES.has(status);
+    if (filter === 'CUSTOMER_CANCELLED') return status === 'CUSTOMER_CANCELLED';
+    return (
+        filter === 'RESOLVED' &&
+        status !== 'CUSTOMER_CANCELLED' &&
+        !ACTIONABLE_STATUSES.has(status)
+    );
 }
 
 // Định dạng số tiền hoàn theo locale Việt Nam nhưng vẫn giữ dữ liệu gốc do Order Service tính toán.
@@ -135,6 +148,21 @@ function getReturnReasonLabel(reason: string): string {
     return labels[reason] ?? reason;
 }
 
+// Khôi phục payer theo chính sách khi request cũ chưa lưu payer cố định; lựa chọn riêng cho OTHER vẫn được ưu tiên.
+function resolveReturnShippingPayer(
+    item: SellerReturnRequest,
+    selectedPayer?: 'CUSTOMER' | 'SELLER',
+): 'CUSTOMER' | 'SELLER' | undefined {
+    // Lựa chọn của seller chỉ được dùng cho OTHER, nơi policy cho phép seller phân loại payer.
+    if (selectedPayer) return selectedPayer;
+    // Snapshot request từ server giữ payer đã gắn với các lý do cố định.
+    if (item.returnShippingPayer) return item.returnShippingPayer;
+    // Request cũ có thể thiếu payer; phục hồi cùng quy tắc trách nhiệm đang dùng khi tạo request mới.
+    if (SELLER_FAULT_RETURN_REASONS.has(item.reason)) return 'SELLER';
+    if (item.reason === 'CHANGE_OF_MIND') return 'CUSTOMER';
+    return undefined;
+}
+
 // Điều phối queue và cache vận đơn để thao tác tạo shipment cập nhật card ngay.
 // Cache hiển thị response POST tức thì; GET khôi phục dữ liệu sau khi tải lại.
 export function SellerReturnsPageContent() {
@@ -144,6 +172,10 @@ export function SellerReturnsPageContent() {
         useState<SellerReturnRequest | null>(null);
     const [rejectingRequest, setRejectingRequest] =
         useState<SellerReturnRequest | null>(null);
+    const [approvalContext, setApprovalContext] =
+        useState<SellerReturnApprovalContext | null>(null);
+    const [preparingApprovalRequestId, setPreparingApprovalRequestId] =
+        useState<string | null>(null);
     // Đồng bộ queue định kỳ để request từ phiên khách khác xuất hiện mà seller không cần tải lại trang.
     const returnsQuery = useQuery({
         queryKey: ['seller-returns'],
@@ -165,26 +197,18 @@ export function SellerReturnsPageContent() {
             approved,
             note,
             returnShippingPayer,
-        }: {
-            returnId: string;
-            approved: boolean;
-            note?: string;
-            returnShippingPayer?: 'CUSTOMER' | 'SELLER';
-        }) => reviewSellerReturn(returnId, approved, note, returnShippingPayer),
+        }: ReviewReturnMutationInput) =>
+            reviewSellerReturn(returnId, approved, note, returnShippingPayer),
         onSuccess: () => {
             setRejectingRequest(null);
+            setApprovalContext(null);
             invalidateReturnQueries(queryClient);
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
     const inspectMutation = useMutation({
-        mutationFn: ({
-            returnId,
-            passed,
-        }: {
-            returnId: string;
-            passed: boolean;
-        }) => inspectSellerReturn(returnId, passed),
+        mutationFn: ({ returnId, passed }: InspectReturnMutationInput) =>
+            inspectSellerReturn(returnId, passed),
         onSuccess: () => invalidateReturnQueries(queryClient),
     });
     const shipmentMutation = useMutation({
@@ -213,20 +237,64 @@ export function SellerReturnsPageContent() {
         matchesReturnFilter(item.status, filter),
     );
 
-    // Duyệt ngay với quyết định tích cực; quyết định từ chối phải đi qua dialog để bắt buộc có lý do.
+    // Chỉ mở cảnh báo tài chính cho phương án shop trả phí; khách trả phí thì duyệt trực tiếp như trước.
     function handleReviewDecision(
         item: SellerReturnRequest,
         approved: boolean,
         returnShippingPayer?: 'CUSTOMER' | 'SELLER',
     ): void {
+        // Từ chối vẫn mở form lý do bắt buộc; nhánh này không cần tải snapshot ví.
         if (!approved) {
             setRejectingRequest(item);
             return;
         }
+        // Payer từ lựa chọn OTHER ưu tiên hơn snapshot; lý do cố định được fallback cho request cũ chưa có payer.
+        const selectedPayer = resolveReturnShippingPayer(
+            item,
+            returnShippingPayer,
+        );
+        if (selectedPayer === 'SELLER') {
+            void prepareSellerPaidApproval(item, selectedPayer);
+            return;
+        }
+        // Chỉ phương án khách trả phí mới được duyệt thẳng, vì không trừ hoặc tạo nợ trong ví shop.
         reviewMutation.mutate({
             returnId: item.id,
             approved: true,
-            returnShippingPayer,
+            returnShippingPayer: selectedPayer ?? undefined,
+        });
+    }
+
+    // Tải số dư và chính sách công nợ mới nhất trước khi hiện số nợ dự kiến, tránh xác nhận trên snapshot cũ.
+    async function prepareSellerPaidApproval(
+        item: SellerReturnRequest,
+        returnShippingPayer: 'CUSTOMER' | 'SELLER',
+    ): Promise<void> {
+        setPreparingApprovalRequestId(item.id);
+        try {
+            const finance = await getSellerReturnFinancePreview(
+                item.id,
+                returnShippingPayer,
+            );
+            setApprovalContext({ request: item, finance });
+        } catch (error) {
+            // Không xác nhận shop chịu phí khi không có snapshot để trình bày số dư và ngưỡng nợ chính xác.
+            toast.error(
+                `Không thể tải thông tin ví để xác nhận phí shop chịu. ${getErrorMessage(error)}`,
+            );
+        } finally {
+            // Khóa nút chỉ trong lúc lấy snapshot; mutation duyệt có trạng thái chờ riêng.
+            setPreparingApprovalRequestId(null);
+        }
+    }
+
+    // Chỉ gọi approve sau khi seller đã xem số dư, phí ước tính và ngưỡng công nợ trong dialog.
+    function confirmSellerPaidApproval(): void {
+        if (!approvalContext) return;
+        reviewMutation.mutate({
+            returnId: approvalContext.request.id,
+            approved: true,
+            returnShippingPayer: 'SELLER',
         });
     }
 
@@ -285,7 +353,9 @@ export function SellerReturnsPageContent() {
                     label="Đã hoàn tất bước shop"
                     value={
                         items.filter(
-                            (item) => !ACTIONABLE_STATUSES.has(item.status),
+                            (item) =>
+                                item.status !== 'CUSTOMER_CANCELLED' &&
+                                !ACTIONABLE_STATUSES.has(item.status),
                         ).length
                     }
                     description="Đang chờ hoàn tiền hoặc đã kết thúc"
@@ -372,6 +442,18 @@ export function SellerReturnsPageContent() {
                         >
                             Đã xử lý
                         </ReturnFilterButton>
+                        <ReturnFilterButton
+                            active={filter === 'CUSTOMER_CANCELLED'}
+                            onClick={() => setFilter('CUSTOMER_CANCELLED')}
+                            count={
+                                items.filter(
+                                    (item) =>
+                                        item.status === 'CUSTOMER_CANCELLED',
+                                ).length
+                            }
+                        >
+                            Khách đã hủy
+                        </ReturnFilterButton>
                     </div>
                 </div>
 
@@ -403,7 +485,10 @@ export function SellerReturnsPageContent() {
                             <SellerReturnRequestCard
                                 key={item.id}
                                 item={item}
-                                reviewPending={reviewMutation.isPending}
+                                reviewPending={
+                                    reviewMutation.isPending ||
+                                    Boolean(preparingApprovalRequestId)
+                                }
                                 inspectPending={inspectMutation.isPending}
                                 shipmentPending={shipmentMutation.isPending}
                                 onReview={(approved, payer) =>
@@ -442,6 +527,12 @@ export function SellerReturnsPageContent() {
                 onClose={() => setRejectingRequest(null)}
                 onSubmit={handleRejectSubmit}
             />
+            <SellerReturnApprovalDialog
+                approval={approvalContext}
+                pending={reviewMutation.isPending}
+                onClose={() => setApprovalContext(null)}
+                onConfirm={confirmSellerPaidApproval}
+            />
         </div>
     );
 }
@@ -464,13 +555,7 @@ function SummaryCard({
     description,
     icon: Icon,
     emphasized = false,
-}: {
-    label: string;
-    value: number;
-    description: string;
-    icon: typeof RotateCcw;
-    emphasized?: boolean;
-}) {
+}: SellerReturnSummaryCardProps) {
     return (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="flex items-start justify-between gap-3">
@@ -497,12 +582,7 @@ function ReturnFilterButton({
     count = 0,
     onClick,
     children,
-}: {
-    active: boolean;
-    count?: number;
-    onClick: () => void;
-    children: React.ReactNode;
-}) {
+}: ReturnFilterButtonProps) {
     return (
         <Button
             variant="ghost"
@@ -524,20 +604,6 @@ function ReturnFilterButton({
             ) : null}
         </Button>
     );
-}
-
-interface SellerReturnRequestCardProps {
-    item: Awaited<ReturnType<typeof listSellerReturns>>[number];
-    reviewPending: boolean;
-    inspectPending: boolean;
-    shipmentPending: boolean;
-    onReview: (
-        approved: boolean,
-        returnShippingPayer?: 'CUSTOMER' | 'SELLER',
-    ) => void;
-    onInspect: (passed: boolean) => void;
-    onCreateShipment: () => void;
-    onViewDetails: () => void;
 }
 
 // Hiển thị request và shipment đã lưu; nút tạo chỉ xuất hiện khi chưa có vận đơn.
@@ -646,7 +712,7 @@ function SellerReturnRequestCard({
                             : item.returnShippingPayer === 'CUSTOMER'
                               ? 'Khách chịu phí; khoản thực tế được trừ vào tiền hoàn.'
                               : item.returnShippingPayer === 'SELLER'
-                                ? 'Shop chịu phí; khoản thực tế được ghi nhận vào ví shop.'
+                                ? 'Shop chịu phí; chỉ ghi nợ ví shop nếu hàng hoàn được kiểm tra đạt.'
                                 : 'Lý do khác: shop cần chọn bên chịu phí trước khi duyệt.'}
                     </p>
                     {Number(item.customerReturnShippingReceivableAmount ?? 0) >

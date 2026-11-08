@@ -473,13 +473,12 @@ export function SellerReturnDetailModal({
                                         </table>
                                     </div>
                                     <p className="mt-3 rounded-lg bg-white px-3 py-2 text-xs leading-5 text-zinc-500">
-                                        Phí trên trước khi GHN nhận kiện chỉ là
-                                        ước tính; chỉ ghi nhận sau khi carrier
-                                        tiếp nhận. Tiền hoàn dự kiến/cuối cùng
-                                        đã được Order Service tính theo phí
-                                        tương ứng. Nếu kiểm hàng không đạt và
-                                        khách chịu phí, hệ thống chỉ ghi khoản
-                                        phải thu, chưa thu tiền thật.
+                                        Phí trước khi GHN nhận kiện chỉ là ước
+                                        tính; chi phí carrier chốt khi GHN tiếp
+                                        nhận. Ví shop chỉ ghi nợ phí nếu hàng
+                                        hoàn được kiểm tra đạt; nếu không đạt
+                                        và khách chịu phí, hệ thống chỉ ghi
+                                        khoản phải thu, chưa thu tiền thật.
                                     </p>
                                 </section>
 
