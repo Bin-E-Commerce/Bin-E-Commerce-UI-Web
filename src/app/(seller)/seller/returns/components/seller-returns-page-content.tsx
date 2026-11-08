@@ -606,7 +606,7 @@ function ReturnFilterButton({
     );
 }
 
-// Hiển thị request và shipment đã lưu; nút tạo chỉ xuất hiện khi chưa có vận đơn.
+// Hiển thị request và shipment đã lưu; khoản khách nhận được tách khỏi nghĩa vụ ghi nợ seller.
 function SellerReturnRequestCard({
     item,
     reviewPending,
@@ -633,6 +633,17 @@ function SellerReturnRequestCard({
         item.status === 'SHIPMENT_FAILED' ||
         returnShipment?.status === 'FAILED' ||
         returnShipment?.status === 'CANCELLED';
+    // Refund snapshot là khoản admin trả khách; khách đổi ý không tạo debit hoàn tiền lên ví seller.
+    const isChangeOfMind = item.reason === 'CHANGE_OF_MIND';
+    const isRejected = item.status === 'REJECTED';
+    const isShippingFinalized = Boolean(item.returnShippingFinalizedAt);
+    const customerRefundAmount = Number(
+        isRejected
+            ? 0
+            : isShippingFinalized
+              ? item.refundAmount
+              : item.estimatedRefundAmount,
+    );
     return (
         <article className="grid gap-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-8">
             <div className="min-w-0">
@@ -674,21 +685,34 @@ function SellerReturnRequestCard({
                     </div>
                     <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3">
                         <p className="text-xs text-zinc-500">
-                            {item.status === 'REJECTED'
+                            {isRejected
                                 ? 'Không phát sinh hoàn tiền'
-                                : item.returnShippingFinalizedAt
-                                  ? 'Hoàn cuối cùng'
-                                  : 'Hoàn dự kiến'}
+                                : isChangeOfMind
+                                  ? 'Shop bị ghi nợ tiền hoàn'
+                                  : isShippingFinalized
+                                    ? 'Hoàn cuối cùng'
+                                    : 'Hoàn dự kiến'}
                         </p>
                         <p className="mt-1 text-sm font-semibold text-zinc-950">
                             {formatRefundAmount(
-                                item.status === 'REJECTED'
+                                isChangeOfMind
                                     ? '0'
-                                    : item.returnShippingFinalizedAt
-                                      ? item.refundAmount
-                                      : item.estimatedRefundAmount,
+                                    : String(customerRefundAmount),
                             )}
                         </p>
+                        {isChangeOfMind && !isRejected ? (
+                            <p className="mt-1 text-xs text-zinc-500">
+                                {item.status === 'REFUNDED'
+                                    ? 'Admin đã hoàn khách'
+                                    : item.status === 'REFUND_FAILED'
+                                      ? 'Admin cần xử lý lại khoản hoàn khách'
+                                      : 'Admin dự kiến hoàn khách'}
+                                :{' '}
+                                {formatRefundAmount(
+                                    String(customerRefundAmount),
+                                )}
+                            </p>
+                        ) : null}
                     </div>
                 </div>
                 <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3 text-xs leading-5 text-blue-950">
@@ -710,7 +734,9 @@ function SellerReturnRequestCard({
                         {item.status === 'REJECTED'
                             ? 'Không phát sinh phí vì yêu cầu đã bị từ chối trước khi GHN nhận kiện.'
                             : item.returnShippingPayer === 'CUSTOMER'
-                              ? 'Khách chịu phí; khoản thực tế được trừ vào tiền hoàn.'
+                              ? isChangeOfMind
+                                  ? 'Khách chịu phí ship hoàn; seller không bị ghi nợ tiền hoàn. Admin xử lý khoản khách nhận từ tiền đơn đang giữ.'
+                                  : 'Khách chịu phí; khoản thực tế được trừ vào tiền hoàn.'
                               : item.returnShippingPayer === 'SELLER'
                                 ? 'Shop chịu phí; chỉ ghi nợ ví shop nếu hàng hoàn được kiểm tra đạt.'
                                 : 'Lý do khác: shop cần chọn bên chịu phí trước khi duyệt.'}

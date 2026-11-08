@@ -109,7 +109,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-// Hiển thị detail read-only của request; media được mở bằng ImageLightbox dùng chung của hệ thống.
+// Hiển thị detail read-only và tách khoản admin hoàn khách khỏi khoản có thể ghi nợ ví seller.
 export function SellerReturnDetailModal({
     request,
     order,
@@ -130,6 +130,9 @@ export function SellerReturnDetailModal({
         );
     const shippingRefundAmount = Number(request.refundShippingAmount ?? 0);
     const returnShippingFinalized = Boolean(request.returnShippingFinalizedAt);
+    // Với CHANGE_OF_MIND, tổng refund vẫn là tiền admin trả khách; seller không bị ghi nợ khoản hoàn này.
+    const isChangeOfMind = request.reason === 'CHANGE_OF_MIND';
+    const isRejected = request.status === 'REJECTED';
     const returnShippingEstimate = Number(
         request.returnShippingEstimatedCost ?? 0,
     );
@@ -153,6 +156,15 @@ export function SellerReturnDetailModal({
               ? request.refundAmount
               : request.estimatedRefundAmount,
     );
+    const customerRefundLabel = isRejected
+        ? 'Không phát sinh hoàn tiền'
+        : request.status === 'REFUNDED'
+          ? 'Admin đã hoàn khách'
+          : request.status === 'REFUND_FAILED'
+            ? 'Admin cần xử lý lại khoản hoàn khách'
+            : returnShippingFinalized
+              ? 'Admin hoàn khách (đã chốt)'
+              : 'Admin dự kiến hoàn khách';
 
     return (
         <div
@@ -296,9 +308,17 @@ export function SellerReturnDetailModal({
                                                 )}
                                             />
                                         ) : null}
+                                        {isChangeOfMind && !isRejected ? (
+                                            <DetailRow
+                                                label="Shop bị ghi nợ tiền hoàn"
+                                                value={formatMoney('0')}
+                                            />
+                                        ) : null}
                                         <div className="mt-1 flex items-start justify-between gap-4 border-t border-zinc-200 pt-4">
                                             <dt className="text-sm font-semibold text-zinc-700">
-                                                Tổng tiền hoàn
+                                                {isChangeOfMind
+                                                    ? customerRefundLabel
+                                                    : 'Tổng tiền hoàn'}
                                             </dt>
                                             <dd className="text-right text-base font-bold text-zinc-950">
                                                 {formatMoney(
@@ -321,9 +341,11 @@ export function SellerReturnDetailModal({
                                         />
                                     </dl>
                                     <p className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">
-                                        Khách có thể yêu cầu hoàn trong 7 ngày
-                                        kể từ khi đơn hoàn tất. Phí hoàn chốt
-                                        theo chi phí GHN thực tế khi nhận kiện.
+                                        {isChangeOfMind && !isRejected
+                                            ? `Khách đổi ý nên tự chịu phí gửi hàng về shop. Shop không bị ghi nợ khoản hoàn; admin sẽ hoàn ${formatMoney(String(totalRefundAmount))} cho khách từ tiền đơn đang giữ sau khi hàng được kiểm tra đạt.`
+                                            : isRejected
+                                              ? 'Yêu cầu đã bị từ chối nên không phát sinh hoàn tiền hoặc phí vận chuyển hoàn.'
+                                              : 'Khách có thể yêu cầu hoàn trong 7 ngày kể từ khi đơn hoàn tất. Phí hoàn chốt theo chi phí GHN thực tế khi nhận kiện.'}
                                     </p>
                                     {request.description ? (
                                         <div className="mt-4 rounded-xl bg-zinc-50 p-4">
@@ -457,9 +479,23 @@ export function SellerReturnDetailModal({
                                                 </tr>
                                             </tbody>
                                             <tfoot className="border-t border-zinc-200 bg-zinc-50">
+                                                {isChangeOfMind &&
+                                                !isRejected ? (
+                                                    <tr>
+                                                        <td className="px-4 py-3 font-medium text-zinc-600">
+                                                            Shop bị ghi nợ tiền
+                                                            hoàn
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-semibold text-zinc-950">
+                                                            {formatMoney('0')}
+                                                        </td>
+                                                    </tr>
+                                                ) : null}
                                                 <tr>
                                                     <td className="px-4 py-3 font-semibold text-zinc-950">
-                                                        Tổng tiền hoàn
+                                                        {isChangeOfMind
+                                                            ? customerRefundLabel
+                                                            : 'Tổng tiền hoàn'}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-bold text-zinc-950">
                                                         {formatMoney(
@@ -476,9 +512,9 @@ export function SellerReturnDetailModal({
                                         Phí trước khi GHN nhận kiện chỉ là ước
                                         tính; chi phí carrier chốt khi GHN tiếp
                                         nhận. Ví shop chỉ ghi nợ phí nếu hàng
-                                        hoàn được kiểm tra đạt; nếu không đạt
-                                        và khách chịu phí, hệ thống chỉ ghi
-                                        khoản phải thu, chưa thu tiền thật.
+                                        hoàn được kiểm tra đạt; nếu không đạt và
+                                        khách chịu phí, hệ thống chỉ ghi khoản
+                                        phải thu, chưa thu tiền thật.
                                     </p>
                                 </section>
 
