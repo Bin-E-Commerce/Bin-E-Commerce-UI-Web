@@ -12,8 +12,10 @@ import {
     getAdminFinance,
     getAdminLedger,
     getAdminPayoutReadiness,
+    getAdminRefunds,
     getAdminWithdrawal,
     getAdminWithdrawals,
+    getPendingAdminCodRemittances,
     rejectAdminWithdrawal,
     startAdminWithdrawalProcessing,
 } from '@/services/admin/api/finance.api';
@@ -30,6 +32,7 @@ import { FINANCE_TABLE_PAGE_SIZE } from '../../constants/finance-pagination.cons
 // Trang điều phối các nghiệp vụ tài chính theo từng tab để tránh xếp chồng bảng dài.
 // Dữ liệu finance do backend giới hạn quyền; số dư và ledger luôn lấy từ API có phân trang.
 // Tab lịch sử dòng tiền chỉ đọc; các thao tác thay đổi tài chính nằm trong luồng payout riêng.
+// Badge đỏ chỉ đếm payout, refund và COD còn cần admin xử lý; lịch sử không bị tính nhầm thành thông báo.
 // Raw account number chỉ được tải khi admin mở chi tiết payout để tránh lộ thông tin trong snapshot chung.
 export function AdminFinancePageClient() {
     const queryClient = useQueryClient();
@@ -47,6 +50,8 @@ export function AdminFinancePageClient() {
         queryKey: ['admin-finance', 'overview'],
         queryFn: () => getAdminFinance(1, 1),
         staleTime: 15_000,
+        refetchInterval: 15_000,
+        refetchIntervalInBackground: false,
     });
     // Mỗi bảng dùng query key và page độc lập để đổi trang không tải lại dữ liệu của bảng còn lại.
     const withdrawalsQuery = useQuery({
@@ -66,6 +71,31 @@ export function AdminFinancePageClient() {
                 withdrawalsSearch || undefined,
             ),
         staleTime: 15_000,
+    });
+    // Badge refund chỉ đếm hồ sơ còn việc: chưa chuyển hoặc chuyển lỗi cần xử lý lại.
+    const refundBadgeQuery = useQuery({
+        queryKey: ['admin-finance', 'tab-counts', 'refunds'],
+        queryFn: async () => {
+            const [pendingRefunds, failedRefunds] = await Promise.all([
+                getAdminRefunds(1, 1, 'REFUND_PENDING'),
+                getAdminRefunds(1, 1, 'REFUND_FAILED'),
+            ]);
+            return pendingRefunds.total + failedRefunds.total;
+        },
+        staleTime: 15_000,
+        refetchInterval: 15_000,
+        refetchIntervalInBackground: false,
+    });
+    // COD API trả total toàn hàng đợi, nên pageSize 1 lấy số đếm chính xác mà không tải cả danh sách lên tab bar.
+    const codBadgeQuery = useQuery({
+        queryKey: ['admin-finance', 'tab-counts', 'cod'],
+        queryFn: async () => {
+            const result = await getPendingAdminCodRemittances(1, 1);
+            return result.total;
+        },
+        staleTime: 15_000,
+        refetchInterval: 15_000,
+        refetchIntervalInBackground: false,
     });
     const ledgerQuery = useQuery({
         queryKey: [
@@ -140,6 +170,8 @@ export function AdminFinancePageClient() {
     });
     const overview = overviewQuery.data;
     const detail = withdrawalQuery.data;
+    const pendingRefundCount = refundBadgeQuery.data ?? 0;
+    const pendingCodCount = codBadgeQuery.data ?? 0;
     // Reset checkbox khi đổi yêu cầu hoặc candidate để không tái sử dụng xác nhận cho giao dịch khác.
     useEffect(() => {
         setManualTransferAcknowledged(false);
@@ -262,9 +294,15 @@ export function AdminFinancePageClient() {
                                 aria-hidden="true"
                             />
                             <span className="truncate">Rút tiền seller</span>
-                            {withdrawalsQuery.data ? (
-                                <span className="hidden rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] tabular-nums text-zinc-500 sm:inline-flex">
-                                    {withdrawalsQuery.data.total}
+                            {overview.pendingWithdrawals > 0 ? (
+                                <span
+                                    aria-label={`${overview.pendingWithdrawals} yêu cầu rút tiền đang chờ xử lý`}
+                                    aria-live="polite"
+                                    className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-rose-700 ring-1 ring-inset ring-rose-200"
+                                >
+                                    {overview.pendingWithdrawals > 99
+                                        ? '99+'
+                                        : overview.pendingWithdrawals}
                                 </span>
                             ) : null}
                         </TabsTrigger>
@@ -279,6 +317,17 @@ export function AdminFinancePageClient() {
                             <span className="truncate">
                                 Hoàn tiền cho khách
                             </span>
+                            {pendingRefundCount > 0 ? (
+                                <span
+                                    aria-label={`${pendingRefundCount} khoản hoàn tiền đang chờ xử lý`}
+                                    aria-live="polite"
+                                    className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-rose-700 ring-1 ring-inset ring-rose-200"
+                                >
+                                    {pendingRefundCount > 99
+                                        ? '99+'
+                                        : pendingRefundCount}
+                                </span>
+                            ) : null}
                         </TabsTrigger>
                         <TabsTrigger
                             value="cod"
@@ -289,6 +338,17 @@ export function AdminFinancePageClient() {
                                 aria-hidden="true"
                             />
                             <span className="truncate">COD đối soát</span>
+                            {pendingCodCount > 0 ? (
+                                <span
+                                    aria-label={`${pendingCodCount} đơn COD đang chờ đối soát`}
+                                    aria-live="polite"
+                                    className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-rose-700 ring-1 ring-inset ring-rose-200"
+                                >
+                                    {pendingCodCount > 99
+                                        ? '99+'
+                                        : pendingCodCount}
+                                </span>
+                            ) : null}
                         </TabsTrigger>
                         <TabsTrigger
                             value="deposits"
