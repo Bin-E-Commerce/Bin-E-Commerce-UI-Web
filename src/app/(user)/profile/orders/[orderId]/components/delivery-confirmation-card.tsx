@@ -5,9 +5,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Check,
+    CheckCircle2,
     CircleAlert,
     Clock3,
     ImagePlus,
+    Package,
     PackageCheck,
     Upload,
 } from 'lucide-react';
@@ -19,7 +22,7 @@ import {
     confirmOrderDelivery,
     createOrderReturn,
     type DeliveryIssueReason,
-    type OrderReturnReason,
+    type CustomerOrderReturnReason,
 } from '@/services/order';
 import { mediaService, type ReviewMediaCleanupAsset } from '@/services/media';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -29,21 +32,19 @@ import {
     type ImageLightboxMedia,
 } from '@/common/reviews/components/ImageLightbox';
 import { uploadReturnMedia } from '../utils/return-media-upload';
+import { ReturnRefundBankAccountPicker } from './return-refund-bank-account-picker';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useConfirmOrderDelivery } from '../hooks/use-delivery-confirmation';
+import type { DeliveryConfirmationCardProps } from '../types/delivery-confirmation-card.type';
 
-type DeliveryConfirmationCardProps = {
-    order: OrderResponse;
-    onOrderCompleted: () => void;
-};
-
+// Form này chỉ nhận lý do hoàn hàng sau giao; mã OTHER chỉ nối tương thích với issue legacy.
 const ISSUE_REASONS = [
-    'NOT_RECEIVED',
     'DAMAGED',
     'WRONG_ITEM',
     'MISSING_ITEM',
-    'OTHER',
+    'NOT_AS_DESCRIBED',
+    'CHANGE_OF_MIND',
 ] as const;
 
 // Định dạng countdown theo ngày/giờ để khách hiểu rõ mốc auto-complete mà không cần biết timestamp kỹ thuật.
@@ -56,22 +57,30 @@ function formatRemainingTime(deadline: string | null): string | null {
     return days > 0 ? `${days} ngày ${hours} giờ` : `${hours} giờ`;
 }
 
-// Kiểm tra stage và confirmation status trước khi render để card không xuất hiện cho đơn cũ hoặc đơn đã xử lý.
+// Fulfillment DELIVERED là điều kiện backend kiểm tra cho cả hai quyết định; confirmation status có thể cũ sau khi hủy return.
 function shouldRenderConfirmation(order: OrderResponse): boolean {
-    const confirmationStatus = order.deliveryConfirmation?.status;
-    return (
-        order.fulfillmentStatus === 'DELIVERED' &&
-        (!confirmationStatus || confirmationStatus === 'PENDING')
-    );
+    return order.fulfillmentStatus === 'DELIVERED';
 }
 
 // Chuyển mã vấn đề thành nhãn trực tiếp trong form để Customer không phải đọc enum kỹ thuật.
 function getIssueReasonLabel(reason: (typeof ISSUE_REASONS)[number]): string {
-    if (reason === 'NOT_RECEIVED') return 'Chưa nhận được hàng';
-    if (reason === 'DAMAGED') return 'Sản phẩm bị hư hỏng';
-    if (reason === 'WRONG_ITEM') return 'Giao sai sản phẩm';
-    if (reason === 'MISSING_ITEM') return 'Thiếu sản phẩm';
-    return 'Vấn đề khác';
+    const labels: Record<(typeof ISSUE_REASONS)[number], string> = {
+        DAMAGED: 'Sản phẩm bị hư hỏng',
+        WRONG_ITEM: 'Giao sai sản phẩm',
+        MISSING_ITEM: 'Thiếu sản phẩm',
+        NOT_AS_DESCRIBED: 'Sản phẩm không đúng mô tả',
+        CHANGE_OF_MIND: 'Không còn nhu cầu',
+    };
+    return labels[reason];
+}
+
+// Mã issue legacy chỉ có OTHER cho các lý do return chi tiết mới được thêm; return request vẫn lưu reason chính xác.
+function toDeliveryIssueReason(
+    reason: (typeof ISSUE_REASONS)[number],
+): DeliveryIssueReason {
+    if (reason === 'NOT_AS_DESCRIBED' || reason === 'CHANGE_OF_MIND')
+        return 'OTHER';
+    return reason;
 }
 
 // Tạo preview media từ File local và thu hồi blob URL sau mỗi lần form thay đổi.
@@ -93,20 +102,27 @@ function createLocalMediaPreviews(
     ];
 }
 
-// Render card xác nhận và chuyển sự kiện hoàn tất lên trang cha để popup review không bị unmount cùng card.
+// Render xác nhận giao hàng và form hoàn sản phẩm, chuyển kết quả hoàn tất lên trang cha để popup review không bị unmount.
+// Form chỉ tạo return sau khi khách đã nhận đơn; lỗi sản phẩm cần bằng chứng, còn đổi ý được gửi không kèm ảnh/video.
+// Return được tạo trước rồi mới liên kết vào delivery issue để backend giữ một lịch sử xử lý thống nhất cho order.
 export function DeliveryConfirmationCard({
     order,
     onOrderCompleted,
 }: DeliveryConfirmationCardProps) {
     const queryClient = useQueryClient();
     const [issueOpen, setIssueOpen] = useState(false);
-    const [reason, setReason] = useState<DeliveryIssueReason | ''>('');
+    const [reason, setReason] = useState<(typeof ISSUE_REASONS)[number] | ''>(
+        '',
+    );
     const [note, setNote] = useState('');
     const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+    const [savedRefundBankAccountId, setSavedRefundBankAccountId] =
+        useState('');
     const [images, setImages] = useState<File[]>([]);
     const [videos, setVideos] = useState<File[]>([]);
     const [activeMedia, setActiveMedia] = useState<number | null>(null);
-    const firstIssueInputRef = useRef<HTMLInputElement | null>(null);
+    const imageInputRef = useRef<HTMLInputElement | null>(null);
+    const videoInputRef = useRef<HTMLInputElement | null>(null);
     const mutation = useConfirmOrderDelivery(order.id, onOrderCompleted);
     const [remainingTime, setRemainingTime] = useState(() =>
         formatRemainingTime(order.deliveryConfirmation.deadline),
@@ -117,13 +133,14 @@ export function DeliveryConfirmationCard({
             .map((item) => item.sellerShopId)
             .filter(Boolean),
     );
-    const isReturnRequest = Boolean(reason && reason !== 'NOT_RECEIVED');
-    // NOT_RECEIVED là khiếu nại vận chuyển; mọi lý do còn lại tạo yêu cầu hoàn và phải kèm attachment.
-    const evidenceRequired = isReturnRequest;
+    const isReturnRequest = Boolean(reason);
+    // Chỉ các lý do lỗi sản phẩm cần attachment; khách đổi ý vẫn phải chọn item và tài khoản nhận hoàn.
+    const evidenceRequired = Boolean(reason && reason !== 'CHANGE_OF_MIND');
     const hasEvidence = images.length > 0 || videos.length > 0;
     const canSubmitIssue =
         Boolean(reason) &&
         (!isReturnRequest || selectedItemIds.length > 0) &&
+        (!isReturnRequest || Boolean(savedRefundBankAccountId)) &&
         (!evidenceRequired || hasEvidence);
     const localMedia = useMemo(
         () => createLocalMediaPreviews(images, videos),
@@ -137,31 +154,22 @@ export function DeliveryConfirmationCard({
             localMedia.forEach((item) => URL.revokeObjectURL(item.url));
     }, [localMedia]);
 
-    // Khi mở form, đưa người dùng tới lựa chọn đầu tiên và cuộn vừa đủ để vùng cần thao tác nằm trong tầm nhìn.
-    // requestAnimationFrame bảo đảm radio đã được mount sau khi issueOpen đổi sang true trước khi gọi focus.
-    useEffect(() => {
-        if (!issueOpen) return;
-        const frame = window.requestAnimationFrame(() => {
-            firstIssueInputRef.current?.focus();
-            firstIssueInputRef.current?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-            });
-        });
-        return () => window.cancelAnimationFrame(frame);
-    }, [issueOpen]);
-
-    // Tạo yêu cầu hoàn trước, sau đó gắn đúng ID vào khiếu nại để hai lịch sử không bị tách rời.
+    // Upload bằng chứng nếu có rồi tạo return trước, sau đó gắn ID return vào issue để hai lịch sử không bị tách rời.
+    // Chỉ lỗi sản phẩm bắt buộc có file; lý do đổi ý vẫn cần item và tài khoản nhưng gửi evidence rỗng hợp lệ.
+    // Nếu bước liên kết issue lỗi sau khi return đã lưu, giữ asset để không làm hỏng bằng chứng đang được request tham chiếu.
     const issueMutation = useMutation({
         mutationFn: async () => {
             if (!reason) throw new Error('Vui lòng chọn vấn đề của đơn hàng.');
 
-            const isReturnRequest = reason !== 'NOT_RECEIVED';
-            if (isReturnRequest && selectedItemIds.length === 0) {
+            if (selectedItemIds.length === 0) {
                 throw new Error('Vui lòng chọn sản phẩm bị ảnh hưởng.');
             }
-            // Chặn trước upload/tạo request để không lưu khiếu nại hoàn thiếu chứng cứ.
-            if (isReturnRequest && !hasEvidence) {
+            // Mọi lý do còn lại đều là return sau giao nên phải có nơi nhận tiền hoàn đã xác minh.
+            if (!savedRefundBankAccountId) {
+                throw new Error('Vui lòng chọn tài khoản nhận tiền hoàn.');
+            }
+            // Chặn trước upload và tạo request với lỗi sản phẩm; khách đổi ý được gửi mà không tạo attachment.
+            if (evidenceRequired && !hasEvidence) {
                 throw new Error(
                     'Vui lòng thêm ít nhất một ảnh hoặc video bằng chứng.',
                 );
@@ -180,26 +188,25 @@ export function DeliveryConfirmationCard({
                           };
                 uploadedAssets = media.uploadedAssets;
 
-                if (isReturnRequest) {
-                    const returnRequest = await createOrderReturn(order.id, {
-                        itemIds: selectedItemIds,
-                        reason: reason as OrderReturnReason,
-                        description: note.trim() || undefined,
-                        evidence: media.evidence,
-                    });
-                    returnCreated = true;
-                    returnRequestId = returnRequest.id;
-                }
+                const returnRequest = await createOrderReturn(order.id, {
+                    itemIds: selectedItemIds,
+                    reason: reason as CustomerOrderReturnReason,
+                    savedRefundBankAccountId,
+                    description: note.trim() || undefined,
+                    evidence: media.evidence,
+                });
+                returnCreated = true;
+                returnRequestId = returnRequest.id;
 
                 const updatedOrder = await confirmOrderDelivery(order.id, {
                     decision: 'ISSUE',
-                    reason,
+                    reason: toDeliveryIssueReason(reason),
                     itemIds: selectedItemIds,
                     returnRequestId,
                     note: note.trim() || undefined,
                     evidence: media.evidence,
                 });
-                return { updatedOrder, returnCreated };
+                return updatedOrder;
             } catch (error) {
                 // Chỉ cleanup asset khi tạo return thất bại; nếu return đã lưu thì evidence là dữ liệu lịch sử cần giữ lại.
                 if (!returnCreated && uploadedAssets.length > 0) {
@@ -210,7 +217,7 @@ export function DeliveryConfirmationCard({
                 throw error;
             }
         },
-        onSuccess: async ({ updatedOrder, returnCreated }) => {
+        onSuccess: async (updatedOrder) => {
             queryClient.setQueryData(
                 ['customer-order', order.id],
                 updatedOrder,
@@ -227,11 +234,7 @@ export function DeliveryConfirmationCard({
                 }),
             ]);
             resetIssueForm();
-            toast.success(
-                returnCreated
-                    ? 'Đã gửi yêu cầu hoàn hàng.'
-                    : 'Đã ghi nhận vấn đề của bạn.',
-            );
+            toast.success('Đã gửi yêu cầu hoàn hàng.');
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
@@ -301,12 +304,13 @@ export function DeliveryConfirmationCard({
         setReason('');
         setNote('');
         setSelectedItemIds([]);
+        setSavedRefundBankAccountId('');
         setImages([]);
         setVideos([]);
         setActiveMedia(null);
     }
 
-    // Gửi một request duy nhất; vấn đề chưa nhận chỉ ghi nhận issue, còn lỗi sản phẩm tự tạo return request kèm evidence.
+    // Gửi yêu cầu sau khi người dùng hoàn tất return; validation trong mutation vẫn bảo vệ mọi đường submit.
     function handleIssueSubmit(event: React.FormEvent<HTMLFormElement>): void {
         event.preventDefault();
         issueMutation.mutate();
@@ -350,226 +354,314 @@ export function DeliveryConfirmationCard({
                     <div className="grid shrink-0 gap-2 sm:grid-cols-2 lg:w-60 lg:grid-cols-1">
                         <Button
                             type="button"
+                            id="confirm-order-received"
                             onClick={handleReceived}
                             disabled={mutation.isPending}
                             className="h-11 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
                         >
                             {mutation.isPending
                                 ? 'Đang cập nhật...'
-                                : 'Hoàn thành đơn hàng'}
+                                : 'Xác nhận đã nhận hàng'}
                         </Button>
                         <Button
                             type="button"
+                            id="report-order-issue"
                             variant="outline"
                             onClick={() => setIssueOpen(true)}
                             disabled={mutation.isPending}
                             className="h-11 rounded-xl border-zinc-200 px-4 text-sm font-semibold text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950"
                         >
-                            <CircleAlert
-                                className="mr-2 size-4"
-                                aria-hidden="true"
-                            />
-                            Chưa nhận / Có vấn đề
+                            Yêu cầu hoàn hàng
                         </Button>
                     </div>
                 </div>
             </section>
 
             {issueOpen ? (
-                <section className="mt-4 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-                    <header className="border-b border-zinc-100 bg-zinc-50/70 px-5 py-5 text-left sm:px-7">
-                        <h3 className="text-xl font-bold tracking-tight text-zinc-950">
-                            Xử lý chưa nhận / có vấn đề
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-zinc-500">
-                            Nhập thông tin một lần. Nếu sản phẩm có vấn đề, hệ
-                            thống sẽ đồng thời tạo yêu cầu hoàn hàng và ghi nhận
-                            vấn đề của đơn.
-                        </p>
+                <section
+                    id="delivery-issue-form"
+                    className="mt-4 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm"
+                >
+                    <header className="flex items-start gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-5 py-4 text-left sm:px-7">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                            <CircleAlert
+                                className="size-5"
+                                aria-hidden="true"
+                            />
+                        </span>
+                        <div>
+                            <h3 className="text-lg font-bold tracking-tight text-zinc-950">
+                                Yêu cầu hoàn hàng
+                            </h3>
+                            <p className="mt-1 text-sm leading-6 text-zinc-500">
+                                Chọn sản phẩm và tài khoản nhận tiền hoàn. Lý do
+                                lỗi sản phẩm cần ảnh/video; đổi ý không bắt buộc
+                                có bằng chứng.
+                            </p>
+                        </div>
                     </header>
                     <form onSubmit={handleIssueSubmit}>
-                        <div className="space-y-5 px-6 py-6 sm:px-7">
+                        <div className="space-y-5 px-4 py-5 sm:px-7 sm:py-6">
                             <fieldset>
                                 <legend className="text-sm font-semibold text-zinc-950">
-                                    Vấn đề của bạn là gì?
+                                    Bạn muốn hoàn hàng vì lý do nào?
                                 </legend>
-                                <div className="mt-3 grid gap-2">
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                                     {ISSUE_REASONS.map((value) => (
-                                        <label
+                                        <Button
                                             key={value}
-                                            className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 px-3.5 py-3 text-sm transition-colors hover:border-zinc-400 has-[:checked]:border-zinc-950 has-[:checked]:bg-zinc-50"
+                                            type="button"
+                                            variant="outline"
+                                            aria-pressed={reason === value}
+                                            onClick={() => setReason(value)}
+                                            className={`h-auto min-h-12 justify-start gap-3 whitespace-normal rounded-xl px-3.5 py-3 text-left text-sm font-medium transition-colors ${reason === value ? 'border-zinc-950 bg-zinc-50 text-zinc-950 shadow-sm hover:bg-zinc-100' : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50'}`}
                                         >
-                                            <input
-                                                ref={
-                                                    value === ISSUE_REASONS[0]
-                                                        ? firstIssueInputRef
-                                                        : undefined
-                                                }
-                                                type="radio"
-                                                name="issue-reason"
-                                                value={value}
-                                                checked={reason === value}
-                                                onChange={() =>
-                                                    setReason(value)
-                                                }
-                                                className="size-4 accent-black"
-                                            />
-                                            <span>
+                                            <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white">
+                                                {reason === value ? (
+                                                    <Check className="size-3.5" />
+                                                ) : null}
+                                            </span>
+                                            <span className="min-w-0">
                                                 {getIssueReasonLabel(value)}
                                             </span>
-                                        </label>
+                                        </Button>
                                     ))}
                                 </div>
                             </fieldset>
 
                             {isReturnRequest ? (
-                                <fieldset>
-                                    <legend className="text-sm font-semibold text-zinc-950">
-                                        Sản phẩm bị ảnh hưởng
-                                    </legend>
-                                    <div className="mt-3 space-y-2">
-                                        {order.items.map((item) => (
-                                            <label
-                                                key={item.id}
-                                                className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 px-3.5 py-3 text-sm hover:border-zinc-400"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedItemIds.includes(
+                                <div className="space-y-4">
+                                    <fieldset>
+                                        <legend className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+                                            <Package
+                                                className="size-4 text-zinc-500"
+                                                aria-hidden="true"
+                                            />
+                                            Sản phẩm cần hoàn
+                                            <span className="font-normal text-zinc-500">
+                                                · mỗi yêu cầu thuộc một shop
+                                            </span>
+                                        </legend>
+                                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                            {order.items.map((item) => {
+                                                // Khóa lựa chọn khác shop sau khi khách chọn sản phẩm đầu tiên.
+                                                const selected =
+                                                    selectedItemIds.includes(
                                                         item.id,
-                                                    )}
-                                                    onChange={() =>
-                                                        toggleItem(item.id)
-                                                    }
-                                                    className="size-4 accent-black"
-                                                />
-                                                <span className="min-w-0 truncate">
-                                                    {item.productName}
-                                                </span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </fieldset>
-                            ) : null}
+                                                    );
+                                                const locked =
+                                                    selectedShopIds.size > 0 &&
+                                                    !selectedShopIds.has(
+                                                        item.sellerShopId ?? '',
+                                                    );
 
-                            {reason ? (
-                                <div>
-                                    <p className="text-sm font-semibold text-zinc-950">
-                                        Bằng chứng{' '}
-                                        {evidenceRequired ? (
-                                            <span className="font-normal text-red-500">
-                                                (bắt buộc ảnh hoặc video)
-                                            </span>
-                                        ) : (
-                                            <span className="font-normal text-zinc-400">
-                                                (không bắt buộc)
-                                            </span>
-                                        )}
-                                    </p>
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
-                                            <ImagePlus className="size-4" />{' '}
-                                            Thêm ảnh
-                                            <input
-                                                hidden
-                                                type="file"
-                                                accept="image/jpeg,image/png,image/webp"
-                                                multiple
-                                                onChange={(event) =>
-                                                    handleFiles(event, 'image')
-                                                }
-                                            />
-                                        </label>
-                                        <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
-                                            <Upload className="size-4" /> Thêm
-                                            video
-                                            <input
-                                                hidden
-                                                type="file"
-                                                accept="video/mp4,video/webm"
-                                                onChange={(event) =>
-                                                    handleFiles(event, 'video')
-                                                }
-                                            />
-                                        </label>
-                                    </div>
-                                    <p className="mt-1.5 text-xs text-zinc-400">
-                                        Tối đa 5 ảnh và 1 video.
-                                    </p>
-                                    {localMedia.length > 0 ? (
-                                        <div className="mt-3 flex flex-wrap gap-3">
-                                            {localMedia.map((media, index) => (
-                                                <ImageLightboxThumbnail
-                                                    key={media.url}
-                                                    item={media}
-                                                    onClick={() =>
-                                                        setActiveMedia(index)
-                                                    }
-                                                    onRemove={() =>
-                                                        handleRemoveMedia(
-                                                            media.type ===
-                                                                'image'
-                                                                ? index
-                                                                : index -
-                                                                      images.length,
-                                                            media.type,
-                                                        )
-                                                    }
-                                                />
-                                            ))}
+                                                return (
+                                                    <Button
+                                                        key={item.id}
+                                                        type="button"
+                                                        variant="outline"
+                                                        aria-pressed={selected}
+                                                        disabled={locked}
+                                                        onClick={() =>
+                                                            toggleItem(item.id)
+                                                        }
+                                                        className={`h-auto min-h-14 min-w-0 justify-start gap-3 whitespace-normal rounded-xl px-3 py-2.5 text-left transition-colors ${selected ? 'border-zinc-950 bg-zinc-50 hover:bg-zinc-100' : 'border-zinc-200 bg-white hover:border-zinc-400 hover:bg-zinc-50'} ${locked ? 'cursor-not-allowed opacity-45' : ''}`}
+                                                    >
+                                                        <span
+                                                            className={`flex size-5 shrink-0 items-center justify-center rounded-md border ${selected ? 'border-zinc-950 bg-zinc-950 text-white' : 'border-zinc-300 bg-white'}`}
+                                                        >
+                                                            {selected ? (
+                                                                <CheckCircle2 className="size-4" />
+                                                            ) : null}
+                                                        </span>
+                                                        <span className="min-w-0">
+                                                            <span className="block truncate text-sm font-semibold text-zinc-950">
+                                                                {
+                                                                    item.productName
+                                                                }
+                                                            </span>
+                                                            <span className="mt-1 block truncate text-xs font-normal text-zinc-500">
+                                                                {
+                                                                    item.variantName
+                                                                }{' '}
+                                                                · SL{' '}
+                                                                {item.quantity}
+                                                            </span>
+                                                        </span>
+                                                    </Button>
+                                                );
+                                            })}
                                         </div>
-                                    ) : null}
+                                    </fieldset>
+
+                                    <ReturnRefundBankAccountPicker
+                                        selectedAccountId={
+                                            savedRefundBankAccountId
+                                        }
+                                        onAccountChange={
+                                            setSavedRefundBankAccountId
+                                        }
+                                    />
                                 </div>
                             ) : null}
 
-                            <div>
-                                <label
-                                    htmlFor="delivery-issue-note"
-                                    className="text-sm font-semibold text-zinc-950"
-                                >
-                                    Mô tả thêm{' '}
-                                    <span className="font-normal text-zinc-400">
-                                        (không bắt buộc)
-                                    </span>
-                                </label>
-                                <Textarea
-                                    id="delivery-issue-note"
-                                    value={note}
-                                    onChange={(event) =>
-                                        setNote(event.target.value)
-                                    }
-                                    placeholder="Mô tả ngắn tình trạng đơn hàng hoặc sản phẩm..."
-                                    className="mt-3 min-h-24 resize-none rounded-xl border-zinc-200"
-                                    maxLength={1000}
-                                />
-                                <p className="mt-1.5 text-right text-[11px] text-zinc-400">
-                                    {note.length}/1000
-                                </p>
-                            </div>
+                            {reason ? (
+                                <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                                    <div className="flex h-full min-h-48 flex-col rounded-2xl border border-zinc-200 bg-zinc-50/60 p-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <p className="text-sm font-semibold text-zinc-950">
+                                                Bằng chứng{' '}
+                                                {evidenceRequired ? (
+                                                    <span className="text-red-600">
+                                                        · bắt buộc
+                                                    </span>
+                                                ) : (
+                                                    <span className="font-normal text-zinc-500">
+                                                        · không bắt buộc
+                                                    </span>
+                                                )}
+                                            </p>
+                                            <span className="text-xs text-zinc-500">
+                                                Tối đa 5 ảnh, 1 video
+                                            </span>
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    imageInputRef.current?.click()
+                                                }
+                                                className="h-9 rounded-lg bg-white px-3 text-xs"
+                                            >
+                                                <ImagePlus
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                Thêm ảnh
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    videoInputRef.current?.click()
+                                                }
+                                                className="h-9 rounded-lg bg-white px-3 text-xs"
+                                            >
+                                                <Upload
+                                                    className="size-4"
+                                                    aria-hidden="true"
+                                                />
+                                                Thêm video
+                                            </Button>
+                                        </div>
+                                        {/* Input gốc là điểm mở bộ chọn tệp của hệ điều hành; thao tác hiển thị dùng Button của design system. */}
+                                        <input
+                                            ref={imageInputRef}
+                                            hidden
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            multiple
+                                            onChange={(event) =>
+                                                handleFiles(event, 'image')
+                                            }
+                                        />
+                                        <input
+                                            ref={videoInputRef}
+                                            hidden
+                                            type="file"
+                                            accept="video/mp4,video/webm"
+                                            onChange={(event) =>
+                                                handleFiles(event, 'video')
+                                            }
+                                        />
+                                        {localMedia.length > 0 ? (
+                                            <div className="mt-3 flex flex-wrap gap-3">
+                                                {localMedia.map(
+                                                    (media, index) => (
+                                                        <ImageLightboxThumbnail
+                                                            key={media.url}
+                                                            item={media}
+                                                            onClick={() =>
+                                                                setActiveMedia(
+                                                                    index,
+                                                                )
+                                                            }
+                                                            onRemove={() =>
+                                                                handleRemoveMedia(
+                                                                    media.type ===
+                                                                        'image'
+                                                                        ? index
+                                                                        : index -
+                                                                              images.length,
+                                                                    media.type,
+                                                                )
+                                                            }
+                                                        />
+                                                    ),
+                                                )}
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    <div className="flex h-full min-h-48 flex-col rounded-2xl border border-zinc-200 bg-zinc-50/60 p-4">
+                                        <label
+                                            htmlFor="delivery-issue-note"
+                                            className="text-sm font-semibold text-zinc-950"
+                                        >
+                                            Mô tả thêm{' '}
+                                            <span className="font-normal text-zinc-500">
+                                                (không bắt buộc)
+                                            </span>
+                                        </label>
+                                        <Textarea
+                                            id="delivery-issue-note"
+                                            value={note}
+                                            onChange={(event) =>
+                                                setNote(event.target.value)
+                                            }
+                                            placeholder="Mô tả ngắn tình trạng đơn hàng hoặc sản phẩm..."
+                                            className="mt-2 min-h-28 flex-1 resize-none rounded-xl border-zinc-200 bg-white"
+                                            maxLength={1000}
+                                        />
+                                        <p className="mt-1.5 text-right text-[11px] text-zinc-400">
+                                            {note.length}/1000
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
-                        <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 bg-zinc-50/60 px-5 py-4 sm:flex-row sm:justify-end sm:px-7">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIssueOpen(false)}
-                                disabled={issueMutation.isPending}
-                                className="h-10 rounded-xl"
-                            >
-                                Thu gọn
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={
-                                    !canSubmitIssue || issueMutation.isPending
-                                }
-                                className="h-10 rounded-xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"
-                            >
-                                {issueMutation.isPending
-                                    ? 'Đang gửi...'
-                                    : isReturnRequest
-                                      ? 'Gửi yêu cầu hoàn hàng'
-                                      : 'Gửi thông tin'}
-                            </Button>
+                        <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 bg-zinc-50/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+                            <p className="text-xs leading-5 text-zinc-500">
+                                {reason === 'CHANGE_OF_MIND'
+                                    ? 'Tài khoản nhận tiền là bắt buộc; ảnh/video có thể gửi thêm nếu bạn muốn.'
+                                    : reason
+                                      ? 'Gửi sản phẩm, tài khoản nhận tiền và bằng chứng để Seller xử lý yêu cầu.'
+                                      : 'Chọn lý do, sản phẩm và tài khoản nhận tiền để tiếp tục.'}
+                            </p>
+                            <div className="flex shrink-0 justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIssueOpen(false)}
+                                    disabled={issueMutation.isPending}
+                                    className="h-10 rounded-xl"
+                                >
+                                    Thu gọn
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        !canSubmitIssue ||
+                                        issueMutation.isPending
+                                    }
+                                    className="h-10 rounded-xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"
+                                >
+                                    {issueMutation.isPending
+                                        ? 'Đang gửi...'
+                                        : 'Gửi yêu cầu hoàn hàng'}
+                                </Button>
+                            </div>
                         </div>
                     </form>
                 </section>

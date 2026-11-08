@@ -1,57 +1,45 @@
-// File này trình bày nghiệp vụ hoàn hàng ở customer order detail.
-// UI giữ màu hệ thống, chỉ cho chọn item cùng shop và gửi evidence theo policy backend.
+// File này chỉ theo dõi lịch sử và trạng thái hoàn hàng trong chi tiết đơn.
+// Form tạo yêu cầu tập trung ở DeliveryConfirmationCard để Customer không nhập trùng dữ liệu.
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useState } from 'react';
 import {
-    AlertCircle,
     CalendarDays,
-    CheckCircle2,
     CircleDollarSign,
-    ImagePlus,
     Pencil,
     RotateCcw,
     SkipForward,
     Truck,
-    Upload,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import type { OrderResponse } from '@/app/(public)/checkout/types/checkout.types';
 import {
     cancelOrderReturn,
-    createOrderReturn,
+    getOrder,
     listOrderReturns,
     updateOrderReturn,
-    type OrderReturnReason,
     type OrderReturnResponse,
-    type UpdateOrderReturnInput,
 } from '@/services/order';
-import { mediaService } from '@/services/media';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import {
     ImageLightbox,
     ImageLightboxThumbnail,
     type ImageLightboxMedia,
 } from '@/common/reviews/components/ImageLightbox';
-import { uploadReturnMedia } from '../utils/return-media-upload';
 import { EditOrderReturnDialog } from './edit-order-return-dialog';
-import { RETURN_REASONS } from '../constants/return-reason.constant';
 import {
     useAdvanceDemoCustomerReturnShipment,
     useCustomerTracking,
 } from '@/hooks/shipping/use-shipment';
+import { useConfirmOrderDelivery } from '../hooks/use-delivery-confirmation';
+import type {
+    OrderReturnPanelProps,
+    UpdateOrderReturnMutationVariables,
+} from '../types/returns/order-return-panel.type';
 
 const RETURN_SHIPPING_LIMIT_REJECTION_PREFIX =
     'Phí hoàn GHN vượt giá trị hàng hoàn.';
@@ -99,29 +87,10 @@ function mapReturnEvidenceToMedia(
     }));
 }
 
-// Tạo preview blob cho file local và giữ thứ tự ảnh trước video giống payload upload.
-function createLocalMediaPreviews(
-    images: File[],
-    videos: File[],
-): ImageLightboxMedia[] {
-    return [
-        ...images.map((file, index) => ({
-            url: URL.createObjectURL(file),
-            type: 'image' as const,
-            label: `Ảnh ${index + 1}`,
-        })),
-        ...videos.map((file, index) => ({
-            url: URL.createObjectURL(file),
-            type: 'video' as const,
-            label: `Video ${index + 1}`,
-        })),
-    ];
-}
-
-// Quản lý yêu cầu hoàn và cập nhật danh sách sau các thao tác của khách hàng.
-// Phần tóm tắt giữ nguyên số tiền/ai chịu phí từ API, đồng thời phân biệt rõ ước tính với số đã chốt.
-// UI dùng tông trung tính và màu trạng thái tiết chế để thông tin tài chính dễ quét trên desktop lẫn mobile.
-export function OrderReturnPanel({ order }: { order: OrderResponse }) {
+// Hiển thị lịch sử hoàn và cho phép xử lý các thao tác còn hợp lệ trên từng request.
+// Form tạo request được giữ duy nhất tại thẻ giao nhận; component này chỉ đọc lịch sử,
+// cập nhật/hủy request và theo dõi vận đơn để tránh hai form tạo cùng một yêu cầu.
+export function OrderReturnPanel({ order }: OrderReturnPanelProps) {
     const queryClient = useQueryClient();
     const returnsQuery = useQuery({
         queryKey: ['order-returns', order.id],
@@ -132,13 +101,6 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     const advanceReturnDemoMutation = useAdvanceDemoCustomerReturnShipment(
         order.id,
     );
-    const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
-    const [reason, setReason] = useState<OrderReturnReason>('DAMAGED');
-    const [description, setDescription] = useState('');
-    const [images, setImages] = useState<File[]>([]);
-    const [videos, setVideos] = useState<File[]>([]);
-    const [submitting, setSubmitting] = useState(false);
-    const [localMedia, setLocalMedia] = useState<ImageLightboxMedia[]>([]);
     const [activeMedia, setActiveMedia] = useState<{
         items: ImageLightboxMedia[];
         index: number;
@@ -146,71 +108,54 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
     const [editingRequest, setEditingRequest] =
         useState<OrderReturnResponse | null>(null);
 
-    // Tạo lại preview khi danh sách file đổi và thu hồi blob URL để không giữ file local trong bộ nhớ.
-    useEffect(() => {
-        const nextMedia = createLocalMediaPreviews(images, videos);
-        // State này phản ánh resource URL được tạo từ File API, không phải derived state thuần từ props.
-        setLocalMedia(nextMedia);
-
-        return () => {
-            nextMedia.forEach((item) => URL.revokeObjectURL(item.url));
-        };
-    }, [images, videos]);
-
-    const createMutation = useMutation({
-        mutationFn: async () => {
-            // Chặn trước upload để không tạo asset rác khi form chưa có bằng chứng bắt buộc.
-            if (images.length + videos.length === 0)
-                throw new Error(
-                    'Vui lòng thêm ít nhất một ảnh hoặc video bằng chứng.',
-                );
-            setSubmitting(true);
-            const media = await uploadReturnMedia(images, videos);
-            try {
-                return await createOrderReturn(order.id, {
-                    itemIds: selectedItemIds,
-                    reason,
-                    description: description.trim() || undefined,
-                    evidence: media.evidence,
-                });
-            } catch (error) {
-                await mediaService
-                    .cleanupUploadedReviewAssets(media.uploadedAssets)
-                    .catch(() => undefined);
-                throw error;
-            }
-        },
-        onSuccess: async () => {
-            toast.success('Đã gửi yêu cầu hoàn hàng.');
-            setSelectedItemIds([]);
-            setDescription('');
-            setImages([]);
-            setVideos([]);
-            await queryClient.invalidateQueries({
-                queryKey: ['order-returns', order.id],
-            });
-        },
-        onError: (error) => toast.error(getErrorMessage(error)),
-        onSettled: () => setSubmitting(false),
-    });
-
     const cancelMutation = useMutation({
         mutationFn: cancelOrderReturn,
         onSuccess: async () => {
             toast.success('Đã hủy yêu cầu hoàn hàng.');
-            await queryClient.invalidateQueries({
-                queryKey: ['order-returns', order.id],
-            });
+            // Hủy request có thể mở lại bước xác nhận giao hàng; đồng bộ cả lịch sử return và order snapshot.
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ['order-returns', order.id],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['customer-order', order.id],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['customer-orders'],
+                }),
+            ]);
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
+    const reconcileCancelledRequestMutation = useMutation({
+        mutationFn: async (returnId: string) => {
+            // Endpoint hủy idempotent; gọi lại chỉ để server khôi phục order cũ bị kẹt sau khi request đã hủy.
+            await cancelOrderReturn(returnId);
+            return getOrder(order.id);
+        },
+        onSuccess: async (updatedOrder) => {
+            queryClient.setQueryData(
+                ['customer-order', order.id],
+                updatedOrder,
+            );
+            toast.success('Đã khôi phục trạng thái đơn hàng.');
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ['order-returns', order.id],
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: ['customer-orders'],
+                }),
+            ]);
+        },
+        onError: (error) => toast.error(getErrorMessage(error)),
+    });
+    const confirmDeliveryMutation = useConfirmOrderDelivery(order.id);
 
     // Tải lại danh sách để thẻ yêu cầu dùng snapshot mới từ server.
     const updateMutation = useMutation({
-        mutationFn: (variables: {
-            returnId: string;
-            input: UpdateOrderReturnInput;
-        }) => updateOrderReturn(variables.returnId, variables.input),
+        mutationFn: (variables: UpdateOrderReturnMutationVariables) =>
+            updateOrderReturn(variables.returnId, variables.input),
         onSuccess: () => {
             toast.success('Đã cập nhật yêu cầu hoàn hàng.');
             void queryClient
@@ -233,81 +178,75 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                     RETURN_SHIPPING_LIMIT_REJECTION_PREFIX,
                 ),
         ) ?? false;
-    // Khi Customer đã gửi issue ở card xác nhận, form này không được xuất hiện lại để tránh nhập trùng dữ liệu.
-    const deliveryIssueReported =
-        order.deliveryConfirmation?.status === 'ISSUE_REPORTED';
-    const selectedShopIds = new Set(
-        order.items
-            .filter((item) => selectedItemIds.includes(item.id))
-            .map((item) => item.sellerShopId)
-            .filter(Boolean),
-    );
-    const selectedReason = RETURN_REASONS.find(
-        (item) => item.value === reason,
-    )!;
-    const canCreate =
-        order.fulfillmentStatus === 'DELIVERED' ||
-        order.fulfillmentStatus === 'COMPLETED';
-    // Ở trạng thái DELIVERED, Customer nhập issue trực tiếp tại card xác nhận; chỉ mở form độc lập sau khi đơn đã COMPLETED.
-    const canShowStandaloneForm = order.fulfillmentStatus === 'COMPLETED';
+    const isOrderCompleted = order.fulfillmentStatus === 'COMPLETED';
+    // Danh sách được sắp theo ngày tạo, nhưng request cũ có thể vừa bị hủy nên chọn theo updatedAt để gắn lối tắt đúng thẻ.
+    const latestCancelledRequestId = returnsQuery.data
+        ?.filter((item) => item.status === 'CUSTOMER_CANCELLED')
+        .sort(
+            (first, second) =>
+                new Date(second.updatedAt).getTime() -
+                new Date(first.updatedAt).getTime(),
+        )[0]?.id;
+    // Trước khi khách xác nhận hoàn tất, chỉ mở thao tác nếu không có return khác đang xử lý hoặc bị từ chối.
+    const canOfferDeliveryChoices =
+        order.fulfillmentStatus === 'DELIVERED' &&
+        !activeRequest &&
+        !hasRejectedRequest;
+    // Một số request cũ đã hủy nhưng order còn RETURN_REFUND; chỉ mở đường phục hồi khi issue cũng đã đóng về cùng trạng thái cũ.
+    const canRepairCancelledOrder =
+        order.fulfillmentStatus === 'RETURN_REFUND' &&
+        order.deliveryConfirmation?.status === 'ISSUE_REPORTED' &&
+        !activeRequest &&
+        !hasRejectedRequest;
     const returnShipments =
         trackingQuery.data?.shipments.filter(
             (shipment) => shipment.shipmentKind === 'RETURN',
         ) ?? [];
 
-    function toggleItem(itemId: string): void {
-        const item = order.items.find((entry) => entry.id === itemId);
-        if (!item?.sellerShopId) return;
-        if (selectedItemIds.includes(itemId)) {
-            setSelectedItemIds((current) =>
-                current.filter((id) => id !== itemId),
-            );
-            return;
+    // Gọi lại cancel idempotent để phục hồi order cũ, sau đó cuộn tới nút mở form thống nhất.
+    async function handleResubmitCancelledRequest(
+        returnId: string,
+    ): Promise<void> {
+        try {
+            const updatedOrder =
+                await reconcileCancelledRequestMutation.mutateAsync(returnId);
+            const targetId =
+                updatedOrder.fulfillmentStatus === 'DELIVERED'
+                    ? 'report-order-issue'
+                    : null;
+            if (!targetId) return;
+
+            // Đợi order chuyển lại DELIVERED và nút báo vấn đề được render rồi mới cuộn tới form duy nhất.
+            window.requestAnimationFrame(() => {
+                document
+                    .getElementById(targetId)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        } catch {
+            // Mutation đã chuyển lỗi thành toast; không nuốt hay ghi đè thông báo lỗi của getErrorMessage.
         }
-        if (
-            selectedShopIds.size > 0 &&
-            !selectedShopIds.has(item.sellerShopId)
-        ) {
-            toast.error('Mỗi yêu cầu chỉ được hoàn sản phẩm của một shop.');
-            return;
+    }
+
+    // Khôi phục order rồi xác nhận nhận hàng trong cùng thao tác để customer không cần bấm qua trạng thái trung gian.
+    async function handleConfirmAfterCancelledRequest(
+        returnId: string,
+    ): Promise<void> {
+        try {
+            const updatedOrder =
+                await reconcileCancelledRequestMutation.mutateAsync(returnId);
+            // Chỉ xác nhận ở trạng thái đã giao; COMPLETED nghĩa là khách đã xác nhận trước đó.
+            if (updatedOrder.fulfillmentStatus !== 'DELIVERED') {
+                toast.error('Đơn chưa thể xác nhận đã nhận hàng.');
+                return;
+            }
+            await confirmDeliveryMutation.mutateAsync({ decision: 'RECEIVED' });
+        } catch {
+            // Hai mutation đã hiển thị lỗi qua toast riêng; giữ nguyên lỗi gốc từ API.
         }
-        setSelectedItemIds((current) => [...current, itemId]);
     }
 
-    function handleFiles(
-        event: React.ChangeEvent<HTMLInputElement>,
-        type: 'image' | 'video',
-    ): void {
-        const files = Array.from(event.target.files ?? []);
-        if (type === 'image')
-            setImages((current) => [...current, ...files].slice(0, 5));
-        else setVideos((current) => [...current, ...files].slice(0, 1));
-        event.target.value = '';
-    }
-
-    // Xóa đúng file local theo định danh thumbnail, không ảnh hưởng evidence đã gửi lên server.
-    function handleRemoveLocalMedia(id: string): void {
-        if (id.startsWith('image-')) {
-            const index = Number(id.replace('image-', ''));
-            setImages((current) =>
-                current.filter((_, fileIndex) => fileIndex !== index),
-            );
-            return;
-        }
-
-        const index = Number(id.replace('video-', ''));
-        setVideos((current) =>
-            current.filter((_, fileIndex) => fileIndex !== index),
-        );
-    }
-
-    if (
-        (!canCreate && !returnsQuery.data?.length) ||
-        ((deliveryIssueReported || order.fulfillmentStatus === 'DELIVERED') &&
-            !returnsQuery.data?.length)
-    ) {
-        return null;
-    }
+    // Chỉ hiển thị lịch sử sau khi có request; form tạo mới nằm ở DeliveryConfirmationCard.
+    if (!returnsQuery.data?.length) return null;
 
     return (
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -317,19 +256,12 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                 </div>
                 <div className="min-w-0">
                     <h2 className="text-lg font-bold text-zinc-950">
-                        Yêu cầu hoàn hàng
+                        Lịch sử hoàn hàng
                     </h2>
                     <p className="mt-0.5 text-xs leading-5 text-zinc-500 sm:text-sm">
-                        Chọn sản phẩm cần hoàn. Mỗi yêu cầu chỉ áp dụng cho một
-                        shop.
+                        Theo dõi trạng thái và các bước xử lý yêu cầu đã gửi.
                     </p>
                 </div>
-            </div>
-            <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-3 text-xs leading-5 text-zinc-700 sm:px-5">
-                Gửi yêu cầu trong vòng 7 ngày kể từ khi đơn hoàn tất. Phí GHN
-                đang hiển thị là ước tính, chưa bị thu; phí thực tế chỉ chốt khi
-                hãng vận chuyển nhận kiện. Lỗi hàng shop chịu phí, đổi ý khách
-                chịu phí; với lý do khác, shop chọn bên chịu khi duyệt.
             </div>
             {returnsQuery.data?.length ? (
                 <div className="space-y-3 border-b border-zinc-100 px-5 py-4 sm:px-6">
@@ -351,6 +283,13 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                 : isShippingFinalized
                                   ? item.refundAmount
                                   : item.estimatedRefundAmount,
+                        );
+                        // Các khoản thành phần lấy nguyên snapshot backend; chỉ tổng refund đổi từ estimate sang thực tế sau khi GHN chốt phí.
+                        const itemRefundAmount = Number(
+                            isRejected ? 0 : (item.refundItemAmount ?? 0),
+                        );
+                        const outboundShippingRefundAmount = Number(
+                            isRejected ? 0 : (item.refundShippingAmount ?? 0),
                         );
                         const shippingAmount = Number(
                             isShippingFinalized
@@ -441,24 +380,39 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                     )}
                                 </div>
 
-                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                                     <div className="min-w-0 rounded-xl border border-zinc-100 bg-zinc-50/80 p-3">
                                         <p className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
                                             <CircleDollarSign
                                                 className="size-3.5"
                                                 aria-hidden="true"
                                             />
-                                            {isRejected
-                                                ? 'Không phát sinh hoàn tiền'
-                                                : isShippingFinalized
-                                                  ? 'Hoàn thực tế'
-                                                  : 'Hoàn dự kiến'}
+                                            Tiền hàng hoàn
                                         </p>
-                                        <p className="mt-1 text-lg font-bold leading-6 tracking-tight text-zinc-950">
-                                            {refundAmount.toLocaleString(
+                                        <p className="mt-1 text-base font-bold leading-6 tracking-tight text-zinc-950">
+                                            {itemRefundAmount.toLocaleString(
                                                 'vi-VN',
                                             )}{' '}
                                             đ
+                                        </p>
+                                    </div>
+
+                                    <div className="min-w-0 rounded-xl border border-zinc-100 bg-zinc-50/80 p-3">
+                                        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                                            <CircleDollarSign
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            Hoàn phí giao ban đầu
+                                        </p>
+                                        <p className="mt-1 text-base font-bold leading-6 tracking-tight text-zinc-950">
+                                            {outboundShippingRefundAmount.toLocaleString(
+                                                'vi-VN',
+                                            )}{' '}
+                                            đ
+                                        </p>
+                                        <p className="mt-0.5 text-[11px] text-zinc-500">
+                                            Phí shop → khách được hoàn
                                         </p>
                                     </div>
 
@@ -468,9 +422,10 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                                 className="size-3.5"
                                                 aria-hidden="true"
                                             />
-                                            {isRejected
-                                                ? 'Phí hoàn hàng dự kiến (không thu)'
-                                                : `Phí hoàn hàng ${isShippingFinalized ? 'thực tế' : 'dự kiến'}`}
+                                            Phí gửi hàng về shop{' '}
+                                            {isShippingFinalized
+                                                ? '(thực tế)'
+                                                : '(dự kiến)'}
                                         </p>
                                         <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                                             <p className="text-base font-semibold leading-6 text-zinc-900">
@@ -483,6 +438,26 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                                 {shippingPayerLabel}
                                             </span>
                                         </div>
+                                    </div>
+
+                                    <div className="min-w-0 rounded-xl border border-zinc-200 bg-white p-3">
+                                        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+                                            <CircleDollarSign
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            {isRejected
+                                                ? 'Không phát sinh hoàn tiền'
+                                                : isShippingFinalized
+                                                  ? 'Tổng khách nhận thực tế'
+                                                  : 'Tổng khách nhận dự kiến'}
+                                        </p>
+                                        <p className="mt-1 text-base font-bold leading-6 tracking-tight text-zinc-950">
+                                            {refundAmount.toLocaleString(
+                                                'vi-VN',
+                                            )}{' '}
+                                            đ
+                                        </p>
                                     </div>
                                 </div>
 
@@ -497,6 +472,128 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                                         ).toLocaleString('vi-VN')}{' '}
                                         đ
                                     </p>
+                                ) : null}
+                                {item.status === 'CUSTOMER_CANCELLED' &&
+                                item.id === latestCancelledRequestId ? (
+                                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                            <div className="flex min-w-0 flex-1 items-start gap-3">
+                                                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-amber-700 shadow-sm">
+                                                    <RotateCcw
+                                                        className="size-4"
+                                                        aria-hidden="true"
+                                                    />
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-amber-950">
+                                                        {isOrderCompleted
+                                                            ? 'Đơn hàng đã hoàn thành'
+                                                            : 'Bạn muốn tiếp tục thế nào?'}
+                                                    </p>
+                                                    <p className="mt-1 text-xs leading-5 text-amber-900/80">
+                                                        {isOrderCompleted
+                                                            ? 'Yêu cầu đã hủy. Vì bạn đã xác nhận hoàn thành đơn, không thể gửi yêu cầu hoàn hàng mới.'
+                                                            : canOfferDeliveryChoices
+                                                              ? 'Yêu cầu đã hủy. Bạn có thể gửi yêu cầu hoàn mới nếu vẫn có vấn đề, hoặc xác nhận đã nhận hàng.'
+                                                              : canRepairCancelledOrder
+                                                                ? 'Yêu cầu đã hủy. Đơn cần khôi phục bước xác nhận trước khi bạn chọn thao tác tiếp theo.'
+                                                                : 'Yêu cầu đã hủy. Trạng thái đơn hiện chưa cho phép tiếp tục thao tác.'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {!isOrderCompleted ? (
+                                                <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto sm:shrink-0">
+                                                    {canOfferDeliveryChoices ? (
+                                                        <>
+                                                            <Button
+                                                                render={
+                                                                    <Link href="#report-order-issue" />
+                                                                }
+                                                                className="h-9 rounded-lg bg-zinc-950 px-3 text-xs text-white hover:bg-zinc-800"
+                                                            >
+                                                                Gửi yêu cầu hoàn
+                                                                hàng lại
+                                                            </Button>
+                                                            <Button
+                                                                render={
+                                                                    <Link href="#confirm-order-received" />
+                                                                }
+                                                                variant="outline"
+                                                                className="h-9 rounded-lg border-amber-300 bg-white px-3 text-xs text-amber-950 hover:bg-amber-100"
+                                                            >
+                                                                Xác nhận đã nhận
+                                                                hàng
+                                                            </Button>
+                                                        </>
+                                                    ) : canRepairCancelledOrder ? (
+                                                        <>
+                                                            <Button
+                                                                type="button"
+                                                                disabled={
+                                                                    reconcileCancelledRequestMutation.isPending
+                                                                }
+                                                                onClick={() =>
+                                                                    void handleResubmitCancelledRequest(
+                                                                        item.id,
+                                                                    )
+                                                                }
+                                                                className="h-9 rounded-lg bg-zinc-950 px-3 text-xs text-white hover:bg-zinc-800"
+                                                            >
+                                                                {reconcileCancelledRequestMutation.isPending
+                                                                    ? 'Đang khôi phục...'
+                                                                    : 'Gửi yêu cầu hoàn hàng lại'}
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                disabled={
+                                                                    reconcileCancelledRequestMutation.isPending ||
+                                                                    confirmDeliveryMutation.isPending
+                                                                }
+                                                                onClick={() =>
+                                                                    void handleConfirmAfterCancelledRequest(
+                                                                        item.id,
+                                                                    )
+                                                                }
+                                                                className="h-9 rounded-lg border-amber-300 bg-white px-3 text-xs text-amber-950 hover:bg-amber-100"
+                                                            >
+                                                                {confirmDeliveryMutation.isPending
+                                                                    ? 'Đang xác nhận...'
+                                                                    : 'Xác nhận đã nhận hàng'}
+                                                            </Button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Button
+                                                                type="button"
+                                                                disabled
+                                                                className="h-9 rounded-lg bg-zinc-950 px-3 text-xs text-white"
+                                                            >
+                                                                Gửi yêu cầu hoàn
+                                                                hàng lại
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                disabled
+                                                                className="h-9 rounded-lg border-amber-300 bg-white px-3 text-xs text-amber-950"
+                                                            >
+                                                                Xác nhận đã nhận
+                                                                hàng
+                                                            </Button>
+                                                            <p className="basis-full text-xs leading-5 text-amber-900/80">
+                                                                {activeRequest
+                                                                    ? 'Đơn đang có yêu cầu hoàn khác chờ xử lý.'
+                                                                    : hasRejectedRequest
+                                                                      ? 'Shop đã từ chối yêu cầu hoàn trước đó; vui lòng xem lại kết quả xử lý.'
+                                                                      : 'Trạng thái đơn chưa cho phép gửi lại yêu cầu hoặc xác nhận đã nhận hàng.'}
+                                                            </p>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    </div>
                                 ) : null}
                                 {(() => {
                                     const returnShipment = returnShipments.find(
@@ -596,169 +693,6 @@ export function OrderReturnPanel({ order }: { order: OrderResponse }) {
                             </article>
                         );
                     })}
-                </div>
-            ) : null}
-            {canCreate &&
-            canShowStandaloneForm &&
-            !activeRequest &&
-            !hasRejectedRequest &&
-            !deliveryIssueReported ? (
-                <div className="space-y-4 px-4 py-4 sm:px-5">
-                    <div className="grid gap-2">
-                        {order.items.map((item) => {
-                            const selected = selectedItemIds.includes(item.id);
-                            const locked =
-                                selectedShopIds.size > 0 &&
-                                !selectedShopIds.has(item.sellerShopId ?? '');
-                            return (
-                                <Button
-                                    variant="ghost"
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => toggleItem(item.id)}
-                                    disabled={locked}
-                                    aria-pressed={selected}
-                                    className={`h-auto w-full min-w-0 justify-start whitespace-normal overflow-hidden rounded-lg border px-3 py-2.5 text-left transition ${selected ? 'border-zinc-950 bg-zinc-50' : 'border-zinc-200 bg-white hover:border-zinc-400'} ${locked ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
-                                >
-                                    <span
-                                        className={`flex size-5 shrink-0 items-center justify-center rounded border ${selected ? 'border-zinc-950 bg-zinc-950 text-white' : 'border-zinc-300'}`}
-                                    >
-                                        {selected ? (
-                                            <CheckCircle2 className="size-4" />
-                                        ) : null}
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className="block truncate text-sm font-semibold text-zinc-950">
-                                            {item.productName}
-                                        </span>
-                                        <span className="mt-1 block text-xs text-zinc-500">
-                                            {item.variantName} · SL{' '}
-                                            {item.quantity}
-                                        </span>
-                                    </span>
-                                </Button>
-                            );
-                        })}
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-[1fr_1fr]">
-                        <label className="text-sm font-medium text-zinc-700">
-                            Lý do hoàn
-                            <Select
-                                value={reason}
-                                onValueChange={(value) => {
-                                    if (value)
-                                        setReason(value as OrderReturnReason);
-                                }}
-                            >
-                                <SelectTrigger className="mt-1.5 h-9 w-full bg-white text-sm">
-                                    <SelectValue>
-                                        {selectedReason.label}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {RETURN_REASONS.map((item) => (
-                                        <SelectItem
-                                            key={item.value}
-                                            value={item.value}
-                                        >
-                                            {item.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </label>
-                        <div>
-                            <p className="text-sm font-medium text-zinc-700">
-                                Bằng chứng{' '}
-                                <span className="text-red-500">
-                                    (bắt buộc ảnh hoặc video)
-                                </span>
-                            </p>
-                            <div className="mt-1.5 flex flex-wrap gap-2">
-                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
-                                    <ImagePlus className="size-4" /> Thêm ảnh
-                                    <input
-                                        hidden
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        multiple
-                                        onChange={(event) =>
-                                            handleFiles(event, 'image')
-                                        }
-                                    />
-                                </label>
-                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-medium hover:border-zinc-950">
-                                    <Upload className="size-4" /> Thêm video
-                                    <input
-                                        hidden
-                                        type="file"
-                                        accept="video/mp4,video/webm"
-                                        onChange={(event) =>
-                                            handleFiles(event, 'video')
-                                        }
-                                    />
-                                </label>
-                            </div>
-                            <p className="mt-1 text-xs text-zinc-400">
-                                Tối đa 5 ảnh và 1 video; cần đính kèm ít nhất
-                                một bằng chứng.
-                            </p>
-                        </div>
-                    </div>
-                    <Textarea
-                        value={description}
-                        onChange={(event) => setDescription(event.target.value)}
-                        maxLength={1000}
-                        placeholder="Mô tả thêm tình trạng sản phẩm (không bắt buộc)"
-                        className="min-h-20 resize-none rounded-lg border-zinc-200"
-                    />
-                    {images.length || videos.length ? (
-                        <div>
-                            <p className="mb-2 text-xs font-medium text-zinc-500">
-                                Media đã chọn · bấm vào để xem trước
-                            </p>
-                            <div className="flex flex-wrap gap-3">
-                                {localMedia.map((media, index) => (
-                                    <ImageLightboxThumbnail
-                                        key={media.url}
-                                        item={media}
-                                        onClick={() =>
-                                            setActiveMedia({
-                                                items: localMedia,
-                                                index,
-                                            })
-                                        }
-                                        onRemove={() =>
-                                            handleRemoveLocalMedia(
-                                                media.type === 'image'
-                                                    ? `image-${index}`
-                                                    : `video-${index - images.length}`,
-                                            )
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    ) : null}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="inline-flex items-center gap-2 text-xs text-zinc-500">
-                            <AlertCircle className="size-4" /> Phí GHN hiển thị
-                            là ước tính; chỉ chốt khi hãng vận chuyển nhận kiện.
-                        </p>
-                        <Button
-                            type="button"
-                            disabled={
-                                !selectedItemIds.length ||
-                                (!images.length && !videos.length) ||
-                                submitting ||
-                                createMutation.isPending
-                            }
-                            onClick={() => createMutation.mutate()}
-                            className="h-9 rounded-lg bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
-                        >
-                            {submitting ? 'Đang gửi...' : 'Gửi yêu cầu hoàn'}
-                        </Button>
-                    </div>
                 </div>
             ) : null}
             {activeMedia ? (

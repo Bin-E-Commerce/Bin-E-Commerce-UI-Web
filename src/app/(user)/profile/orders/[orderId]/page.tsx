@@ -129,12 +129,14 @@ function getLatestReturnStatus(
     }).status;
 }
 
-// Quy đổi trạng thái vận đơn chiều ngược về trạng thái yêu cầu để timeline dùng cùng một ngôn ngữ tiến độ.
+// Chỉ xét vận đơn hoàn; IN_TRANSIT/RETURNING cùng là kiện đang đi về shop, RETURNED là shop đã nhận và FAILED là lỗi.
+// Trạng thái carrier chưa ánh xạ không đẩy timeline tiến; nếu có nhiều vận đơn thì giữ rank cao nhất, đồng hạng lấy bản mới hơn.
 function getReturnStatusFromShipments(
     shipments: ShipmentResponse[] | undefined,
 ): OrderReturnStatus | null {
     const returnStatusMap: Partial<Record<ShipmentStatus, OrderReturnStatus>> =
         {
+            IN_TRANSIT: 'IN_TRANSIT',
             RETURNING: 'IN_TRANSIT',
             RETURNED: 'RECEIVED',
             FAILED: 'SHIPMENT_FAILED',

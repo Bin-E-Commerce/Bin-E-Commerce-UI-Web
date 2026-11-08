@@ -57,7 +57,9 @@ function createLocalMediaPreviews(
     ];
 }
 
-// Đồng bộ dữ liệu khi mở, quản lý upload evidence và gửi phiên bản request để tránh ghi đè thao tác mới.
+// Đồng bộ request khi mở và cập nhật nội dung trước khi shop duyệt.
+// Lý do đổi ý được lưu với evidence rỗng; lỗi sản phẩm vẫn phải giữ ít nhất một ảnh hoặc video.
+// Asset tải lên chỉ bị cleanup khi API từ chối để không xóa file đang được request đã lưu tham chiếu.
 export function EditOrderReturnDialog({
     open,
     isSubmitting,
@@ -121,14 +123,18 @@ export function EditOrderReturnDialog({
         evidence.filter((item) => item.type === 'image').length + images.length;
     const videoCount =
         evidence.filter((item) => item.type === 'video').length + videos.length;
+    const evidenceRequired = reason !== 'CHANGE_OF_MIND';
 
-    // Lưu snapshot hiện tại; file upload mới được rollback nếu API từ chối cập nhật.
+    // Lưu snapshot hiện tại; chỉ chặn evidence rỗng với lỗi sản phẩm và rollback file mới nếu API từ chối.
     async function handleSubmit(
         event: FormEvent<HTMLFormElement>,
     ): Promise<void> {
         event.preventDefault();
-        // Chặn thiếu bằng chứng trước upload để không tạo asset rác.
-        if (evidence.length + images.length + videos.length === 0) {
+        // Lý do đổi ý không yêu cầu tệp; các lý do lỗi phải có bằng chứng trước khi phát sinh upload.
+        if (
+            evidenceRequired &&
+            evidence.length + images.length + videos.length === 0
+        ) {
             toast.error(
                 'Vui lòng giữ lại hoặc thêm ít nhất một ảnh/video bằng chứng.',
             );
@@ -233,7 +239,7 @@ export function EditOrderReturnDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-            <DialogContent className="grid max-h-[90vh] max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-3xl border-zinc-200 bg-white p-0 shadow-2xl">
+            <DialogContent className="grid max-h-[90vh] max-w-[calc(100%-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-3xl border-zinc-200 bg-white p-0 shadow-2xl sm:w-[calc(100%_-_2rem)] sm:max-w-2xl">
                 <DialogHeader className="border-b border-zinc-100 px-5 py-5 sm:px-7">
                     <div className="flex items-start gap-3">
                         <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700">
@@ -261,7 +267,7 @@ export function EditOrderReturnDialog({
                 >
                     <section className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
                         <div className="flex items-center justify-between gap-3">
-                            <div>
+                            <div className="min-w-0 flex-1">
                                 <p className="text-sm font-semibold text-zinc-900">
                                     Sản phẩm yêu cầu hoàn
                                 </p>
@@ -269,7 +275,7 @@ export function EditOrderReturnDialog({
                                     Danh sách sản phẩm đã gửi được giữ nguyên.
                                 </p>
                             </div>
-                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
+                            <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 ring-1 ring-zinc-200">
                                 {selectedItems.length} sản phẩm
                             </span>
                         </div>
@@ -277,7 +283,7 @@ export function EditOrderReturnDialog({
                             {selectedItems.map((item) => (
                                 <p
                                     key={item.id}
-                                    className="truncate text-sm text-zinc-700"
+                                    className="break-words whitespace-normal text-sm text-zinc-700"
                                 >
                                     {item.productName}
                                 </p>
@@ -300,17 +306,23 @@ export function EditOrderReturnDialog({
                         >
                             <SelectTrigger
                                 id="edit-return-reason"
-                                className="h-11 w-full rounded-xl border-zinc-200 bg-white px-3.5 shadow-sm"
+                                className="h-11 w-full rounded-xl border-zinc-200 bg-white px-3.5 shadow-sm data-[size=default]:h-12"
                             >
                                 <SelectValue>
-                                    {
-                                        RETURN_REASONS.find(
-                                            (item) => item.value === reason,
-                                        )?.label
-                                    }
+                                    {RETURN_REASONS.find(
+                                        (item) => item.value === reason,
+                                    )?.label ??
+                                        (reason === 'OTHER'
+                                            ? 'Lý do khác (yêu cầu cũ)'
+                                            : '')}
                                 </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="z-[70]">
+                                {reason === 'OTHER' ? (
+                                    <SelectItem value="OTHER">
+                                        Lý do khác (yêu cầu cũ)
+                                    </SelectItem>
+                                ) : null}
                                 {RETURN_REASONS.map((item) => (
                                     <SelectItem
                                         key={item.value}
@@ -352,11 +364,18 @@ export function EditOrderReturnDialog({
                             <div>
                                 <p className="text-sm font-medium text-zinc-800">
                                     Ảnh/video bằng chứng{' '}
-                                    <span className="text-red-500">*</span>
+                                    {evidenceRequired ? (
+                                        <span className="text-red-500">*</span>
+                                    ) : (
+                                        <span className="font-normal text-zinc-500">
+                                            (không bắt buộc)
+                                        </span>
+                                    )}
                                 </p>
                                 <p className="mt-1 text-xs text-zinc-500">
-                                    Tối đa 5 ảnh và 1 video; cần giữ lại ít nhất
-                                    một tệp.
+                                    {evidenceRequired
+                                        ? 'Tối đa 5 ảnh và 1 video; cần giữ lại ít nhất một tệp.'
+                                        : 'Tối đa 5 ảnh và 1 video nếu bạn muốn bổ sung.'}
                                 </p>
                             </div>
                             <span className="text-xs tabular-nums text-zinc-500">
@@ -455,7 +474,7 @@ export function EditOrderReturnDialog({
                     </div>
                 </form>
 
-                <DialogFooter className="border-t border-zinc-100 bg-zinc-50/70 px-5 py-4 sm:px-7">
+                <DialogFooter className="mb-0 border-t border-zinc-100 bg-zinc-50/70 px-8 pt-4 pb-6 sm:px-10">
                     <Button
                         type="button"
                         variant="outline"
@@ -470,8 +489,11 @@ export function EditOrderReturnDialog({
                         form="edit-order-return-form"
                         disabled={
                             isSubmitting ||
-                            evidence.length + images.length + videos.length ===
-                                0
+                            (evidenceRequired &&
+                                evidence.length +
+                                    images.length +
+                                    videos.length ===
+                                    0)
                         }
                         className="h-10 rounded-xl bg-zinc-950 px-5 font-semibold text-white hover:bg-zinc-800"
                     >

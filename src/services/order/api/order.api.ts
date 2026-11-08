@@ -40,11 +40,7 @@ export async function verifyPay2sReturn(
 }
 
 export type DeliveryIssueReason =
-    | 'NOT_RECEIVED'
-    | 'DAMAGED'
-    | 'WRONG_ITEM'
-    | 'MISSING_ITEM'
-    | 'OTHER';
+    'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
 
 export interface DeliveryConfirmationInput {
     decision: 'RECEIVED' | 'ISSUE';
@@ -288,6 +284,7 @@ export type OrderReturnReason =
     | 'NOT_AS_DESCRIBED'
     | 'CHANGE_OF_MIND'
     | 'OTHER';
+export type CustomerOrderReturnReason = Exclude<OrderReturnReason, 'OTHER'>;
 
 export interface OrderReturnResponse {
     id: string;
@@ -323,17 +320,18 @@ export interface UpdateOrderReturnInput {
     expectedUpdatedAt: string;
     reason: OrderReturnReason;
     description?: string;
-    evidence: OrderReturnResponse['evidence'];
+    evidence?: OrderReturnResponse['evidence'];
 }
 
-// Tạo return request theo một shop; UI phải tách item nhiều shop thành nhiều request.
+// Tạo return request theo một shop; evidence có thể bỏ trống khi khách đổi ý, còn lỗi sản phẩm được backend yêu cầu bằng chứng.
 export async function createOrderReturn(
     orderId: string,
     input: {
         itemIds: string[];
-        reason: OrderReturnReason;
+        reason: CustomerOrderReturnReason;
+        savedRefundBankAccountId: string;
         description?: string;
-        evidence: OrderReturnResponse['evidence'];
+        evidence?: OrderReturnResponse['evidence'];
     },
 ): Promise<OrderReturnResponse> {
     const response = await authorizedAxios.post<OrderReturnResponse>(
@@ -363,7 +361,7 @@ export async function cancelOrderReturn(
     return response.data;
 }
 
-// Sửa request còn chờ shop; version được gửi để server từ chối dữ liệu form đã cũ.
+// Sửa request còn chờ shop; version ngăn ghi đè form cũ và evidence áp dụng yêu cầu theo lý do như lúc tạo mới.
 export async function updateOrderReturn(
     returnId: string,
     input: UpdateOrderReturnInput,

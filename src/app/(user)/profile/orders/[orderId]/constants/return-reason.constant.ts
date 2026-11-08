@@ -8,5 +8,4 @@ export const RETURN_REASONS: ReturnReasonOption[] = [
     { value: 'MISSING_ITEM', label: 'Thiếu sản phẩm' },
     { value: 'NOT_AS_DESCRIBED', label: 'Không đúng mô tả' },
     { value: 'CHANGE_OF_MIND', label: 'Không còn nhu cầu' },
-    { value: 'OTHER', label: 'Lý do khác' },
 ];
