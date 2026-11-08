@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import type { FinanceTableToolbarProps } from '../../types/shared/finance-table-toolbar.types';
 
-// Đồng bộ ô nhập với bộ lọc cha khi reset trang hoặc đổi tab, rồi chờ ngắn trước khi phát truy vấn mới.
+// Đồng bộ hai bộ lọc với trạng thái trang; ô tìm kiếm chỉ phát từ khóa đã trim sau một nhịp dừng gõ.
 export function FinanceTableToolbar({
     searchValue,
     searchPlaceholder,
@@ -81,7 +81,7 @@ export function FinanceTableToolbar({
                         >
                             <SelectTrigger
                                 aria-label={statusLabel}
-                                className="h-10 min-w-0 w-full rounded-xl border-zinc-200 bg-zinc-50/70 px-3 shadow-none focus-visible:bg-white"
+                                className="h-10 min-h-10 min-w-0 w-full rounded-xl border-zinc-200 bg-zinc-50/70 px-3 shadow-none focus-visible:bg-white"
                             >
                                 {/* Giá trị API như ALL không phải nhãn giao diện; luôn đổi về tên trạng thái đã dịch. */}
                                 <SelectValue placeholder={statusLabel}>

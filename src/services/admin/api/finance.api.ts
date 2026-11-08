@@ -13,6 +13,8 @@ import type {
     AdminFinanceRefund,
     AdminFinanceDeliveryIssue,
     AdminRefundRecipientAccountInput,
+    AdminSellerWalletDebtFilter,
+    AdminSellerWalletDebtPage,
 } from '@/services/admin/types/finance.types';
 
 const financeUrl = `${API_BASE_URL}${API_VERSION}/admin/finance`;
@@ -33,6 +35,20 @@ export async function getAdminFinance(
     const response = await authorizedAxios.get<AdminFinanceSnapshot>(
         `${financeUrl}/overview`,
         { params: { page, pageSize } },
+    );
+    return response.data;
+}
+
+// Lấy một trang công nợ; backend lọc theo shopId/trạng thái và chỉ trả số dư, hạn nợ, marker khóa cần cho bảng.
+export async function getAdminSellerDebts(input: {
+    page: number;
+    pageSize: number;
+    status: AdminSellerWalletDebtFilter;
+    search?: string;
+}): Promise<AdminSellerWalletDebtPage> {
+    const response = await authorizedAxios.get<AdminSellerWalletDebtPage>(
+        `${financeUrl}/seller-debts`,
+        { params: input },
     );
     return response.data;
 }

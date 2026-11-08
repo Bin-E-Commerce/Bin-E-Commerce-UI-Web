@@ -56,6 +56,23 @@ export interface AdminFinanceSnapshot {
     sellerDebtLockedShopCount?: number;
 }
 
+export type AdminSellerWalletDebtFilter = 'ALL' | 'DEBT' | 'OVERDUE' | 'LOCKED';
+
+export interface AdminSellerWalletDebt {
+    shopId: string;
+    debtBalance: string;
+    dueAt: string | null;
+    financeLockedAt: string | null;
+    isAtLimit: boolean;
+    isOverdue: boolean;
+    updatedAt: string;
+}
+
+export interface AdminSellerWalletDebtPage extends AdminFinancePage<AdminSellerWalletDebt> {
+    page: number;
+    pageSize: number;
+}
+
 export interface AdminFinanceWithdrawalDetail extends AdminFinanceWithdrawal {
     bankCode: string;
     accountNumber: string;

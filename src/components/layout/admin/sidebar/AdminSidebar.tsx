@@ -1,3 +1,4 @@
+// Sidebar Admin Center dựng menu theo navigation backend; icon map chỉ ánh xạ tên biểu tượng đã được cấp.
 'use client';
 
 import Link from 'next/link';
@@ -5,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import {
     BarChart3,
+    BadgeAlert,
     ClipboardCheck,
     FilePenLine,
     LayoutDashboard,
@@ -30,6 +32,7 @@ interface AdminSidebarProps {
 
 const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
     BarChart3,
+    BadgeAlert,
     ClipboardCheck,
     FilePenLine,
     LayoutDashboard,
