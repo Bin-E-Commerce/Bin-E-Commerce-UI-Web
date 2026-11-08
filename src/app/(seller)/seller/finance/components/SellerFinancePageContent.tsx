@@ -206,6 +206,31 @@ export function SellerFinancePageContent() {
     });
     const wallet = walletQuery.data;
     const payoutAccount = profileQuery.data?.tax;
+    const availableBalanceAmount = Number(wallet?.availableBalance ?? '0');
+    const hasOutstandingDebt = Number(wallet?.debt?.debtBalance ?? '0') > 0;
+    const hasPayoutAccount = Boolean(
+        payoutAccount?.payoutBankName &&
+        payoutAccount?.payoutAccountNumberMasked,
+    );
+    // Dư nợ chặn payout; số dư phải đủ ngưỡng 10.000 đ trước khi mở form rút hoặc hiện thao tác chọn toàn bộ.
+    const hasMinimumWithdrawalBalance =
+        Number.isFinite(availableBalanceAmount) &&
+        availableBalanceAmount >= 10000;
+    const canWithdrawFromBalance =
+        !hasOutstandingDebt && hasMinimumWithdrawalBalance;
+    const withdrawalDisabledReason = hasOutstandingDebt
+        ? 'Thanh toán hết dư nợ để mở lại chức năng rút tiền.'
+        : !Number.isFinite(availableBalanceAmount)
+          ? 'Không thể xác minh số dư khả dụng; vui lòng tải lại ví.'
+          : !hasMinimumWithdrawalBalance
+            ? 'Số dư khả dụng cần đạt tối thiểu 10.000 đ để rút.'
+            : !profileQuery.isPending &&
+                !profileQuery.isError &&
+                !hasPayoutAccount
+              ? 'Thiết lập tài khoản ngân hàng nhận tiền trong hồ sơ shop để rút.'
+              : null;
+    const isWithdrawalDisabled =
+        hasOutstandingDebt || !hasMinimumWithdrawalBalance || !hasPayoutAccount;
 
     // Mở biểu mẫu được chọn và xóa mutation cũ để lần thử mới không hiện nhầm lỗi.
     function openWalletAction(action: SellerWalletAction) {
@@ -248,9 +273,14 @@ export function SellerFinancePageContent() {
                 return;
             }
 
-            const availableAmount = Number(wallet?.availableBalance ?? 0);
             // Số dư trên màn hình chỉ giúp báo sớm; repository khóa ví và kiểm tra lại để chống ghi vượt khi có giao dịch mới.
-            if (requestedAmount > availableAmount) {
+            if (!Number.isFinite(availableBalanceAmount)) {
+                setWithdrawalValidationError(
+                    'Không thể xác minh số dư khả dụng; vui lòng tải lại ví.',
+                );
+                return;
+            }
+            if (requestedAmount > availableBalanceAmount) {
                 setWithdrawalValidationError(
                     `Số dư khả dụng không đủ. Hiện shop có ${formatMoney(wallet?.availableBalance ?? '0')} để rút.`,
                 );
@@ -516,6 +546,13 @@ export function SellerFinancePageContent() {
                         Nạp qua Pay2S hoặc gửi yêu cầu rút về tài khoản trong hồ
                         sơ shop.
                     </p>
+                    {withdrawalDisabledReason ? (
+                        <p
+                            className={`mt-2 text-xs font-medium ${hasOutstandingDebt ? 'text-rose-200' : 'text-amber-200'}`}
+                        >
+                            {withdrawalDisabledReason}
+                        </p>
+                    ) : null}
                 </div>
                 <div className="relative flex flex-wrap gap-2">
                     <Button
@@ -529,11 +566,9 @@ export function SellerFinancePageContent() {
                     </Button>
                     <Button
                         type="button"
-                        disabled={
-                            !payoutAccount?.payoutBankName ||
-                            !payoutAccount?.payoutAccountNumberMasked
-                        }
-                        className="h-10 rounded-xl border-white/20 bg-gradient-to-r from-zinc-800 to-zinc-700 px-4 text-white shadow-md shadow-black/20 hover:from-zinc-700 hover:to-zinc-600"
+                        disabled={isWithdrawalDisabled}
+                        title={withdrawalDisabledReason ?? undefined}
+                        className="h-10 rounded-xl border-white/20 bg-gradient-to-r from-zinc-800 to-zinc-700 px-4 text-white shadow-md shadow-black/20 hover:from-zinc-700 hover:to-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={() => openWalletAction('withdraw')}
                     >
                         <ArrowUpFromLine aria-hidden="true" />
@@ -638,22 +673,33 @@ export function SellerFinancePageContent() {
                                                 đ
                                             </span>
                                         </div>
-                                        {activeAction === 'withdraw' ? (
-                                            <div className="mt-2 flex items-center justify-between gap-3">
-                                                <p className="text-xs text-zinc-500">
-                                                    Số dư khả dụng:{' '}
-                                                    <span className="font-semibold text-zinc-800">
-                                                        {formatMoney(
-                                                            wallet?.availableBalance ??
-                                                                '0',
-                                                        )}
+                                        {activeAction === 'withdraw' &&
+                                        canWithdrawFromBalance ? (
+                                            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-emerald-200/80 bg-gradient-to-r from-emerald-50 to-white px-3.5 py-3 shadow-sm shadow-emerald-950/[0.03]">
+                                                <div className="flex min-w-0 items-center gap-2.5">
+                                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                                                        <WalletCards
+                                                            className="size-4"
+                                                            aria-hidden="true"
+                                                        />
                                                     </span>
-                                                </p>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wide text-emerald-800/80">
+                                                            Số dư có thể rút
+                                                        </p>
+                                                        <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-zinc-950">
+                                                            {formatMoney(
+                                                                wallet?.availableBalance ??
+                                                                    '0',
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                                 <Button
                                                     type="button"
                                                     size="sm"
-                                                    variant="ghost"
-                                                    className="shrink-0 px-2 text-xs"
+                                                    variant="outline"
+                                                    className="shrink-0 border-emerald-200 bg-white px-3 text-xs font-semibold text-emerald-900 hover:bg-emerald-100"
                                                     disabled={
                                                         withdrawalMutation.isPending
                                                     }
@@ -661,7 +707,7 @@ export function SellerFinancePageContent() {
                                                         handleUseAvailableBalance
                                                     }
                                                 >
-                                                    Dùng toàn bộ số dư
+                                                    Dùng toàn bộ
                                                 </Button>
                                             </div>
                                         ) : null}
@@ -790,8 +836,7 @@ export function SellerFinancePageContent() {
                                         depositMutation.isPending ||
                                         withdrawalMutation.isPending ||
                                         (activeAction === 'withdraw' &&
-                                            (!payoutAccount?.payoutBankName ||
-                                                !payoutAccount?.payoutAccountNumberMasked))
+                                            isWithdrawalDisabled)
                                     }
                                 >
                                     {depositMutation.isPending ||
