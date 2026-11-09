@@ -303,17 +303,13 @@ export function RecommendationAiEnhancedRanking() {
                         <div className="mt-3 grid gap-2 md:grid-cols-2">
                             <div className="rounded-lg bg-zinc-50 p-3 text-[11px] leading-5 text-zinc-600">
                                 <p className="font-mono font-semibold text-zinc-900">
-                                    profileAffinity = clamp(P + 0,6C + 0,4B)
+                                    profileAffinity = 0,5P + 0,3C + 0,2B
                                 </p>
                                 <p className="mt-1">
-                                    P/C/B lần lượt là preference của
-                                    product/category/brand. Mỗi preference được
-                                    decay theo{' '}
-                                    <span className="font-mono">
-                                        score × 0,5^(tuổi / halfLife)
-                                    </span>
-                                    , chia 8 rồi clamp. Mặc định half-life là 7
-                                    ngày.
+                                    P/C/B là điểm sản phẩm/danh mục/thương hiệu.
+                                    Mỗi hành động dương giảm theo tuổi riêng với
+                                    half-life mặc định 7 ngày. Tổng của từng
+                                    chiều chia ngưỡng 8/16/8 rồi giới hạn ở 1.
                                 </p>
                             </div>
                             <div className="rounded-lg bg-zinc-50 p-3 text-[11px] leading-5 text-zinc-600">

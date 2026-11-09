@@ -299,11 +299,11 @@ export function CatalogAffinityFlow() {
                             </p>
                         </header>
                         <p className="mt-1.5 text-xs leading-5 text-zinc-700">
-                            Feature hồ sơ được tính từ preference đã suy giảm
-                            theo thời gian và chuẩn hóa về 0–1:
+                            Feature hồ sơ cộng các hành động dương đã suy giảm
+                            theo tuổi riêng, rồi chuẩn hóa từng chiều về 0–1:
                         </p>
                         <p className="mt-2 rounded-lg bg-zinc-50 px-3 py-2 font-mono text-xs text-zinc-800">
-                            profileAffinity = clamp(P + 0,6C + 0,4B)
+                            profileAffinity = 0,5P + 0,3C + 0,2B
                         </p>
                         <p className="mt-2 text-xs leading-5 text-zinc-600">
                             P/C/B lần lượt là điểm sản phẩm/danh mục/thương

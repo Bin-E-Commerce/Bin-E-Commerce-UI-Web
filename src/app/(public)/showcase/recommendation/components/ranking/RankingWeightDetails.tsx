@@ -44,7 +44,7 @@ export function RankingWeightDetails({
                         Lưu ý về các con số:
                     </strong>{' '}
                     tỷ trọng trong các ô là thứ bạn đang chỉnh. Còn các số nằm
-                    bên trong công thức như 0.6, 7 ngày hay 12 là quy tắc mặc
+                    bên trong công thức như 0.5, 7 ngày hay 12 là quy tắc mặc
                     định do dự án đặt để bắt đầu — không phải kết quả hệ thống
                     đã học từ khách hàng thật. Một số có thể đổi trong cấu hình
                     dịch vụ; những số khác hiện cố định trong code. Đây là
