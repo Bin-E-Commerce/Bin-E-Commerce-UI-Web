@@ -3,7 +3,7 @@
 
 'use client';
 
-import { BarChart3, ListFilter, Settings2 } from 'lucide-react';
+import { BarChart3, BrainCircuit, ListFilter } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -16,7 +16,7 @@ import { AdminRecommendationPolicy } from './policy/AdminRecommendationPolicy';
 const tabs = [
     { key: 'overview', label: 'Tổng quan', icon: BarChart3 },
     { key: 'activity', label: 'Theo tài khoản', icon: ListFilter },
-    { key: 'policy', label: 'Policy ranking', icon: Settings2 },
+    { key: 'policy', label: 'Model ranking', icon: BrainCircuit },
 ] as const;
 
 // Render shell chung của Admin Recommendation Center; panel nào active mới được mount để tránh gọi/hiển thị thừa.
@@ -32,8 +32,8 @@ export function AdminRecommendationPageClient() {
                             Phân tích và điều khiển gợi ý
                         </h1>
                         <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500">
-                            Theo dõi hành vi recommendation và điều chỉnh policy
-                            có version.
+                            Theo dõi hoạt động recommendation và trạng thái model
+                            LambdaRank đang được phục vụ.
                         </p>
                     </div>
                     <Button
@@ -118,12 +118,7 @@ export function AdminRecommendationPageClient() {
                 <AdminRecommendationPolicy
                     key={state.policy?.version ?? 'policy-loading'}
                     policy={state.policy}
-                    history={state.history}
                     loading={state.policyLoading}
-                    saving={state.policySaving}
-                    rollbackSaving={state.rollbackSaving}
-                    onSave={state.updatePolicy}
-                    onRollback={state.rollbackPolicy}
                 />
             ) : null}
 

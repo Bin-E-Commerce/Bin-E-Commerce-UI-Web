@@ -1,4 +1,4 @@
-// Giải thích chi tiết tín hiệu sessionContext; nội dung và công thức phải khớp với Standard Ranking trong Recommendation Service.
+// Giải thích công thức sessionContext như một feature đầu vào và giữ khớp với RankingFeatureService.
 import {
     DetailFormula,
     DetailSection,

@@ -1,4 +1,4 @@
-// Giải thích chi tiết tín hiệu popularity; nội dung và công thức phải khớp với Standard Ranking trong Recommendation Service.
+// Giải thích công thức popularity như một feature đầu vào và giữ khớp với RankingFeatureService.
 import {
     DetailFormula,
     DetailSection,

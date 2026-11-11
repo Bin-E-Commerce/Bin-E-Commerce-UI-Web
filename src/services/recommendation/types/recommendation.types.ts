@@ -23,7 +23,7 @@ export interface TrackRecommendationInteractionInput {
     recommendationRank?: number;
     surface?: 'home' | 'product_detail' | 'recommendations_page';
     recommendationPolicyVersion?: string;
-    recommendationRankingMode?: 'HYBRID' | 'ML_HYBRID';
+    recommendationRankingMode?: 'AI_MODEL' | 'HYBRID' | 'ML_HYBRID';
 }
 
 // Context đã được Recommendation Service ký để nối click của recommendation với hành động add-to-cart sau khi người dùng sang trang chi tiết.
@@ -35,7 +35,7 @@ export interface RecommendationAttributionContext {
     recommendationRank: number;
     surface: 'home' | 'product_detail' | 'recommendations_page';
     recommendationPolicyVersion: string;
-    recommendationRankingMode?: 'HYBRID' | 'ML_HYBRID';
+    recommendationRankingMode?: 'AI_MODEL' | 'HYBRID' | 'ML_HYBRID';
 }
 
 import type { PublicProduct } from '@/services/product';
@@ -61,6 +61,6 @@ export interface RecommendationResponse {
     generatedAt: string;
     ruleVersion: string;
     rankingPolicyVersion: string;
-    rankingMode: 'HYBRID' | 'ML_HYBRID';
+    rankingMode: 'AI_MODEL';
     rankingModelVersion: string | null;
 }

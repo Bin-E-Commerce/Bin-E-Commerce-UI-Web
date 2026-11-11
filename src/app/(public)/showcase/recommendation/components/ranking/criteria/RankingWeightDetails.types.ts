@@ -13,5 +13,4 @@ export type RankingWeightKey =
 export interface RankingWeightDetailsProps {
     id: string;
     signal: RankingWeightKey;
-    weightPercent: number;
 }

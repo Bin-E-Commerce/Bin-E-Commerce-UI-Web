@@ -124,7 +124,7 @@ export function ShowcaseLanding() {
                             imageSrc="/images/feature/recommendation/img.png"
                             imageAlt="Minh họa hệ thống phân tích tín hiệu người mua và xếp hạng sản phẩm gợi ý."
                             title="Gợi ý sản phẩm cá nhân hóa"
-                            description="Không chỉ hiển thị sản phẩm bán chạy, hệ thống đọc profile, session và ngữ cảnh đang xem để chọn đúng ứng viên cho từng khách hàng. Candidate được tìm từ xu hướng, quan hệ và semantic search, rồi qua Standard Ranking và AI-Enhanced Ranking trước khi trả về."
+                            description="Không chỉ hiển thị sản phẩm bán chạy, hệ thống đọc profile, session và ngữ cảnh đang xem để chọn ứng viên cho từng khách hàng. Candidate được tìm từ xu hướng, quan hệ và semantic search, sau đó được chấm bằng 8 feature và xếp hạng bằng LambdaRank."
                         />
                         <ShowcaseFeatureCard
                             href="/showcase/ai-optimization"

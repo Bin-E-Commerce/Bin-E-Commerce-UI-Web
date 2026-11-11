@@ -417,8 +417,8 @@ export function RecommendationFeedbackFlow() {
                                     CO_BEHAVIOR. RelationCandidateService tìm
                                     món thường đi cùng sản phẩm đang xem hoặc
                                     vừa quan tâm; CandidateUnionService nhập
-                                    chúng vào pool. Sau đó Standard/AI-Enhanced
-                                    mới chấm điểm và quyết định thứ tự.
+                                    chúng vào pool. Sau đó LambdaRank mới chấm
+                                    điểm và quyết định thứ tự.
                                 </dd>
                             </div>
                             <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 border-t border-zinc-200 py-3 last:pb-0">

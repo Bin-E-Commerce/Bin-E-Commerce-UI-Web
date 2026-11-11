@@ -307,8 +307,8 @@ export function CatalogAffinityFlow() {
                         </p>
                         <p className="mt-2 text-xs leading-5 text-zinc-600">
                             P/C/B lần lượt là điểm sản phẩm/danh mục/thương
-                            hiệu. Trọng số Standard mặc định là 25%, có thể thay
-                            theo policy.
+                            hiệu. Đây là trọng số giữa ba chiều trong feature. LambdaRank học
+                            ảnh hưởng của profileAffinity từ dữ liệu gán nhãn.
                         </p>
                     </article>
                 </section>

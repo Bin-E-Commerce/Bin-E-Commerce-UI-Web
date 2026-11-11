@@ -1,4 +1,4 @@
-// Giải thích chi tiết tín hiệu exploration; nội dung và công thức phải khớp với Standard Ranking trong Recommendation Service.
+// Giải thích điều kiện exploration như một feature đầu vào và giữ khớp với RankingFeatureService.
 import {
     DetailFormula,
     DetailSection,
@@ -47,9 +47,9 @@ export function RankingWeightExplorationDetails() {
             </DetailSection>
             <DetailSection title="Ví dụ">
                 Hồ sơ đạt 0.35/1 và sản phẩm thuộc danh sách mới: cả hai điều
-                kiện đúng, nên điểm khám phá = 1. Nếu đặt tỷ trọng 4%, phần đóng
-                góp sẽ là 1 × 0.04 = 0.04 điểm. Nếu hồ sơ đạt 0.41/1 thì điểm
-                khám phá bằng 0, kể cả sản phẩm mới.
+                kiện đúng, nên feature khám phá = 1. Nếu hồ sơ đạt 0.41/1 thì
+                feature bằng 0, kể cả sản phẩm mới. Model tự học vai trò của
+                feature này từ dữ liệu huấn luyện.
             </DetailSection>
             <DetailSection title="Khi nào không được cộng điểm?">
                 Khi hồ sơ đã trên 0.4, hoặc sản phẩm không có nguồn từ danh sách

@@ -1,4 +1,4 @@
-// Giải thích công thức profileAffinity của Standard Ranking và các giả định chưa được kiểm chứng trên khách hàng thật.
+// Giải thích công thức profileAffinity như một feature đầu vào và nêu rõ giả định chưa được kiểm chứng trên khách hàng thật.
 import {
     DetailFormula,
     DetailSection,

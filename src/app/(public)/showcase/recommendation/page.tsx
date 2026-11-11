@@ -5,7 +5,7 @@ import { RecommendationShowcase } from './components/orchestration/Recommendatio
 export const metadata: Metadata = {
     title: 'Recommendation System | Bin E-Commerce',
     description:
-        'Tìm hiểu kiến trúc, dữ liệu, công thức Standard Ranking và lớp AI-Enhanced của hệ thống gợi ý sản phẩm.',
+        'Tìm hiểu kiến trúc, 8 feature xếp hạng, model LambdaRank và cách đánh giá hệ thống gợi ý sản phẩm.',
 };
 
 // Giữ route mỏng; nội dung và sơ đồ thuộc feature Recommendation trong khu showcase.

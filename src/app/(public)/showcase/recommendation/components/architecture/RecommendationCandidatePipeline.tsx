@@ -333,8 +333,8 @@ export function RecommendationCandidatePipeline() {
                             <span className="font-semibold tabular-nums text-zinc-900">
                                 Pool ≤300
                             </span>{' '}
-                            · ứng viên chuyển sang Standard hoặc AI-Enhanced
-                            Ranking; chưa phải thứ tự hiển thị.
+                            · ứng viên chuyển sang LambdaRank; chưa phải thứ
+                            tự hiển thị.
                         </p>
                         <RecommendationDetailLink
                             href="#recommendation-candidate-union"

@@ -103,9 +103,8 @@ export function RecommendationServicesOverview() {
                                 AI Service
                             </h5>
                             <p className="mt-1.5 text-xs leading-5 text-zinc-600">
-                                Dự đoán điểm cho AI-Enhanced; nếu prediction
-                                không dùng được, Recommendation quay về
-                                Standard.
+                                Chạy LambdaRank để xếp candidate; nếu model
+                                chưa sẵn sàng, Recommendation trả unavailable.
                             </p>
                         </li>
                     </ol>

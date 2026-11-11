@@ -8,7 +8,6 @@ import type {
     RecommendationAdminOverview,
     RecommendationAdminRankingPerformance,
     RecommendationAdminPolicy,
-    UpdateRecommendationPolicyPayload,
 } from '../types/recommendation.types';
 
 export interface RecommendationAnalyticsRange {
@@ -74,28 +73,4 @@ export const adminRecommendationService = {
             )
             .then((response) => response.data),
 
-    // Cập nhật policy đã được backend normalize, audit và activate atomically.
-    updatePolicy: (payload: UpdateRecommendationPolicyPayload) =>
-        authorizedAxios
-            .patch<RecommendationAdminPolicy>(
-                `${API_VERSION}/admin/recommendation/config`,
-                payload,
-            )
-            .then((response) => response.data),
-
-    // Đọc lịch sử policy để hiển thị rollback có kiểm soát.
-    getPolicyHistory: () =>
-        authorizedAxios
-            .get<RecommendationAdminPolicy[]>(
-                `${API_VERSION}/admin/recommendation/config/history`,
-            )
-            .then((response) => response.data),
-
-    // Rollback theo version, vẫn tạo active version mới để audit không bị mất lịch sử.
-    rollbackPolicy: (version: string) =>
-        authorizedAxios
-            .post<RecommendationAdminPolicy>(
-                `${API_VERSION}/admin/recommendation/config/rollback/${encodeURIComponent(version)}`,
-            )
-            .then((response) => response.data),
 };

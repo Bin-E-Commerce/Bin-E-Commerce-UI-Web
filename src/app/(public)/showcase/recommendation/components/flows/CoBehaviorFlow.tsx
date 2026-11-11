@@ -331,9 +331,9 @@ export function CoBehaviorFlow() {
                         <strong className="font-semibold text-zinc-950">
                             Bàn giao sang ranking:
                         </strong>{' '}
-                        mỗi quan hệ được chuẩn hóa thành feature theo loại
-                        (CO_VIEW/CART/PURCHASE); Standard Hybrid mặc định dành
-                        trọng số 0,10 cho coBehavior (policy có thể thay đổi).
+                        mỗi quan hệ được chuẩn hóa thành feature coBehavior
+                        theo loại (CO_VIEW/CART/PURCHASE); model LambdaRank tự
+                        học ảnh hưởng của feature từ các request đã gắn nhãn.
                     </p>
                     <span className="shrink-0 font-mono text-[9px] uppercase tracking-[0.12em] text-zinc-500">
                         Candidate ≠ thứ hạng

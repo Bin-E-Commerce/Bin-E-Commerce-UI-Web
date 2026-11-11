@@ -1,5 +1,5 @@
-// Trình bày luồng fail-soft, giới hạn request và ghi nhận phản hồi của Recommendation.
-// Component chỉ diễn giải hành vi hiện có ở backend/Web; không thực thi fallback hay thay đổi event contract.
+// Trình bày cách cô lập lỗi nguồn candidate, fail-closed khi model lỗi và ghi nhận phản hồi recommendation.
+// Component chỉ diễn giải hành vi hiện có ở backend/Web; không thực thi dự phòng ranking hay thay đổi event contract.
 import {
     Check,
     Clock3,
@@ -14,10 +14,10 @@ export function RecommendationReliability() {
     return (
         <section className="space-y-5">
             <RecommendationDisclosure
-                id="recommendation-fallback-request-flow"
+                id="recommendation-ranking-failure-flow"
                 number="2.3.1"
-                title="Dự phòng theo từng bước trong request"
-                description="Mỗi bước có giới hạn và đường dự phòng riêng. Khi một phần thiếu dữ liệu, hệ thống giữ phần còn dùng được thay vì buộc toàn luồng thất bại."
+                title="Lỗi được xử lý ở từng bước"
+                description="Nguồn candidate được cô lập độc lập. Khi model ranking không sẵn sàng, request không chuyển sang công thức khác."
                 level={4}
                 variant="flow"
             >
@@ -84,7 +84,7 @@ export function RecommendationReliability() {
                                         02 · CHẤM ĐIỂM
                                     </p>
                                     <h4 className="mt-1 text-sm font-semibold text-zinc-950">
-                                        AI chậm thì quay về Standard
+                                        Model lỗi thì request unavailable
                                     </h4>
                                 </div>
                             </div>
@@ -103,20 +103,19 @@ export function RecommendationReliability() {
                                         Xử lý → đầu ra
                                     </dt>
                                     <dd className="mt-0.5 text-zinc-600">
-                                        Standard luôn tạo điểm nền. Nếu bật AI,
-                                        hệ thống chờ tối đa 150ms mặc định. Điểm
-                                        AI không hợp lệ thì món đó giữ Standard;
-                                        nếu lần gọi AI lỗi hoặc quá hạn, cả danh
-                                        sách dùng Standard.
+                                        Request gọi LambdaRank với timeout cấu
+                                        hình. Model thiếu, lỗi, quá hạn hoặc trả
+                                        batch không đủ candidate thì service trả
+                                        unavailable; không tạo score thay thế.
                                     </dd>
                                 </div>
                                 <div className="rounded-xl border border-zinc-200 bg-white p-3 text-zinc-600">
                                     <strong className="text-zinc-900">
                                         Đánh đổi:
                                     </strong>{' '}
-                                    timeout ngắn giữ request nhanh nhưng có thể
-                                    fallback thường xuyên hơn. Lượt fallback
-                                    không bị tính nhầm là AI khi fallback.
+                                        người dùng có thể nhận lỗi tạm thời khi
+                                        model không phục vụ được; trạng thái model
+                                        được hiển thị riêng cho Admin.
                                 </div>
                             </dl>
                         </article>

@@ -32,7 +32,7 @@ export interface ProductDetailRecommendation {
     recommendationRequestId?: string;
     recommendationItemId?: string;
     recommendationPolicyVersion?: string;
-    recommendationRankingMode?: 'HYBRID' | 'ML_HYBRID';
+    recommendationRankingMode?: 'AI_MODEL' | 'HYBRID' | 'ML_HYBRID';
 }
 
 export interface ProductBreadcrumbItem {

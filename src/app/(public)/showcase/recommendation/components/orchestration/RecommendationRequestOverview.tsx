@@ -40,8 +40,8 @@ export function RecommendationRequestOverview() {
                         <span className="font-semibold text-zinc-900">
                             Chưa có lịch sử?
                         </span>{' '}
-                        Hệ thống vẫn thử nguồn candidate dự phòng và xếp hạng
-                        bằng Standard.
+                        Hệ thống tạo candidate từ nội dung, danh mục và sản phẩm mới;
+                        LambdaRank xếp thứ tự khi model đã sẵn sàng.
                     </p>
                 </div>
 
@@ -100,8 +100,7 @@ export function RecommendationRequestOverview() {
                             Xếp hạng
                         </h3>
                         <p className="mt-1 text-xs leading-5 text-zinc-600">
-                            Standard chấm theo trọng số; AI-Enhanced kết hợp dự
-                            đoán ML.
+                            LambdaRank học cách xếp candidate từ 8 tiêu chí.
                         </p>
                     </div>
                     <ArrowRight

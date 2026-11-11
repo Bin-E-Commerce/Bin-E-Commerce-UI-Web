@@ -1,4 +1,4 @@
-// Giải thích chi tiết tín hiệu quality; nội dung và công thức phải khớp với Standard Ranking trong Recommendation Service.
+// Giải thích công thức quality như một feature đầu vào và giữ khớp với RankingFeatureService.
 import {
     DetailFormula,
     DetailSection,

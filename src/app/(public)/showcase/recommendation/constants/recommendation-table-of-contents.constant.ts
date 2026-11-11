@@ -101,54 +101,50 @@ export const recommendationTableOfContents: ShowcaseTocItem[] = [
                 label: '2.2 · Xếp hạng sản phẩm',
                 children: [
                     {
-                        id: 'standard-ranking-formula',
-                        label: '2.2.1 · Công thức Standard',
-                    },
-                    {
-                        id: 'ranking-feature-weights',
-                        label: '2.2.2 · Tám tiêu chí xếp hạng',
+                        id: 'ranking-feature-formulas',
+                        label: '2.2.1 · Tám tiêu chí đầu vào',
                         children: [
                             {
                                 id: 'ranking-feature-profileAffinity',
-                                label: '2.2.2.1 · Sở thích trong hồ sơ',
+                                label: '2.2.1.1 · Sở thích trong hồ sơ',
                             },
                             {
                                 id: 'ranking-feature-sessionContext',
-                                label: '2.2.2.2 · Nhu cầu trong phiên hiện tại',
+                                label: '2.2.1.2 · Nhu cầu trong phiên hiện tại',
                             },
                             {
                                 id: 'ranking-feature-semanticSimilarity',
-                                label: '2.2.2.3 · Sản phẩm tương tự về nội dung',
+                                label: '2.2.1.3 · Sản phẩm tương tự về nội dung',
                             },
                             {
                                 id: 'ranking-feature-coBehavior',
-                                label: '2.2.2.4 · Sản phẩm thường đi cùng nhau',
+                                label: '2.2.1.4 · Sản phẩm thường đi cùng nhau',
                             },
                             {
                                 id: 'ranking-feature-popularity',
-                                label: '2.2.2.5 · Mức độ phổ biến',
+                                label: '2.2.1.5 · Mức độ phổ biến',
                             },
                             {
                                 id: 'ranking-feature-freshness',
-                                label: '2.2.2.6 · Độ mới của sản phẩm',
+                                label: '2.2.1.6 · Độ mới của sản phẩm',
                             },
                             {
                                 id: 'ranking-feature-quality',
-                                label: '2.2.2.7 · Chất lượng và tồn kho',
+                                label: '2.2.1.7 · Chất lượng và tồn kho',
                             },
                             {
                                 id: 'ranking-feature-exploration',
-                                label: '2.2.2.8 · Khám phá sản phẩm mới',
+                                label: '2.2.1.8 · Khám phá sản phẩm mới',
                             },
                         ],
                     },
                     {
-                        id: 'ai-enhanced-ranking-formula',
-                        label: '2.2.3 · Công thức AI‑Enhanced Ranking',
+                        id: 'recommendation-lambdarank',
+                        label: '2.2.2 · Model LambdaRank',
                     },
                     {
                         id: 'recommendation-ranking-evaluation',
-                        label: '2.2.4 · Đo lường chất lượng Ranking',
+                        label: '2.2.3 · Đo lường chất lượng Ranking',
                     },
                 ],
             },

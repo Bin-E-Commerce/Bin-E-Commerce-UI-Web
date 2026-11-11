@@ -2,20 +2,18 @@
 // Hook không chứa JSX và không gọi trực tiếp Recommendation Service, mọi HTTP đi qua admin API adapter.
 
 import { useDeferredValue, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 import {
     adminRecommendationService,
     type RecommendationAnalyticsRange,
-    type UpdateRecommendationPolicyPayload,
 } from '@/services/admin';
 
 import type { RecommendationDateRangeInput } from '../types/date-range.types';
 
 const OVERVIEW_KEY = ['admin-recommendation-overview'];
 const ACTORS_KEY = ['admin-recommendation-actors'];
-const POLICY_KEY = ['admin-recommendation-policy'];
+const POLICY_KEY = ['admin-recommendation-model-status'];
 const ACTIVITY_PAGE_SIZE = 10;
 
 type AdminRecommendationTab = 'overview' | 'activity' | 'policy';
@@ -48,9 +46,8 @@ function toApiRange(
     return { from: from.toISOString(), to: toExclusive.toISOString() };
 }
 
-// Gom data fetching và mutation theo từng panel để route Admin chỉ compose UI, không phải biết chi tiết cache key/HTTP.
+// Gom data fetching theo từng panel để route Admin chỉ compose UI, không phải biết chi tiết cache key/HTTP.
 export function useAdminRecommendation() {
-    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] =
         useState<AdminRecommendationTab>('overview');
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -140,42 +137,6 @@ export function useAdminRecommendation() {
         queryFn: adminRecommendationService.getPolicy,
         enabled: activeTab === 'policy',
     });
-    const historyQuery = useQuery({
-        queryKey: ['admin-recommendation-policy-history'],
-        queryFn: adminRecommendationService.getPolicyHistory,
-        enabled: activeTab === 'policy',
-    });
-
-    const updatePolicyMutation = useMutation({
-        mutationFn: (payload: UpdateRecommendationPolicyPayload) =>
-            adminRecommendationService.updatePolicy(payload),
-        onSuccess: async () => {
-            toast.success('Đã áp dụng policy ranking mới.');
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: POLICY_KEY }),
-                queryClient.invalidateQueries({
-                    queryKey: ['admin-recommendation-policy-history'],
-                }),
-            ]);
-        },
-        onError: () => toast.error('Không thể cập nhật policy ranking.'),
-    });
-
-    const rollbackMutation = useMutation({
-        mutationFn: (version: string) =>
-            adminRecommendationService.rollbackPolicy(version),
-        onSuccess: async () => {
-            toast.success('Đã rollback policy.');
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: POLICY_KEY }),
-                queryClient.invalidateQueries({
-                    queryKey: ['admin-recommendation-policy-history'],
-                }),
-            ]);
-        },
-        onError: () => toast.error('Không thể rollback policy.'),
-    });
-
     // Làm mới hai nguồn dữ liệu của Overview cùng lúc để nút refresh không tạo trạng thái nửa cũ/nửa mới.
     function refreshOverview() {
         void Promise.all([
@@ -262,12 +223,7 @@ export function useAdminRecommendation() {
         setActivityPage,
         activityLoading: activityQuery.isFetching,
         policy: policyQuery.data ?? null,
-        history: historyQuery.data ?? [],
         policyLoading: policyQuery.isFetching,
-        updatePolicy: updatePolicyMutation.mutate,
-        policySaving: updatePolicyMutation.isPending,
-        rollbackPolicy: rollbackMutation.mutate,
-        rollbackSaving: rollbackMutation.isPending,
         dateRange,
         appliedDateRange,
         dateRangeError,

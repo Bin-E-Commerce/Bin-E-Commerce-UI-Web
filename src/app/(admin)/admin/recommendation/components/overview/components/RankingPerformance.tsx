@@ -23,7 +23,7 @@ export function RankingPerformance({ rankingPerformance }: Props) {
                     </p>
                 </div>
                 <span className="text-xs text-zinc-400">
-                    AI áp dụng 100% request khi được bật.
+                    Request mới chỉ dùng AI_MODEL; mode cũ chỉ còn trong lịch sử.
                 </span>
             </div>
 
@@ -48,11 +48,9 @@ export function RankingPerformance({ rankingPerformance }: Props) {
                         {rankingPerformance.map((item) => (
                             <tr key={item.rankingMode}>
                                 <td className="px-2 py-3 font-medium text-zinc-900">
-                                    {item.rankingMode === 'HYBRID'
-                                        ? 'Standard Ranking / Fallback'
-                                        : item.rankingMode === 'ML_HYBRID'
-                                          ? 'AI-Enhanced Ranking'
-                                          : `${item.rankingMode} (lịch sử)`}
+                                    {item.rankingMode === 'AI_MODEL'
+                                        ? 'LambdaRank model'
+                                        : `${item.rankingMode} (lịch sử)`}
                                 </td>
                                 <td className="px-2 py-3 text-zinc-600">
                                     {item.impressions.toLocaleString('vi-VN')}

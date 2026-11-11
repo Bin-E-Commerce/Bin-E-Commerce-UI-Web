@@ -98,15 +98,9 @@ export interface RecommendationAdminActivityResponse {
     total: number;
 }
 
-export interface RecommendationPolicyConfig {
-    hybridWeights: Record<string, number>;
-    mlEnabled: boolean;
-    mlBlend: number;
-}
-
 export interface RecommendationPolicyRuntimeStatus {
-    standardEnabled: true;
-    aiPolicyEnabled: boolean;
+    rankingMode: 'AI_MODEL';
+    objective: 'lambdarank';
     candidateSources: {
         semanticEnabled: boolean;
         coBehaviorEnabled: boolean;
@@ -117,7 +111,6 @@ export interface RecommendationPolicyRuntimeStatus {
     model: {
         reachable: boolean;
         ready: boolean;
-        fallback: boolean;
         modelVersion: string | null;
         featureCount: number | null;
     };
@@ -126,17 +119,7 @@ export interface RecommendationPolicyRuntimeStatus {
 export interface RecommendationAdminPolicy {
     id?: string;
     version: string;
-    status: string;
-    config: RecommendationPolicyConfig;
+    rankingMode: 'AI_MODEL';
+    objective: 'lambdarank';
     runtime: RecommendationPolicyRuntimeStatus;
-    createdBy: string | null;
-    reason: string | null;
-    createdAt: string | null;
-}
-
-export interface UpdateRecommendationPolicyPayload {
-    hybridWeights: Record<string, number>;
-    mlEnabled: boolean;
-    mlBlend: number;
-    reason?: string;
 }

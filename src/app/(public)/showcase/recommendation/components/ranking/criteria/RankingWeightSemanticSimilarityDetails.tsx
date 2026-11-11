@@ -1,4 +1,4 @@
-// Giải thích chi tiết tín hiệu semanticSimilarity; nội dung và công thức phải khớp với Standard Ranking trong Recommendation Service.
+// Giải thích công thức semanticSimilarity như một feature đầu vào và giữ khớp với RankingFeatureService.
 import {
     DetailFormula,
     DetailSection,
@@ -69,9 +69,9 @@ export function RankingWeightSemanticSimilarityDetails() {
                     Dãy số được tạo trước bằng mô hình mã hóa nội dung — mô hình
                     biến tên, thương hiệu, danh mục, mô tả và thuộc tính sản
                     phẩm thành số — rồi lưu lại. Khi có yêu cầu, hệ thống dùng
-                    các số này để tìm sản phẩm gần giống; đây không phải
-                    AI-Enhanced Ranking và cũng không phải AI trò chuyện viết
-                    câu trả lời mới cho từng lượt.
+                    các số này để tìm sản phẩm gần giống; embedding search
+                    tạo candidate source, còn LambdaRank xử lý thứ tự cuối.
+                    Đây cũng không phải AI trò chuyện viết câu trả lời mới.
                 </p>
             </DetailSection>
             <DetailSection title="Ví dụ dễ hình dung">

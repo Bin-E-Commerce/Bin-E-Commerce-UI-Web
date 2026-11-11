@@ -75,20 +75,20 @@ export function RecommendationLogicOverview() {
                             <span>Chấm và cân bằng</span>
                         </div>
                         <h4 className="mt-3 text-sm font-semibold text-zinc-950">
-                            Standard hoặc AI-Enhanced
+                            8 feature + LambdaRank
                         </h4>
                         <p className="mt-2 flex-1 text-xs leading-5 text-zinc-600">
-                            Standard chấm 8 tiêu chí trên cùng thang điểm.
-                            AI-Enhanced dự đoán lại điểm trên chính danh sách
-                            đó; bước cân bằng sau cùng tránh để một nhóm chiếm
-                            quá nhiều vị trí.
+                            RankingFeatureService tạo 8 tiêu chí và
+                            negativePenalty; LightGBM LambdaRank học thứ tự
+                            trong candidate pool. Diversity xử lý sau model để
+                            tránh một nhóm chiếm quá nhiều vị trí.
                         </p>
                         <p className="mt-3 border-t border-zinc-100 pt-3 text-xs leading-5 text-zinc-500">
                             <strong className="font-semibold text-zinc-800">
                                 Giải quyết:
                             </strong>{' '}
-                            vừa có baseline giải thích được, vừa có đường thử ML
-                            an toàn.
+                            chuyển các tín hiệu thành thứ tự dựa trên dữ liệu
+                            gán nhãn.
                         </p>
                     </article>
 
@@ -148,9 +148,9 @@ export function RecommendationLogicOverview() {
                             <strong className="text-zinc-900">
                                 ML ↔ khả năng kiểm soát:
                             </strong>{' '}
-                            model có thể học tương tác phức tạp, đổi lại cần
-                            inference ổn định và attribution đủ tin cậy; lỗi thì
-                            quay về Standard.
+                            model có thể học tương tác giữa tín hiệu, đổi lại
+                            cần dữ liệu và inference ổn định; nếu lỗi thì request
+                            trả unavailable.
                         </p>
                     </div>
                     <div className="mt-5 border-t border-zinc-200 pt-4">

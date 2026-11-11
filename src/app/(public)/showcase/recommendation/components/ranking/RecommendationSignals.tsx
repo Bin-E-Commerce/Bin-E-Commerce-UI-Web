@@ -689,7 +689,7 @@ export function RecommendationSignals() {
                 id="recommendation-candidate-union"
                 number="2.1.4"
                 title="Từ nhiều danh sách thành một pool không trùng"
-                description="Các nguồn tìm sản phẩm riêng; bước này lọc, gộp và giới hạn kết quả trước khi Standard hoặc AI Ranking tính thứ tự."
+                description="Các nguồn tìm sản phẩm riêng; bước này lọc, gộp và giới hạn kết quả trước khi LambdaRank tính thứ tự."
                 level={4}
                 variant="flow"
             >
@@ -941,7 +941,7 @@ export function RecommendationSignals() {
                                 Bước kế tiếp
                             </p>
                             <p className="mt-1 text-xs font-semibold text-zinc-900">
-                                Standard hoặc AI Ranking
+                                Model LambdaRank
                             </p>
                             <p className="mt-1 text-[11px] leading-4 text-zinc-600">
                                 Ranking dùng pool candidate để tính điểm và

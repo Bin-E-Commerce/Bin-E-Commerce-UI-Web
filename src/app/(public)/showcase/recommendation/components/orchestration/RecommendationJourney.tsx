@@ -39,8 +39,8 @@ const recommendationRequestSteps: ShowcaseFlowStep[] = [
         id: 'ranking',
         title: 'Chấm và sắp xếp',
         summary:
-            'Standard Ranking tính điểm cho từng candidate, rồi cân bằng danh mục, thương hiệu và shop.',
-        detail: 'RankingFeatureService tính 8 tín hiệu trong [0,1]; RecommendationRuleService chuẩn hóa tổng trọng số về 100%, còn negativePenalty được trừ riêng và bị chặn tối đa 0,15. Có hai mode trên cùng candidate: Standard áp dụng trọng số đã cấu hình; AI-Enhanced kết hợp điểm Standard với dự đoán ML theo mlBlend cho toàn bộ traffic khi được bật. Nếu lượt AI thiếu prediction hoặc modelVersion hợp lệ, hệ thống dùng Standard và analytics ghi nhận đúng mode fallback. Trong code, hai mode này mang tên HYBRID và ML_HYBRID. RecommendationRankingService sắp xếp, trộn quota nguồn khi cold-start rồi diversity theo cửa sổ: product_detail tối đa 2 cùng category, 2 cùng brand, 3 cùng shop trong 6 item; surface khác là 4/3/5 trong 24 item. Nếu quota làm thiếu danh sách, lượt thứ hai nới quota thay vì bỏ hết candidate.',
+            'Tính 8 feature, để LambdaRank chấm thứ tự candidate rồi áp dụng giới hạn diversity.',
+        detail: 'RankingFeatureService tính 8 tiêu chí trong [0,1] và thêm negativePenalty thành feature thứ chín. RecommendationMlRankingService gửi vector đến LightGBM LambdaRank; model trả raw score, RecommendationRankingService sắp xếp theo score rồi áp dụng diversity theo cửa sổ: product_detail tối đa 2 cùng category, 2 cùng brand, 3 cùng shop trong 6 item; surface khác là 4/3/5 trong 24 item. Nếu model chưa sẵn sàng, thiếu prediction hoặc lỗi, request trả unavailable thay vì đổi sang công thức khác. Candidate generation vẫn chạy độc lập trước bước ranking.',
         output: 'Danh sách canonical tối đa 180 item; sau đó API mới cắt trang (pageSize tối đa 24, product_detail tối đa 6).',
         implementation:
             'RankingFeatureService · RecommendationRankingService · RecommendationMlRankingService',

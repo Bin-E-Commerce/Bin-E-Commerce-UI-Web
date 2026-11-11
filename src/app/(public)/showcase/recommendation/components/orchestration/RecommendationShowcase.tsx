@@ -8,7 +8,7 @@ import { RecommendationRequestOverview } from './RecommendationRequestOverview';
 import { RecommendationReadingGuide } from '../shared/RecommendationReadingGuide';
 import { RecommendationReliability } from '../ranking/RecommendationReliability';
 import { RecommendationScoring } from '../ranking/RecommendationScoring';
-import { RecommendationAiEnhancedRanking } from '../ranking/RecommendationAiEnhancedRanking';
+import { RecommendationLambdaRank } from '../ranking/RecommendationLambdaRank';
 import { RecommendationModelEvaluation } from '../ranking/RecommendationModelEvaluation';
 import { RecommendationSignals } from '../ranking/RecommendationSignals';
 import { recommendationTableOfContents } from '../../constants/recommendation-table-of-contents.constant';
@@ -69,7 +69,7 @@ export function RecommendationShowcase() {
                                     id="recommendation-logic"
                                     number="2"
                                     title="Logic tạo gợi ý"
-                                    description="Đi từ hồ sơ và phiên truy cập, qua tạo ứng viên, chấm Standard/AI, đến fallback và attribution; từng quyết định, giới hạn và trade-off được trình bày bên dưới."
+                                    description="Đi từ hồ sơ và phiên truy cập, qua tạo ứng viên, tính 8 feature, chấm LambdaRank và attribution; từng quyết định, giới hạn và trade-off được trình bày bên dưới."
                                     level={2}
                                     variant="section"
                                 >
@@ -89,18 +89,18 @@ export function RecommendationShowcase() {
                                             id="recommendation-ranking-logic"
                                             number="2.2"
                                             title="Vì sao sản phẩm này đứng trước sản phẩm kia?"
-                                            description="Từ dữ liệu đầu vào, hệ thống tính 8 điểm thế nào, nhân trọng số ra sao và AI pha vào Standard theo công thức nào?"
+                                            description="Tám feature được tính ra sao, LambdaRank học thứ tự thế nào, và cách kiểm chứng dựa trên bằng chứng nào?"
                                             variant="section"
                                         >
                                             <RecommendationScoring />
                                         </RecommendationDisclosure>
-                                        <RecommendationAiEnhancedRanking />
+                                        <RecommendationLambdaRank />
                                         <RecommendationModelEvaluation />
                                         <RecommendationDisclosure
                                             id="recommendation-reliability-logic"
                                             number="2.3"
                                             title="Khi thiếu dữ liệu hoặc có lỗi, hệ thống làm gì?"
-                                            description="Nguồn lỗi thì bỏ riêng, AI lỗi thì dùng Standard; xem tiếp giới hạn danh sách và cách event cập nhật cho lượt gợi ý sau."
+                                            description="Nguồn candidate lỗi thì cô lập; model lỗi thì request báo unavailable. Xem tiếp giới hạn danh sách và cách event cập nhật cho lượt gợi ý sau."
                                             variant="section"
                                         >
                                             <RecommendationReliability />

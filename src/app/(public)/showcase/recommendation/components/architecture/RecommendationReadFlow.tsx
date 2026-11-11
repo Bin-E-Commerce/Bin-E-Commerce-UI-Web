@@ -215,37 +215,34 @@ export function RecommendationReadFlow() {
             <section aria-label="Xếp hạng ứng viên">
                 <div className="mx-auto max-w-3xl text-center">
                     <h4 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950 sm:text-2xl">
-                        AI có cải thiện thứ tự gợi ý không?
+                        Model học cách xếp candidate như thế nào?
                     </h4>
                     <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-                        Hai phương pháp dùng chung quy trình tìm sản phẩm, chỉ
-                        khác cách chấm điểm. Trong thử nghiệm, mỗi tài khoản
-                        hoặc phiên khách luôn ở cùng một nhánh; lượt hiển thị,
-                        nhấp và đơn hoàn tất được gắn về đúng gợi ý để so sánh.
-                        AI không mặc định được xem là tốt hơn.
+                        Candidate được chuyển thành vector 8 tiêu chí cùng
+                        negativePenalty, sau đó LambdaRank trả raw score. Hiệu
+                        quả chỉ được kết luận sau khi so trên cùng các request
+                        test theo thời gian với baseline.
                     </p>
                 </div>
                 <div className="mt-5 grid items-stretch gap-4 md:grid-cols-2">
                     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white">
                         <RecommendationStepHeader
                             number="06"
-                            title="Standard Ranking"
+                            title="Feature vector"
                             titleLevel={5}
                             className="px-4 py-3"
                         />
                         <div className="flex-1 p-4 sm:p-5">
                             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-                                    Công thức điểm
+                                    Đầu vào model
                                 </p>
                                 <code className="mt-2 block break-words text-xs leading-5 text-zinc-800">
-                                    clamp(Σ(weight × feature) − negativePenalty,
-                                    0, 1)
+                                    xᵢ = [f₁, f₂, ..., f₈, negativePenalty]
                                 </code>
                                 <p className="mt-2 text-xs leading-5 text-zinc-600">
-                                    8 feature được chuẩn hóa; trọng số policy có
-                                    tổng 100%, penalty từ sở thích âm được trừ
-                                    riêng.
+                                    8 feature được chuẩn hóa trong [0, 1];
+                                    negativePenalty là feature bổ sung thứ chín.
                                 </p>
                             </div>
 
@@ -255,20 +252,19 @@ export function RecommendationReadFlow() {
                                         Vai trò
                                     </dt>
                                     <dd className="mt-1 text-xs leading-5 text-zinc-600">
-                                        Tạo baseline xác định, dễ lần ngược từng
-                                        tín hiệu để biết vì sao sản phẩm đứng ở
-                                        vị trí đó.
+                                        Giữ từng tín hiệu thành một cột có thể
+                                        kiểm tra bằng test thuộc tính và so sánh
+                                    với label tương tác.
                                     </dd>
                                 </div>
                                 <div>
                                     <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-                                        Điều chỉnh
+                                        Kiểm chứng
                                     </dt>
                                     <dd className="mt-1 text-xs leading-5 text-zinc-600">
-                                        Admin tinh chỉnh{' '}
-                                        <code>hybridWeights</code> trong policy;{' '}
-                                        <code>HYBRID</code> là baseline để đối
-                                        chiếu ranking mode.
+                                        Dùng feature-only baseline và bỏ từng
+                                        feature khi đánh giá offline; baseline
+                                        không chạy trong serving.
                                     </dd>
                                 </div>
                             </dl>
@@ -277,55 +273,53 @@ export function RecommendationReadFlow() {
                             <span className="font-semibold text-zinc-800">
                                 Đánh đổi ·{' '}
                             </span>
-                            Dễ kiểm soát, không cần gọi model; nhưng phụ thuộc
-                            trọng số con người đặt và khó nắm hết tương tác phức
-                            tạp giữa tín hiệu.
+                            Công thức feature có thể giải thích riêng; độ tốt
+                            của từng biến đổi vẫn phải được kiểm chứng với dữ
+                            liệu.
                         </p>
                     </article>
 
                     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white">
                         <RecommendationStepHeader
                             number="06"
-                            title="AI-Enhanced Ranking"
+                            title="LambdaRank model"
                             titleLevel={5}
                             className="px-4 py-3"
                         />
                         <div className="flex-1 p-4 sm:p-5">
                             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-                                    Công thức điểm
+                                    Điểm xếp hạng
                                 </p>
                                 <code className="mt-2 block break-words text-xs leading-5 text-zinc-800">
-                                    clamp(Standard × (1 − mlBlend) + ML ×
-                                    mlBlend, 0, 1)
+                                    scoreᵢ = Fθ(xᵢ)
                                 </code>
                                 <p className="mt-2 text-xs leading-5 text-zinc-600">
-                                    Model dự đoán điểm cho từng ứng viên từ cùng
-                                    feature vector; không tạo thêm nguồn sản
-                                    phẩm.
+                                    Model học thứ tự candidate theo nhóm request
+                                    và trả raw relevance score; không phải xác
+                                    suất mua.
                                 </p>
                             </div>
 
                             <dl className="mt-4 space-y-3">
                                 <div>
                                     <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-                                        Điều chỉnh & đo lường
+                                        Huấn luyện & đo lường
                                     </dt>
                                     <dd className="mt-1 text-xs leading-5 text-zinc-600">
-                                        <code>mlBlend</code> mặc định 0,3, giới
-                                        hạn tối đa 0,5. Analytics nhóm theo
-                                        ranking mode thực tế để đo hiệu quả có
-                                        attribution.
+                                        Early stopping dùng NDCG@10 trên
+                                        validation; test được giữ riêng và so
+                                        với feature-only baseline.
                                     </dd>
                                 </div>
                                 <div>
                                     <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
-                                        Fallback an toàn
+                                        Khi model unavailable
                                     </dt>
                                     <dd className="mt-1 text-xs leading-5 text-zinc-600">
-                                        Nếu response model thiếu phiên bản hợp
-                                        lệ, cả lượt dùng Standard; ứng viên
-                                        thiếu prediction vẫn giữ điểm baseline.
+                                        Nếu thiếu artifact hoặc prediction
+                                        không đầy đủ, API trả unavailable và
+                                        không đổi sang ranker khác.
                                     </dd>
                                 </div>
                             </dl>
@@ -334,9 +328,8 @@ export function RecommendationReadFlow() {
                             <span className="font-semibold text-zinc-800">
                                 Đánh đổi ·{' '}
                             </span>
-                            Có thể khai thác quan hệ giữa nhiều tín hiệu, nhưng
-                            cần model ổn định, thêm độ trễ inference và
-                            attribution đủ tin cậy để chứng minh hiệu quả.
+                            Tự học cách kết hợp feature nhưng phụ thuộc chất
+                            lượng nhãn, kích thước dữ liệu và latency inference.
                         </p>
                     </article>
                 </div>
@@ -348,15 +341,15 @@ export function RecommendationReadFlow() {
                         </p>
                         <p className="mt-1 text-xs leading-5 text-zinc-600">
                             So impression → click → đơn hoàn tất có attribution;
-                            dùng kết quả để tinh chỉnh trọng số Standard hoặc tỷ
-                            lệ blend.
+                            dùng kết quả để so model với baseline và kiểm tra
+                            từng feature.
                         </p>
                     </div>
                     <RecommendationRankingLogicLink />
                 </div>
                 <p className="mt-2 text-center text-xs leading-5 text-zinc-500">
-                    Sau xếp hạng, cả hai nhánh cùng qua bước cân bằng độ đa
-                    dạng; danh sách chuẩn tối đa 180 sản phẩm.
+                    Sau xếp hạng, diversity giới hạn lặp danh mục, thương hiệu
+                    và shop; danh sách chuẩn tối đa 180 sản phẩm.
                 </p>
             </section>
 
@@ -501,9 +494,8 @@ export function RecommendationReadFlow() {
                                         rankingModelVersion
                                     </dt>
                                     <dd className="text-zinc-600">
-                                        Phiên bản model nếu lượt này có dự đoán
-                                        ML hợp lệ; nếu không sẽ là{' '}
-                                        <code>null</code>.
+                                        Phiên bản artifact LambdaRank đã tạo
+                                        thứ tự cho response thành công.
                                     </dd>
                                 </div>
                                 <div>
@@ -511,10 +503,9 @@ export function RecommendationReadFlow() {
                                         rankingMode
                                     </dt>
                                     <dd className="text-zinc-600">
-                                        ID và nhánh đang được so sánh; nếu
-                                        request dùng mode nào thì ghi nhận đúng
-                                        mode đó; khi fallback là{' '}
-                                        <code>null</code>.
+                                        Request mới ghi{' '}
+                                        <code>AI_MODEL</code>. Giá trị HYBRID và
+                                        ML_HYBRID chỉ còn ở event lịch sử.
                                     </dd>
                                 </div>
                             </dl>
