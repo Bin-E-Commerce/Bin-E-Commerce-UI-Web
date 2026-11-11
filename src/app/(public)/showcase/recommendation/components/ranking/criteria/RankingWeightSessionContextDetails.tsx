@@ -1,69 +1,61 @@
-// Giải thích công thức sessionContext như một feature đầu vào và giữ khớp với RankingFeatureService.
+// Giải thích feature sessionContext theo vị trí danh mục và thương hiệu trong phiên; không chấm điểm cuối.
 import {
     DetailFormula,
     DetailSection,
     DetailTerm,
 } from './RankingWeightDetails.shared';
 
-// Trình bày ý nghĩa, dữ liệu đầu vào và ví dụ của tín hiệu sessionContext mà không chứa state hay side effect runtime.
+// Trình bày công thức, nguồn dữ liệu và giới hạn của tín hiệu phiên mà không thực hiện I/O.
 export function RankingWeightSessionContextDetails() {
     return (
         <>
             <DetailFormula>
+                <p>Điểm ngữ cảnh = (điểm danh mục + điểm thương hiệu) ÷ 2.</p>
                 <p>
-                    Điểm ngữ cảnh = giới hạn 0–1 [(khớp danh mục ? 0.60 : 0) +
-                    (khớp thương hiệu ? 0.25 : 0) + (được gợi ý từ sản phẩm hiện
-                    tại ? 0.15 : 0)]
+                    Điểm một thuộc tính = (số mục trong danh sách − vị trí tính
+                    từ 0) ÷ số mục; không khớp thì bằng 0.
                 </p>
-                <p>Mỗi điều kiện trong ngoặc nhận 1 nếu đúng, 0 nếu sai.</p>
             </DetailFormula>
             <DetailSection title="Nói đơn giản">
-                Đây là phần ghi nhận điều người dùng đang quan tâm trong lần ghé
-                thăm hiện tại. Khác với hồ sơ dài hạn, nó giúp gợi ý thay đổi
-                nhanh khi người dùng vừa xem một nhóm hàng hoặc thương hiệu nào
-                đó.
+                Hệ thống so danh mục và thương hiệu của sản phẩm với những mục
+                người dùng vừa chủ động tương tác trong phiên. Mục gần đây hơn
+                có điểm cao hơn. Đây là một tín hiệu đầu vào của model AI, không
+                phải xác suất mua.
             </DetailSection>
-            <DetailSection title="Hệ thống nhớ những gì trong lần ghé thăm?">
-                Trong lúc người dùng ghé website, hệ thống nhớ tạm các danh
-                mục/thương hiệu người dùng vừa tương tác và sản phẩm gần nhất họ
-                thật sự xem hoặc bấm. Dữ liệu này chỉ được nhớ tạm trong lần ghé
-                thăm, không phải toàn bộ lịch sử dài hạn. Chỉ nhìn thấy sản phẩm
-                trên màn hình mà chưa xem/bấm thì không đổi sản phẩm hiện tại.
+            <DetailSection title="Dữ liệu nào được nhớ?">
+                Hệ thống giữ hai danh sách tạm: danh mục và thương hiệu từng
+                tương tác, mới nhất ở đầu và không lặp khóa. Tương tác lại với
+                một khóa sẽ đưa khóa đó lên đầu. Lượt hiển thị thụ động không
+                làm đổi hai danh sách. Dữ liệu có giới hạn số mục và thời gian
+                lưu theo cấu hình phiên.
             </DetailSection>
-            <DetailSection title="Các con số trong cách tính">
+            <DetailSection title="Cách đọc điểm">
                 <ul className="space-y-1.5">
-                    <DetailTerm term="0.60 điểm">
-                        Cộng khi sản phẩm đang chấm thuộc danh mục người dùng
-                        vừa xem/tương tác. Nếu không trùng, phần này cộng 0.
+                    <DetailTerm term="Vị trí đầu">
+                        Thuộc tính vừa tương tác gần nhất có điểm riêng bằng 1.
                     </DetailTerm>
-                    <DetailTerm term="0.25 điểm">
-                        Cộng khi thương hiệu của sản phẩm nằm trong các thương
-                        hiệu vừa tương tác; không trùng thì cộng 0.
+                    <DetailTerm term="Vị trí cũ hơn">
+                        Với danh sách hai mục, mục thứ hai có điểm riêng 1/2.
+                        Không xuất hiện trong danh sách thì bằng 0.
                     </DetailTerm>
-                    <DetailTerm term="0.15 điểm">
-                        Cộng khi sản phẩm đang chấm được tìm thấy nhờ sản phẩm
-                        người dùng đang xem/bấm. Nếu không có mốc này thì cộng
-                        0.
-                    </DetailTerm>
-                    <DetailTerm term="tổng điểm">
-                        Cộng các phần khớp lại. Ba phần cộng tối đa 0.60 + 0.25
-                        + 0.15 = 1.00. Các số này là điểm của tiêu chí, không
-                        phải xác suất mua.
+                    <DetailTerm term="Hai chiều">
+                        Danh mục và thương hiệu đóng góp ngang nhau; chỉ một
+                        chiều đạt 1 thì điểm ngữ cảnh bằng 0,5.
                     </DetailTerm>
                 </ul>
             </DetailSection>
             <DetailSection title="Ví dụ">
-                Người dùng vừa xem một chiếc nồi. Một sản phẩm khác cùng danh
-                mục nhận 0.60; nếu cùng thương hiệu thì cộng thêm 0.25; nếu còn
-                được gợi ý từ chính chiếc nồi đang xem thì cộng thêm 0.15. Khớp
-                cả ba được 0.60 + 0.25 + 0.15 = 1.00; chỉ cùng danh mục thì được
-                0.60.
+                Danh mục gần đây là [nồi, sách], thương hiệu là [A, B]. Sản phẩm
+                thuộc danh mục nồi, thương hiệu B nhận (1 + 0,5) ÷ 2 = 0,75. Sản
+                phẩm khớp cả hai mục mới nhất nhận 1; không khớp mục nào nhận 0.
             </DetailSection>
-            <DetailSection title="Khi nào điểm bằng 0?">
-                Không có dữ liệu phiên, sản phẩm không trùng danh mục/thương
-                hiệu gần đây và cũng không được tìm từ sản phẩm hiện tại. Khi đó
-                tiêu chí này không cộng điểm; các tiêu chí còn lại vẫn hoạt
-                động.
+            <DetailSection title="Cơ sở và giới hạn">
+                Nghiên cứu về gợi ý theo phiên đã dùng trọng số vị trí để ưu
+                tiên tương tác mới hơn. Công thức này áp dụng ý tưởng đó cho
+                danh mục và thương hiệu; việc lấy trung bình hai chiều là lựa
+                chọn của dự án, chưa được chứng minh là tối ưu trên người dùng
+                thật. Điểm có nguồn gợi ý từ sản phẩm đang xem được giữ ở
+                attribution, không tự cộng vào tiêu chí này.
             </DetailSection>
         </>
     );
