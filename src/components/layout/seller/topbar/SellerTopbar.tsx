@@ -11,6 +11,7 @@ import {
     ChevronDown,
     LogOut,
     Menu,
+    ShoppingBag,
     Smile,
     Settings,
     Store,
@@ -30,7 +31,8 @@ interface SellerTopbarProps {
     onOpenSidebar: () => void;
 }
 
-// Topbar dùng tên shop cho lời chào và menu; ảnh đại diện cùng thao tác tài khoản vẫn theo session hiện tại.
+// Topbar nhận diện shop hiện tại, giữ lối tắt quản lý và dẫn seller về storefront công khai.
+// Thao tác đăng xuất vẫn thu hồi đúng phiên hiện tại.
 export function SellerTopbar({
     avatarUrl,
     shopLogoUrl,
@@ -151,6 +153,15 @@ export function SellerTopbar({
                                     >
                                         <Settings className="size-4 text-zinc-400" />
                                         Hồ sơ shop
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link
+                                        href="/"
+                                        className="mt-1 flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-zinc-700 outline-none transition-colors hover:bg-zinc-50"
+                                    >
+                                        <ShoppingBag className="size-4 text-zinc-400" />
+                                        Về trang mua sắm
                                     </Link>
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Separator className="my-1 h-px bg-zinc-100" />
