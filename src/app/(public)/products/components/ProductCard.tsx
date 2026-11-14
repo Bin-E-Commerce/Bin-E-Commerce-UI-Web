@@ -162,7 +162,7 @@ export function ProductCard({
             }}
             aria-label={`Xem chi tiết ${product.name}`}
             className={cn(
-                'group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-md',
+                'group relative flex min-w-0 flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-neutral-400 hover:shadow-md',
                 compact && 'w-44 shrink-0 snap-start sm:w-auto',
                 className,
             )}
@@ -172,7 +172,7 @@ export function ProductCard({
                     -{discountPercent}%
                 </span>
             ) : null}
-            <div className="relative aspect-square overflow-hidden bg-zinc-50">
+            <div className="relative aspect-square overflow-hidden bg-neutral-50">
                 {imageUrl ? (
                     <Image
                         src={imageUrl}
@@ -186,7 +186,7 @@ export function ProductCard({
                     <div
                         role="img"
                         aria-label="Ảnh sản phẩm không khả dụng"
-                        className="flex h-full items-center justify-center text-zinc-300"
+                        className="flex h-full items-center justify-center text-neutral-300"
                     >
                         <PackageOpen className="h-10 w-10" />
                     </div>
@@ -194,19 +194,19 @@ export function ProductCard({
             </div>
 
             <div className="flex flex-1 flex-col p-3">
-                <p className="line-clamp-2 min-h-10 text-sm font-medium leading-5 text-zinc-900">
+                <p className="line-clamp-2 min-h-10 text-sm font-medium leading-5 text-neutral-900">
                     {product.name}
                 </p>
                 {recommendationReason ? (
-                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-zinc-500">
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-neutral-500">
                         {recommendationReason}
                     </p>
                 ) : null}
-                <div className="mt-2 flex min-h-5 items-center gap-1.5 text-xs text-zinc-500">
+                <div className="mt-2 flex min-h-5 items-center gap-1.5 text-xs text-neutral-500">
                     <span
                         className={cn(
                             'inline-flex min-w-0 flex-1 items-center gap-1',
-                            hasRating ? 'text-amber-500' : 'text-zinc-400',
+                            hasRating ? 'text-amber-500' : 'text-neutral-400',
                         )}
                     >
                         <Star
@@ -220,7 +220,7 @@ export function ProductCard({
                                 <>
                                     {rating.toFixed(1)}
                                     {product.reviewCount > 0 ? (
-                                        <span className="ml-1 text-zinc-400">
+                                        <span className="ml-1 text-neutral-400">
                                             (
                                             {product.reviewCount.toLocaleString(
                                                 'vi-VN',
@@ -234,7 +234,7 @@ export function ProductCard({
                             )}
                         </span>
                     </span>
-                    <span className="h-3 w-px shrink-0 bg-zinc-200" />
+                    <span className="h-3 w-px shrink-0 bg-neutral-200" />
                     <span className="shrink-0 whitespace-nowrap">
                         Đã bán {formatSoldCount(product.totalSold)}
                     </span>
@@ -242,14 +242,14 @@ export function ProductCard({
 
                 <div className="mt-auto pt-3">
                     {hasPriceRange ? (
-                        <p className="text-[11px] text-zinc-400">Giá từ</p>
+                        <p className="text-[11px] text-neutral-400">Giá từ</p>
                     ) : null}
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <p className="text-lg font-bold tracking-tight text-red-600">
                             {formatProductPrice(displayPrice)}
                         </p>
                         {discountPercent > 0 ? (
-                            <p className="text-xs text-zinc-400 line-through">
+                            <p className="text-xs text-neutral-400 line-through">
                                 {formatProductPrice(displayOriginalPrice)}
                             </p>
                         ) : null}

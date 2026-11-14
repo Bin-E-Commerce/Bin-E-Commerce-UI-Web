@@ -6,6 +6,7 @@ import type {
     PaginatedProductResponse,
     ProductDetail,
     OrderReviewStatusResponse,
+    ProductSearchSuggestion,
     PublicProduct,
     ShopCatalogSummary,
 } from '../types/product.types';
@@ -14,11 +15,20 @@ import publicAxios from '@/utils/publicAxios';
 
 export const productService = {
     // Homepage dùng endpoint public qua API Gateway để không phụ thuộc trực tiếp URL nội bộ của product-service.
-    listProducts: (params: ListProductsParams = {}) =>
+    listProducts: (params: ListProductsParams = {}, signal?: AbortSignal) =>
         publicAxios
             .get<PaginatedProductResponse<PublicProduct>>(
                 `${API_VERSION}/products`,
-                { params },
+                { params, signal },
+            )
+            .then((response) => response.data),
+
+    // Autocomplete gọi read model gọn để không đồng bộ review và doanh số của listing trong lúc người dùng gõ.
+    getSearchSuggestions: (query: string, signal?: AbortSignal) =>
+        publicAxios
+            .get<ProductSearchSuggestion[]>(
+                `${API_VERSION}/products/search/suggestions`,
+                { params: { q: query }, signal },
             )
             .then((response) => response.data),
 

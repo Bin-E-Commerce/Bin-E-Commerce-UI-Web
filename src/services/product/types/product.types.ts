@@ -134,6 +134,16 @@ export interface PublicProduct {
     images?: ProductImage[];
 }
 
+export interface ProductSearchSuggestion {
+    id: string;
+    name: string;
+    slug: string;
+    minPrice: string;
+    maxPrice: string;
+    brandName: string | null;
+    imageUrl: string | null;
+}
+
 export interface ProductDetail extends PublicProduct {
     description?: string | null;
     categoryId: string;
@@ -160,7 +170,13 @@ export interface ListProductsParams {
     maxPrice?: number;
     minRating?: number;
     inStock?: boolean;
-    sort?: 'newest' | 'price_asc' | 'price_desc' | 'rating_desc' | 'sold_desc';
+    sort?:
+        | 'relevance'
+        | 'newest'
+        | 'price_asc'
+        | 'price_desc'
+        | 'rating_desc'
+        | 'sold_desc';
 }
 
 export interface ShopCatalogSummary {

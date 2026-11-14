@@ -9,6 +9,9 @@ import { NAV_LINKS } from '../../constants/nav-links.constant';
 export function NavLinks() {
     const pathname = usePathname();
 
+    // Trang tìm kiếm ưu tiên truy vấn và kết quả; các mục điều hướng vẫn có trong footer.
+    if (pathname === '/products') return null;
+
     return (
         <nav className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map((item) => {

@@ -7,7 +7,7 @@ export const FOOTER_LINKS = {
         { href: '/goi-y-hom-nay', label: 'Gợi ý hôm nay' },
     ],
     'Khám phá': [
-        { href: '/showcase', label: 'Kiến trúc & công nghệ' },
+        { href: '/showcase', label: 'Tính năng nổi bật' },
         { href: '/showcase/ai-optimization', label: 'Tối ưu hình ảnh AI' },
         { href: '/showcase/recommendation', label: 'Gợi ý sản phẩm' },
     ],

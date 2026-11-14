@@ -17,9 +17,13 @@ export const publicShopService = {
     // Đọc danh sách shop active cho trang khám phá; backend đã phân trang và chỉ trả dữ liệu public.
     list: (
         params: { page?: number; pageSize?: number; search?: string } = {},
+        signal?: AbortSignal,
     ) =>
         authorizedAxios
-            .get<PublicShopListResponse>(`${API_VERSION}/shops`, { params })
+            .get<PublicShopListResponse>(`${API_VERSION}/shops`, {
+                params,
+                signal,
+            })
             .then((response) => response.data),
 
     // Đọc hồ sơ public và trạng thái follow hiện tại của viewer.
