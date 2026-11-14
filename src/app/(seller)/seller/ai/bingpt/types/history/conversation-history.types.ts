@@ -7,6 +7,7 @@ import type {
 } from '@/services/seller/types/seller-copilot.types';
 
 export interface ConversationHistoryPanelProps {
+    isDrawer?: boolean;
     conversations: SellerCopilotConversation[];
     activeConversationId?: string;
     isLoading: boolean;

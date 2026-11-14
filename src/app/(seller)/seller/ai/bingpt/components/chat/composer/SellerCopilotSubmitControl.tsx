@@ -13,9 +13,11 @@ import type { SellerCopilotSubmitControlProps } from '../../../types/composer/co
 
 const MAX_COPILOT_INPUT_LENGTH = 2000;
 
-// Render action cuối form và khoá gửi khi input rỗng/quá dài để validation vẫn nằm sát control.
+// Render action cuối form và khoá gửi khi input không hợp lệ hoặc mode đang chờ server xác nhận.
 export function SellerCopilotSubmitControl({
     isStreaming,
+    isModeChanging,
+    isConversationLoading,
     input,
     activeTooltip,
     onTooltipOpenChange,
@@ -24,6 +26,13 @@ export function SellerCopilotSubmitControl({
     const isInputInvalid =
         !input.trim() || input.length > MAX_COPILOT_INPUT_LENGTH;
     const tooltip = isStreaming ? 'stop' : 'send';
+    const tooltipMessage = isModeChanging
+        ? 'Đang chuyển chế độ...'
+        : isConversationLoading
+          ? 'Đang mở cuộc trò chuyện...'
+          : isStreaming
+            ? 'Dừng câu trả lời'
+            : 'Gửi câu hỏi';
 
     return (
         <TooltipProvider delayDuration={180}>
@@ -32,7 +41,16 @@ export function SellerCopilotSubmitControl({
                 onOpenChange={(open) => onTooltipOpenChange(tooltip, open)}
             >
                 <TooltipTrigger asChild>
-                    <span className="inline-flex shrink-0 cursor-pointer">
+                    <span
+                        className={`inline-flex shrink-0 ${
+                            !isStreaming &&
+                            (isInputInvalid ||
+                                isModeChanging ||
+                                isConversationLoading)
+                                ? 'cursor-not-allowed'
+                                : 'cursor-pointer'
+                        }`}
+                    >
                         {isStreaming ? (
                             <Button
                                 type="button"
@@ -49,7 +67,11 @@ export function SellerCopilotSubmitControl({
                                 size="icon"
                                 className="mb-1 size-9 shrink-0 rounded-full border border-zinc-300 bg-zinc-50 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400"
                                 aria-label="Gửi câu hỏi"
-                                disabled={isInputInvalid}
+                                disabled={
+                                    isInputInvalid ||
+                                    isModeChanging ||
+                                    isConversationLoading
+                                }
                             >
                                 <Send className="size-4" />
                             </Button>
@@ -61,7 +83,7 @@ export function SellerCopilotSubmitControl({
                     className="border border-zinc-200 bg-white text-zinc-950 shadow-xl"
                     arrowClassName="fill-white stroke-zinc-200 stroke-1"
                 >
-                    {isStreaming ? 'Dừng câu trả lời' : 'Gửi câu hỏi'}
+                    {tooltipMessage}
                 </TooltipContent>
             </Tooltip>
         </TooltipProvider>

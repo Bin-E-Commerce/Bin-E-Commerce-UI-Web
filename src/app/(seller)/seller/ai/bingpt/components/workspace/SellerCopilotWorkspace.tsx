@@ -6,6 +6,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowDown, LoaderCircle, PanelRightOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerTitle,
+} from '@/components/ui/drawer';
 import { ConversationHistoryPanel } from '../history/panel/ConversationHistoryPanel';
 import { ConversationHistoryRail } from '../history/rail/ConversationHistoryRail';
 import { SellerCopilotComposer } from '../chat/composer/SellerCopilotComposer';
@@ -23,8 +29,12 @@ export default function SellerCopilotWorkspace({
 }: SellerCopilotWorkspaceProps) {
     const router = useRouter();
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
+    const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(
+        null,
+    );
     const [isAtLatestMessage, setIsAtLatestMessage] = useState(true);
     const messageScrollRef = useRef<HTMLDivElement>(null);
+    const composerRootRef = useRef<HTMLDivElement>(null);
     const shouldFollowGeneratedContentRef = useRef(true);
     const isProgrammaticScrollRef = useRef(false);
     const previousRouteConversationIdRef = useRef(initialConversationId);
@@ -64,6 +74,18 @@ export default function SellerCopilotWorkspace({
 
     const loadConversationRef = useRef(loadConversation);
 
+    // Chuyển lịch sử sang Drawer khi viewport nhỏ; matchMedia bám đúng breakpoint xl của layout.
+    useEffect(() => {
+        const mobileViewport = window.matchMedia('(max-width: 1279px)');
+        const syncViewport = () => {
+            setIsMobileViewport(mobileViewport.matches);
+            if (mobileViewport.matches) setIsHistoryOpen(false);
+        };
+        syncViewport();
+        mobileViewport.addEventListener('change', syncViewport);
+        return () => mobileViewport.removeEventListener('change', syncViewport);
+    }, []);
+
     // Callback tải conversation đổi identity khi trạng thái stream đổi; ref giữ phiên bản mới nhất mà không kích hoạt nạp lại.
     useEffect(() => {
         loadConversationRef.current = loadConversation;
@@ -80,23 +102,35 @@ export default function SellerCopilotWorkspace({
         previousRouteConversationIdRef.current = initialConversationId;
     }, [initialConversationId, startNewConversation]);
 
-    // Tạo phiên sạch rồi trở về route gốc để URL không tiếp tục trỏ vào conversation cũ.
+    // Tạo phiên sạch rồi trở về route gốc; drawer mobile được đóng để seller thấy ngay khung chat mới.
     const handleNewConversation = useCallback(() => {
+        // Không reset conversation khi server đang lưu mode; hook vẫn bảo vệ trường hợp route đổi từ browser history.
+        if (isModeChanging) return;
         startNewConversation();
+        if (isMobileViewport) setIsHistoryOpen(false);
         if (conversationId) {
             router.push(SELLER_COPILOT_PATH, { scroll: false });
         }
-    }, [conversationId, router, startNewConversation]);
+    }, [
+        conversationId,
+        isMobileViewport,
+        isModeChanging,
+        router,
+        startNewConversation,
+    ]);
 
-    // Chuyển conversation thành URL có ID riêng; route có thể chia sẻ, tải lại và phục hồi bằng nút back/forward.
+    // Chuyển conversation thành URL có ID riêng và đóng drawer mobile để nội dung vừa chọn không bị che.
     const handleSelectConversation = useCallback(
         (targetConversationId: string) => {
+            // Chặn chọn từ history trong lúc mode session của conversation hiện tại chưa được xác nhận.
+            if (isModeChanging) return;
+            if (isMobileViewport) setIsHistoryOpen(false);
             router.push(
                 `${SELLER_COPILOT_PATH}/${encodeURIComponent(targetConversationId)}`,
                 { scroll: false },
             );
         },
-        [router],
+        [isMobileViewport, isModeChanging, router],
     );
 
     // Nếu xóa phiên đang mở, điều hướng khỏi URL không còn hợp lệ sau khi backend xác nhận xóa thành công.
@@ -109,6 +143,42 @@ export default function SellerCopilotWorkspace({
         },
         [conversationId, deleteConversation, router],
     );
+
+    // Giữ callback tải trang ổn định để danh sách history không đổi props theo mỗi token stream.
+    const handleLoadMoreConversations = useCallback(() => {
+        void loadMoreConversations();
+    }, [loadMoreConversations]);
+
+    // Gói thao tác pin thành callback ổn định; API chỉ được gọi từ hành động chủ động trong panel.
+    const handleSetConversationPinned = useCallback(
+        (id: string, isPinned: boolean) => {
+            void setConversationPinned(id, isPinned);
+        },
+        [setConversationPinned],
+    );
+
+    // Đóng history theo cùng một callback cho drawer mobile và panel desktop.
+    const handleCloseHistory = useCallback(() => {
+        setIsHistoryOpen(false);
+    }, []);
+
+    // Drawer mobile và panel desktop dùng cùng dữ liệu/callback để giữ một hành vi lịch sử nhất quán.
+    const historyPanelProps = {
+        conversations,
+        activeConversationId: conversationId,
+        isLoading: isLoadingHistory,
+        isLoadingMore: isLoadingMoreHistory,
+        hasMore: hasMoreHistory,
+        disabled: isStreaming || isModeChanging,
+        onNewConversation: handleNewConversation,
+        onSelectConversation: handleSelectConversation,
+        onLoadMore: handleLoadMoreConversations,
+        onSetConversationPinned: handleSetConversationPinned,
+        onRenameConversation: renameConversation,
+        onDeleteConversation: handleDeleteConversation,
+        onSearch: searchConversations,
+        onClose: handleCloseHistory,
+    };
 
     // Bật lại chế độ bám cuối trước khi gửi câu hỏi mới để seller luôn nhìn thấy prompt,
     // placeholder assistant và token đầu tiên; thao tác cuộn thủ công sau đó vẫn có quyền tắt chế độ này.
@@ -170,13 +240,6 @@ export default function SellerCopilotWorkspace({
         [hasMoreMessages, isLoadingMoreMessages, loadOlderMessages],
     );
 
-    // Hủy auto-follow ngay khi có thao tác cuộn thật của seller; làm trước onScroll để
-    // event này không bị nhầm là scroll do code tạo ra trong lúc token đang cập nhật.
-    const cancelGeneratedContentFollow = useCallback(() => {
-        shouldFollowGeneratedContentRef.current = false;
-        isProgrammaticScrollRef.current = false;
-    }, []);
-
     // Cuộn về tin nhắn mới nhất mà không gọi API; cờ programmatic ngăn event scroll nội bộ
     // vô tình tắt auto-follow trong lúc component đang đưa seller về cuối vùng đọc.
     const scrollToLatestMessage = useCallback(
@@ -226,6 +289,31 @@ export default function SellerCopilotWorkspace({
         handleMessageScroll(element, false, false);
     }, [handleMessageScroll, messages, isStreaming]);
 
+    // Để nội dung cuối cuộn lên phía trên composer đang nổi; ResizeObserver theo cả textarea, banner Agent và cảnh báo nhập.
+    useEffect(() => {
+        const scrollElement = messageScrollRef.current;
+        const composerElement = composerRootRef.current;
+        if (!scrollElement || !composerElement) return;
+
+        // Đo chiều cao thực tế để textarea và các dòng trạng thái không che message cuối.
+        const syncComposerClearance = () => {
+            const composerHeight = Math.ceil(
+                composerElement.getBoundingClientRect().height,
+            );
+            scrollElement.style.paddingBottom = `${composerHeight + 16}px`;
+        };
+        // Khi panel tăng chiều cao và seller vẫn đang ở cuối, giữ câu trả lời mới nhất khỏi bị đẩy khuất.
+        const handleComposerResize = () => {
+            syncComposerClearance();
+            if (!shouldFollowGeneratedContentRef.current) return;
+            requestAnimationFrame(() => scrollToLatestMessage());
+        };
+        syncComposerClearance();
+        const observer = new ResizeObserver(handleComposerResize);
+        observer.observe(composerElement);
+        return () => observer.disconnect();
+    }, [scrollToLatestMessage]);
+
     return (
         <div
             className={`grid h-full min-h-0 w-full min-w-0 overflow-hidden bg-white pb-0 pl-4 pr-0 sm:pl-6 lg:pl-8 ${
@@ -254,14 +342,10 @@ export default function SellerCopilotWorkspace({
                 <div className="relative min-h-0 flex-1">
                     <div
                         ref={messageScrollRef}
-                        onWheel={cancelGeneratedContentFollow}
-                        onTouchMove={cancelGeneratedContentFollow}
                         onScroll={(event) =>
                             handleMessageScroll(event.currentTarget)
                         }
-                        className={`h-full overflow-y-auto overscroll-contain px-4 pr-5 pt-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-5 sm:pt-8 ${
-                            hasMessages ? 'pb-36 sm:pb-40' : ''
-                        }`}
+                        className="h-full overflow-y-auto overscroll-contain px-4 pr-5 pt-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-5 sm:pt-8"
                     >
                         {isLoadingMoreMessages ? (
                             <p className="pb-3 text-center text-xs text-zinc-400">
@@ -337,41 +421,56 @@ export default function SellerCopilotWorkspace({
 
                     {/* Composer nổi trên message layer; vùng nền mờ giữ phần nội dung phía sau vẫn nhận diện được. */}
                     <SellerCopilotComposer
+                        rootRef={composerRootRef}
                         interactionMode={interactionMode}
                         isStreaming={isStreaming}
                         isModeChanging={isModeChanging}
+                        isConversationLoading={
+                            isLoadingConversation || isOpeningRoutedConversation
+                        }
                         showNotice={hasMessages && isAtLatestMessage}
                         onInteractionModeChange={setInteractionMode}
                         onSendMessage={handleSendMessage}
                         onStop={stop}
                     />
                     {error ? (
-                        <p className="absolute bottom-1 left-0 right-0 z-30 text-center text-xs text-red-600">
+                        <p
+                            role="alert"
+                            className="absolute bottom-1 left-0 right-0 z-30 text-center text-xs text-red-600"
+                        >
                             {error}
                         </p>
                     ) : null}
                 </div>
             </section>
 
-            {isHistoryOpen ? (
-                <ConversationHistoryPanel
-                    conversations={conversations}
-                    activeConversationId={conversationId}
-                    isLoading={isLoadingHistory}
-                    isLoadingMore={isLoadingMoreHistory}
-                    hasMore={hasMoreHistory}
-                    disabled={isStreaming}
-                    onNewConversation={handleNewConversation}
-                    onSelectConversation={handleSelectConversation}
-                    onLoadMore={() => void loadMoreConversations()}
-                    onSetConversationPinned={(id, isPinned) =>
-                        void setConversationPinned(id, isPinned)
-                    }
-                    onRenameConversation={renameConversation}
-                    onDeleteConversation={handleDeleteConversation}
-                    onSearch={searchConversations}
-                    onClose={() => setIsHistoryOpen(false)}
-                />
+            {isMobileViewport === null ? (
+                // Chưa đọc breakpoint: ẩn panel ở mobile nhưng vẫn giữ panel desktop ngay trong lần paint đầu.
+                <div className="hidden h-full xl:block">
+                    <ConversationHistoryPanel {...historyPanelProps} />
+                </div>
+            ) : isMobileViewport ? (
+                <Drawer
+                    open={isHistoryOpen}
+                    onOpenChange={setIsHistoryOpen}
+                    swipeDirection="right"
+                >
+                    <DrawerContent className="w-[min(86vw,320px)] sm:w-80">
+                        <div className="sr-only">
+                            <DrawerTitle>Lịch sử trò chuyện BinGPT</DrawerTitle>
+                            <DrawerDescription>
+                                Tìm, mở hoặc tạo cuộc trò chuyện với trợ lý bán
+                                hàng.
+                            </DrawerDescription>
+                        </div>
+                        <ConversationHistoryPanel
+                            {...historyPanelProps}
+                            isDrawer
+                        />
+                    </DrawerContent>
+                </Drawer>
+            ) : isHistoryOpen ? (
+                <ConversationHistoryPanel {...historyPanelProps} />
             ) : (
                 // Rail thu gọn dùng cùng handler tạo phiên để URL cũng trở về route gốc nếu đang ở conversation detail.
                 <ConversationHistoryRail

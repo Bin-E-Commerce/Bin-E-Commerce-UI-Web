@@ -1,3 +1,5 @@
+// Hiển thị preview thay đổi sản phẩm và giữ lựa chọn xác nhận ở phía seller.
+// Card không gọi dịch vụ ghi trực tiếp; mọi thao tác vẫn đi qua callback xác nhận có scope backend.
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -14,8 +16,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import type { SellerCopilotActionProposalCardProps } from '@/app/(seller)/seller/ai/bingpt/types/chat/action-proposal-card.types';
 
-// Hiển thị preview theo từng SKU với khoảng đệm rõ ràng giữa khung nhóm và từng thay đổi.
-// Batch thông thường giữ lựa chọn hiện tại; preview xả hàng mặc định chưa chọn để seller chọn SKU muốn áp dụng.
+// Hiển thị preview theo từng SKU và yêu cầu seller chọn rõ khi một thao tác giá có nhiều mục tiêu.
+// Batch xả hàng cũng mặc định chưa chọn; các batch tồn kho giữ hành vi chọn sẵn để người bán xử lý nhanh.
 // Payload là snapshot trước/sau, còn quyền ghi và kiểm tra stale vẫn thuộc backend xác nhận.
 // Trạng thái thành công/lỗi/hết hạn dùng màu ngữ nghĩa nhẹ, không làm thay đổi luồng xác nhận.
 export function SellerCopilotActionProposalCard({
@@ -30,15 +32,31 @@ export function SellerCopilotActionProposalCard({
                 .map((proposal) => proposal.proposalId),
         [proposals],
     );
+    const confirmableIds = useMemo(
+        () =>
+            proposals
+                .filter(
+                    (proposal) =>
+                        proposal.status === 'pending' ||
+                        proposal.status === 'processing',
+                )
+                .map((proposal) => proposal.proposalId),
+        [proposals],
+    );
     const hasSlowMovingClearance = proposals.some(
         (proposal) =>
             proposal.payload.kind === 'SET_VARIANT_PRICE' &&
             proposal.payload.priceRecommendation?.kind ===
                 'SLOW_MOVING_CLEARANCE',
     );
-    // Chiến dịch xả hàng cần seller chủ động chọn SKU; proposal thao tác trực tiếp giữ hành vi cũ.
+    const hasMultiplePriceTargets =
+        proposals.length > 1 &&
+        proposals.some(
+            (proposal) => proposal.payload.kind === 'SET_VARIANT_PRICE',
+        );
+    // Giá nhiều SKU cần chọn tường minh để một lần xác nhận không vô tình áp dụng cả batch.
     const [selectedIds, setSelectedIds] = useState<string[]>(() =>
-        hasSlowMovingClearance ? [] : pendingIds,
+        hasSlowMovingClearance || hasMultiplePriceTargets ? [] : pendingIds,
     );
     const [editedTargets, setEditedTargets] = useState<Record<string, string>>(
         () =>
@@ -54,7 +72,7 @@ export function SellerCopilotActionProposalCard({
     const selected = proposals.filter(
         (proposal) =>
             selectedIds.includes(proposal.proposalId) &&
-            proposal.status === 'pending',
+            (proposal.status === 'pending' || proposal.status === 'processing'),
     );
     const completedCount = proposals.filter(
         (proposal) => proposal.status === 'completed',
@@ -65,7 +83,7 @@ export function SellerCopilotActionProposalCard({
     const expiredCount = proposals.filter(
         (proposal) => proposal.status === 'expired',
     ).length;
-    const hasPendingProposals = pendingIds.length > 0;
+    const hasPendingProposals = confirmableIds.length > 0;
 
     // Chỉ batch cần checkbox; với một proposal, toàn bộ card chính là đối tượng đang được xác nhận.
     const toggle = (proposalId: string, checked: boolean) => {
@@ -175,8 +193,9 @@ export function SellerCopilotActionProposalCard({
                             className={`rounded-xl border p-4 shadow-sm transition-colors sm:p-5 ${statusTone === 'success' ? 'border-zinc-200 bg-white' : statusTone === 'expired' ? 'border-amber-200 bg-amber-50/20' : statusTone === 'failed' ? 'border-rose-200 bg-rose-50/20' : 'border-zinc-200 bg-white hover:border-zinc-300'}`}
                         >
                             <div className="flex items-start gap-3">
-                                {pendingIds.length > 1 &&
-                                proposal.status === 'pending' ? (
+                                {confirmableIds.length > 1 &&
+                                (proposal.status === 'pending' ||
+                                    proposal.status === 'processing') ? (
                                     <Checkbox
                                         className="mt-0.5"
                                         checked={selectedIds.includes(
@@ -214,28 +233,78 @@ export function SellerCopilotActionProposalCard({
                                             >
                                                 {detail}
                                             </p>
-                                            {payload.kind === 'SET_VARIANT_PRICE' &&
-                                            payload.priceRecommendation?.kind ===
+                                            {proposal.status === 'processing' &&
+                                            !proposal.resultMessage ? (
+                                                <p
+                                                    role="status"
+                                                    className="mt-2 text-xs leading-5 text-zinc-600"
+                                                >
+                                                    Lượt xác nhận trước bị gián
+                                                    đoạn. Bấm “Kiểm tra lại” để
+                                                    đối soát kết quả của chính
+                                                    đề xuất này.
+                                                </p>
+                                            ) : null}
+                                            {payload.kind ===
+                                                'SET_VARIANT_PRICE' &&
+                                            payload.priceRecommendation
+                                                ?.kind ===
                                                 'SLOW_MOVING_CLEARANCE' ? (
                                                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-600">
                                                     <span className="rounded-md bg-zinc-50 px-2.5 py-1.5">
-                                                        Tồn {payload.priceRecommendation.available} · bán {payload.priceRecommendation.quantitySold} trong {payload.priceRecommendation.periodDays} ngày
+                                                        Tồn{' '}
+                                                        {
+                                                            payload
+                                                                .priceRecommendation
+                                                                .available
+                                                        }{' '}
+                                                        · bán{' '}
+                                                        {
+                                                            payload
+                                                                .priceRecommendation
+                                                                .quantitySold
+                                                        }{' '}
+                                                        trong{' '}
+                                                        {
+                                                            payload
+                                                                .priceRecommendation
+                                                                .periodDays
+                                                        }{' '}
+                                                        ngày
                                                     </span>
                                                     <span className="rounded-md bg-zinc-50 px-2.5 py-1.5">
-                                                        Giảm {payload.priceRecommendation.effectiveDiscountPercent.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%
-                                                        {payload.priceRecommendation.effectiveDiscountPercent !== payload.priceRecommendation.requestedDiscountPercent
+                                                        Giảm{' '}
+                                                        {payload.priceRecommendation.effectiveDiscountPercent.toLocaleString(
+                                                            'vi-VN',
+                                                            {
+                                                                maximumFractionDigits: 2,
+                                                            },
+                                                        )}
+                                                        %
+                                                        {payload
+                                                            .priceRecommendation
+                                                            .effectiveDiscountPercent !==
+                                                        payload
+                                                            .priceRecommendation
+                                                            .requestedDiscountPercent
                                                             ? ` (yêu cầu ${payload.priceRecommendation.requestedDiscountPercent}%)`
                                                             : ''}
                                                     </span>
-                                                    {payload.minimumPrice !== undefined ? (
+                                                    {payload.minimumPrice !==
+                                                    undefined ? (
                                                         <span className="rounded-md bg-zinc-50 px-2.5 py-1.5">
-                                                            Giá sàn {payload.minimumPrice.toLocaleString('vi-VN')}đ
+                                                            Giá sàn{' '}
+                                                            {payload.minimumPrice.toLocaleString(
+                                                                'vi-VN',
+                                                            )}
+                                                            đ
                                                         </span>
                                                     ) : null}
                                                 </div>
                                             ) : null}
                                         </div>
-                                        {proposal.status === 'pending' ? (
+                                        {proposal.status === 'pending' ||
+                                        proposal.status === 'processing' ? (
                                             <Button
                                                 type="button"
                                                 size="sm"
@@ -252,6 +321,9 @@ export function SellerCopilotActionProposalCard({
                                             >
                                                 {proposal.isConfirming ? (
                                                     <LoaderCircle className="size-4 animate-spin" />
+                                                ) : proposal.status ===
+                                                  'processing' ? (
+                                                    'Kiểm tra lại'
                                                 ) : (
                                                     'Xác nhận'
                                                 )}
@@ -375,7 +447,7 @@ export function SellerCopilotActionProposalCard({
                     );
                 })}
             </div>
-            {pendingIds.length > 1 ? (
+            {confirmableIds.length > 1 ? (
                 <div className="flex flex-col gap-3 border-t border-zinc-100 bg-zinc-50/80 px-4 py-3 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
                     <span>
                         {selected.length} đề xuất được chọn · mỗi dòng được xử

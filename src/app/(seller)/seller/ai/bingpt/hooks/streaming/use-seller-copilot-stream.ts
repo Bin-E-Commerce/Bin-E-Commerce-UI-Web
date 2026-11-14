@@ -138,7 +138,15 @@ export function useSellerCopilotStream({
             message: string,
             interactionMode: SellerCopilotInteractionMode = currentInteractionMode,
         ): Promise<void> => {
-            if (!accessToken || !message.trim() || isStreaming) return;
+            // State React có thể chưa render sau click đầu; ref assistant chặn lượt submit thứ hai trong khoảng đó.
+            if (
+                !accessToken ||
+                !message.trim() ||
+                isStreaming ||
+                activeAssistantIdRef.current
+            ) {
+                return;
+            }
 
             streamAbortRef.current?.abort();
             const controller = new AbortController();
@@ -450,9 +458,9 @@ export function useSellerCopilotStream({
         ],
     );
 
-    // Chỉ gửi proposalId sau click chủ động; kiểm tra trạng thái/hạn dùng ở UI để tránh request vô ích, backend vẫn xác minh lại.
-    // Ref khóa mọi proposal trong thời gian chờ để double-click từ nhiều card không tạo hai request đồng thời.
-    // Response thành công cập nhật đúng assistant message; lỗi hiện chuyển card sang failed, nhưng timeout có thể chưa cho biết write đã commit hay chưa.
+    // Chỉ gửi proposalId sau click chủ động; proposal processing vẫn có thể được đối soát lại sau timeout.
+    // Ref khóa mọi proposal trong thời gian chờ để double-click từ nhiều card không tạo request lặp ngoài ý muốn.
+    // Lỗi mạng giữ card ở processing để seller thử lại cùng proposalId thay vì tạo lệnh mới khi kết quả còn mơ hồ.
     const confirmAction = useCallback(
         async (
             assistantMessageId: string,
@@ -461,11 +469,16 @@ export function useSellerCopilotStream({
             if (!accessToken) return;
             if (
                 !proposal ||
-                proposal.status !== 'pending' ||
-                Date.parse(proposal.expiresAt) <= Date.now() ||
+                (proposal.status !== 'pending' &&
+                    proposal.status !== 'processing') ||
+                (proposal.status === 'pending' &&
+                    Date.parse(proposal.expiresAt) <= Date.now()) ||
                 confirmingProposalIdRef.current
             ) {
-                if (proposal?.status === 'pending') {
+                if (
+                    proposal?.status === 'pending' &&
+                    Date.parse(proposal.expiresAt) <= Date.now()
+                ) {
                     setMessages((current) =>
                         current.map((item) =>
                             item.id === assistantMessageId
@@ -516,7 +529,7 @@ export function useSellerCopilotStream({
                             : item,
                     ),
                 );
-            } catch (error) {
+            } catch {
                 setMessages((current) =>
                     current.map((item) =>
                         item.id === assistantMessageId
@@ -524,11 +537,10 @@ export function useSellerCopilotStream({
                                   ...item,
                                   actionProposal: {
                                       ...proposal,
-                                      status: 'failed',
+                                      status: 'processing',
+                                      isConfirming: false,
                                       resultMessage:
-                                          error instanceof Error
-                                              ? error.message
-                                              : 'Không thể cập nhật tồn kho.',
+                                          'Chưa nhận được kết quả từ máy chủ. Đề xuất vẫn được giữ; hãy bấm kiểm tra lại trước khi tạo yêu cầu mới.',
                                   },
                               }
                             : item,
@@ -555,8 +567,10 @@ export function useSellerCopilotStream({
                 return;
             const eligible = proposals.filter(
                 (proposal) =>
-                    proposal.status === 'pending' &&
-                    Date.parse(proposal.expiresAt) > Date.now(),
+                    (proposal.status === 'pending' ||
+                        proposal.status === 'processing') &&
+                    (proposal.status === 'processing' ||
+                        Date.parse(proposal.expiresAt) > Date.now()),
             );
             if (!eligible.length) return;
             confirmingProposalIdRef.current = eligible[0]?.proposalId ?? null;
@@ -611,7 +625,7 @@ export function useSellerCopilotStream({
                             : item,
                     ),
                 );
-            } catch (error) {
+            } catch {
                 setMessages((current) =>
                     current.map((item) =>
                         item.id === assistantMessageId
@@ -626,12 +640,10 @@ export function useSellerCopilotStream({
                                           )
                                               ? {
                                                     ...proposal,
-                                                    status: 'failed',
+                                                    status: 'processing',
                                                     isConfirming: false,
                                                     resultMessage:
-                                                        error instanceof Error
-                                                            ? error.message
-                                                            : 'Không thể xác nhận đề xuất.',
+                                                        'Chưa nhận được kết quả từ máy chủ. Đề xuất vẫn được giữ; hãy thử xác nhận lại để kiểm tra trạng thái.',
                                                 }
                                               : proposal,
                                   ),

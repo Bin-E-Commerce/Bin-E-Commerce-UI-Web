@@ -1,4 +1,4 @@
-// Card preview cho tác vụ tồn kho; hiển thị rõ trạng thái và chỉ gọi confirm sau thao tác chủ động của seller.
+// Card preview cho tác vụ tồn kho; cho phép xác minh lại proposal processing mà không tạo action mới.
 'use client';
 
 import {
@@ -11,14 +11,16 @@ import {
 import { Button } from '@/components/ui/button';
 import type { SellerCopilotInventoryActionCardProps } from '../../../../types/chat/answer-components.types';
 
-// Tách preview khỏi câu trả lời để seller nhìn thấy giá trị trước/sau và không vô tình ghi tồn trong lúc chat.
+// Tách preview khỏi câu trả lời; pending cần xác nhận, còn processing cho seller đối soát lại cùng một proposal.
 export function SellerCopilotInventoryActionCard({
     proposal,
     onConfirm,
 }: SellerCopilotInventoryActionCardProps) {
-    const isPending = proposal.status === 'pending';
+    const isConfirmable =
+        proposal.status === 'pending' || proposal.status === 'processing';
     const statusLabel = {
         pending: 'Chờ xác nhận',
+        processing: 'Cần xác minh kết quả',
         completed: 'Đã cập nhật',
         failed: 'Không cập nhật được',
         expired: 'Đề xuất đã hết hạn',
@@ -66,7 +68,13 @@ export function SellerCopilotInventoryActionCard({
                     )}
                     {proposal.resultMessage}
                 </p>
-            ) : isPending ? (
+            ) : proposal.status === 'processing' ? (
+                <p className="mt-3 flex items-center gap-1.5 text-xs text-zinc-600">
+                    <Clock3 className="size-3.5" />
+                    Lượt xác nhận trước bị gián đoạn. Bấm “Kiểm tra lại” để đối
+                    soát kết quả.
+                </p>
+            ) : isConfirmable ? (
                 <p className="mt-3 flex items-center gap-1.5 text-xs text-zinc-500">
                     <Clock3 className="size-3.5" />
                     Đề xuất hết hạn lúc{' '}
@@ -77,7 +85,7 @@ export function SellerCopilotInventoryActionCard({
                     . Chỉ cập nhật khi bạn xác nhận.
                 </p>
             ) : null}
-            {isPending ? (
+            {isConfirmable ? (
                 <div className="mt-3 flex justify-end">
                     <Button
                         type="button"
@@ -90,6 +98,8 @@ export function SellerCopilotInventoryActionCard({
                                 <LoaderCircle className="size-4 animate-spin" />
                                 Đang cập nhật...
                             </>
+                        ) : proposal.status === 'processing' ? (
+                            'Kiểm tra lại'
                         ) : (
                             'Xác nhận cập nhật tồn'
                         )}

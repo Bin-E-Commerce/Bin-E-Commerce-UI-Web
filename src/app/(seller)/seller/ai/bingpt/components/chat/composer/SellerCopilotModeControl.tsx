@@ -1,7 +1,13 @@
 // Bộ chọn mode của BinGPT; icon và tooltip phản ánh mode hiện tại, menu dùng để đổi lựa chọn.
 'use client';
 
-import { BookOpen, Bot, MessageCircle, Store } from 'lucide-react';
+import {
+    BookOpen,
+    Bot,
+    LoaderCircle,
+    MessageCircle,
+    Store,
+} from 'lucide-react';
 import {
     Select,
     SelectContent,
@@ -17,17 +23,18 @@ import {
 } from '@/components/ui/tooltip';
 import type { SellerCopilotModeControlProps } from '../../../types/composer/composer.types';
 
-// Giữ nút mode hình tròn, đặt Dữ liệu shop đầu menu và dùng con trỏ pointer cho mọi lựa chọn.
-// Thứ tự/cursor chỉ ảnh hưởng trình bày; value gửi lên hook/backend của từng mode không đổi.
+// Giữ nút mode hình tròn, báo trạng thái chờ bằng spinner và đặt Dữ liệu shop đầu menu.
+// Trạng thái đổi mode khóa menu đến khi server xác nhận; value gửi backend không đổi.
 export function SellerCopilotModeControl({
     mode,
     disabled = false,
+    isChanging = false,
     onModeChange,
 }: SellerCopilotModeControlProps) {
     return (
         <TooltipProvider delayDuration={220}>
             <Select
-                disabled={disabled}
+                disabled={disabled || isChanging}
                 value={mode}
                 onValueChange={(value) => {
                     if (value) onModeChange(value as typeof mode);
@@ -38,22 +45,28 @@ export function SellerCopilotModeControl({
                         <SelectTrigger
                             size="icon"
                             showChevron={false}
-                            aria-label="Chuyển chế độ trả lời của BinGPT"
-                            className="mb-1 cursor-pointer border-zinc-300 bg-zinc-50 text-zinc-700 shadow-sm hover:border-zinc-400 hover:bg-zinc-100"
+                            aria-label={
+                                isChanging
+                                    ? 'Đang chuyển chế độ trả lời của BinGPT'
+                                    : 'Chuyển chế độ trả lời của BinGPT'
+                            }
+                            className="mb-1 cursor-pointer border-zinc-300 bg-zinc-50 text-zinc-700 shadow-sm hover:border-zinc-400 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-70"
                         >
                             <SelectValue className="min-w-0 flex-none items-center justify-center gap-0">
-                                {mode === 'chat' ? (
+                                {isChanging ? (
+                                    <LoaderCircle
+                                        className="size-4 animate-spin"
+                                        aria-hidden="true"
+                                    />
+                                ) : mode === 'chat' ? (
                                     <MessageCircle className="size-4" />
-                                ) : null}
-                                {mode === 'shop_data' ? (
+                                ) : mode === 'shop_data' ? (
                                     <Store className="size-4" />
-                                ) : null}
-                                {mode === 'knowledge' ? (
+                                ) : mode === 'knowledge' ? (
                                     <BookOpen className="size-4" />
-                                ) : null}
-                                {mode === 'agent' ? (
+                                ) : (
                                     <Bot className="size-4 text-rose-600" />
-                                ) : null}
+                                )}
                             </SelectValue>
                         </SelectTrigger>
                     </TooltipTrigger>
@@ -62,13 +75,15 @@ export function SellerCopilotModeControl({
                         className="border border-zinc-200 bg-white text-zinc-950 shadow-xl"
                         arrowClassName="fill-white stroke-zinc-200 stroke-1"
                     >
-                        {mode === 'chat'
-                            ? 'Trò chuyện tự nhiên'
-                            : mode === 'shop_data'
-                              ? 'Hồ sơ và dữ liệu live của shop'
-                              : mode === 'knowledge'
-                                ? 'Tra cứu chính sách và hướng dẫn'
-                                : 'AI Agent · Tra cứu shop và đề xuất thao tác'}
+                        {isChanging
+                            ? 'Đang chuyển chế độ...'
+                            : mode === 'chat'
+                              ? 'Trò chuyện tự nhiên'
+                              : mode === 'shop_data'
+                                ? 'Hồ sơ và dữ liệu live của shop'
+                                : mode === 'knowledge'
+                                  ? 'Tra cứu chính sách và hướng dẫn'
+                                  : 'AI Agent · Tra cứu shop và đề xuất thao tác'}
                     </TooltipContent>
                 </Tooltip>
                 <SelectContent

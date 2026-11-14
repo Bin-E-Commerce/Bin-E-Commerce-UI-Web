@@ -36,7 +36,7 @@ export interface SellerCopilotChatMessage {
         currentAvailable: number;
         nextAvailable: number;
         expiresAt: string;
-        status: 'pending' | 'completed' | 'failed' | 'expired';
+        status: 'pending' | 'processing' | 'completed' | 'failed' | 'expired';
         resultMessage?: string;
         isConfirming?: boolean;
     };

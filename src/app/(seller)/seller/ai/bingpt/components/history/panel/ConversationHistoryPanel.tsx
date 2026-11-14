@@ -3,6 +3,7 @@
 'use client';
 
 import {
+    memo,
     type UIEvent,
     useCallback,
     useEffect,
@@ -25,8 +26,9 @@ import { ConversationSearchDialog } from '../search/ConversationSearchDialog';
 import { ConversationHistoryHeader } from './ConversationHistoryHeader';
 import { ConversationHistoryList } from './ConversationHistoryList';
 
-// Điều phối trạng thái của history nhưng không trực tiếp dựng từng row, giúp panel dễ review và thay đổi độc lập.
-export function ConversationHistoryPanel({
+// Điều phối trạng thái history; memo giữ sidebar không render lại theo từng token khi props lịch sử không đổi.
+export const ConversationHistoryPanel = memo(function ConversationHistoryPanel({
+    isDrawer = false,
     conversations,
     activeConversationId,
     isLoading,
@@ -242,7 +244,11 @@ export function ConversationHistoryPanel({
 
     return (
         <TooltipProvider delayDuration={180}>
-            <aside className="flex h-full min-h-0 min-w-0 flex-col self-stretch overflow-hidden border-l border-zinc-200 bg-white pl-3 pr-3 pt-6 text-zinc-950 xl:z-20 xl:w-[270px]">
+            <aside
+                className={`flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-l border-zinc-200 bg-white pl-3 pr-3 pt-6 text-zinc-950 ${
+                    isDrawer ? 'w-full' : 'w-[270px]'
+                }`}
+            >
                 <ConversationHistoryHeader
                     isSearchOpen={isSearchOpen}
                     searchLabel={searchLabel}
@@ -310,4 +316,4 @@ export function ConversationHistoryPanel({
             />
         </TooltipProvider>
     );
-}
+});

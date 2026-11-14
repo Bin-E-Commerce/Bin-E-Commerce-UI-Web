@@ -177,7 +177,7 @@ export async function startSellerCopilotModeSession(
     );
 }
 
-// Xác nhận đề xuất đúng một lần; proposalId là tham chiếu opaque, backend tự ràng buộc user/shop và kiểm tra tồn mới nhất.
+// Xác nhận proposal và giữ trạng thái processing nếu kết quả downstream chưa xác minh được để seller có thể thử đối soát lại.
 export function confirmSellerCopilotInventoryAction(
     proposalId: string,
     input: AuthenticatedRequestInput,
@@ -226,12 +226,13 @@ export function confirmSellerCopilotInventoryAction(
             ) as SellerCopilotStreamEvent;
             onEvent?.(event);
             if (event.type !== 'action_result') return;
-            if (event.status !== 'completed') throw new Error(event.message);
             result = {
                 proposalId: event.proposalId,
                 status: event.status,
                 message: event.message,
-                availableQuantity: event.availableQuantity ?? 0,
+                ...(event.availableQuantity !== undefined
+                    ? { availableQuantity: event.availableQuantity }
+                    : {}),
             };
         };
 
@@ -266,7 +267,7 @@ export function confirmSellerCopilotActionBatch(
 ): Promise<
     Array<{
         proposalId: string;
-        status: 'completed' | 'failed';
+        status: 'processing' | 'completed' | 'failed';
         message: string;
         availableQuantity?: number;
     }>

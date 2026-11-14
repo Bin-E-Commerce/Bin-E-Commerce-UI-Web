@@ -47,7 +47,7 @@ export interface SellerCopilotActionProposal {
     batchId: string;
     payload: SellerCopilotActionPayload;
     expiresAt: string;
-    status: 'pending' | 'completed' | 'failed' | 'expired';
+    status: 'pending' | 'processing' | 'completed' | 'failed' | 'expired';
     resultMessage?: string;
     isConfirming?: boolean;
     isUpdating?: boolean;
@@ -115,7 +115,7 @@ export interface SellerCopilotMessage {
             batchId?: string | null;
             payload: SellerCopilotActionPayload;
             expiresAt: string;
-            status?: 'pending' | 'completed' | 'failed';
+            status?: 'pending' | 'processing' | 'completed' | 'failed';
             result?: Record<string, unknown>;
         };
         actionProposals?: Array<{
@@ -123,7 +123,7 @@ export interface SellerCopilotMessage {
             batchId: string;
             payload: SellerCopilotActionPayload;
             expiresAt: string;
-            status?: 'pending' | 'completed' | 'failed';
+            status?: 'pending' | 'processing' | 'completed' | 'failed';
             result?: Record<string, unknown>;
         }>;
     } | null;
@@ -132,9 +132,9 @@ export interface SellerCopilotMessage {
 
 export interface SellerCopilotInventoryActionResult {
     proposalId: string;
-    status: 'completed';
+    status: 'processing' | 'completed' | 'failed';
     message: string;
-    availableQuantity: number;
+    availableQuantity?: number;
 }
 
 export interface SellerCopilotConversation {
@@ -232,7 +232,7 @@ export type SellerCopilotStreamEvent =
     | {
           type: 'action_result';
           proposalId: string;
-          status: 'completed' | 'failed';
+          status: 'processing' | 'completed' | 'failed';
           message: string;
           availableQuantity?: number;
       }

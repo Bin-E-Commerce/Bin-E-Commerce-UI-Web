@@ -23,9 +23,11 @@ const MAX_COPILOT_INPUT_LENGTH = 2000;
 
 // Giữ state nhập liệu tại một boundary và nhận mode có kiểm soát để việc chọn nguồn không bị reset sau submit.
 export function SellerCopilotComposer({
+    rootRef,
     interactionMode,
     isStreaming,
     isModeChanging,
+    isConversationLoading,
     showNotice,
     onInteractionModeChange,
     onSendMessage,
@@ -35,6 +37,9 @@ export function SellerCopilotComposer({
     const [activeTooltip, setActiveTooltip] = useState<ComposerTooltip>(null);
     const [showAgentSuggestions, setShowAgentSuggestions] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const submitLockRef = useRef(false);
+    const isComposerLocked =
+        isStreaming || isModeChanging || isConversationLoading;
 
     // Chọn agent tách chế độ hành động khỏi nội dung tự nhiên, để model không tự suy diễn quyền thực thi.
     const selectAgent = () => {
@@ -45,9 +50,7 @@ export function SellerCopilotComposer({
     };
 
     // Chèn lệnh tồn kho hoặc xả hàng vào input rồi chuyển mode; backend vẫn xác thực tác vụ và quyền ghi.
-    const selectAgentCommand = (
-        command: '@tồn-kho' | '@xả-hàng',
-    ) => {
+    const selectAgentCommand = (command: '@tồn-kho' | '@xả-hàng') => {
         setInput((current) => current.replace(/@[^ \n]*$/u, `${command} `));
         void onInteractionModeChange('agent');
         setShowAgentSuggestions(false);
@@ -62,25 +65,35 @@ export function SellerCopilotComposer({
         setActiveTooltip(open ? tooltip : null);
     };
 
-    // Chuẩn hóa input, tự chuyển mode cho command allowlist và chỉ gửi khi đổi mode thành công.
+    // Chuẩn hóa input và chỉ gửi khi mode cần thiết đã đổi thành công.
+    // Ref khóa event đồng bộ để Enter/click lặp trong lúc API đổi mode không tạo hai request.
     const submit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (isModeChanging) return;
-        const typedAgentMention = /^@bingpt\b\s*/iu.test(input.trim());
-        const typedAgentCommand = /^@(tồn-kho|ton-kho|giá|xả-hàng|xa-hang)\b/iu.test(
-            input.trim(),
-        );
-        const value = input.trim().replace(/^@bingpt\b\s*/iu, '');
-        if (!value || value.length > MAX_COPILOT_INPUT_LENGTH) return;
-        const selectedMode =
-            typedAgentMention || typedAgentCommand ? 'agent' : interactionMode;
-        if (selectedMode !== interactionMode) {
-            const modeChanged = await onInteractionModeChange(selectedMode);
-            if (!modeChanged) return;
+        if (isComposerLocked || submitLockRef.current) return;
+
+        submitLockRef.current = true;
+        try {
+            const typedAgentMention = /^@bingpt\b\s*/iu.test(input.trim());
+            const typedAgentCommand =
+                /^@(tồn-kho|ton-kho|giá|xả-hàng|xa-hang)\b/iu.test(
+                    input.trim(),
+                );
+            const value = input.trim().replace(/^@bingpt\b\s*/iu, '');
+            if (!value || value.length > MAX_COPILOT_INPUT_LENGTH) return;
+            const selectedMode =
+                typedAgentMention || typedAgentCommand
+                    ? 'agent'
+                    : interactionMode;
+            if (selectedMode !== interactionMode) {
+                const modeChanged = await onInteractionModeChange(selectedMode);
+                if (!modeChanged) return;
+            }
+            setInput('');
+            onSendMessage(value, selectedMode);
+            setShowAgentSuggestions(false);
+        } finally {
+            submitLockRef.current = false;
         }
-        setInput('');
-        onSendMessage(value, selectedMode);
-        setShowAgentSuggestions(false);
     };
 
     // Mở gợi ý khi token cuối bắt đầu bằng @; token được thay bằng lựa chọn agent thay vì gửi nguyên cú pháp nội bộ.
@@ -124,7 +137,10 @@ export function SellerCopilotComposer({
     };
 
     return (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-white/90 via-white/55 to-transparent px-4 pb-6 pt-12 sm:px-5">
+        <div
+            ref={rootRef}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-white/90 via-white/55 to-transparent px-4 pb-6 pt-12 sm:px-5"
+        >
             {showNotice ? (
                 <p className="mx-auto mb-2 max-w-3xl text-center text-[11px] leading-4 text-zinc-500">
                     BinGPT có thể mắc lỗi. Hãy kiểm tra các thông tin quan
@@ -179,25 +195,33 @@ export function SellerCopilotComposer({
                     ) : null}
                     <Textarea
                         ref={textareaRef}
+                        aria-label="Nhập tin nhắn cho BinGPT"
                         value={input}
                         onChange={(event) =>
                             handleInputChange(event.target.value)
                         }
                         onKeyDown={handleInputKeyDown}
                         spellCheck={false}
-                        disabled={isStreaming}
-                        placeholder="Hỏi BinGPT"
+                        disabled={isComposerLocked}
+                        placeholder={
+                            isConversationLoading
+                                ? 'Đang mở cuộc trò chuyện...'
+                                : 'Hỏi BinGPT'
+                        }
                         rows={1}
                         className="min-h-10 max-h-40 min-w-0 flex-1 resize-none overflow-y-auto overscroll-contain rounded-none border-0 px-2 py-2.5 text-sm leading-6 shadow-none disabled:cursor-default disabled:bg-white disabled:opacity-100 [scrollbar-color:#a1a1aa_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-button]:hidden [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-300 [&::-webkit-scrollbar-thumb:hover]:bg-zinc-400 focus-visible:border-0 focus-visible:ring-0"
                     />
                     {/* Đặt bộ chuyển mode cạnh nút gửi để mode đang dùng có thể đổi ngay tại vùng nhập. */}
                     <SellerCopilotModeControl
                         mode={interactionMode}
-                        disabled={isStreaming || isModeChanging}
+                        disabled={isStreaming || isConversationLoading}
+                        isChanging={isModeChanging}
                         onModeChange={onInteractionModeChange}
                     />
                     <SellerCopilotSubmitControl
                         isStreaming={isStreaming}
+                        isModeChanging={isModeChanging}
+                        isConversationLoading={isConversationLoading}
                         input={input}
                         activeTooltip={activeTooltip}
                         onTooltipOpenChange={handleTooltipOpenChange}
@@ -216,6 +240,7 @@ export function SellerCopilotComposer({
                                 size="icon-xs"
                                 aria-label="Tắt chế độ tác nhân"
                                 className="-mr-1 size-5 rounded-full text-rose-700 hover:bg-rose-100"
+                                disabled={isComposerLocked}
                                 onClick={() => onInteractionModeChange('chat')}
                             >
                                 <X className="size-3" />

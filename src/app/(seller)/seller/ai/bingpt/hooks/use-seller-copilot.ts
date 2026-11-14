@@ -78,6 +78,7 @@ export function useSellerCopilot() {
             if (isStreaming || isModeChanging) return false;
 
             const previousMode = interactionMode;
+            const selectionVersion = conversationSelectionVersionRef.current;
             // Conversation chưa tồn tại thì mode chỉ là state cục bộ; backend sẽ cấp session khi gửi câu đầu tiên.
             if (!conversationId) {
                 setInteractionMode(nextMode);
@@ -101,6 +102,12 @@ export function useSellerCopilot() {
                     nextMode,
                     { accessToken },
                 );
+                // Bỏ response mode cũ nếu người dùng đã mở conversation khác trong khi request còn chờ.
+                if (
+                    selectionVersion !== conversationSelectionVersionRef.current
+                ) {
+                    return false;
+                }
                 modeSessionIdRef.current = session.modeSessionId;
                 setMessages((current) => [
                     ...current,
@@ -118,6 +125,12 @@ export function useSellerCopilot() {
                 ]);
                 return true;
             } catch (caught) {
+                // Không rollback mode hoặc đẩy lỗi của conversation cũ lên UI đang hiển thị chat mới.
+                if (
+                    selectionVersion !== conversationSelectionVersionRef.current
+                ) {
+                    return false;
+                }
                 setInteractionMode(previousMode);
                 setError(
                     caught instanceof Error
