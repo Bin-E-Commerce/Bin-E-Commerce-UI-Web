@@ -1,3 +1,4 @@
+// Điều hướng phụ của storefront; chỉ quản lý các liên kết, không sở hữu layout hay trạng thái header.
 'use client';
 
 import Link from 'next/link';
@@ -9,8 +10,8 @@ import { NAV_LINKS } from '../../constants/nav-links.constant';
 export function NavLinks() {
     const pathname = usePathname();
 
-    // Trang tìm kiếm ưu tiên truy vấn và kết quả; các mục điều hướng vẫn có trong footer.
-    if (pathname === '/products') return null;
+    // Trang chủ và trang tìm kiếm ưu tiên nội dung chính; các lối điều hướng vẫn có ở các trang khác.
+    if (pathname === '/' || pathname === '/products') return null;
 
     return (
         <nav className="hidden md:flex items-center gap-1">
