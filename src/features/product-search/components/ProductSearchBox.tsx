@@ -34,6 +34,7 @@ import type {
 import {
     clearRecentSearches,
     readRecentSearches,
+    removeRecentSearch,
     rememberRecentSearch,
 } from '../utils/recent-searches';
 import { buildSearchScopeHref } from '../utils/search-url';
@@ -47,18 +48,8 @@ function trackSearchQuery(query: string): void {
     }).catch(() => undefined);
 }
 
-// Hiển thị lịch sử, shop và sản phẩm theo từng loại để người dùng nhận diện kết quả ngay trong gợi ý.
+// Hiển thị gợi ý shop và sản phẩm với thông tin phụ để người dùng nhận diện kết quả ngay trong popup.
 function SearchOptionRow({ option }: SearchOptionRowProps) {
-    if (option.kind === 'recent') {
-        return (
-            <>
-                <Clock3 className="size-4 shrink-0 text-neutral-400" />
-                <span className="min-w-0 flex-1 truncate">{option.query}</span>
-                <span className="text-xs text-neutral-400">Tìm gần đây</span>
-            </>
-        );
-    }
-
     if (option.kind === 'shop') {
         const shop = option.shop.shop;
         const location = [shop.location.district, shop.location.province]
@@ -129,7 +120,9 @@ function SearchOptionRow({ option }: SearchOptionRowProps) {
     );
 }
 
-// Debounce query API, ghi lịch sử cục bộ và điều hướng riêng cho chọn sản phẩm hoặc xem toàn bộ kết quả.
+// Kết hợp query, gợi ý và lịch sử cục bộ để tìm sản phẩm/shop.
+// Header đổi chiều rộng theo focus; popup bám theo anchor để hai vùng bung ra đồng bộ.
+// Query được debounce trước API; xóa một mục chỉ cập nhật lịch sử, không điều hướng hay gửi tracking.
 export function ProductSearchBox({
     variant,
     initialQuery = '',
@@ -171,19 +164,10 @@ export function ProductSearchBox({
         setRecentSearches(readRecentSearches());
     }, []);
 
-    // Query ngắn hiển thị lịch sử; query đủ dài chỉ dùng gợi ý khớp input hiện tại để không chọn nhầm kết quả cũ.
+    // Giữ lịch sử ngoài listbox; chỉ tạo option khi gợi ý khớp query đã debounce để tránh chọn nhầm kết quả cũ.
     const options = useMemo<ProductSearchOption[]>(() => {
         const searchTerm = normalizedQuery;
-        if (searchTerm.length < 2) {
-            return searchTerm
-                ? []
-                : recentSearches.map((recentQuery, index) => ({
-                      id: `recent-${index}-${recentQuery}`,
-                      kind: 'recent',
-                      label: recentQuery,
-                      query: recentQuery,
-                  }));
-        }
+        if (searchTerm.length < 2) return [];
 
         if (searchTerm !== debouncedQuery) return [];
 
@@ -206,7 +190,6 @@ export function ProductSearchBox({
     }, [
         debouncedQuery,
         normalizedQuery,
-        recentSearches,
         suggestionsQuery.data,
         shopSuggestionsQuery.data,
     ]);
@@ -228,15 +211,9 @@ export function ProductSearchBox({
         setIsOpen(false);
     }
 
-    // Chọn lịch sử chạy lại query; chọn sản phẩm lưu/tracking query hiện tại, tracking click và mở trang chi tiết.
+    // Chọn shop mở gian hàng; chọn sản phẩm ghi nhận tương tác rồi mở trang chi tiết.
     function handleOptionSelect(option: ProductSearchOption | null): void {
         if (!option) return;
-
-        if (option.kind === 'recent') {
-            setQuery(option.query);
-            submitSearch(option.query);
-            return;
-        }
 
         // Chọn shop mở storefront trực tiếp; không gửi sự kiện PRODUCT_CLICKED cho sai loại đối tượng.
         if (option.kind === 'shop') {
@@ -277,18 +254,24 @@ export function ProductSearchBox({
         setRecentSearches([]);
     }
 
+    // Xóa đúng query đã chọn và cập nhật popup từ danh sách trả về của storage helper.
+    function handleRemoveRecentSearch(queryToRemove: string): void {
+        setRecentSearches(removeRecentSearch(queryToRemove));
+    }
+
     const isHeader = variant === 'header';
-    // Popup header dùng cùng breakpoint width với ô đã mở rộng để hai mép luôn thẳng hàng.
-    const suggestionWidth = isHeader
+    const showRecentSearches = !normalizedQuery && recentSearches.length > 0;
+    // Chỉ đổi target theo focus; transition giới hạn ở chiều rộng để icon header không bị animate theo.
+    const headerWidthClasses = isOpen
         ? 'w-[min(36rem,calc(100vw-15rem))] lg:w-[48rem]'
-        : 'w-(--anchor-width)';
+        : 'w-52 lg:w-80';
 
     return (
         <form
             onSubmit={handleSubmit}
             className={
                 isHeader
-                    ? `relative flex items-center transition-[width] duration-200 ${isOpen ? 'w-[min(36rem,calc(100vw-15rem))] lg:w-[48rem]' : 'w-52 lg:w-80'}`
+                    ? `relative flex items-center transition-[width] duration-300 ease-in-out motion-reduce:transition-none ${headerWidthClasses}`
                     : 'relative flex w-full items-center gap-2'
             }
         >
@@ -360,9 +343,13 @@ export function ProductSearchBox({
                             aria-label="Tìm trong sản phẩm hoặc cửa hàng"
                             className="data-[size=default]:h-11 h-11 w-32 shrink-0 rounded-xl border-neutral-200 bg-white px-3 text-sm"
                         >
-                            <SelectValue />
+                            <SelectValue>
+                                {searchScope === 'products'
+                                    ? 'Sản phẩm'
+                                    : 'Cửa hàng'}
+                            </SelectValue>
                         </SelectTrigger>
-                        <SelectContent align="end">
+                        <SelectContent align="start" className="min-w-0">
                             <SelectItem value="products">Sản phẩm</SelectItem>
                             <SelectItem value="shops">Cửa hàng</SelectItem>
                         </SelectContent>
@@ -378,7 +365,7 @@ export function ProductSearchBox({
                     </Button>
                 ) : null}
                 <ComboboxContent
-                    className={`${suggestionWidth} min-w-0 max-w-[calc(100vw-1rem)] rounded-2xl border-neutral-200 bg-white p-2 shadow-[0_18px_55px_-22px_rgba(0,0,0,0.22)]`}
+                    className="w-(--anchor-width) min-w-0 max-w-[calc(100vw-1rem)] rounded-2xl border-neutral-200 bg-white p-2 shadow-[0_18px_55px_-22px_rgba(0,0,0,0.22)] duration-200 ease-in-out"
                     sideOffset={8}
                 >
                     {(suggestionsQuery.isFetching ||
@@ -396,23 +383,70 @@ export function ProductSearchBox({
                             đủ bên dưới.
                         </p>
                     ) : null}
-                    <ComboboxEmpty>
-                        {normalizedQuery.length >= 2 &&
-                        normalizedQuery !== debouncedQuery
-                            ? 'Đang chuẩn bị gợi ý…'
-                            : suggestionsQuery.isFetching ||
-                                shopSuggestionsQuery.isFetching
-                              ? 'Đang tìm gợi ý…'
-                              : suggestionsQuery.isError &&
-                                  shopSuggestionsQuery.isError
-                                ? 'Hãy nhấn Enter để xem trang kết quả.'
-                                : suggestionsQuery.isError ||
-                                    shopSuggestionsQuery.isError
-                                  ? 'Một số gợi ý chưa tải được. Hãy mở trang kết quả để tiếp tục tìm.'
-                                  : normalizedQuery.length >= 2
-                                    ? 'Chưa thấy sản phẩm hoặc shop phù hợp. Hãy thử từ khóa khác.'
-                                    : 'Nhập ít nhất 2 ký tự để tìm sản phẩm hoặc shop.'}
-                    </ComboboxEmpty>
+                    {showRecentSearches ? (
+                        <div
+                            role="group"
+                            aria-label="Tìm gần đây"
+                            className="space-y-1 p-1"
+                        >
+                            {recentSearches.map((recentQuery, index) => (
+                                <div
+                                    key={`recent-${index}-${recentQuery}`}
+                                    className="flex items-center gap-1"
+                                >
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-12 min-w-0 flex-1 justify-start rounded-xl px-3 text-left font-normal text-neutral-900 hover:bg-neutral-100"
+                                        onClick={() =>
+                                            submitSearch(recentQuery)
+                                        }
+                                    >
+                                        <Clock3 className="size-4 shrink-0 text-neutral-400" />
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {recentQuery}
+                                        </span>
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={`Xóa lịch sử tìm kiếm: ${recentQuery}`}
+                                        className="text-neutral-400 hover:bg-neutral-100 hover:text-red-600"
+                                        onPointerDown={(event) =>
+                                            event.preventDefault()
+                                        }
+                                        onClick={() =>
+                                            handleRemoveRecentSearch(
+                                                recentQuery,
+                                            )
+                                        }
+                                    >
+                                        <X className="size-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : null}
+                    {!showRecentSearches ? (
+                        <ComboboxEmpty>
+                            {normalizedQuery.length >= 2 &&
+                            normalizedQuery !== debouncedQuery
+                                ? 'Đang chuẩn bị gợi ý…'
+                                : suggestionsQuery.isFetching ||
+                                    shopSuggestionsQuery.isFetching
+                                  ? 'Đang tìm gợi ý…'
+                                  : suggestionsQuery.isError &&
+                                      shopSuggestionsQuery.isError
+                                    ? 'Hãy nhấn Enter để xem trang kết quả.'
+                                    : suggestionsQuery.isError ||
+                                        shopSuggestionsQuery.isError
+                                      ? 'Một số gợi ý chưa tải được. Hãy mở trang kết quả để tiếp tục tìm.'
+                                      : normalizedQuery.length >= 2
+                                        ? 'Chưa thấy sản phẩm hoặc shop phù hợp. Hãy thử từ khóa khác.'
+                                        : 'Nhập ít nhất 2 ký tự để tìm sản phẩm hoặc shop.'}
+                        </ComboboxEmpty>
+                    ) : null}
                     <ComboboxList className="max-h-80">
                         {(option: ProductSearchOption, index: number) => (
                             <ComboboxItem

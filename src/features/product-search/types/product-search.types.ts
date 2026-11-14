@@ -19,13 +19,6 @@ export interface ProductSearchFilters {
     inStock: boolean;
 }
 
-export interface RecentSearchOption {
-    id: string;
-    kind: 'recent';
-    label: string;
-    query: string;
-}
-
 export interface ProductSuggestionOption {
     id: string;
     kind: 'product';
@@ -41,7 +34,7 @@ export interface ShopSuggestionOption {
 }
 
 export type ProductSearchOption =
-    RecentSearchOption | ProductSuggestionOption | ShopSuggestionOption;
+    ProductSuggestionOption | ShopSuggestionOption;
 
 export interface ProductSearchBoxProps {
     variant: 'header' | 'page';

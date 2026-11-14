@@ -41,12 +41,40 @@ export function rememberRecentSearch(query: string): string[] {
     ].slice(0, RECENT_SEARCHES_LIMIT);
 
     try {
-        window.localStorage.setItem(
-            RECENT_SEARCHES_KEY,
-            JSON.stringify(next),
-        );
+        window.localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
     } catch {
         // Lịch sử chỉ là tiện ích UX; lỗi quota/privacy không ngăn việc tìm kiếm.
+    }
+
+    return next;
+}
+
+// Xóa mọi biến thể hoa/thường của một query và trả danh sách mới để UI cập nhật ngay.
+export function removeRecentSearch(query: string): string[] {
+    const normalizedQuery = query.trim();
+    // Query rỗng không đại diện cho mục hợp lệ; SSR cũng không được truy cập localStorage.
+    if (!normalizedQuery || typeof window === 'undefined') {
+        return readRecentSearches();
+    }
+
+    // Lọc không phân biệt hoa/thường để không giữ lại bản trùng cũ trong storage.
+    const next = readRecentSearches().filter(
+        (item) =>
+            item.toLocaleLowerCase('vi-VN') !==
+            normalizedQuery.toLocaleLowerCase('vi-VN'),
+    );
+
+    try {
+        if (next.length > 0) {
+            window.localStorage.setItem(
+                RECENT_SEARCHES_KEY,
+                JSON.stringify(next),
+            );
+        } else {
+            window.localStorage.removeItem(RECENT_SEARCHES_KEY);
+        }
+    } catch {
+        // UI vẫn nhận danh sách đã lọc dù trình duyệt chặn thao tác lưu trữ.
     }
 
     return next;
