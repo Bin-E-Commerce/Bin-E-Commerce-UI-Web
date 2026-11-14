@@ -29,7 +29,9 @@ export function Header() {
                     <NavLinks />
                     <div className="flex min-w-0 flex-1 items-center justify-end gap-0">
                         <SearchBar />
-                        <CartIcon />
+                        <div className="mx-4 shrink-0">
+                            <CartIcon />
+                        </div>
                         <UserMenu />
                     </div>
                 </div>
