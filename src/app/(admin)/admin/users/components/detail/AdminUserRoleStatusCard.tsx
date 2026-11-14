@@ -1,5 +1,6 @@
 // Card điều khiển role/status; chỉ phát lựa chọn và submit callback, còn policy/mutation nằm trong detail hook.
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { LockKeyhole, ShieldAlert } from 'lucide-react';
 import type {
     AdminUserDetail,
@@ -61,6 +62,21 @@ export function AdminUserRoleStatusCard({
                     </p>
                 </div>
             </div>
+            {user.role === 'SELLER' ? (
+                <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm leading-6 text-zinc-600">
+                    <p>
+                        Trạng thái <strong>ACTIVE</strong> tại đây chỉ cho biết
+                        tài khoản còn đăng nhập được. Trạng thái vận hành shop,
+                        gồm khóa do công nợ, được theo dõi riêng.
+                    </p>
+                    <Link
+                        href="/admin/finance/debts"
+                        className="mt-1 inline-flex font-medium text-zinc-950 underline underline-offset-4 hover:text-zinc-600"
+                    >
+                        Mở trang công nợ seller
+                    </Link>
+                </div>
+            ) : null}
             {isMutationProtected ? (
                 <div className="mt-4 flex gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600">
                     <LockKeyhole className="mt-0.5 size-4 shrink-0 text-zinc-500" />

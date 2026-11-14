@@ -5,7 +5,13 @@ export type SellerDashboardRange = '7d' | '30d' | '90d';
 export interface SellerDashboardSnapshot {
     generatedAt: string;
     timezone: 'Asia/Ho_Chi_Minh';
-    shop: { id: string; name: string; status: string; logoUrl: string | null };
+    shop: {
+        id: string;
+        name: string;
+        status: string;
+        financeLocked: boolean;
+        logoUrl: string | null;
+    };
     range: {
         key: SellerDashboardRange;
         from: string;
