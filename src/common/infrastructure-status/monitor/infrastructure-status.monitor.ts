@@ -30,7 +30,7 @@ const trackedRequests = new Map<number, TrackedRequest>();
 const axiosRequestStops = new WeakMap<object, (error?: unknown) => void>();
 
 let nextRequestId = 0;
-let warningNotifiedForActiveRequests = false;
+let activeWarningReason: InfrastructureNoticeReason | null = null;
 
 // Gửi event cho provider mà không để một listener lỗi làm hỏng interceptor của Axios.
 function emit(event: InfrastructureStatusEvent): void {
@@ -43,11 +43,18 @@ function emit(event: InfrastructureStatusEvent): void {
     });
 }
 
-// Chỉ phát một cảnh báo cho cùng một đợt request lỗi, dù nhiều API cùng timeout.
+// Gộp cảnh báo trong cùng đợt request nhưng vẫn cho phép lỗi thật nâng cảnh báo pending lên mất kết nối.
 function emitWarning(reason: InfrastructureNoticeReason): void {
-    if (warningNotifiedForActiveRequests) return;
+    if (activeWarningReason === 'server-unavailable') return;
+    if (activeWarningReason === 'request-pending') {
+        if (reason === 'server-unavailable') {
+            activeWarningReason = reason;
+            emit({ type: 'warning-detected', reason });
+        }
+        return;
+    }
 
-    warningNotifiedForActiveRequests = true;
+    activeWarningReason = reason;
     emit({ type: 'warning-detected', reason });
 }
 
@@ -76,8 +83,9 @@ export function subscribeInfrastructureStatus(
     return () => listeners.delete(listener);
 }
 
-// Theo dõi một request từ lúc Axios chuẩn bị gửi cho tới khi response/error kết thúc.
-// Timer chỉ giữ metadata trong memory, không tạo request nền và tự cleanup khi request hoàn tất.
+// Theo dõi request Axios để phân biệt request còn chậm với lỗi mạng/gateway đã được xác nhận.
+// Timer chỉ giữ metadata trong memory; provider dùng pending cho ưu tiên popup tính năng, không coi chậm là outage.
+// Mọi tracker được dọn ngay khi response hoặc error kết thúc.
 export function beginInfrastructureRequest(): (error?: unknown) => void {
     const requestId = nextRequestId++;
     const trackedRequest: TrackedRequest = {
@@ -102,12 +110,17 @@ export function beginInfrastructureRequest(): (error?: unknown) => void {
             hasPendingRequests: trackedRequests.size > 0,
         });
 
-        if (error && !isWithinSupportHours() && isInfrastructureError(error)) {
+        const infrastructureFailure =
+            Boolean(error) &&
+            !isWithinSupportHours() &&
+            isInfrastructureError(error);
+
+        if (infrastructureFailure) {
             emitWarning('server-unavailable');
         }
 
         if (trackedRequests.size === 0) {
-            warningNotifiedForActiveRequests = false;
+            activeWarningReason = null;
         }
     };
 }

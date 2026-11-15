@@ -66,9 +66,10 @@ export function HomeShowcasePrompt() {
     }, [canDisplayPrompt, open]);
 
     useEffect(() => {
-        // Popup hạ tầng có ưu tiên cao hơn; đóng prompt tính năng ngay khi sự cố xuất hiện.
-        if (isInfrastructureAlertOpen) setOpen(false);
-    }, [isInfrastructureAlertOpen]);
+        // Đóng state thật khi request hoặc cảnh báo hạ tầng giành quyền ưu tiên,
+        // nếu chỉ ẩn bằng prop thì open vẫn true và popup sẽ bật lại sau request.
+        if (!canDisplayPrompt) setOpen(false);
+    }, [canDisplayPrompt]);
 
     return (
         <AlertDialog open={open && canDisplayPrompt} onOpenChange={setOpen}>

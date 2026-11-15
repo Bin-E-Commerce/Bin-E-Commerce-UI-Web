@@ -3,7 +3,7 @@
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
     subscribeInfrastructureStatus,
@@ -15,9 +15,10 @@ import { checkApiGatewayHealth } from '../services/infrastructure-health.service
 import { isWithinSupportHours } from '../utils/support-hours';
 
 const HEALTH_CHECK_INTERVAL_MS = 15_000;
+const HEALTHY_CHECKS_TO_CLOSE = 2;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Giữ duy nhất một popup ưu tiên, chỉ tự đóng sau khi health endpoint xác nhận Gateway đã hồi phục.
+// Giữ một popup ưu tiên, đóng cảnh báo pending khi request kết thúc bình thường và xác nhận hồi phục qua hai health check.
 export function InfrastructureStatusProvider({
     children,
 }: {
@@ -29,6 +30,7 @@ export function InfrastructureStatusProvider({
         null,
     );
     const [healthCheckRevision, setHealthCheckRevision] = useState(0);
+    const retryRequestedRef = useRef(false);
 
     useEffect(() => {
         // Subscribe một lần ở root để mọi Axios instance dùng chung một trạng thái cảnh báo.
@@ -41,10 +43,19 @@ export function InfrastructureStatusProvider({
             // Next.js thay NODE_ENV theo bundle; chỉ production mới được mở cảnh báo EC2, còn pending vẫn phục vụ popup khác.
             if (!IS_PRODUCTION) return;
 
+            // Request chậm khi chuyển trang chưa chứng minh EC2 lỗi; chỉ lỗi mạng/gateway mới mở cảnh báo gián đoạn.
+            if (event.reason === 'request-pending') return;
+
             // Trong giờ vận hành, lỗi API được xử lý bởi feature tương ứng; popup này chỉ dành cho lúc EC2 ngoài lịch bật.
             if (isWithinSupportHours()) return;
 
-            setReason(event.reason);
+            // Lỗi kết nối có độ ưu tiên cao hơn request chậm để không làm yếu cảnh báo đã được xác nhận.
+            setReason((currentReason) =>
+                currentReason === 'server-unavailable' &&
+                event.reason === 'request-pending'
+                    ? currentReason
+                    : event.reason,
+            );
             setIsOpen(true);
         });
     }, []);
@@ -53,8 +64,9 @@ export function InfrastructureStatusProvider({
         if (!isOpen) return;
 
         let cancelled = false;
+        let consecutiveHealthyChecks = 0;
 
-        // Health check riêng biệt giúp popup không đóng nhầm ngay sau khi request gốc timeout.
+        // Health endpoint có thể phản hồi riêng Gateway; cần hai lần trạng thái ok và không còn request pending mới tự đóng.
         const verifyRecovery = async () => {
             // Khi bước vào giờ vận hành, không giữ lại cảnh báo ngoài giờ dù health check chưa chạy lại.
             if (isWithinSupportHours()) {
@@ -63,27 +75,44 @@ export function InfrastructureStatusProvider({
                 return;
             }
 
+            // Chờ request đang chạy kết thúc để không dùng health check gateway đóng cảnh báo quá sớm.
+            if (hasPendingRequests) {
+                consecutiveHealthyChecks = 0;
+                return;
+            }
+
             const healthy = await checkApiGatewayHealth();
-            if (healthy && !cancelled) {
+            if (cancelled) return;
+
+            consecutiveHealthyChecks = healthy
+                ? consecutiveHealthyChecks + 1
+                : 0;
+            if (consecutiveHealthyChecks >= HEALTHY_CHECKS_TO_CLOSE) {
                 setIsOpen(false);
                 setReason(null);
             }
         };
 
-        void verifyRecovery();
         const intervalId = window.setInterval(
             () => void verifyRecovery(),
             HEALTH_CHECK_INTERVAL_MS,
         );
 
+        // Chỉ thao tác Thử lại mới kiểm tra ngay; cảnh báo tự động phải ổn định đủ lâu để tránh popup chớp tắt.
+        if (retryRequestedRef.current) {
+            retryRequestedRef.current = false;
+            void verifyRecovery();
+        }
+
         return () => {
             cancelled = true;
             window.clearInterval(intervalId);
         };
-    }, [healthCheckRevision, isOpen]);
+    }, [hasPendingRequests, healthCheckRevision, isOpen]);
 
     // Cho phép người dùng kiểm tra hồi phục ngay mà không reload toàn trang hoặc tạo thêm request nghiệp vụ.
     const retryHealthCheck = useCallback(() => {
+        retryRequestedRef.current = true;
         setHealthCheckRevision((revision) => revision + 1);
     }, []);
 

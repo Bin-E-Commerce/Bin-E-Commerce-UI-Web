@@ -5,7 +5,7 @@ import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 
 const HEALTH_CHECK_TIMEOUT_MS = 3_000;
 
-// Gọi health endpoint không cache và tự hủy sau 3 giây để popup không giữ request vô hạn.
+// Gọi health endpoint không cache, chỉ nhận payload trạng thái "ok" và tự hủy sau 3 giây.
 export async function checkApiGatewayHealth(): Promise<boolean> {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(
@@ -20,7 +20,13 @@ export async function checkApiGatewayHealth(): Promise<boolean> {
             signal: controller.signal,
         });
 
-        return response.ok;
+        if (!response.ok) return false;
+
+        // Endpoint có thể trả HTTP 200 khi trạng thái degraded; không coi response đó là hồi phục.
+        const payload: unknown = await response.json();
+        if (!payload || typeof payload !== 'object') return false;
+
+        return 'status' in payload && payload.status === 'ok';
     } catch {
         return false;
     } finally {
