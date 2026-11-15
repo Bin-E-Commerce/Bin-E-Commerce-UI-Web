@@ -1,13 +1,14 @@
 // Hook xử lý Pay2S Return cho lịch sử đơn hàng.
 // Backend xác minh chữ ký/IPN và giữ trạng thái thanh toán authoritative;
-// hook chờ kết quả, làm mới cache và chỉ hiển thị thông báo không chặn thao tác.
+// hook chờ kết quả, làm mới cache, mở biên nhận khi PAID và tránh tranh URL với thao tác tab.
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { verifyPay2sReturn } from '@/services/order';
+import type { Pay2sPaymentSuccessDetails } from '../types/pay2s-payment-success.types';
 
 // Backoff giới hạn số lần verify khi IPN chưa ghi trạng thái, tránh gọi dồn dập
 // trong lúc chờ callback server-to-server.
@@ -50,12 +51,25 @@ function waitForRetry(delayMs: number): Promise<void> {
 
 // Verify callback đã ký rồi đợi IPN cập nhật đơn trước khi báo thành công.
 // Return URL không ghi PAID; PENDING được kiểm tra lại theo backoff giới hạn.
-// Sau lần verify đầu, URL sạch nhưng closure vẫn giữ callback để poll.
-// Khi PAID, hook invalidates list/detail; lỗi mạng giữ query để tải lại.
+// Nếu khách đổi tab trong lúc verify, hook không sửa URL giữa route transition.
+// Khi PAID, hook mở biên nhận và invalidate list/detail; backend vẫn giữ trạng thái authoritative.
 export function usePay2sReturnVerification(hasPay2sReturn: boolean) {
     const queryClient = useQueryClient();
     const handledPay2sReturn = useRef(false);
     const pageIsMounted = useRef(false);
+    const returnNavigationRequested = useRef(false);
+    const [verifiedPayment, setVerifiedPayment] =
+        useState<Pay2sPaymentSuccessDetails | null>(null);
+
+    // Đóng biên nhận chỉ ẩn dialog; trạng thái thanh toán đã xác minh vẫn do backend lưu.
+    const clearVerifiedPayment = useCallback(() => {
+        setVerifiedPayment(null);
+    }, []);
+
+    // Đánh dấu route do khách chọn để callback nền không ghi đè URL tab/page mới.
+    const markReturnNavigation = useCallback(() => {
+        returnNavigationRequested.current = true;
+    }, []);
 
     // Cờ này dừng poll khi rời trang; thay query chỉ làm render lại.
     useEffect(() => {
@@ -80,18 +94,20 @@ export function usePay2sReturnVerification(hasPay2sReturn: boolean) {
                 let result = await verifyPay2sReturn(rawQueryString);
                 if (!pageIsMounted.current) return;
 
-                // Dọn URL bằng History API để không đè thao tác chuyển tab đang chạy.
-                const cleanedUrl = new URL(window.location.href);
-                for (const key of [...cleanedUrl.searchParams.keys()]) {
-                    if (PAY2S_RETURN_QUERY_KEYS.has(key)) {
-                        cleanedUrl.searchParams.delete(key);
+                // Nếu khách đã bấm tab/page, router sở hữu URL mới; không ghi history nền giữa transition.
+                if (!returnNavigationRequested.current) {
+                    const cleanedUrl = new URL(window.location.href);
+                    for (const key of [...cleanedUrl.searchParams.keys()]) {
+                        if (PAY2S_RETURN_QUERY_KEYS.has(key)) {
+                            cleanedUrl.searchParams.delete(key);
+                        }
                     }
+                    window.history.replaceState(
+                        window.history.state,
+                        '',
+                        `${cleanedUrl.pathname}${cleanedUrl.search}${cleanedUrl.hash}`,
+                    );
                 }
-                window.history.replaceState(
-                    window.history.state,
-                    '',
-                    `${cleanedUrl.pathname}${cleanedUrl.search}${cleanedUrl.hash}`,
-                );
 
                 if (result.status === 'PENDING') {
                     pendingToastId = toast.loading(
@@ -126,10 +142,24 @@ export function usePay2sReturnVerification(hasPay2sReturn: boolean) {
                 if (pendingToastId !== undefined) toast.dismiss(pendingToastId);
 
                 if (result.status === 'PAID') {
-                    // Toast không phủ modal lên tab; chi tiết đơn vẫn nạp từ server.
-                    toast.success(
-                        'Thanh toán thành công. Đơn hàng đã được cập nhật.',
-                    );
+                    const callback = new URLSearchParams(rawQueryString);
+                    const callbackAmount = Number(callback.get('amount'));
+                    const orderInfo = callback.get('orderInfo') ?? '';
+                    const orderNumber = orderInfo
+                        .match(/(?:don|đơn)\s+(.+)$/i)?.[1]
+                        ?.trim();
+                    const transactionNumber = callback.get('transId');
+
+                    // Chỉ dùng chi tiết Return sau khi backend trả PAID đã xác minh chữ ký và đối chiếu attempt.
+                    setVerifiedPayment({
+                        orderId: result.orderId,
+                        ...(Number.isSafeInteger(callbackAmount) &&
+                        callbackAmount > 0
+                            ? { amount: callbackAmount }
+                            : {}),
+                        ...(orderNumber ? { orderNumber } : {}),
+                        ...(transactionNumber ? { transactionNumber } : {}),
+                    });
                     await queryClient.invalidateQueries({
                         queryKey: ['customer-order', result.orderId],
                     });
@@ -177,5 +207,11 @@ export function usePay2sReturnVerification(hasPay2sReturn: boolean) {
         }
 
         void verifyAndRefresh();
-    }, [hasPay2sReturn, queryClient]);
+    }, [hasPay2sReturn, queryClient, returnNavigationRequested]);
+
+    return {
+        verifiedPayment,
+        clearVerifiedPayment,
+        markReturnNavigation,
+    };
 }

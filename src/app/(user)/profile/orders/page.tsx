@@ -31,6 +31,7 @@ import { CustomerOrderActions } from './components/customer-order-actions';
 import { CustomerPay2sPaymentRetry } from './components/customer-pay2s-payment-retry';
 import { CustomerOrderTabs } from './components/customer-order-tabs';
 import { OrderStatusBadge } from './components/order-status-badge';
+import { Pay2sPaymentSuccessDialog } from './components/Pay2sPaymentSuccessDialog';
 import { usePay2sReturnVerification } from './hooks/use-pay2s-return-verification';
 
 // Định dạng thời gian tại UI, dữ liệu ISO vẫn giữ nguyên từ API.
@@ -71,7 +72,7 @@ function readFilter(params: URLSearchParams): CustomerOrderFilter {
     };
 }
 
-// Render lịch sử đơn và xác minh Pay2S Return; thông báo thành công không chặn thao tác chuyển tab.
+// Render lịch sử và Pay2S Return; biên nhận chỉ mở sau khi backend xác nhận PAID và không khóa tab.
 export default function ProfileOrdersPage() {
     const router = useRouter();
     const pathname = usePathname();
@@ -79,23 +80,30 @@ export default function ProfileOrdersPage() {
     const hasPay2sReturn = params.has('orderId');
     const filter = readFilter(params);
     const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
-    usePay2sReturnVerification(hasPay2sReturn);
+    const { verifiedPayment, clearVerifiedPayment, markReturnNavigation } =
+        usePay2sReturnVerification(hasPay2sReturn);
     const ordersQuery = useCustomerOrders(filter, page);
     const images = useLegacyOrderPreviewImages(ordersQuery.data?.items ?? []);
     const isOrdersLoading =
         ordersQuery.isPending || ordersQuery.isPlaceholderData;
 
-    // Đổi tab hoặc trang qua URL để browser back/refresh giữ đúng ngữ cảnh.
+    // Đổi tab/trang qua URL; đóng biên nhận và ngăn callback nền sửa URL trong lúc router chuyển route.
     function navigate(nextFilter: CustomerOrderFilter, nextPage = 1): void {
         const next = new URLSearchParams();
         if (nextFilter.status) next.set('status', nextFilter.status);
         if (nextFilter.stage) next.set('stage', nextFilter.stage);
         if (nextPage > 1) next.set('page', String(nextPage));
+        markReturnNavigation();
+        clearVerifiedPayment();
         router.push(`${pathname}${next.toString() ? `?${next}` : ''}`);
     }
 
     return (
         <div className="mx-auto max-w-7xl py-8">
+            <Pay2sPaymentSuccessDialog
+                payment={verifiedPayment}
+                onClose={clearVerifiedPayment}
+            />
             <div className="flex flex-col gap-6 md:flex-row md:gap-8">
                 <ProfileSidebar />
                 <main className="min-w-0 flex-1">
