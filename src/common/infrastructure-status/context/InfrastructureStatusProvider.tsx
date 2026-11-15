@@ -15,10 +15,12 @@ import { checkApiGatewayHealth } from '../services/infrastructure-health.service
 import { isWithinSupportHours } from '../utils/support-hours';
 
 const HEALTH_CHECK_INTERVAL_MS = 15_000;
+const INCIDENT_CONFIRMATION_INTERVAL_MS = 2_000;
+const UNHEALTHY_CHECKS_TO_OPEN = 2;
 const HEALTHY_CHECKS_TO_CLOSE = 2;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Giữ một popup ưu tiên, đóng cảnh báo pending khi request kết thúc bình thường và xác nhận hồi phục qua hai health check.
+// Chỉ mở popup outage sau khi health endpoint xác nhận Gateway mất kết nối hai lần liên tiếp.
 export function InfrastructureStatusProvider({
     children,
 }: {
@@ -29,6 +31,7 @@ export function InfrastructureStatusProvider({
     const [reason, setReason] = useState<InfrastructureNoticeReason | null>(
         null,
     );
+    const [isIncidentCandidate, setIsIncidentCandidate] = useState(false);
     const [healthCheckRevision, setHealthCheckRevision] = useState(0);
     const retryRequestedRef = useRef(false);
 
@@ -49,16 +52,64 @@ export function InfrastructureStatusProvider({
             // Trong giờ vận hành, lỗi API được xử lý bởi feature tương ứng; popup này chỉ dành cho lúc EC2 ngoài lịch bật.
             if (isWithinSupportHours()) return;
 
-            // Lỗi kết nối có độ ưu tiên cao hơn request chậm để không làm yếu cảnh báo đã được xác nhận.
-            setReason((currentReason) =>
-                currentReason === 'server-unavailable' &&
-                event.reason === 'request-pending'
-                    ? currentReason
-                    : event.reason,
-            );
-            setIsOpen(true);
+            // Ghi nhận nghi vấn trước; health endpoint sẽ phân biệt Gateway chết với lỗi đơn lẻ ở downstream.
+            setReason(event.reason);
+            setIsIncidentCandidate(true);
         });
     }, []);
+
+    useEffect(() => {
+        if (!isIncidentCandidate) return;
+
+        // Popup đã mở thì cảnh báo mới không cần một luồng xác nhận thứ hai.
+        if (isOpen) {
+            setIsIncidentCandidate(false);
+            return;
+        }
+
+        let cancelled = false;
+        let retryTimeoutId: number | null = null;
+        let failedHealthChecks = 0;
+
+        // Chỉ xác nhận outage nếu Gateway không trả lời hai lần liên tiếp; một lỗi API đơn lẻ sẽ bị loại khi health còn sống.
+        const confirmGatewayFailure = async () => {
+            if (isWithinSupportHours()) {
+                setIsIncidentCandidate(false);
+                setReason(null);
+                return;
+            }
+
+            const gatewayAvailable = await checkApiGatewayHealth();
+            if (cancelled) return;
+
+            if (gatewayAvailable) {
+                setIsIncidentCandidate(false);
+                setReason(null);
+                return;
+            }
+
+            failedHealthChecks += 1;
+            if (failedHealthChecks >= UNHEALTHY_CHECKS_TO_OPEN) {
+                setIsIncidentCandidate(false);
+                setIsOpen(true);
+                return;
+            }
+
+            retryTimeoutId = window.setTimeout(
+                () => void confirmGatewayFailure(),
+                INCIDENT_CONFIRMATION_INTERVAL_MS,
+            );
+        };
+
+        void confirmGatewayFailure();
+
+        return () => {
+            cancelled = true;
+            if (retryTimeoutId !== null) {
+                window.clearTimeout(retryTimeoutId);
+            }
+        };
+    }, [isIncidentCandidate, isOpen]);
 
     useEffect(() => {
         if (!isOpen) return;

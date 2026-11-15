@@ -5,7 +5,7 @@ import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 
 const HEALTH_CHECK_TIMEOUT_MS = 3_000;
 
-// Gọi health endpoint không cache, chỉ nhận payload trạng thái "ok" và tự hủy sau 3 giây.
+// Gọi health endpoint không cache để xác nhận Gateway còn phản hồi, rồi tự hủy sau 3 giây.
 export async function checkApiGatewayHealth(): Promise<boolean> {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(
@@ -22,11 +22,11 @@ export async function checkApiGatewayHealth(): Promise<boolean> {
 
         if (!response.ok) return false;
 
-        // Endpoint có thể trả HTTP 200 khi trạng thái degraded; không coi response đó là hồi phục.
+        // Trạng thái degraded mô tả route downstream, nhưng HTTP 200 xác nhận Gateway còn sống và popup EC2 không phù hợp.
         const payload: unknown = await response.json();
         if (!payload || typeof payload !== 'object') return false;
 
-        return 'status' in payload && payload.status === 'ok';
+        return 'service' in payload && payload.service === 'api-gateway';
     } catch {
         return false;
     } finally {
