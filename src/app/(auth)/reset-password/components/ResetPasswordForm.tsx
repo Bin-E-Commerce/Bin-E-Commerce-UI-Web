@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useResetPasswordForm } from '../hooks/useResetPasswordForm';
 
-// Render các trường reset, giữ password/OTP trong react-hook-form và dùng Button shadcn cho mọi thao tác.
+// Render các trường reset, giữ password/OTP trong react-hook-form và dùng Button shadcn cho thao tác gửi mã lẫn hiện/ẩn từng mật khẩu.
 export function ResetPasswordForm() {
     const {
         form,
@@ -23,6 +23,8 @@ export function ResetPasswordForm() {
         isResending,
         showPassword,
         setShowPassword,
+        showConfirmPassword,
+        setShowConfirmPassword,
         onSubmit,
         onResend,
     } = useResetPasswordForm();
@@ -172,13 +174,41 @@ export function ResetPasswordForm() {
                                 Xác nhận mật khẩu mới
                             </FormLabel>
                             <FormControl>
-                                <Input
-                                    {...field}
-                                    type={showPassword ? 'text' : 'password'}
-                                    placeholder="Nhập lại mật khẩu mới"
-                                    autoComplete="new-password"
-                                    className="h-11 bg-white text-sm focus-visible:ring-2 focus-visible:ring-zinc-900/20"
-                                />
+                                <div className="relative">
+                                    <Input
+                                        {...field}
+                                        type={
+                                            showConfirmPassword
+                                                ? 'text'
+                                                : 'password'
+                                        }
+                                        placeholder="Nhập lại mật khẩu mới"
+                                        autoComplete="new-password"
+                                        className="h-11 bg-white pr-10 text-sm focus-visible:ring-2 focus-visible:ring-zinc-900/20"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={
+                                            showConfirmPassword
+                                                ? 'Ẩn mật khẩu xác nhận'
+                                                : 'Hiện mật khẩu xác nhận'
+                                        }
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+                                        onClick={() =>
+                                            setShowConfirmPassword(
+                                                (current) => !current,
+                                            )
+                                        }
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                </div>
                             </FormControl>
                             <FormMessage className="text-xs" />
                         </FormItem>

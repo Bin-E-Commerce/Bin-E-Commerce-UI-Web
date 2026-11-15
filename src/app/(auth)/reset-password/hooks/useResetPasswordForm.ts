@@ -2,7 +2,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -18,18 +18,19 @@ import {
     RESET_PASSWORD_RESEND_COOLDOWN_SECONDS,
 } from '../utils/reset-password-cooldown';
 
-// Điều phối reset password theo OTP, thu hồi timer khi unmount để không giữ interval sau khi rời trang.
+// Điều phối OTP, đồng bộ cooldown từ sentAt, thu hồi timer khi rời trang và giữ hiện/ẩn riêng cho từng ô mật khẩu.
 export function useResetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const sentAtParam = searchParams.get('sentAt');
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const initialEmail = searchParams.get('email')?.trim().toLowerCase() ?? '';
-    const initialCooldown = getRemainingResetPasswordCooldown(
-        searchParams.get('sentAt'),
+    const [cooldown, setCooldown] = useState(() =>
+        getRemainingResetPasswordCooldown(sentAtParam),
     );
-    const [cooldown, setCooldown] = useState(initialCooldown);
     const [isResending, setIsResending] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const form = useForm<ResetPasswordFormValues>({
         resolver: zodResolver(resetPasswordSchema),
@@ -41,27 +42,36 @@ export function useResetPasswordForm() {
         },
     });
 
-    // Timer chỉ khóa resend ở client; Redis/Auth Service vẫn là nơi quyết định cooldown cuối cùng.
-    function startCooldown(): void {
-        if (timerRef.current) clearInterval(timerRef.current);
-        setCooldown(RESET_PASSWORD_RESEND_COOLDOWN_SECONDS);
-        timerRef.current = setInterval(() => {
-            setCooldown((current) => {
-                if (current <= 1) {
-                    if (timerRef.current) clearInterval(timerRef.current);
-                    timerRef.current = null;
-                    return 0;
-                }
-                return current - 1;
-            });
-        }, 1000);
-    }
+    // Dùng chung timer cho sentAt trên URL và lần gửi lại mới; server vẫn là nơi quyết định cooldown cuối cùng.
+    const startCooldown = useCallback(
+        (duration = RESET_PASSWORD_RESEND_COOLDOWN_SECONDS): void => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            setCooldown(duration);
+            timerRef.current = setInterval(() => {
+                setCooldown((current) => {
+                    // Chốt ở 0 và dừng interval tại giây cuối để nút gửi lại không bị khóa hoặc chạy số âm.
+                    if (current <= 1) {
+                        if (timerRef.current) clearInterval(timerRef.current);
+                        timerRef.current = null;
+                        return 0;
+                    }
+                    return current - 1;
+                });
+            }, 1000);
+        },
+        [],
+    );
 
     useEffect(() => {
+        // Bắt đầu đếm ngay từ sentAt khi vào trang, rồi dọn interval nếu query đổi hoặc component rời màn hình.
+        const initialCooldown = getRemainingResetPasswordCooldown(sentAtParam);
+        if (initialCooldown > 0) startCooldown(initialCooldown);
+
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
+            timerRef.current = null;
         };
-    }, []);
+    }, [sentAtParam, startCooldown]);
 
     // Gửi OTP và đổi mật khẩu; chỉ điều hướng sau khi backend xác nhận thành công để tránh mất lỗi nghiệp vụ.
     async function onSubmit(values: ResetPasswordFormValues): Promise<void> {
@@ -106,6 +116,8 @@ export function useResetPasswordForm() {
         isResending,
         showPassword,
         setShowPassword,
+        showConfirmPassword,
+        setShowConfirmPassword,
         onSubmit,
         onResend,
     };
