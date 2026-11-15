@@ -642,7 +642,7 @@ export default function ProfileOrderDetailPage() {
                             </div>
                             <div className="space-y-3 p-4 text-sm sm:p-5">
                                 <div className="flex justify-between gap-3 text-zinc-500">
-                                    <span>Tạm tính</span>
+                                    <span>Tiền sản phẩm</span>
                                     <span className="shrink-0 tabular-nums">
                                         {formatMoney(order.subtotal)}
                                     </span>
