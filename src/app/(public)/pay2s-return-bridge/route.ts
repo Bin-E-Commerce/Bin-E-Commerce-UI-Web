@@ -7,8 +7,15 @@ import { SITE_URL } from '@/config/site.config';
 // Giữ query Pay2S đã ký để trang đích xác minh với Order Service; cờ flow nội bộ không được chuyển tiếp.
 export function GET(request: NextRequest): NextResponse {
     const callbackParams = new URLSearchParams(request.nextUrl.searchParams);
+    const flow = callbackParams.get('flow');
+    const orderId = callbackParams.get('orderId')?.trim();
+
+    // Callback production cũ có thể thiếu flow; tiền tố W được tạo riêng cho giao dịch nạp ví.
+    const isWalletReturn =
+        flow === 'wallet' ||
+        (flow === null && orderId?.toUpperCase().startsWith('W') === true);
     const destination =
-        callbackParams.get('flow') === 'wallet'
+        isWalletReturn
             ? '/seller/finance/pay2s-return'
             : '/profile/orders';
 
