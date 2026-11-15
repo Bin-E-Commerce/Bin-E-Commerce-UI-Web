@@ -31,8 +31,8 @@ interface SellerTopbarProps {
     onOpenSidebar: () => void;
 }
 
-// Topbar nhận diện shop hiện tại, giữ lối tắt quản lý và dẫn seller về storefront công khai.
-// Thao tác đăng xuất vẫn thu hồi đúng phiên hiện tại.
+// Topbar nhận diện shop hiện tại bằng avatar shop, giữ lối tắt quản lý và dẫn seller về storefront công khai.
+// Chỉ dùng avatar tài khoản làm fallback khi shop chưa có ảnh riêng; đăng xuất vẫn thu hồi đúng phiên hiện tại.
 export function SellerTopbar({
     avatarUrl,
     shopLogoUrl,
@@ -58,9 +58,12 @@ export function SellerTopbar({
             : currentHour < 18
               ? 'Chào buổi chiều'
               : 'Chào buổi tối';
-    // Avatar cá nhân được ưu tiên; logo shop thay thế khi tài khoản chưa có ảnh đại diện.
-    const displayAvatarUrl =
-        avatarUrl || shopLogoUrl || profileQuery.data?.shop.logoUrl;
+    // Trong Seller Center ưu tiên avatar của shop, rồi dữ liệu hồ sơ mới nhất, sau đó mới fallback ảnh cá nhân.
+    const shopAvatarUrl = shopLogoUrl || profileQuery.data?.shop.logoUrl;
+    const displayAvatarUrl = shopAvatarUrl || avatarUrl;
+    const displayAvatarAlt = shopAvatarUrl
+        ? 'Ảnh đại diện shop'
+        : 'Ảnh đại diện người bán';
 
     return (
         <header className="sticky top-0 z-30 flex-none border-b border-zinc-200 bg-white/95 backdrop-blur">
@@ -110,7 +113,7 @@ export function SellerTopbar({
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img
                                             src={displayAvatarUrl}
-                                            alt="Ảnh đại diện shop"
+                                            alt={displayAvatarAlt}
                                             className="h-full w-full object-cover"
                                         />
                                     ) : (
