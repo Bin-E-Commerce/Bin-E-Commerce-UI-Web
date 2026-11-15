@@ -101,9 +101,9 @@ const CUSTOMER_RETURN_STEPS: LifecycleStep[] = [
         description: 'Shop đã nhận được kiện hàng hoàn',
     },
     {
-        key: 'return-inspected',
-        title: 'Kết quả kiểm tra',
-        description: 'Shop đã kiểm tra và cập nhật kết quả xử lý',
+        key: 'return-confirmed',
+        title: 'Xác nhận nhận hàng',
+        description: 'Shop xác nhận đã nhận được kiện hàng hoàn',
     },
 ];
 
@@ -166,11 +166,11 @@ function getReturnStatusTitle(
         AWAITING_SHIPMENT: 'Chờ gửi hàng hoàn',
         IN_TRANSIT: 'Đang hoàn về shop',
         RECEIVED: 'Shop đã nhận hàng',
-        REFUND_PENDING: 'Đã kiểm tra đạt · Chờ hoàn tiền',
+        REFUND_PENDING: 'Đã xác nhận nhận hàng · Chờ hoàn tiền',
         REJECTED: 'Yêu cầu bị từ chối',
         CUSTOMER_CANCELLED: 'Yêu cầu đã hủy',
         SHIPMENT_FAILED: 'Vận chuyển hoàn thất bại',
-        INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
+        INSPECTION_FAILED: 'Không chấp thuận hoàn · Chờ gửi trả sản phẩm',
     };
     return (status ? labels[status] : undefined) ?? 'Đang xử lý hoàn hàng';
 }
@@ -285,7 +285,7 @@ export function OrderLifecycleStepper({
         ['REJECTED', 'INSPECTION_FAILED', 'SHIPMENT_FAILED'].includes(
             returnStatus ?? '',
         );
-    // Bước 5 đã hoàn tất ngay khi Seller có kết quả kiểm tra; REFUND_PENDING chỉ còn chờ phase hoàn tiền.
+    // Bước cuối hoàn tất khi shop xác nhận đã nhận kiện; REFUND_PENDING chỉ còn chờ xử lý tiền hoàn.
     const isReturnOutcomeComplete =
         isCustomerReturnFlow &&
         ['REFUND_PENDING', 'INSPECTION_FAILED'].includes(returnStatus ?? '');
@@ -310,7 +310,7 @@ export function OrderLifecycleStepper({
             : 'Đang xử lý trả hàng / hoàn tiền';
     const terminalDescription =
         returnStatus === 'INSPECTION_FAILED'
-            ? 'Shop chưa chấp nhận hoàn tiền sau khi kiểm tra. Sản phẩm sẽ được gửi trả lại cho bạn.'
+            ? 'Theo kết quả xử lý trước đây, shop không chấp nhận hoàn tiền. Sản phẩm sẽ được gửi trả lại cho bạn.'
             : isReturnFailed
               ? 'Yêu cầu hoàn hàng đã dừng theo kết quả xử lý của shop.'
               : isCancelled
@@ -431,15 +431,15 @@ export function OrderLifecycleStepper({
                                         {step.key === 'return-review' &&
                                         returnStatus === 'REJECTED'
                                             ? 'Shop từ chối yêu cầu'
-                                            : step.key === 'return-inspected' &&
+                                            : step.key === 'return-confirmed' &&
                                                 returnStatus ===
                                                     'REFUND_PENDING'
-                                              ? 'Đã kiểm tra đạt'
+                                              ? 'Đã xác nhận nhận hàng'
                                               : step.key ===
-                                                      'return-inspected' &&
+                                                      'return-confirmed' &&
                                                   returnStatus ===
                                                       'INSPECTION_FAILED'
-                                                ? 'Kiểm tra không đạt'
+                                                ? 'Không chấp thuận hoàn'
                                                 : step.title}
                                     </p>
                                     <p
@@ -453,15 +453,15 @@ export function OrderLifecycleStepper({
                                         {step.key === 'return-review' &&
                                         returnStatus === 'REJECTED'
                                             ? 'Shop đã từ chối yêu cầu hoàn hàng'
-                                            : step.key === 'return-inspected' &&
+                                            : step.key === 'return-confirmed' &&
                                                 returnStatus ===
                                                     'REFUND_PENDING'
-                                              ? 'Shop đã duyệt hoàn tiền cho bạn'
+                                              ? 'Khoản hoàn đang chờ được xử lý'
                                               : step.key ===
-                                                      'return-inspected' &&
+                                                      'return-confirmed' &&
                                                   returnStatus ===
                                                       'INSPECTION_FAILED'
-                                                ? 'Shop đã từ chối sau khi kiểm tra hàng'
+                                                ? 'Yêu cầu được xử lý theo quy trình cũ'
                                                 : step.description}
                                     </p>
                                     {state === 'current' ? (
@@ -599,7 +599,7 @@ export function OrderLifecycleStepper({
                             <p className="mt-1 text-xs leading-5 text-slate-500">
                                 {isCustomerReturnFlow
                                     ? returnStatus === 'REFUND_PENDING'
-                                        ? 'Shop đã kiểm tra đạt. Khoản hoàn đang chờ được xử lý ở phase thanh toán sau.'
+                                        ? 'Shop đã xác nhận nhận hàng hoàn. Khoản hoàn đang chờ được xử lý.'
                                         : 'Bạn có thể theo dõi từng bước xử lý yêu cầu hoàn hàng tại đây.'
                                     : isAwaitingCustomerConfirmation
                                       ? 'Vui lòng xác nhận đã nhận hàng. Nếu chưa nhận hoặc sản phẩm có vấn đề, bạn có thể gửi yêu cầu hỗ trợ/hoàn hàng bên dưới.'

@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 import {
     getSellerOrder,
     getSellerReturnFinancePreview,
-    inspectSellerReturn,
+    confirmSellerReturnReceived,
     listSellerReturns,
     reviewSellerReturn,
 } from '@/services/order';
@@ -42,7 +42,7 @@ import { SellerReturnDetailModal } from './seller-return-detail-modal';
 import { SellerReturnApprovalDialog } from './seller-return-approval-dialog';
 import { SellerReturnRejectDialog } from './seller-return-reject-dialog';
 import type {
-    InspectReturnMutationInput,
+    ConfirmReceivedReturnMutationInput,
     ReturnQueueFilter,
     ReturnFilterButtonProps,
     ReviewReturnMutationInput,
@@ -72,12 +72,12 @@ function getReturnStatusLabel(status: string): string {
         AWAITING_SHIPMENT: 'Chờ khách gửi hàng',
         SHIPMENT_FAILED: 'Vận chuyển lỗi · có thể tạo lại vận đơn',
         IN_TRANSIT: 'Đang hoàn về shop',
-        RECEIVED: 'Chờ kiểm tra hàng',
-        REFUND_PENDING: 'Đã kiểm tra đạt · Chờ hoàn tiền',
+        RECEIVED: 'Chờ shop xác nhận nhận hàng hoàn',
+        REFUND_PENDING: 'Đã xác nhận nhận hàng · Chờ hoàn tiền',
         REFUND_FAILED: 'Chuyển khoản hoàn lỗi · cần xử lý lại',
         REFUNDED: 'Đã hoàn tiền',
         REJECTED: 'Đã từ chối',
-        INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
+        INSPECTION_FAILED: 'Không chấp thuận hoàn · Chờ gửi trả sản phẩm',
         CUSTOMER_CANCELLED: 'Khách đã hủy yêu cầu',
     };
 
@@ -163,8 +163,8 @@ function resolveReturnShippingPayer(
     return undefined;
 }
 
-// Điều phối queue và cache vận đơn để thao tác tạo shipment cập nhật card ngay.
-// Cache hiển thị response POST tức thì; GET khôi phục dữ liệu sau khi tải lại.
+// Điều phối queue và cache vận đơn; xác nhận nhận kiện chuyển request sang chờ hoàn tiền.
+// Cache được làm mới sau mutation để trạng thái và số việc cần xử lý luôn lấy từ Order Service.
 export function SellerReturnsPageContent() {
     const queryClient = useQueryClient();
     const [filter, setFilter] = useState<ReturnQueueFilter>('ALL');
@@ -206,10 +206,18 @@ export function SellerReturnsPageContent() {
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
-    const inspectMutation = useMutation({
-        mutationFn: ({ returnId, passed }: InspectReturnMutationInput) =>
-            inspectSellerReturn(returnId, passed),
-        onSuccess: () => invalidateReturnQueries(queryClient),
+    // Một xác nhận nhận hàng hoàn thay bước đánh giá đạt/không đạt.
+    // Refund vẫn giữ trạng thái chờ xử lý theo quy trình thanh toán hiện có.
+    const confirmReceivedMutation = useMutation({
+        mutationFn: ({ returnId }: ConfirmReceivedReturnMutationInput) =>
+            confirmSellerReturnReceived(returnId),
+        onSuccess: () => {
+            toast.success(
+                'Đã xác nhận nhận hàng hoàn. Khoản hoàn đang chờ xử lý.',
+            );
+            invalidateReturnQueries(queryClient);
+        },
+        onError: (error) => toast.error(getErrorMessage(error)),
     });
     const shipmentMutation = useMutation({
         mutationFn: createSellerReturnShipment,
@@ -316,8 +324,8 @@ export function SellerReturnsPageContent() {
                         Xử lý hoàn hàng
                     </h2>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-                        Duyệt yêu cầu, theo dõi hàng hoàn về shop và ghi nhận
-                        kết quả kiểm tra minh bạch cho customer.
+                        Duyệt yêu cầu, theo dõi hàng hoàn về shop và xác nhận
+                        đã nhận được kiện hoàn.
                     </p>
                 </div>
                 <Button
@@ -434,7 +442,7 @@ export function SellerReturnsPageContent() {
                                 ).length
                             }
                         >
-                            Chờ kiểm tra
+                            Chờ xác nhận nhận hàng
                         </ReturnFilterButton>
                         <ReturnFilterButton
                             active={filter === 'RESOLVED'}
@@ -489,15 +497,16 @@ export function SellerReturnsPageContent() {
                                     reviewMutation.isPending ||
                                     Boolean(preparingApprovalRequestId)
                                 }
-                                inspectPending={inspectMutation.isPending}
+                                confirmReceivedPending={
+                                    confirmReceivedMutation.isPending
+                                }
                                 shipmentPending={shipmentMutation.isPending}
                                 onReview={(approved, payer) =>
                                     handleReviewDecision(item, approved, payer)
                                 }
-                                onInspect={(passed) =>
-                                    inspectMutation.mutate({
+                                onConfirmReceived={() =>
+                                    confirmReceivedMutation.mutate({
                                         returnId: item.id,
-                                        passed,
                                     })
                                 }
                                 onCreateShipment={() =>
@@ -606,14 +615,14 @@ function ReturnFilterButton({
     );
 }
 
-// Hiển thị request và shipment đã lưu; khoản khách nhận được tách khỏi nghĩa vụ ghi nợ seller.
+// Hiển thị request và shipment đã lưu; seller chỉ xác nhận kiện về, còn khoản hoàn do admin xử lý riêng.
 function SellerReturnRequestCard({
     item,
     reviewPending,
-    inspectPending,
+    confirmReceivedPending,
     shipmentPending,
     onReview,
-    onInspect,
+    onConfirmReceived,
     onCreateShipment,
     onViewDetails,
 }: SellerReturnRequestCardProps) {
@@ -738,7 +747,7 @@ function SellerReturnRequestCard({
                                   ? 'Khách chịu phí ship hoàn; seller không bị ghi nợ tiền hoàn. Admin xử lý khoản khách nhận từ tiền đơn đang giữ.'
                                   : 'Khách chịu phí; khoản thực tế được trừ vào tiền hoàn.'
                               : item.returnShippingPayer === 'SELLER'
-                                ? 'Shop chịu phí; chỉ ghi nợ ví shop nếu hàng hoàn được kiểm tra đạt.'
+                                ? 'Shop chịu phí; ví shop được ghi nợ sau khi shop xác nhận đã nhận hàng hoàn.'
                                 : 'Lý do khác: shop cần chọn bên chịu phí trước khi duyệt.'}
                     </p>
                     {Number(item.customerReturnShippingReceivableAmount ?? 0) >
@@ -937,26 +946,16 @@ function SellerReturnRequestCard({
                     </span>
                 ) : null}
                 {item.status === 'RECEIVED' ? (
-                    <>
-                        <Button
-                            variant="ghost"
-                            type="button"
-                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                            disabled={inspectPending}
-                            onClick={() => onInspect(true)}
-                        >
-                            <ClipboardCheck className="size-4" /> Đạt kiểm tra
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            type="button"
-                            className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 transition hover:border-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                            disabled={inspectPending}
-                            onClick={() => onInspect(false)}
-                        >
-                            Không đạt
-                        </Button>
-                    </>
+                    <Button
+                        variant="ghost"
+                        type="button"
+                        className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                        disabled={confirmReceivedPending}
+                        onClick={onConfirmReceived}
+                    >
+                        <PackageCheck className="size-4" />{' '}
+                        <span>Xác nhận đã nhận hàng hoàn</span>
+                    </Button>
                 ) : null}
             </div>
         </article>

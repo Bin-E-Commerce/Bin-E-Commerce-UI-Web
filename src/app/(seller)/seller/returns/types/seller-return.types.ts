@@ -35,13 +35,13 @@ export interface SellerReturnApprovalDialogProps {
 export interface SellerReturnRequestCardProps {
     item: SellerReturnRequest;
     reviewPending: boolean;
-    inspectPending: boolean;
+    confirmReceivedPending: boolean;
     shipmentPending: boolean;
     onReview: (
         approved: boolean,
         returnShippingPayer?: 'CUSTOMER' | 'SELLER',
     ) => void;
-    onInspect: (passed: boolean) => void;
+    onConfirmReceived: () => void;
     onCreateShipment: () => void;
     onViewDetails: () => void;
 }
@@ -54,9 +54,8 @@ export interface ReviewReturnMutationInput {
     returnShippingPayer?: 'CUSTOMER' | 'SELLER';
 }
 
-export interface InspectReturnMutationInput {
+export interface ConfirmReceivedReturnMutationInput {
     returnId: string;
-    passed: boolean;
 }
 
 export interface SellerReturnSummaryCardProps {

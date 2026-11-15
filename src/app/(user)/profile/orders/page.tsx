@@ -28,6 +28,7 @@ import {
     useLegacyOrderPreviewImages,
 } from './hooks/use-customer-orders';
 import { CustomerOrderActions } from './components/customer-order-actions';
+import { CustomerPay2sPaymentRetry } from './components/customer-pay2s-payment-retry';
 import { CustomerOrderTabs } from './components/customer-order-tabs';
 import { Pay2sPaymentSuccessDialog } from './components/Pay2sPaymentSuccessDialog';
 import { usePay2sReturnVerification } from './hooks/use-pay2s-return-verification';
@@ -181,6 +182,11 @@ export default function ProfileOrdersPage() {
                                 // Đơn đã giao đang chờ khách xác nhận; CTA đưa thẳng đến detail để hoàn tất xác nhận và đánh giá.
                                 const needsCustomerConfirmation =
                                     order.fulfillmentStatus === 'DELIVERED';
+                                // Chỉ hiện nút cho order Pay2S chưa được xác nhận thu tiền và còn ở trạng thái PENDING.
+                                const canRetryPay2sPayment =
+                                    order.status === 'PENDING' &&
+                                    order.paymentMethod === 'PAY2S' &&
+                                    order.paymentStatus === 'PENDING';
                                 const orderDetailHref = `/profile/orders/${order.id}`;
 
                                 return (
@@ -280,7 +286,11 @@ export default function ProfileOrdersPage() {
                                                 </span>
                                             </div>
                                         </Link>
-                                        {needsCustomerConfirmation ? (
+                                        {canRetryPay2sPayment ? (
+                                            <CustomerPay2sPaymentRetry
+                                                orderId={order.id}
+                                            />
+                                        ) : needsCustomerConfirmation ? (
                                             <CustomerOrderActions
                                                 orderId={order.id}
                                                 orderDetailHref={

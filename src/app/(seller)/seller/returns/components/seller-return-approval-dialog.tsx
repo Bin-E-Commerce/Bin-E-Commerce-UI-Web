@@ -1,4 +1,5 @@
-// Dialog xác nhận duyệt yêu cầu hoàn do shop chịu phí; số nợ trong preview chỉ phát sinh nếu hàng hoàn được kiểm tra đạt.
+// Dialog xác nhận duyệt yêu cầu hoàn do shop chịu phí.
+// Khoản dự kiến chỉ được ghi nợ sau khi shop xác nhận đã nhận kiện hoàn.
 
 'use client';
 
@@ -14,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, WalletCards } from 'lucide-react';
 import type { SellerReturnApprovalDialogProps } from '../types/seller-return.types';
 
-// Dự báo hai lượt vận chuyển; dialog không ghi sổ và công nợ chỉ phát sinh sau khi seller xác nhận hàng hoàn đạt.
+// Dự báo hai lượt vận chuyển; dialog không ghi sổ và công nợ chỉ phát sinh sau khi seller xác nhận nhận hàng hoàn.
 export function SellerReturnApprovalDialog({
     approval,
     pending,
@@ -118,7 +119,7 @@ export function SellerReturnApprovalDialog({
                         </div>
                         <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5">
                             <p className="text-xs text-amber-900">
-                                Số dư nếu kiểm tra đạt
+                                Số dư sau khi shop xác nhận nhận hàng
                             </p>
                             <p className="mt-1.5 text-base font-bold tabular-nums text-amber-950">
                                 {projectedBalance.toLocaleString('vi-VN')} đ
@@ -126,7 +127,7 @@ export function SellerReturnApprovalDialog({
                         </div>
                         <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5">
                             <p className="text-xs text-amber-900">
-                                Nợ dự kiến nếu kiểm tra đạt
+                                Nợ dự kiến sau khi shop xác nhận nhận hàng
                             </p>
                             <p className="mt-1.5 text-base font-bold tabular-nums text-amber-950">
                                 {projectedDebt.toLocaleString('vi-VN')} đ
@@ -175,8 +176,8 @@ export function SellerReturnApprovalDialog({
                                 aria-hidden="true"
                             />
                             Shop đang bị khóa tài chính do công nợ. Nếu hàng
-                            hoàn được kiểm tra đạt, phí thực tế sẽ được ghi nợ
-                            theo số GHN chốt.
+                            shop xác nhận đã nhận hàng hoàn, phí thực tế sẽ
+                            được ghi nợ theo số GHN chốt.
                         </div>
                     ) : null}
 
@@ -187,8 +188,8 @@ export function SellerReturnApprovalDialog({
                                 aria-hidden="true"
                             />
                             <p>
-                                Nếu kiểm tra đạt, nợ có thể chạm hoặc vượt
-                                ngưỡng khóa shop.
+                                Khi shop xác nhận đã nhận hàng hoàn, nợ có thể
+                                chạm hoặc vượt ngưỡng khóa shop.
                                 {debtOverLimit > 0
                                     ? ` Ước tính vượt ${debtOverLimit.toLocaleString('vi-VN')} đ.`
                                     : ''}{' '}
@@ -199,10 +200,9 @@ export function SellerReturnApprovalDialog({
                     ) : null}
 
                     <p className="text-xs leading-5 text-zinc-500">
-                        Duyệt yêu cầu chưa trừ tiền. Nếu hàng hoàn được kiểm tra
-                        đạt, ví shop ghi nợ phí giao ban đầu đủ điều kiện hoàn
-                        cho khách và phí GHN thực tế chiều về. Nếu kiểm tra
-                        không đạt, shop không bị ghi nợ hai khoản này.
+                        Duyệt yêu cầu chưa trừ tiền. Sau khi shop xác nhận đã
+                        nhận hàng hoàn, ví shop ghi nợ phí giao ban đầu đủ điều
+                        kiện hoàn cho khách và phí GHN thực tế chiều về.
                     </p>
                 </div>
 

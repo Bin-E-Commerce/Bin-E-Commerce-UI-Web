@@ -68,8 +68,8 @@ export function getCheckoutIdempotencyKey(
         const next: StoredCheckoutIdempotencyKey = {
             key: createIdempotencyKey(),
             signature,
-            // Order Service hết hạn Pay2S sau 15 phút; thêm một phút để tránh tái dùng key sát deadline.
-            expiresAt: now + 16 * 60_000,
+            // Order Service hết hạn Pay2S sau 10 phút; thêm một phút để tránh tái dùng key sát deadline.
+            expiresAt: now + 11 * 60_000,
         };
         window.sessionStorage.setItem(scope, JSON.stringify(next));
         return next.key;
@@ -86,7 +86,7 @@ export function getCheckoutIdempotencyKey(
         const next: StoredCheckoutIdempotencyKey = {
             key: createIdempotencyKey(),
             signature,
-            expiresAt: now + 16 * 60_000,
+            expiresAt: now + 11 * 60_000,
         };
         inMemoryKeys.set(scope, next);
         return next.key;

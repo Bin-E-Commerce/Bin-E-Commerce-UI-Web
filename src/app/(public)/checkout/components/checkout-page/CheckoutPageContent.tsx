@@ -184,6 +184,13 @@ export function CheckoutPageContent() {
             }))
             .sort((left, right) => left.id.localeCompare(right.id));
 
+        // Giữ tab cửa hàng để khách theo dõi IPN; mở sẵn tab trong thao tác click để tránh popup blocker.
+        const paymentWindow =
+            paymentMethod === 'PAY2S'
+                ? window.open('about:blank', '_blank')
+                : null;
+        if (paymentWindow) paymentWindow.opener = null;
+
         // Dấu vân tay cart làm key đổi khi sản phẩm/số lượng đổi, nhưng giữ nguyên khi retry cùng checkout.
         orderMutation.mutate(
             {
@@ -196,12 +203,24 @@ export function CheckoutPageContent() {
                 cartFingerprint: JSON.stringify(selectedCartItems),
             },
             {
-                // Chuyển thẳng đến detail order vừa tạo để khách hàng thấy ngay mã đơn, trạng thái và snapshot giao hàng.
+                // Tab thanh toán riêng không chặn tab chi tiết, nơi trạng thái sẽ được làm mới đến khi backend nhận IPN.
                 onSuccess: (order) => {
-                    if (order.paymentUrl)
-                        window.location.assign(order.paymentUrl);
-                    else router.replace(`/profile/orders/${order.id}`);
+                    if (order.paymentUrl && paymentWindow) {
+                        paymentWindow.location.replace(
+                            `/profile/orders/${order.id}/payment`,
+                        );
+                        router.replace(`/profile/orders/${order.id}`);
+                    } else if (order.paymentUrl) {
+                        window.location.assign(
+                            `/profile/orders/${order.id}/payment`,
+                        );
+                    } else {
+                        paymentWindow?.close();
+                        router.replace(`/profile/orders/${order.id}`);
+                    }
                 },
+                // Nếu tạo đơn thất bại, đóng tab chờ để người dùng không bị bỏ lại ở trang trống.
+                onError: () => paymentWindow?.close(),
             },
         );
     }

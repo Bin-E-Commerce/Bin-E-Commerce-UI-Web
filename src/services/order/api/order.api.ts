@@ -8,6 +8,7 @@ import type {
     OrderResponse,
 } from '@/app/(public)/checkout/types/checkout.types';
 import type { CancelOrderInput } from '@/services/order/types/cancel-order.types';
+import type { Pay2sCustomerPaymentDetails } from '@/services/order/types/pay2s-payment.types';
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
 const PAY2S_RETURN = `${API_BASE_URL}${API_VERSION}/payments/pay2s/return`;
@@ -117,6 +118,36 @@ export async function getOrderQuote(
 export async function getOrder(orderId: string): Promise<OrderResponse> {
     const response = await authorizedAxios.get<OrderResponse>(
         `${ORDERS}/${orderId}`,
+    );
+    return response.data;
+}
+
+// Xin payment URL mới cho order Pay2S còn pending; backend xác minh owner, trạng thái và hạn thanh toán.
+export async function retryPay2sPayment(
+    orderId: string,
+): Promise<{ paymentUrl: string }> {
+    const response = await authorizedAxios.post<{ paymentUrl: string }>(
+        `${ORDERS}/${orderId}/pay2s-payment`,
+    );
+    return response.data;
+}
+
+// Lấy QR và hạn thanh toán đã lưu; refresh không tạo phiên mới hay đặt lại đồng hồ.
+export async function getPay2sPaymentDetails(
+    orderId: string,
+): Promise<Pay2sCustomerPaymentDetails> {
+    const response = await authorizedAxios.get<Pay2sCustomerPaymentDetails>(
+        `${ORDERS}/${orderId}/pay2s-payment`,
+    );
+    return response.data;
+}
+
+// Hủy phiên Pay2S qua backend; response order cho biết server đã chốt trạng thái đơn.
+export async function cancelPay2sPayment(
+    orderId: string,
+): Promise<OrderResponse> {
+    const response = await authorizedAxios.post<OrderResponse>(
+        `${ORDERS}/${orderId}/pay2s-payment/cancel`,
     );
     return response.data;
 }

@@ -58,6 +58,16 @@ export function useCustomerOrders(
         placeholderData: keepPreviousData,
         staleTime: 30_000,
         enabled,
+        refetchInterval: (query) => {
+            // Danh sách tự cập nhật khi còn đơn Pay2S gần đây đang chờ IPN; khi backend chốt trạng thái thì dừng polling.
+            const hasPendingPay2sOrder = query.state.data?.items.some(
+                (order) =>
+                    order.paymentMethod === 'PAY2S' &&
+                    order.paymentStatus === 'PENDING' &&
+                    order.status === 'PENDING',
+            );
+            return hasPendingPay2sOrder ? 10_000 : false;
+        },
     });
 }
 
@@ -85,6 +95,13 @@ export function useCustomerOrder(orderId: string, enabled = true) {
         enabled: Boolean(orderId) && enabled,
         staleTime: 30_000,
         refetchInterval: (query) => {
+            // IPN có thể đến sau redirect; tiếp tục đọc đơn Pay2S đang chờ để giao diện tự chuyển sang trạng thái đã chốt.
+            if (
+                query.state.data?.paymentMethod === 'PAY2S' &&
+                query.state.data.paymentStatus === 'PENDING' &&
+                query.state.data.status === 'PENDING'
+            )
+                return 10_000;
             const order = query.state.data;
             // Giữ nhịp polling shipment hiện tại để card nhận hàng xuất hiện sau webhook giao thành công.
             if (order?.fulfillmentStatus === 'SHIPPING') return 15_000;

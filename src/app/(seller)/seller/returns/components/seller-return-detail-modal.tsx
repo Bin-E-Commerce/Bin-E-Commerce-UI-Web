@@ -1,5 +1,5 @@
 // Modal này trình bày toàn bộ ngữ cảnh của một yêu cầu hoàn hàng cho Seller.
-// Component chỉ đọc snapshot request và order được truyền vào; thao tác duyệt, kiểm tra và tạo vận đơn vẫn thuộc màn hình danh sách.
+// Component chỉ đọc snapshot request và order; seller xác nhận nhận hàng ở danh sách, không chấm đạt/không đạt sản phẩm.
 
 'use client';
 import { Button } from '@/components/ui/button';
@@ -49,9 +49,9 @@ function getReturnLabel(value: string): string {
         AWAITING_SHIPMENT: 'Chờ khách gửi hàng',
         IN_TRANSIT: 'Đang hoàn về shop',
         SHIPMENT_FAILED: 'Gửi hàng hoàn thất bại',
-        RECEIVED: 'Chờ kiểm tra hàng',
-        INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
-        REFUND_PENDING: 'Đã kiểm tra đạt · Chờ hoàn tiền',
+        RECEIVED: 'Chờ shop xác nhận nhận hàng hoàn',
+        INSPECTION_FAILED: 'Không chấp thuận hoàn · Chờ gửi trả sản phẩm',
+        REFUND_PENDING: 'Đã xác nhận nhận hàng · Chờ hoàn tiền',
         REFUND_FAILED: 'Chuyển khoản hoàn lỗi · cần xử lý lại',
         REFUNDED: 'Đã hoàn tiền',
     };
@@ -109,7 +109,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-// Hiển thị detail read-only và tách khoản admin hoàn khách khỏi khoản có thể ghi nợ ví seller.
+// Hiển thị detail read-only, thể hiện trạng thái xác nhận nhận kiện và tách khoản admin hoàn khỏi nghĩa vụ ví seller.
 export function SellerReturnDetailModal({
     request,
     order,
@@ -133,6 +133,13 @@ export function SellerReturnDetailModal({
     // Với CHANGE_OF_MIND, tổng refund vẫn là tiền admin trả khách; seller không bị ghi nợ khoản hoàn này.
     const isChangeOfMind = request.reason === 'CHANGE_OF_MIND';
     const isRejected = request.status === 'REJECTED';
+    // Các trường inspection cũ được giữ để tương thích ledger.
+    // Giao diện chỉ diễn giải chúng thành trạng thái xác nhận shop đã nhận hàng.
+    const isReceiptConfirmed =
+        request.inspectionPassed === true ||
+        ['REFUND_PENDING', 'REFUND_FAILED', 'REFUNDED'].includes(
+            request.status,
+        );
     const returnShippingEstimate = Number(
         request.returnShippingEstimatedCost ?? 0,
     );
@@ -233,7 +240,7 @@ export function SellerReturnDetailModal({
                                                 Thông tin yêu cầu
                                             </h3>
                                             <p className="mt-0.5 text-xs text-zinc-500">
-                                                Nội dung Seller cần kiểm tra
+                                                Nội dung Seller cần xem
                                                 trước khi xử lý
                                             </p>
                                         </div>
@@ -342,7 +349,7 @@ export function SellerReturnDetailModal({
                                     </dl>
                                     <p className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">
                                         {isChangeOfMind && !isRejected
-                                            ? `Khách đổi ý nên tự chịu phí gửi hàng về shop. Shop không bị ghi nợ khoản hoàn; admin sẽ hoàn ${formatMoney(String(totalRefundAmount))} cho khách từ tiền đơn đang giữ sau khi hàng được kiểm tra đạt.`
+                                            ? `Khách đổi ý nên tự chịu phí gửi hàng về shop. Shop không bị ghi nợ khoản hoàn; admin sẽ hoàn ${formatMoney(String(totalRefundAmount))} cho khách từ tiền đơn đang giữ sau khi shop xác nhận nhận hàng hoàn.`
                                             : isRejected
                                               ? 'Yêu cầu đã bị từ chối nên không phát sinh hoàn tiền hoặc phí vận chuyển hoàn.'
                                               : 'Khách có thể yêu cầu hoàn trong 7 ngày kể từ khi đơn hoàn tất. Phí hoàn chốt theo chi phí GHN thực tế khi nhận kiện.'}
@@ -512,41 +519,40 @@ export function SellerReturnDetailModal({
                                         Phí trước khi GHN nhận kiện chỉ là ước
                                         tính; chi phí carrier chốt khi GHN tiếp
                                         nhận. Ví shop chỉ ghi nợ phí nếu hàng
-                                        hoàn được kiểm tra đạt; nếu không đạt và
-                                        khách chịu phí, hệ thống chỉ ghi khoản
-                                        phải thu, chưa thu tiền thật.
+                                        về shop. Sau khi shop xác nhận đã nhận
+                                        kiện, hệ thống ghi nhận các khoản phí
+                                        theo payer đã chốt.
                                     </p>
                                 </section>
 
                                 <section className="rounded-2xl border border-zinc-200 bg-white p-5">
                                     <h3 className="font-semibold text-zinc-950">
-                                        Kiểm tra hàng hoàn
+                                        Xác nhận nhận hàng hoàn
                                     </h3>
                                     <dl className="mt-3">
                                         <DetailRow
-                                            label="Kết quả kiểm tra"
-                                            value={
-                                                request.inspectionPassed ===
-                                                null
-                                                    ? 'Chưa kiểm tra'
-                                                    : request.inspectionPassed
-                                                      ? 'Đạt kiểm tra'
-                                                      : 'Không đạt kiểm tra'
-                                            }
+                                            label="Trạng thái nhận hàng"
+                                            value={isReceiptConfirmed
+                                                ? 'Shop đã xác nhận nhận hàng hoàn'
+                                                : request.status === 'RECEIVED'
+                                                  ? 'Đang chờ shop xác nhận'
+                                                  : request.status ===
+                                                      'INSPECTION_FAILED'
+                                                    ? 'Luồng cũ: shop không chấp thuận hoàn'
+                                                    : 'Chưa xác nhận nhận hàng hoàn'}
                                         />
                                         <DetailRow
-                                            label="Ghi chú kiểm tra"
-                                            value={
-                                                request.inspectionNote ||
-                                                'Chưa có'
-                                            }
-                                        />
-                                        <DetailRow
-                                            label="Kiểm tra lúc"
+                                            label="Xác nhận lúc"
                                             value={formatDate(
                                                 request.inspectedAt,
                                             )}
                                         />
+                                        {request.inspectionNote ? (
+                                            <DetailRow
+                                                label="Ghi chú lịch sử"
+                                                value={request.inspectionNote}
+                                            />
+                                        ) : null}
                                     </dl>
                                 </section>
 

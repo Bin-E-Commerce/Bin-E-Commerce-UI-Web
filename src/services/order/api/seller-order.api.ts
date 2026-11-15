@@ -186,18 +186,12 @@ export async function reviewSellerReturn(
     return response.data;
 }
 
-// Seller ghi nhận kết quả kiểm tra kiện hàng đã hoàn về kho.
-export async function inspectSellerReturn(
+// Seller xác nhận đã nhận kiện hàng hoàn; backend chốt trạng thái return và giữ refund ở bước xử lý tiếp theo.
+export async function confirmSellerReturnReceived(
     returnId: string,
-    passed: boolean,
-    note?: string,
 ): Promise<OrderReturnResponse> {
     const response = await authorizedAxios.post<OrderReturnResponse>(
-        `${SELLER_ORDERS}/returns/${returnId}/inspection`,
-        {
-            passed,
-            note: note?.trim() || undefined,
-        },
+        `${SELLER_ORDERS}/returns/${returnId}/confirm-received`,
     );
     return response.data;
 }

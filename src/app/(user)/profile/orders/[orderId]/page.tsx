@@ -37,6 +37,7 @@ import {
     useUpdateCustomerCancellation,
 } from '../hooks/use-customer-orders';
 import { CancelOrderDialog } from '../components/cancel-order-dialog';
+import { CustomerPay2sPaymentRetry } from '../components/customer-pay2s-payment-retry';
 import { CustomerShipmentPanel } from '@/common/shipping';
 import { OrderLifecycleStepper } from '@/common/orders';
 import { useCustomerTracking } from '@/hooks/shipping/use-shipment';
@@ -358,6 +359,11 @@ export default function ProfileOrderDetailPage() {
                     ? 'Pay2S'
                     : 'Pay2S · Chờ xác nhận'
                 : 'COD';
+    // Không cho dùng lại link trên COD, đơn đã xử lý hoặc khoản Pay2S đã được ghi nhận.
+    const canRetryPay2sPayment =
+        order.status === 'PENDING' &&
+        order.paymentMethod === 'PAY2S' &&
+        order.paymentStatus === 'PENDING';
     // Chỉ thêm lối tắt hoàn hàng khi card thật sự có thể xuất hiện hoặc đang có yêu cầu cần theo dõi.
     const showReturns =
         (returnsQuery.data?.length ?? 0) > 0 ||
@@ -674,6 +680,9 @@ export default function ProfileOrderDetailPage() {
                                     </span>
                                 </div>
                             </div>
+                            {canRetryPay2sPayment ? (
+                                <CustomerPay2sPaymentRetry orderId={order.id} />
+                            ) : null}
                         </section>
 
                         <section

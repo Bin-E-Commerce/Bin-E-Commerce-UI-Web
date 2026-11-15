@@ -54,9 +54,9 @@ function statusLabel(status: OrderReturnResponse['status']): string {
         AWAITING_SHIPMENT: 'Chờ gửi hàng hoàn',
         IN_TRANSIT: 'Đang vận chuyển về shop',
         SHIPMENT_FAILED: 'Vận chuyển lỗi',
-        RECEIVED: 'Shop đã nhận hàng',
-        INSPECTION_FAILED: 'Kiểm tra không đạt · Chờ gửi trả sản phẩm',
-        REFUND_PENDING: 'Đã kiểm tra đạt · Chờ hoàn tiền',
+        RECEIVED: 'Chờ shop xác nhận nhận hàng hoàn',
+        INSPECTION_FAILED: 'Không chấp thuận hoàn · Chờ gửi trả sản phẩm',
+        REFUND_PENDING: 'Shop đã xác nhận nhận hàng · Chờ hoàn tiền',
         REFUND_FAILED: 'Chuyển khoản hoàn lỗi · đang được xử lý lại',
         REFUNDED: 'Đã hoàn tiền',
     };
