@@ -1,5 +1,5 @@
 // File này là transport adapter cho Order API qua Gateway.
-// Client chỉ gửi addressId, COD và note; item, giá, tồn kho và tổng tiền do Order Service quyết định.
+// Client gửi lựa chọn checkout; item, giá, tồn kho và tổng tiền do Order Service quyết định.
 
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
@@ -8,7 +8,6 @@ import type {
     OrderResponse,
 } from '@/app/(public)/checkout/types/checkout.types';
 import type { CancelOrderInput } from '@/services/order/types/cancel-order.types';
-import type { Pay2sCustomerPaymentDetails } from '@/services/order/types/pay2s-payment.types';
 
 const ORDERS = `${API_BASE_URL}${API_VERSION}/orders`;
 const PAY2S_RETURN = `${API_BASE_URL}${API_VERSION}/payments/pay2s/return`;
@@ -21,6 +20,7 @@ export type Pay2sReturnResponse =
     | {
           status:
               | 'FAILED'
+              | 'CANCELLED'
               | 'REFUND_PENDING'
               | 'REFUNDED'
               | 'PENDING'
@@ -128,26 +128,6 @@ export async function retryPay2sPayment(
 ): Promise<{ paymentUrl: string }> {
     const response = await authorizedAxios.post<{ paymentUrl: string }>(
         `${ORDERS}/${orderId}/pay2s-payment`,
-    );
-    return response.data;
-}
-
-// Lấy QR và hạn thanh toán đã lưu; refresh không tạo phiên mới hay đặt lại đồng hồ.
-export async function getPay2sPaymentDetails(
-    orderId: string,
-): Promise<Pay2sCustomerPaymentDetails> {
-    const response = await authorizedAxios.get<Pay2sCustomerPaymentDetails>(
-        `${ORDERS}/${orderId}/pay2s-payment`,
-    );
-    return response.data;
-}
-
-// Hủy phiên Pay2S qua backend; response order cho biết server đã chốt trạng thái đơn.
-export async function cancelPay2sPayment(
-    orderId: string,
-): Promise<OrderResponse> {
-    const response = await authorizedAxios.post<OrderResponse>(
-        `${ORDERS}/${orderId}/pay2s-payment/cancel`,
     );
     return response.data;
 }

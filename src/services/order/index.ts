@@ -5,8 +5,4 @@ export type {
     CancelOrderInput,
     RefundBankAccountInput,
 } from './types/cancel-order.types';
-export type {
-    Pay2sCustomerPaymentDetails,
-    Pay2sCustomerPaymentStatus,
-} from './types/pay2s-payment.types';
 export type { SellerReturnFinancePreview } from './types/seller-order.types';

@@ -14,20 +14,12 @@ export function CustomerPay2sPaymentRetry({
 }: CustomerPay2sPaymentRetryProps) {
     const mutation = useRetryPay2sPayment(orderId);
 
-    // Mở tab chờ trong click để trình duyệt không chặn; trang danh sách/chi tiết ở tab hiện tại vẫn theo dõi IPN.
+    // Lấy URL sau khi backend xác nhận đơn còn được thanh toán.
+    // Chuyển tab hiện tại để tránh tạo thêm tab rỗng.
     function handleRetryPayment(): void {
-        const paymentWindow = window.open('about:blank', '_blank');
-        if (paymentWindow) paymentWindow.opener = null;
-
-        // URL chỉ được dùng sau ownership/state check; popup bị chặn sẽ dùng cùng tab như phương án dự phòng.
+        // Backend kiểm tra chủ đơn, trạng thái tiền và hạn thanh toán trước khi cấp URL.
         mutation.mutate(undefined, {
-            onSuccess: () => {
-                const paymentPath = `/profile/orders/${orderId}/payment`;
-                if (paymentWindow) paymentWindow.location.replace(paymentPath);
-                else window.location.assign(paymentPath);
-            },
-            // Không để tab rỗng tồn tại nếu backend từ chối tạo lại link.
-            onError: () => paymentWindow?.close(),
+            onSuccess: ({ paymentUrl }) => window.location.assign(paymentUrl),
         });
     }
 

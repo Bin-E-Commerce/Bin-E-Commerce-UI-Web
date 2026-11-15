@@ -30,7 +30,7 @@ import {
 import { CustomerOrderActions } from './components/customer-order-actions';
 import { CustomerPay2sPaymentRetry } from './components/customer-pay2s-payment-retry';
 import { CustomerOrderTabs } from './components/customer-order-tabs';
-import { Pay2sPaymentSuccessDialog } from './components/Pay2sPaymentSuccessDialog';
+import { OrderStatusBadge } from './components/order-status-badge';
 import { usePay2sReturnVerification } from './hooks/use-pay2s-return-verification';
 
 // Định dạng thời gian tại UI, dữ liệu ISO vẫn giữ nguyên từ API.
@@ -71,7 +71,7 @@ function readFilter(params: URLSearchParams): CustomerOrderFilter {
     };
 }
 
-// Render lịch sử đơn và xử lý Pay2S Return; chỉ mở biên nhận khi backend xác nhận PAID.
+// Render lịch sử đơn và xác minh Pay2S Return; thông báo thành công không chặn thao tác chuyển tab.
 export default function ProfileOrdersPage() {
     const router = useRouter();
     const pathname = usePathname();
@@ -79,8 +79,7 @@ export default function ProfileOrdersPage() {
     const hasPay2sReturn = params.has('orderId');
     const filter = readFilter(params);
     const page = Math.max(1, Number(params.get('page') ?? 1) || 1);
-    const { verifiedPayment, clearVerifiedPayment } =
-        usePay2sReturnVerification(hasPay2sReturn);
+    usePay2sReturnVerification(hasPay2sReturn);
     const ordersQuery = useCustomerOrders(filter, page);
     const images = useLegacyOrderPreviewImages(ordersQuery.data?.items ?? []);
     const isOrdersLoading =
@@ -96,11 +95,7 @@ export default function ProfileOrdersPage() {
     }
 
     return (
-        <div className="mx-auto max-w-7xl md:px-0 py-8 sm:px-6">
-            <Pay2sPaymentSuccessDialog
-                payment={verifiedPayment}
-                onClose={clearVerifiedPayment}
-            />
+        <div className="mx-auto max-w-7xl py-8">
             <div className="flex flex-col gap-6 md:flex-row md:gap-8">
                 <ProfileSidebar />
                 <main className="min-w-0 flex-1">
@@ -187,6 +182,12 @@ export default function ProfileOrdersPage() {
                                     order.status === 'PENDING' &&
                                     order.paymentMethod === 'PAY2S' &&
                                     order.paymentStatus === 'PENDING';
+                                // Đơn chưa được xác nhận giữ trạng thái checkout để không hiện nhầm stage mặc định; sau đó dùng stage vận chuyển từ server.
+                                const displayOrderStatus =
+                                    order.status !== 'CONFIRMED'
+                                        ? order.status
+                                        : (order.fulfillmentStatus ??
+                                          order.status);
                                 const orderDetailHref = `/profile/orders/${order.id}`;
 
                                 return (
@@ -206,10 +207,15 @@ export default function ProfileOrdersPage() {
                                                             aria-hidden="true"
                                                         />
                                                     </span>
-                                                    <div>
+                                                    <div className="flex flex-wrap items-center gap-2">
                                                         <p className="font-bold text-zinc-950">
                                                             Đơn hàng
                                                         </p>
+                                                        <OrderStatusBadge
+                                                            status={
+                                                                displayOrderStatus
+                                                            }
+                                                        />
                                                     </div>
                                                 </div>
                                                 {/* Nêu trạng thái tiền riêng để khách không nhầm đơn Pay2S chưa trả với đơn đã xác nhận. */}

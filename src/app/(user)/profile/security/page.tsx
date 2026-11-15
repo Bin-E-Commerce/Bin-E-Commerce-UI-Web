@@ -6,7 +6,7 @@ import { ChangePasswordForm } from './components/ChangePasswordForm';
 // Trang bảo mật chỉ giữ bố cục, phần form và logic đổi mật khẩu được tách thành feature components/hooks.
 export default function SecurityPage() {
     return (
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-0 lg:px-0">
+        <div className="mx-auto max-w-7xl py-10">
             <div className="flex flex-col gap-8 md:flex-row">
                 <ProfileSidebar />
 

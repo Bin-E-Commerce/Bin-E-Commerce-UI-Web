@@ -3,3 +3,7 @@
 export interface CustomerPay2sPaymentRetryProps {
     orderId: string;
 }
+
+export interface CustomerPay2sLegacyPaymentRedirectProps {
+    params: Promise<{ orderId: string }>;
+}

@@ -14,9 +14,9 @@ export function useRetryPay2sPayment(orderId: string) {
 
     return useMutation({
         mutationFn: () => retryPay2sPayment(orderId),
-        onSuccess: async () => {
-            // Retry tạo attempt mới; refresh cả list lẫn detail để thấy PENDING và bắt đầu polling ngay.
-            await Promise.all([
+        onSuccess: () => {
+            // Làm mới cache nền để chuyển sang cổng Pay2S không phải chờ request này.
+            void Promise.all([
                 queryClient.invalidateQueries({
                     queryKey: ['customer-orders'],
                 }),

@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Clock3, Search, Store, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -121,7 +121,8 @@ function SearchOptionRow({ option }: SearchOptionRowProps) {
 }
 
 // Kết hợp query, gợi ý và lịch sử cục bộ để tìm sản phẩm/shop.
-// Header đổi chiều rộng theo focus; popup bám theo anchor để hai vùng bung ra đồng bộ.
+// Header đổi chiều rộng theo focus; popup neo vào wrapper của ô nhập để có cùng chiều rộng.
+// Khi đóng, menu header được tháo khỏi portal ngay để positioner không đổi cỡ theo input đang thu gọn.
 // Query được debounce trước API; xóa một mục chỉ cập nhật lịch sử, không điều hướng hay gửi tracking.
 export function ProductSearchBox({
     variant,
@@ -130,6 +131,7 @@ export function ProductSearchBox({
     onSearchScopeChange,
 }: ProductSearchBoxProps) {
     const router = useRouter();
+    const searchAnchorRef = useRef<HTMLDivElement | null>(null);
     const [query, setQuery] = useState(initialQuery);
     const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
     const [isOpen, setIsOpen] = useState(false);
@@ -261,7 +263,7 @@ export function ProductSearchBox({
 
     const isHeader = variant === 'header';
     const showRecentSearches = !normalizedQuery && recentSearches.length > 0;
-    // Chỉ đổi target theo focus; transition giới hạn ở chiều rộng để icon header không bị animate theo.
+    // Menu header ẩn tức thì khi isOpen=false; chiều rộng input vẫn co mượt trong 200 ms.
     const headerWidthClasses = isOpen
         ? 'w-[min(36rem,calc(100vw-15rem))] lg:w-[48rem]'
         : 'w-52 lg:w-80';
@@ -271,7 +273,7 @@ export function ProductSearchBox({
             onSubmit={handleSubmit}
             className={
                 isHeader
-                    ? `relative flex items-center transition-[width] duration-300 ease-in-out motion-reduce:transition-none ${headerWidthClasses}`
+                    ? `relative flex items-center transition-[width] duration-200 ease-in-out motion-reduce:transition-none ${headerWidthClasses}`
                     : 'relative flex w-full items-center gap-2'
             }
         >
@@ -288,7 +290,7 @@ export function ProductSearchBox({
                 autoHighlight={false}
                 filter={null}
             >
-                <div className="relative min-w-0 flex-1">
+                <div ref={searchAnchorRef} className="relative min-w-0 flex-1">
                     <ComboboxInput
                         aria-label="Tìm kiếm sản phẩm hoặc cửa hàng"
                         maxLength={120}
@@ -364,142 +366,149 @@ export function ProductSearchBox({
                         <span className="hidden sm:inline">Tìm kiếm</span>
                     </Button>
                 ) : null}
-                <ComboboxContent
-                    className="w-(--anchor-width) min-w-0 max-w-[calc(100vw-1rem)] rounded-2xl border-neutral-200 bg-white p-2 shadow-[0_18px_55px_-22px_rgba(0,0,0,0.22)] duration-200 ease-in-out"
-                    sideOffset={8}
-                >
-                    {(suggestionsQuery.isFetching ||
-                        shopSuggestionsQuery.isFetching) &&
-                    options.length > 0 ? (
-                        <p className="px-3 py-2 text-xs text-neutral-500">
-                            Đang tìm gợi ý…
-                        </p>
-                    ) : null}
-                    {(suggestionsQuery.isError ||
-                        shopSuggestionsQuery.isError) &&
-                    options.length > 0 ? (
-                        <p className="px-3 py-2 text-xs text-neutral-500">
-                            Một vài gợi ý chưa tải được; bạn vẫn có thể tìm đầy
-                            đủ bên dưới.
-                        </p>
-                    ) : null}
-                    {showRecentSearches ? (
-                        <div
-                            role="group"
-                            aria-label="Tìm gần đây"
-                            className="space-y-1 p-1"
-                        >
-                            {recentSearches.map((recentQuery, index) => (
-                                <div
-                                    key={`recent-${index}-${recentQuery}`}
-                                    className="flex items-center gap-1"
+                {/* Tháo popup header khỏi portal trước khi anchor bắt đầu thu về kích thước gọn. */}
+                {!isHeader || isOpen ? (
+                    <ComboboxContent
+                        anchor={isHeader ? searchAnchorRef : undefined}
+                        className="w-(--anchor-width) min-w-0 max-w-[calc(100vw-1rem)] rounded-2xl border-neutral-200 bg-white p-2 shadow-[0_18px_55px_-22px_rgba(0,0,0,0.22)] duration-200 ease-in-out"
+                        sideOffset={8}
+                    >
+                        {(suggestionsQuery.isFetching ||
+                            shopSuggestionsQuery.isFetching) &&
+                        options.length > 0 ? (
+                            <p className="px-3 py-2 text-xs text-neutral-500">
+                                Đang tìm gợi ý…
+                            </p>
+                        ) : null}
+                        {(suggestionsQuery.isError ||
+                            shopSuggestionsQuery.isError) &&
+                        options.length > 0 ? (
+                            <p className="px-3 py-2 text-xs text-neutral-500">
+                                Một vài gợi ý chưa tải được; bạn vẫn có thể tìm
+                                đầy đủ bên dưới.
+                            </p>
+                        ) : null}
+                        {showRecentSearches ? (
+                            <div
+                                role="group"
+                                aria-label="Tìm gần đây"
+                                className="space-y-1 p-1"
+                            >
+                                {recentSearches.map((recentQuery, index) => (
+                                    <div
+                                        key={`recent-${index}-${recentQuery}`}
+                                        className="flex items-center gap-1"
+                                    >
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="h-12 min-w-0 flex-1 justify-start rounded-xl px-3 text-left font-normal text-neutral-900 hover:bg-neutral-100"
+                                            onClick={() =>
+                                                submitSearch(recentQuery)
+                                            }
+                                        >
+                                            <Clock3 className="size-4 shrink-0 text-neutral-400" />
+                                            <span className="min-w-0 flex-1 truncate">
+                                                {recentQuery}
+                                            </span>
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon-sm"
+                                            aria-label={`Xóa lịch sử tìm kiếm: ${recentQuery}`}
+                                            className="text-neutral-400 hover:bg-neutral-100 hover:text-red-600"
+                                            onPointerDown={(event) =>
+                                                event.preventDefault()
+                                            }
+                                            onClick={() =>
+                                                handleRemoveRecentSearch(
+                                                    recentQuery,
+                                                )
+                                            }
+                                        >
+                                            <X className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null}
+                        {!showRecentSearches ? (
+                            <ComboboxEmpty>
+                                {normalizedQuery.length >= 2 &&
+                                normalizedQuery !== debouncedQuery
+                                    ? 'Đang chuẩn bị gợi ý…'
+                                    : suggestionsQuery.isFetching ||
+                                        shopSuggestionsQuery.isFetching
+                                      ? 'Đang tìm gợi ý…'
+                                      : suggestionsQuery.isError &&
+                                          shopSuggestionsQuery.isError
+                                        ? 'Hãy nhấn Enter để xem trang kết quả.'
+                                        : suggestionsQuery.isError ||
+                                            shopSuggestionsQuery.isError
+                                          ? 'Một số gợi ý chưa tải được. Hãy mở trang kết quả để tiếp tục tìm.'
+                                          : normalizedQuery.length >= 2
+                                            ? 'Chưa thấy sản phẩm hoặc shop phù hợp. Hãy thử từ khóa khác.'
+                                            : 'Nhập ít nhất 2 ký tự để tìm sản phẩm hoặc shop.'}
+                            </ComboboxEmpty>
+                        ) : null}
+                        <ComboboxList className="max-h-80">
+                            {(option: ProductSearchOption, index: number) => (
+                                <ComboboxItem
+                                    key={option.id}
+                                    value={option}
+                                    index={index}
+                                    className="min-h-14 cursor-pointer rounded-xl px-2.5 py-2 transition-colors data-[highlighted]:bg-neutral-100"
                                 >
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        className="h-12 min-w-0 flex-1 justify-start rounded-xl px-3 text-left font-normal text-neutral-900 hover:bg-neutral-100"
-                                        onClick={() =>
-                                            submitSearch(recentQuery)
-                                        }
-                                    >
-                                        <Clock3 className="size-4 shrink-0 text-neutral-400" />
-                                        <span className="min-w-0 flex-1 truncate">
-                                            {recentQuery}
-                                        </span>
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        aria-label={`Xóa lịch sử tìm kiếm: ${recentQuery}`}
-                                        className="text-neutral-400 hover:bg-neutral-100 hover:text-red-600"
-                                        onPointerDown={(event) =>
-                                            event.preventDefault()
-                                        }
-                                        onClick={() =>
-                                            handleRemoveRecentSearch(
-                                                recentQuery,
-                                            )
-                                        }
-                                    >
-                                        <X className="size-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    ) : null}
-                    {!showRecentSearches ? (
-                        <ComboboxEmpty>
-                            {normalizedQuery.length >= 2 &&
-                            normalizedQuery !== debouncedQuery
-                                ? 'Đang chuẩn bị gợi ý…'
-                                : suggestionsQuery.isFetching ||
-                                    shopSuggestionsQuery.isFetching
-                                  ? 'Đang tìm gợi ý…'
-                                  : suggestionsQuery.isError &&
-                                      shopSuggestionsQuery.isError
-                                    ? 'Hãy nhấn Enter để xem trang kết quả.'
-                                    : suggestionsQuery.isError ||
-                                        shopSuggestionsQuery.isError
-                                      ? 'Một số gợi ý chưa tải được. Hãy mở trang kết quả để tiếp tục tìm.'
-                                      : normalizedQuery.length >= 2
-                                        ? 'Chưa thấy sản phẩm hoặc shop phù hợp. Hãy thử từ khóa khác.'
-                                        : 'Nhập ít nhất 2 ký tự để tìm sản phẩm hoặc shop.'}
-                        </ComboboxEmpty>
-                    ) : null}
-                    <ComboboxList className="max-h-80">
-                        {(option: ProductSearchOption, index: number) => (
-                            <ComboboxItem
-                                key={option.id}
-                                value={option}
-                                index={index}
-                                className="min-h-14 cursor-pointer rounded-xl px-2.5 py-2 transition-colors data-[highlighted]:bg-neutral-100"
-                            >
-                                <SearchOptionRow option={option} />
-                            </ComboboxItem>
-                        )}
-                    </ComboboxList>
-                    {normalizedQuery.length >= 2 ? (
-                        <div className="mt-1 grid grid-cols-2 gap-2 border-t border-neutral-100 p-1 pt-3">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="h-10 justify-center rounded-xl border-neutral-200 text-xs font-semibold text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-800 sm:text-sm"
-                                onClick={() =>
-                                    submitSearch(normalizedQuery, 'products')
-                                }
-                            >
-                                <Search className="size-4" />
-                                Tìm sản phẩm
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="h-10 justify-center rounded-xl border-neutral-200 text-xs font-semibold text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-800 sm:text-sm"
-                                onClick={() =>
-                                    submitSearch(normalizedQuery, 'shops')
-                                }
-                            >
-                                <Store className="size-4" />
-                                Tìm cửa hàng
-                            </Button>
-                        </div>
-                    ) : recentSearches.length > 0 ? (
-                        <div className="flex items-center justify-between border-t border-neutral-100 px-2 pt-2">
-                            <span className="text-xs font-medium text-neutral-500">
-                                Tìm gần đây
-                            </span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-7 px-2 text-xs text-neutral-500"
-                                onClick={handleClearRecentSearches}
-                            >
-                                Xóa lịch sử
-                            </Button>
-                        </div>
-                    ) : null}
-                </ComboboxContent>
+                                    <SearchOptionRow option={option} />
+                                </ComboboxItem>
+                            )}
+                        </ComboboxList>
+                        {normalizedQuery.length >= 2 ? (
+                            <div className="mt-1 grid grid-cols-2 gap-2 border-t border-neutral-100 p-1 pt-3">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-10 justify-center rounded-xl border-neutral-200 text-xs font-semibold text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-800 sm:text-sm"
+                                    onClick={() =>
+                                        submitSearch(
+                                            normalizedQuery,
+                                            'products',
+                                        )
+                                    }
+                                >
+                                    <Search className="size-4" />
+                                    Tìm sản phẩm
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-10 justify-center rounded-xl border-neutral-200 text-xs font-semibold text-neutral-700 hover:border-neutral-300 hover:bg-neutral-100 hover:text-neutral-800 sm:text-sm"
+                                    onClick={() =>
+                                        submitSearch(normalizedQuery, 'shops')
+                                    }
+                                >
+                                    <Store className="size-4" />
+                                    Tìm cửa hàng
+                                </Button>
+                            </div>
+                        ) : recentSearches.length > 0 ? (
+                            <div className="flex items-center justify-between border-t border-neutral-100 px-2 pt-2">
+                                <span className="text-xs font-medium text-neutral-500">
+                                    Tìm gần đây
+                                </span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs text-neutral-500"
+                                    onClick={handleClearRecentSearches}
+                                >
+                                    Xóa lịch sử
+                                </Button>
+                            </div>
+                        ) : null}
+                    </ComboboxContent>
+                ) : null}
             </Combobox>
         </form>
     );

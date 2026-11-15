@@ -133,8 +133,9 @@ export function useCheckout() {
             });
             return createCodOrder({ ...order, idempotencyKey });
         },
-        onSuccess: async (order) => {
-            await queryClient.invalidateQueries({
+        onSuccess: (order) => {
+            // Đánh dấu cart cũ mà không đợi refetch; điều hướng Pay2S cần chạy ngay khi có URL.
+            void queryClient.invalidateQueries({
                 queryKey: ['cart', userId ?? 'anonymous'],
             });
             if (order.warnings.length > 0) toast.warning(order.warnings[0]);

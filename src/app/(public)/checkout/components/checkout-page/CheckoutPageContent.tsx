@@ -161,8 +161,8 @@ export function CheckoutPageContent() {
         }
     }
 
-    // Chỉ gửi đơn sau khi địa chỉ hợp lệ và quote đã thành công; nếu quote lỗi, backend có thể không biết phí cần thu.
-    // Chặn ở cả handler lẫn nút để bảo vệ luồng checkout khi trạng thái query thay đổi giữa hai lần render.
+    // Tạo đơn sau khi địa chỉ và quote hợp lệ.
+    // Pay2S dùng cùng tab để callback quay về lịch sử đơn hàng.
     function handleSubmitOrder(): void {
         if (!activeAddressId) {
             toast.error('Vui lòng chọn hoặc thêm địa chỉ giao hàng.');
@@ -184,13 +184,6 @@ export function CheckoutPageContent() {
             }))
             .sort((left, right) => left.id.localeCompare(right.id));
 
-        // Giữ tab cửa hàng để khách theo dõi IPN; mở sẵn tab trong thao tác click để tránh popup blocker.
-        const paymentWindow =
-            paymentMethod === 'PAY2S'
-                ? window.open('about:blank', '_blank')
-                : null;
-        if (paymentWindow) paymentWindow.opener = null;
-
         // Dấu vân tay cart làm key đổi khi sản phẩm/số lượng đổi, nhưng giữ nguyên khi retry cùng checkout.
         orderMutation.mutate(
             {
@@ -203,24 +196,20 @@ export function CheckoutPageContent() {
                 cartFingerprint: JSON.stringify(selectedCartItems),
             },
             {
-                // Tab thanh toán riêng không chặn tab chi tiết, nơi trạng thái sẽ được làm mới đến khi backend nhận IPN.
                 onSuccess: (order) => {
-                    if (order.paymentUrl && paymentWindow) {
-                        paymentWindow.location.replace(
-                            `/profile/orders/${order.id}/payment`,
-                        );
-                        router.replace(`/profile/orders/${order.id}`);
-                    } else if (order.paymentUrl) {
-                        window.location.assign(
-                            `/profile/orders/${order.id}/payment`,
-                        );
-                    } else {
-                        paymentWindow?.close();
-                        router.replace(`/profile/orders/${order.id}`);
+                    if (order.paymentUrl) {
+                        // Dùng URL từ Order Service để Pay2S callback về danh sách trong tab này.
+                        window.location.assign(order.paymentUrl);
+                        return;
                     }
+                    // Giữ lối xem đơn nếu Pay2S chưa cấp URL để khách có thể dùng CTA thanh toán lại.
+                    if (paymentMethod === 'PAY2S') {
+                        toast.info(
+                            'Đơn hàng đã tạo nhưng chưa mở được Pay2S. Bạn có thể tiếp tục thanh toán từ chi tiết đơn hàng.',
+                        );
+                    }
+                    router.replace(`/profile/orders/${order.id}`);
                 },
-                // Nếu tạo đơn thất bại, đóng tab chờ để người dùng không bị bỏ lại ở trang trống.
-                onError: () => paymentWindow?.close(),
             },
         );
     }

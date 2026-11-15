@@ -105,7 +105,7 @@ export default function SessionsPage() {
     }
 
     return (
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-0 lg:px-0">
+        <div className="mx-auto max-w-7xl py-10">
             <ConfirmRevokeModal
                 open={showConfirmAll}
                 loading={revokingAll}
