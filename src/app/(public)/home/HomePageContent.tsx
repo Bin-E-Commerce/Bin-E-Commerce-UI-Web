@@ -11,7 +11,8 @@ import { HomeShortcutSection } from './sections/shortcuts/HomeShortcutSection';
 import { HomeShowcasePrompt } from './components/HomeShowcasePrompt';
 import { selectFeaturedProducts } from './utils/product-presentation';
 
-// Điều phối các section của homepage từ một nguồn dữ liệu chung để chỉ gọi API một lần.
+// Điều phối section homepage; catalog cấp cho khu sản phẩm, còn gợi ý lấy
+// riêng từ model.
 export function HomePageContent() {
     const homeQuery = useHomeData();
 
@@ -27,7 +28,6 @@ export function HomePageContent() {
         (product) => !featuredIds.has(product.id),
     );
     const topSearchProducts = remainingProducts.slice(0, 6);
-    const recommendationProducts = remainingProducts.slice(6, 30);
 
     return (
         <div className="bg-zinc-100 pb-10 text-zinc-950">
@@ -52,9 +52,7 @@ export function HomePageContent() {
                     mode="rail"
                 />
             ) : null}
-            {recommendationProducts.length > 0 ? (
-                <HomeRecommendationSection products={recommendationProducts} />
-            ) : null}
+            <HomeRecommendationSection />
         </div>
     );
 }

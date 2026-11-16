@@ -1,4 +1,4 @@
-// Hook này tải tối đa 24 recommendation ở Home; lỗi API được giữ ngoài luồng để section dùng catalog fallback.
+// Hook tải tối đa 24 recommendation; chỉ dùng kết quả model hợp lệ cho homepage.
 
 'use client';
 

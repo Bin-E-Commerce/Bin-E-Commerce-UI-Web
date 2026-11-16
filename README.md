@@ -137,8 +137,7 @@ This keeps service discovery, authentication enforcement, rate limiting, request
 - review shop profile change requests;
 - manage access-control information;
 - inspect recommendation analytics;
-- adjust recommendation policy and AI ranking status;
-- review policy history and rollback;
+- view LambdaRank readiness and candidate-source status;
 - operate platform-facing admin screens.
 
 ---
@@ -211,9 +210,7 @@ This keeps service discovery, authentication enforcement, rate limiting, request
 - shop profile change review;
 - access-control overview;
 - recommendation analytics;
-- recommendation policy configuration;
-- AI ranking switch and read-only model/source status;
-- policy history and rollback UI.
+- read-only LambdaRank model and candidate-source status.
 
 ### Platform showcase
 
@@ -643,19 +640,9 @@ Admin pages are permission-aware and use dedicated service adapters for:
 - shop profile change requests;
 - access-control information;
 - recommendation analytics;
-- recommendation policy;
-- policy history and rollback.
+- read-only recommendation runtime status.
 
-The recommendation admin screen can display:
-
-- Standard Ranking baseline;
-- AI-enabled state;
-- AI blend percentage;
-- model readiness/fallback;
-- candidate pipeline operational status;
-- ranking weights;
-- policy version;
-- audit history.
+The recommendation admin screen displays the active ranking mode and objective, model readiness and version, feature count, candidate-source status, and historical attribution analytics. Model changes are delivered through the training and deployment process.
 
 The UI does not call AI Service directly and never receives internal model credentials.
 
