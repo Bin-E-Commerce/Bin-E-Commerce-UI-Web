@@ -39,7 +39,9 @@ export interface AdminFinanceSnapshot {
     platformBalance: string;
     // Tiền seller đã đủ điều kiện thanh toán, không bao gồm phần còn đang chờ.
     sellerPayableBalance: string;
-    // Hoàn tiền đang xử lý được hiển thị riêng, không cộng vào khoản phải trả seller.
+    // Tiền hàng seller đang chờ đơn hoàn tất và được giải phóng sang số dư khả dụng.
+    sellerPendingBalance: string;
+    // Tổng hồ sơ hoàn đang chờ xử lý; không cộng vào số dư seller khả dụng.
     pendingRefundBalance: string;
     reservedWithdrawalBalance: string;
     shippingFundBalance: string;

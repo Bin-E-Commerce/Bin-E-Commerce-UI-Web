@@ -12,7 +12,8 @@ import {
 import type { FinanceMetricsProps } from '../../types/dashboard/finance-dashboard.types';
 import { formatMoney } from '../../utils/format-finance-money';
 
-// Hiển thị snapshot tài chính; tổng hoàn đang chờ tách riêng khỏi khoản seller đã chốt.
+// Hiển thị snapshot admin với số dư seller dùng được và tiền hàng đang chờ tách riêng.
+// Component chỉ định dạng dữ liệu API, không tự tính số dư hoặc trộn tiền hoàn khách vào ví seller.
 export function FinanceMetrics({ overview }: FinanceMetricsProps) {
     return (
         <section
@@ -27,10 +28,10 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                     highlight: true,
                 },
                 {
-                    label: 'Phải trả seller (đã chốt)',
+                    label: 'Số dư ví seller khả dụng',
                     value: overview.sellerPayableBalance,
                     icon: WalletCards,
-                    pendingRefundValue: overview.pendingRefundBalance,
+                    pendingSellerValue: overview.sellerPendingBalance,
                 },
                 {
                     label: 'Đang giữ cho yêu cầu rút',
@@ -89,8 +90,8 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                     >
                         {formatMoney(metric.value)}
                     </p>
-                    {/* Hiện tiền hoàn trong chính card seller nhưng tách khỏi số phải trả để tránh hiểu nhầm hai khoản là một. */}
-                    {'pendingRefundValue' in metric ? (
+                    {/* Tách doanh thu chưa giải phóng khỏi số dư seller có thể rút hoặc dùng. */}
+                    {'pendingSellerValue' in metric ? (
                         <div className="relative z-10 mt-3 border-t border-zinc-100 pt-2.5">
                             <div className="flex items-center justify-between gap-2">
                                 <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium leading-4 text-amber-700">
@@ -98,14 +99,15 @@ export function FinanceMetrics({ overview }: FinanceMetricsProps) {
                                         className="size-3.5 shrink-0"
                                         aria-hidden="true"
                                     />
-                                    <span>Hoàn tiền đang xử lý</span>
+                                    <span>Tiền hàng đang chờ hoàn tất</span>
                                 </span>
                                 <span className="shrink-0 text-xs font-semibold tabular-nums text-amber-800">
-                                    {formatMoney(metric.pendingRefundValue)}
+                                    {formatMoney(metric.pendingSellerValue)}
                                 </span>
                             </div>
                             <p className="mt-1 text-[10px] leading-4 text-zinc-500">
-                                Chưa tính vào khoản phải trả seller.
+                                Đơn hoàn tất mới chuyển sang khả dụng; COD cần
+                                đối soát.
                             </p>
                         </div>
                     ) : null}
