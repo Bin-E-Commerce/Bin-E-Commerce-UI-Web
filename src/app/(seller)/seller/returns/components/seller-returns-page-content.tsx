@@ -11,7 +11,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    useMutation,
+    useQueries,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query';
 import {
     Check,
     ClipboardCheck,
@@ -164,7 +169,7 @@ function resolveReturnShippingPayer(
 }
 
 // Điều phối queue và cache vận đơn; xác nhận nhận kiện chuyển request sang chờ hoàn tiền.
-// Cache được làm mới sau mutation để trạng thái và số việc cần xử lý luôn lấy từ Order Service.
+// Badge cần xử lý kết hợp trạng thái Order với việc nhãn vận đơn đã được tạo hay chưa.
 export function SellerReturnsPageContent() {
     const queryClient = useQueryClient();
     const [filter, setFilter] = useState<ReturnQueueFilter>('ALL');
@@ -199,10 +204,11 @@ export function SellerReturnsPageContent() {
             returnShippingPayer,
         }: ReviewReturnMutationInput) =>
             reviewSellerReturn(returnId, approved, note, returnShippingPayer),
-        onSuccess: () => {
+        // Đóng dialog và đợi queue/order list tải trạng thái đã được Order Service lưu.
+        onSuccess: async () => {
             setRejectingRequest(null);
             setApprovalContext(null);
-            invalidateReturnQueries(queryClient);
+            await invalidateReturnQueries(queryClient);
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
@@ -211,36 +217,58 @@ export function SellerReturnsPageContent() {
     const confirmReceivedMutation = useMutation({
         mutationFn: ({ returnId }: ConfirmReceivedReturnMutationInput) =>
             confirmSellerReturnReceived(returnId),
-        onSuccess: () => {
+        // Xác nhận bước shop xong rồi đợi danh sách phản ánh trạng thái hoàn tiền mới.
+        onSuccess: async () => {
             toast.success(
                 'Đã xác nhận nhận hàng hoàn. Khoản hoàn đang chờ xử lý.',
             );
-            invalidateReturnQueries(queryClient);
+            await invalidateReturnQueries(queryClient);
         },
         onError: (error) => toast.error(getErrorMessage(error)),
     });
     const shipmentMutation = useMutation({
         mutationFn: createSellerReturnShipment,
-        // Hủy GET đang bay trước khi ghi kết quả POST, tránh response 404 cũ
-        // ghi đè shipment vừa tạo trong cache.
-        onSuccess: async (shipment) => {
-            if (shipment.returnRequestId) {
-                const shipmentQueryKey = [
-                    'seller-return-shipment',
-                    shipment.returnRequestId,
-                ];
-                await queryClient.cancelQueries({
-                    queryKey: shipmentQueryKey,
-                });
-                queryClient.setQueryData(shipmentQueryKey, shipment);
-            }
-            invalidateReturnQueries(queryClient);
+        // Khóa GET cũ rồi cache bằng ID mutation; response thiếu returnRequestId vẫn phải ẩn nút tạo.
+        // Refetch queue sau khi cache vận đơn có dữ liệu để badge và trạng thái cùng cập nhật.
+        onSuccess: async (shipment, returnId) => {
+            const shipmentQueryKey = ['seller-return-shipment', returnId];
+            await queryClient.cancelQueries({ queryKey: shipmentQueryKey });
+            queryClient.setQueryData(shipmentQueryKey, shipment);
+            await invalidateReturnQueries(queryClient);
+            toast.success(
+                `Đã tạo vận đơn hoàn ${shipment.trackingCode}. Đang chờ khách gửi hàng.`,
+            );
         },
+        // Cho seller biết POST thất bại thay vì để nút trông như không có phản hồi.
+        onError: (error) => toast.error(getErrorMessage(error)),
     });
     const items = returnsQuery.data ?? [];
-    const actionableCount = items.filter((item) =>
-        ACTIONABLE_STATUSES.has(item.status),
-    ).length;
+    const awaitingShipmentItems = items.filter(
+        (item) => item.status === 'AWAITING_SHIPMENT',
+    );
+    // Cùng theo dõi cache vận đơn với card để badge cần xử lý giảm ngay sau khi có nhãn.
+    // Chỉ xem AWAITING_SHIPMENT là việc của shop khi chưa có nhãn hoặc vận đơn đã lỗi/hủy.
+    const returnShipmentQueries = useQueries({
+        queries: awaitingShipmentItems.map((item) => ({
+            queryKey: ['seller-return-shipment', item.id],
+            queryFn: () => getSellerReturnShipment(item.id),
+            staleTime: 15_000,
+        })),
+    });
+    const returnShipmentsCreated = new Set(
+        awaitingShipmentItems.flatMap((item, index) => {
+            const shipment = returnShipmentQueries[index]?.data;
+            return shipment &&
+                !['FAILED', 'CANCELLED'].includes(shipment.status)
+                ? [item.id]
+                : [];
+        }),
+    );
+    const actionableCount = items.filter((item) => {
+        if (item.status === 'AWAITING_SHIPMENT')
+            return !returnShipmentsCreated.has(item.id);
+        return ACTIONABLE_STATUSES.has(item.status);
+    }).length;
     const visibleItems = items.filter((item) =>
         matchesReturnFilter(item.status, filter),
     );
@@ -324,8 +352,8 @@ export function SellerReturnsPageContent() {
                         Xử lý hoàn hàng
                     </h2>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-                        Duyệt yêu cầu, theo dõi hàng hoàn về shop và xác nhận
-                        đã nhận được kiện hoàn.
+                        Duyệt yêu cầu, theo dõi hàng hoàn về shop và xác nhận đã
+                        nhận được kiện hoàn.
                     </p>
                 </div>
                 <Button
@@ -500,7 +528,10 @@ export function SellerReturnsPageContent() {
                                 confirmReceivedPending={
                                     confirmReceivedMutation.isPending
                                 }
-                                shipmentPending={shipmentMutation.isPending}
+                                shipmentPending={
+                                    shipmentMutation.isPending &&
+                                    shipmentMutation.variables === item.id
+                                }
                                 onReview={(approved, payer) =>
                                     handleReviewDecision(item, approved, payer)
                                 }
@@ -546,11 +577,13 @@ export function SellerReturnsPageContent() {
     );
 }
 
-// Làm mới cả queue hoàn hàng và order list sau mutation để badge/trạng thái ở các màn hình liên quan nhất quán.
-function invalidateReturnQueries(
+// Làm mới queue hoàn hàng và order list để badge/trạng thái trên các màn hình nhất quán.
+// Chờ refetch xong để mutation caller có thể kết thúc sau khi snapshot mới đã về.
+async function invalidateReturnQueries(
     queryClient: ReturnType<typeof useQueryClient>,
-): void {
-    void Promise.all([
+): Promise<void> {
+    // Chờ cả hai danh sách tải lại để count và trạng thái không giữ snapshot trước mutation.
+    await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['seller-returns'] }),
         queryClient.invalidateQueries({ queryKey: ['seller-orders'] }),
     ]);
@@ -615,7 +648,8 @@ function ReturnFilterButton({
     );
 }
 
-// Hiển thị request và shipment đã lưu; seller chỉ xác nhận kiện về, còn khoản hoàn do admin xử lý riêng.
+// Hiển thị trạng thái request cùng vận đơn; sau khi tạo nhãn, badge cập nhật và nút tạo được thay bằng tracking.
+// Seller chỉ xác nhận kiện về; việc chuyển tiền hoàn vẫn thuộc luồng admin riêng.
 function SellerReturnRequestCard({
     item,
     reviewPending,
@@ -642,6 +676,12 @@ function SellerReturnRequestCard({
         item.status === 'SHIPMENT_FAILED' ||
         returnShipment?.status === 'FAILED' ||
         returnShipment?.status === 'CANCELLED';
+    // Chỉ carrier mới xác nhận kiện đã đi; tạo nhãn chỉ đổi badge, không giả lập IN_TRANSIT.
+    const displayReturnStatus = canRetryReturnShipment
+        ? getReturnStatusLabel('SHIPMENT_FAILED')
+        : item.status === 'AWAITING_SHIPMENT' && returnShipment
+          ? 'Đã tạo vận đơn · Chờ khách gửi hàng'
+          : getReturnStatusLabel(item.status);
     // Refund snapshot là khoản admin trả khách; khách đổi ý không tạo debit hoàn tiền lên ví seller.
     const isChangeOfMind = item.reason === 'CHANGE_OF_MIND';
     const isRejected = item.status === 'REJECTED';
@@ -668,7 +708,7 @@ function SellerReturnRequestCard({
                             <span
                                 className={`rounded-full px-2.5 py-1 text-xs font-semibold ${['SHIPMENT_FAILED', 'REFUND_FAILED'].includes(item.status) ? 'bg-red-50 text-red-800' : 'bg-zinc-100 text-zinc-700'}`}
                             >
-                                {getReturnStatusLabel(item.status)}
+                                {displayReturnStatus}
                             </span>
                         </div>
                         <p className="mt-1 text-xs text-zinc-500">
@@ -870,8 +910,12 @@ function SellerReturnRequestCard({
                         disabled={shipmentPending}
                         onClick={onCreateShipment}
                     >
-                        <PackageCheck className="size-4" />
-                        Tạo lại vận đơn hoàn
+                        <PackageCheck
+                            className={`size-4 ${shipmentPending ? 'animate-pulse' : ''}`}
+                        />
+                        {shipmentPending
+                            ? 'Đang tạo lại vận đơn...'
+                            : 'Tạo lại vận đơn hoàn'}
                     </Button>
                 ) : null}
                 {item.status === 'AWAITING_SHIPMENT' ? (
@@ -922,8 +966,12 @@ function SellerReturnRequestCard({
                                     disabled={shipmentPending}
                                     onClick={onCreateShipment}
                                 >
-                                    <PackageCheck className="size-4" />
-                                    Tạo lại vận đơn hoàn
+                                    <PackageCheck
+                                        className={`size-4 ${shipmentPending ? 'animate-pulse' : ''}`}
+                                    />
+                                    {shipmentPending
+                                        ? 'Đang tạo lại vận đơn...'
+                                        : 'Tạo lại vận đơn hoàn'}
                                 </Button>
                             ) : null}
                         </>
@@ -935,8 +983,12 @@ function SellerReturnRequestCard({
                             disabled={shipmentPending}
                             onClick={onCreateShipment}
                         >
-                            <PackageCheck className="size-4" />
-                            Tạo vận đơn hoàn
+                            <PackageCheck
+                                className={`size-4 ${shipmentPending ? 'animate-pulse' : ''}`}
+                            />
+                            {shipmentPending
+                                ? 'Đang tạo vận đơn...'
+                                : 'Tạo vận đơn hoàn'}
                         </Button>
                     )
                 ) : null}
