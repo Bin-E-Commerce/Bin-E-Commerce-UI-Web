@@ -8,12 +8,15 @@ import type {
 
 const inMemoryKeys = new Map<string, StoredCheckoutIdempotencyKey>();
 
-// Tạo scope riêng theo account và dòng mua ngay để các checkout độc lập không dùng chung key.
+// Tạo scope riêng theo account và selection để các tập item khác nhau không dùng chung key.
 function getStorageScope(
     userId: string,
     input: CheckoutOrderMutationInput,
 ): string {
-    return `checkout-order:${userId}:${input.order.cartItemId ?? 'cart'}`;
+    const selectionKey = input.order.cartItemIds
+        ? [...input.order.cartItemIds].sort().join(',')
+        : input.order.cartItemId ?? 'cart';
+    return `checkout-order:${userId}:${selectionKey}`;
 }
 
 // Chuẩn hóa đúng dữ liệu ảnh hưởng đến ý định đặt hàng, bao gồm cả snapshot item hiện tại.

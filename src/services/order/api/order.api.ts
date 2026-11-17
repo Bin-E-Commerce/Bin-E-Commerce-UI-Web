@@ -69,7 +69,7 @@ export async function confirmOrderDelivery(
     return response.data;
 }
 
-// Tạo order COD với idempotency key để double click hoặc retry mạng không tạo đơn trùng.
+// Tạo order từ toàn cart, legacy item đơn lẻ hoặc danh sách checkbox; idempotency key chặn đơn trùng khi retry.
 export async function createCodOrder(
     input: CreateCodOrderInput,
 ): Promise<OrderResponse> {
@@ -78,6 +78,7 @@ export async function createCodOrder(
         {
             shippingAddressId: input.shippingAddressId,
             ...(input.cartItemId ? { cartItemId: input.cartItemId } : {}),
+            ...(input.cartItemIds ? { cartItemIds: input.cartItemIds } : {}),
             paymentMethod: input.paymentMethod,
             note: input.note?.trim() || undefined,
         },
@@ -102,17 +103,19 @@ export interface OrderQuoteResponse {
     }>;
 }
 
-// Quote chỉ truyền addressId; item, shop và số tiền authoritative được đọc ở backend.
+// Quote truyền selection IDs nhưng backend xác thực membership trong active cart và tính lại giá/phí.
 export async function getOrderQuote(
     shippingAddressId: string,
     cartItemId?: string,
     paymentMethod: 'COD' | 'PAY2S' = 'COD',
+    cartItemIds?: string[],
 ): Promise<OrderQuoteResponse> {
     const response = await authorizedAxios.post<OrderQuoteResponse>(
         `${ORDERS}/quote`,
         {
             shippingAddressId,
             ...(cartItemId ? { cartItemId } : {}),
+            ...(cartItemIds ? { cartItemIds } : {}),
             paymentMethod,
         },
     );

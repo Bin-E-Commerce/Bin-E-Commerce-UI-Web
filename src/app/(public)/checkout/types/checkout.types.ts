@@ -8,6 +8,7 @@ import type { RefundBankAccountInput } from '@/services/order/types/cancel-order
 export interface CreateCodOrderInput {
     shippingAddressId: string;
     cartItemId?: string;
+    cartItemIds?: string[];
     note?: string;
     idempotencyKey: string;
     paymentMethod: 'COD' | 'PAY2S';

@@ -1,22 +1,18 @@
-// File này hiển thị danh sách item, thao tác quantity và tổng tiền tạm tính của cart.
-// Component không tự tính giá hoặc gọi API; mutation và dữ liệu thuộc về Cart feature hooks.
-
-// Component này hiển thị danh sách item, thao tác quantity và tổng tiền tạm tính của cart.
-// Component không tự tính hay lưu dữ liệu; mọi mutation được ủy quyền cho Cart Service qua CartItemActions.
+// File này hiển thị item, checkbox chọn mua, quantity và tạm tính của cart.
+// Selection chỉ giới hạn item gửi sang checkout; Cart/Order Service vẫn xác thực lại item, giá và tồn kho.
 
 'use client';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { ArrowRight, ImageOff, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import type { Cart } from '../types/cart.types';
+import { MAX_PARTIAL_CHECKOUT_ITEMS } from '../constants/cart-selection.constants';
+import type { CartItemsViewProps } from '../types/cart-selection.types';
 import { CartItemActions } from './CartItemActions';
-
-interface CartItemsViewProps {
-    cart: Cart;
-}
+import { useCartSelection } from '../hooks/use-cart-selection';
 
 // Định dạng snapshot price thành tiền Việt để UI không phải tự suy luận scale numeric từ API.
 function formatCartPrice(value: string): string {
@@ -30,13 +26,31 @@ function formatCartPrice(value: string): string {
     }).format(amount);
 }
 
-// Render danh sách item và subtotal từ response backend, giữ bố cục nhất quán với trang cart hiện tại.
+// Render cart và điều hướng checkout theo selection; toàn cart bỏ danh sách ID, còn selection một phần tuân theo giới hạn API.
 export function CartItemsView({ cart }: CartItemsViewProps) {
     const router = useRouter();
+    const selection = useCartSelection(cart.items);
+    const exceedsPartialSelectionLimit =
+        !selection.isAllSelected &&
+        selection.selectedItemIds.length > MAX_PARTIAL_CHECKOUT_ITEMS;
 
-    // Cart chỉ chứa sản phẩm seller, nên checkout đi thẳng tới bước đặt hàng.
+    // Gửi toàn cart không kèm ID để tránh giới hạn query; selection một phần gửi ID đã sắp xếp giống quote và tạo order.
+    // Dừng sớm nếu selection rỗng hoặc vượt giới hạn 100 ID mà Cart Service xác minh được.
     function handleCheckout() {
-        router.push('/checkout');
+        if (
+            selection.selectedItemIds.length === 0 ||
+            exceedsPartialSelectionLimit
+        ) {
+            return;
+        }
+        if (selection.isAllSelected) {
+            router.push('/checkout');
+            return;
+        }
+        const selectedIds = [...selection.selectedItemIds].sort();
+        router.push(
+            `/checkout?cartItemIds=${encodeURIComponent(selectedIds.join(','))}`,
+        );
     }
 
     return (
@@ -56,7 +70,25 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                     </span>
                 </div>
 
-                <div className="mt-5 hidden grid-cols-[80px_minmax(0,1fr)_120px_150px_130px_120px] gap-6 px-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400 lg:grid">
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                    <div className="flex items-center gap-2.5 text-sm font-medium text-zinc-700">
+                        <Checkbox
+                            checked={selection.isAllSelected}
+                            indeterminate={selection.isPartiallySelected}
+                            aria-label="Chọn tất cả sản phẩm"
+                            onCheckedChange={(checked) =>
+                                selection.toggleAll(checked === true)
+                            }
+                        />
+                        <span>Chọn tất cả ({cart.items.length})</span>
+                    </div>
+                    <span className="text-xs text-zinc-500">
+                        Đã chọn {selection.selectedQuantity} sản phẩm
+                    </span>
+                </div>
+
+                <div className="mt-3 hidden grid-cols-[24px_80px_minmax(0,1fr)_120px_150px_130px_120px] gap-5 px-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400 lg:grid">
+                    <span aria-hidden="true" />
                     <span className="col-span-2">Sản phẩm</span>
                     <span className="text-right">Đơn giá</span>
                     <span className="text-center">Số lượng</span>
@@ -68,12 +100,26 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                     {cart.items.map((item) => (
                         <article
                             key={item.id}
-                            className="grid grid-cols-[64px_minmax(0,1fr)] gap-x-4 gap-y-3 p-4 sm:grid-cols-[80px_minmax(0,1fr)] sm:gap-x-5 sm:p-5 lg:grid-cols-[80px_minmax(0,1fr)_120px_150px_130px_120px] lg:items-center lg:gap-6"
+                            className="grid grid-cols-[20px_64px_minmax(0,1fr)] gap-x-3 gap-y-3 p-4 sm:grid-cols-[24px_80px_minmax(0,1fr)] sm:gap-x-4 sm:p-5 lg:grid-cols-[24px_80px_minmax(0,1fr)_120px_150px_130px_120px] lg:items-center lg:gap-5"
                         >
+                            <div className="row-span-5 flex items-start justify-center pt-2 lg:row-span-1 lg:items-center lg:pt-0">
+                                <Checkbox
+                                    checked={selection.selectedItemIds.includes(
+                                        item.id,
+                                    )}
+                                    aria-label={`Chọn ${item.productName}`}
+                                    onCheckedChange={(checked) =>
+                                        selection.toggleItem(
+                                            item.id,
+                                            checked === true,
+                                        )
+                                    }
+                                />
+                            </div>
                             <Link
                                 href={`/products/${item.productId}`}
                                 aria-label={`Xem chi tiết ${item.productName}`}
-                                className="group row-span-5 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-zinc-100 transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:h-20 sm:w-20 lg:row-span-1"
+                                className="group col-start-2 row-span-5 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-zinc-100 transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 sm:h-20 sm:w-20 lg:row-span-1"
                             >
                                 {item.imageUrl ? (
                                     <img
@@ -92,7 +138,7 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                             <Link
                                 href={`/products/${item.productId}`}
                                 aria-label={`Xem chi tiết ${item.productName}`}
-                                className="group min-w-0 cursor-pointer lg:col-start-2"
+                                className="group col-start-3 min-w-0 cursor-pointer"
                             >
                                 <h3 className="line-clamp-2 text-base font-semibold leading-5 text-zinc-950 transition-colors group-hover:text-zinc-600 group-hover:underline">
                                     {item.productName}
@@ -105,7 +151,7 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                 ) : null}
                             </Link>
 
-                            <div className="col-start-2 flex items-center justify-between gap-3 text-left lg:col-start-3 lg:block lg:text-right">
+                            <div className="col-start-3 flex items-center justify-between gap-3 text-left lg:col-start-4 lg:block lg:text-right">
                                 <span className="text-xs text-zinc-400 lg:hidden">
                                     Đơn giá
                                 </span>
@@ -114,14 +160,14 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                 </p>
                             </div>
 
-                            <div className="col-start-2 flex items-center justify-between gap-3 lg:col-start-4 lg:justify-center">
+                            <div className="col-start-3 flex items-center justify-between gap-3 lg:col-start-5 lg:justify-center">
                                 <span className="text-xs text-zinc-400 lg:hidden">
                                     Số lượng
                                 </span>
                                 <CartItemActions item={item} mode="quantity" />
                             </div>
 
-                            <div className="col-start-2 flex items-center justify-between gap-3 text-left lg:col-start-5 lg:block lg:text-right">
+                            <div className="col-start-3 flex items-center justify-between gap-3 text-left lg:col-start-6 lg:block lg:text-right">
                                 <span className="text-xs text-zinc-400 lg:hidden">
                                     Số tiền
                                 </span>
@@ -130,7 +176,7 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                 </p>
                             </div>
 
-                            <div className="col-start-2 flex items-center justify-between gap-3 lg:col-start-6 lg:justify-self-end">
+                            <div className="col-start-3 flex items-center justify-between gap-3 lg:col-start-7 lg:justify-self-end">
                                 <span className="text-xs text-zinc-400 lg:hidden">
                                     Thao tác
                                 </span>
@@ -157,11 +203,23 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                 </div>
 
                 <div className="mt-6 flex items-center justify-between border-t border-zinc-200 pt-5 text-sm">
-                    <span className="text-zinc-600">Tạm tính</span>
+                    <span className="text-zinc-600">Tạm tính đã chọn</span>
                     <strong className="text-lg text-zinc-950">
-                        {formatCartPrice(cart.subtotal)}
+                        {formatCartPrice(selection.selectedSubtotal)}
                     </strong>
                 </div>
+
+                <p className="mt-2 text-xs text-zinc-500">
+                    {selection.selectedQuantity} sản phẩm được chọn để thanh
+                    toán.
+                </p>
+                {exceedsPartialSelectionLimit ? (
+                    <p role="alert" className="mt-2 text-xs text-red-600">
+                        Khi thanh toán một phần, bạn có thể chọn tối đa{' '}
+                        {MAX_PARTIAL_CHECKOUT_ITEMS} mặt hàng. Hãy chọn tất cả
+                        hoặc bỏ bớt mặt hàng.
+                    </p>
+                ) : null}
 
                 <p className="mt-4 text-xs leading-5 text-zinc-500">
                     Giá và tồn kho sẽ được kiểm tra lại khi bạn tiến hành đặt
@@ -171,9 +229,13 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                 <Button
                     type="button"
                     onClick={handleCheckout}
+                    disabled={
+                        selection.selectedItemIds.length === 0 ||
+                        exceedsPartialSelectionLimit
+                    }
                     className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2"
                 >
-                    Thanh toán
+                    Thanh toán sản phẩm đã chọn
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
             </aside>

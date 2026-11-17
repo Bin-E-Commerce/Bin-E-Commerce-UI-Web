@@ -159,22 +159,31 @@ export function useCheckout() {
     };
 }
 
-// Tính quote theo địa chỉ GHN đã lưu trong Auth Service.
-// Tính quote theo địa chỉ và tùy chọn item Mua ngay; bỏ cartItemId sẽ giữ nguyên checkout toàn bộ giỏ.
+// Tính quote theo địa chỉ và selection của cart; server xác minh ID và chốt lại giá cùng phí vận chuyển.
 export function useCheckoutQuote(
     shippingAddressId: string,
     cartItemId?: string,
     paymentMethod: 'COD' | 'PAY2S' = 'COD',
+    cartItemIds?: string[],
 ) {
+    const selectionKey = cartItemIds
+        ? [...cartItemIds].sort().join(',')
+        : cartItemId ?? 'cart';
+
     return useQuery({
         queryKey: [
             'checkout-quote',
             shippingAddressId,
-            cartItemId ?? 'cart',
+            selectionKey,
             paymentMethod,
         ],
         queryFn: () =>
-            getOrderQuote(shippingAddressId, cartItemId, paymentMethod),
+            getOrderQuote(
+                shippingAddressId,
+                cartItemId,
+                paymentMethod,
+                cartItemIds,
+            ),
         enabled: Boolean(shippingAddressId),
         staleTime: 20_000,
         refetchOnWindowFocus: false,

@@ -3,8 +3,9 @@
 import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
 
 import { cn } from '@/lib/utils';
-import { CheckIcon } from 'lucide-react';
+import { CheckIcon, MinusIcon } from 'lucide-react';
 
+// Bọc Base UI checkbox để mọi form dùng cùng primitive và thể hiện đúng trạng thái chọn một phần.
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
     return (
         <CheckboxPrimitive.Root
@@ -17,9 +18,10 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         >
             <CheckboxPrimitive.Indicator
                 data-slot="checkbox-indicator"
-                className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
+                className="grid place-content-center text-current transition-none data-[indeterminate]:[&>svg:first-child]:hidden data-[indeterminate]:[&>svg:last-child]:block [&>svg]:size-3.5"
             >
                 <CheckIcon />
+                <MinusIcon className="hidden" />
             </CheckboxPrimitive.Indicator>
         </CheckboxPrimitive.Root>
     );

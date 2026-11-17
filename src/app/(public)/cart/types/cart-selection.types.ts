@@ -1,0 +1,21 @@
+// Kiểu dữ liệu trình bày cho lựa chọn sản phẩm trong cart.
+// Các ID chỉ quyết định dòng hàng nào đi sang checkout; giá và tồn kho vẫn do Order Service xác nhận.
+
+import type { Cart, CartItem } from './cart.types';
+
+// Props của danh sách cart được lấy từ response đã chuẩn hóa của Cart Service.
+export interface CartItemsViewProps {
+    cart: Cart;
+}
+
+// Trạng thái selection giữ item được tick và các tổng tạm tính chỉ phục vụ giao diện.
+export interface CartSelectionState {
+    selectedItemIds: string[];
+    selectedItems: CartItem[];
+    selectedQuantity: number;
+    selectedSubtotal: string;
+    isAllSelected: boolean;
+    isPartiallySelected: boolean;
+    toggleAll(checked: boolean): void;
+    toggleItem(itemId: string, checked: boolean): void;
+}

@@ -63,8 +63,8 @@ function formatAddress(address: UserAddress): string {
     return `${address.street}, ${address.ward}, ${address.district}, ${address.province}`;
 }
 
-// Ghép dữ liệu checkout vào các bước chọn địa chỉ và thanh toán.
-// Component chỉ điều phối thao tác người dùng; báo giá và tạo đơn vẫn do backend xác nhận.
+// Ghép selection từ cart vào các bước chọn địa chỉ và thanh toán.
+// Component chỉ trình bày item được chọn; quote, ownership, giá và tồn kho vẫn do backend xác nhận.
 export function CheckoutPageContent() {
     const { initialized, isAuthenticated } = useCartAuthRedirect();
     const cartQuery = useCart();
@@ -87,6 +87,12 @@ export function CheckoutPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const buyNowCartItemId = searchParams.get('cartItemId') ?? undefined;
+    const hasSelectedCartItemIds = searchParams.has('cartItemIds');
+    const selectedCartItemIds = hasSelectedCartItemIds
+        ? (searchParams.get('cartItemIds') ?? '').split(',').filter(Boolean)
+        : undefined;
+    const checkoutSelectionIds = selectedCartItemIds ??
+        (buyNowCartItemId ? [buyNowCartItemId] : undefined);
 
     const addresses = addressesQuery.data ?? EMPTY_ADDRESSES;
     const fallbackAddressId = useMemo(
@@ -101,6 +107,7 @@ export function CheckoutPageContent() {
         activeAddressId,
         buyNowCartItemId,
         paymentMethod,
+        selectedCartItemIds,
     );
 
     // Chỉ chặn guest sau khi initAuth hoàn tất; nếu chạy sớm hơn, refresh checkout sẽ redirect sai trước khi cookie được restore.
@@ -161,8 +168,8 @@ export function CheckoutPageContent() {
         }
     }
 
-    // Tạo đơn sau khi địa chỉ và quote hợp lệ.
-    // Pay2S dùng cùng tab để callback quay về lịch sử đơn hàng.
+    // Tạo đơn đúng tập item đã gửi quote; ID được sắp xếp để retry cùng lựa chọn giữ nguyên fingerprint.
+    // Pay2S dùng cùng tab để callback quay về lịch sử đơn hàng; backend vẫn xác minh lại cart trước khi reserve.
     function handleSubmitOrder(): void {
         if (!activeAddressId) {
             toast.error('Vui lòng chọn hoặc thêm địa chỉ giao hàng.');
@@ -174,8 +181,11 @@ export function CheckoutPageContent() {
             );
             return;
         }
+        const selectedIds = checkoutSelectionIds
+            ? [...checkoutSelectionIds].sort()
+            : undefined;
         const selectedCartItems = (cartQuery.data?.items ?? [])
-            .filter((item) => !buyNowCartItemId || item.id === buyNowCartItemId)
+            .filter((item) => !selectedIds || selectedIds.includes(item.id))
             .map(({ id, productId, variantId, quantity }) => ({
                 id,
                 productId,
@@ -189,7 +199,12 @@ export function CheckoutPageContent() {
             {
                 order: {
                     shippingAddressId: activeAddressId,
-                    cartItemId: buyNowCartItemId,
+                    cartItemId: hasSelectedCartItemIds
+                        ? undefined
+                        : buyNowCartItemId,
+                    cartItemIds: hasSelectedCartItemIds
+                        ? selectedIds
+                        : undefined,
                     note: note.trim() || undefined,
                     paymentMethod,
                 },
@@ -254,10 +269,9 @@ export function CheckoutPageContent() {
     }
 
     const cart = cartQuery.data;
-    // Khi có cartItemId, chỉ render item đã chọn để giao diện khớp với quote/order server-side.
-    // Không lọc ở browser để thay thế kiểm tra backend; đây chỉ là dữ liệu trình bày và fallback UX.
-    const checkoutItems = buyNowCartItemId
-        ? cart.items.filter((item) => item.id === buyNowCartItemId)
+    // Chỉ ẩn các dòng không được chọn trong giao diện; Order Service nhận lại cùng ID và tự kiểm tra active cart.
+    const checkoutItems = checkoutSelectionIds
+        ? cart.items.filter((item) => checkoutSelectionIds.includes(item.id))
         : cart.items;
     const checkoutTotalItems = checkoutItems.reduce(
         (total, item) => total + item.quantity,

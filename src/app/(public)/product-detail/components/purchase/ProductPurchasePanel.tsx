@@ -1,5 +1,5 @@
-// Component này hiển thị CTA mua hàng, thêm sản phẩm vào cart và điều hướng Customer tới checkout.
-// Cart Service vẫn là nguồn xác thực cuối cùng cho variant, giá và tồn kho; component không tự tính lại dữ liệu bán hàng.
+// Component này hiển thị CTA mua hàng và thêm sản phẩm vào cart.
+// Nút Mua ngay chỉ mở cart sau khi Cart Service xác nhận item; checkout tiếp tục xác thực giá và tồn kho phía server.
 
 'use client';
 
@@ -74,21 +74,19 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         });
     }
 
-    // Điều hướng sang checkout với đúng cartItemId mà Cart Service trả về sau mutation.
-    // Checkout dùng ID này để backend quote/reserve một dòng hàng, còn các sản phẩm khác vẫn nằm trong active cart.
-    function goToBuyNowCheckout(cart: Cart): void {
+    // Đưa Customer vào cart sau khi server trả item đã thêm/cập nhật để khách chọn rõ mặt hàng trước khi checkout.
+    function goToCartWithSelectedItem(cart: Cart): void {
         const selectedItem = cart.items.find(
             (item) => item.variantId === purchase.selectedVariant?.id,
         );
+        // Không mở bước chọn mua nếu response mutation thiếu dòng hàng đã yêu cầu.
         if (!selectedItem) return;
-        router.push(
-            `/checkout?cartItemId=${encodeURIComponent(selectedItem.id)}`,
-        );
+        router.push(`/cart?selectItemId=${encodeURIComponent(selectedItem.id)}`);
     }
 
-    // Mua ngay vẫn dùng mutation thêm/cập nhật cart để server xác nhận variant và tồn kho,
-    // nhưng không còn chuyển tới checkout toàn bộ cart như luồng cũ.
-    // Với Customer chưa đăng nhập, giữ lại đường dẫn sản phẩm để sau khi xác thực có thể tiếp tục chọn và mua.
+    // Mua ngay lưu item qua Cart Service rồi mở cart để khách chọn rõ mặt hàng trước checkout.
+    // Guest được đưa tới đăng nhập và quay lại đúng sản phẩm; Customer đã có item thì cập nhật quantity đã chọn.
+    // Callback chỉ điều hướng khi mutation thành công nên lỗi tồn kho không mở ra một cart tưởng như đã sẵn sàng.
     function handleBuyNow(): void {
         if (!canAddToCart || !purchase.selectedVariant) return;
 
@@ -109,7 +107,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     showSuccessToast: false,
                 },
                 {
-                    onSuccess: (cart) => goToBuyNowCheckout(cart),
+                    onSuccess: (cart) => goToCartWithSelectedItem(cart),
                 },
             );
             return;
@@ -123,7 +121,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                 showSuccessToast: false,
             },
             {
-                onSuccess: (cart) => goToBuyNowCheckout(cart),
+                onSuccess: (cart) => goToCartWithSelectedItem(cart),
             },
         );
     }
