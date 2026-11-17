@@ -22,6 +22,7 @@ export type Pay2sReturnResponse =
               | 'FAILED'
               | 'CANCELLED'
               | 'REFUND_PENDING'
+              | 'REFUND_FAILED'
               | 'REFUNDED'
               | 'PENDING'
               | 'WALLET_DEPOSIT_FAILED'
@@ -41,7 +42,11 @@ export async function verifyPay2sReturn(
 }
 
 export type DeliveryIssueReason =
-    'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
+    | 'NOT_RECEIVED'
+    | 'DAMAGED'
+    | 'WRONG_ITEM'
+    | 'MISSING_ITEM'
+    | 'OTHER';
 
 export interface DeliveryConfirmationInput {
     decision: 'RECEIVED' | 'ISSUE';

@@ -167,6 +167,11 @@ export function usePay2sReturnVerification(hasPay2sReturn: boolean) {
                     toast.info(
                         'Giao dịch đến muộn; hệ thống đang xử lý hoàn tiền.',
                     );
+                } else if (result.status === 'REFUND_FAILED') {
+                    // Tiền đã được xác nhận nhưng chuyển hoàn thất bại; không báo thành thanh toán đang chờ.
+                    toast.error(
+                        'Tiền đã được nhận nhưng hoàn tiền chưa thành công. Vui lòng liên hệ hỗ trợ.',
+                    );
                 } else if (result.status === 'REFUNDED') {
                     toast.info('Giao dịch đã được hoàn tiền.');
                 } else if (result.status === 'CANCELLED') {
