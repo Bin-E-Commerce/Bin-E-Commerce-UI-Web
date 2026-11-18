@@ -1,4 +1,5 @@
-// File này dựng trang chi tiết đơn hàng Customer, trình bày snapshot order và thao tác theo trạng thái hợp lệ.
+// File này dựng trang chi tiết đơn Customer và phối hợp các section theo snapshot order.
+// Trang giữ bố cục/điều kiện hiển thị; các luồng thanh toán, hủy và hoàn hàng thuộc component/hook chuyên trách.
 
 'use client';
 
@@ -192,9 +193,12 @@ function getCustomerReturnStatus(
 // Trang chi tiết đơn cho Customer theo dõi hoàn tiền, xem xác nhận đã chuyển và sửa yêu cầu khi khoản hoàn còn chờ.
 // Trạng thái hoàn lấy từ payment snapshot hoặc return đã chốt; số tiền hiển thị đúng nguồn đã hoàn gần nhất.
 // Bố cục co từ một cột sang hai rồi ba cột để thông tin vẫn dễ quét ở màn hình nhỏ.
+// Ô thành tiền giữ chiều rộng ổn định và căn giữa theo chiều cao từng dòng.
+// Thân card tổng thanh toán căn giữa khi card sản phẩm làm hàng lưới cao hơn.
 // Phương thức ở phần thanh toán chỉ nêu Pay2S/COD, tránh lặp trạng thái đã hiển thị trên đầu trang.
 export default function ProfileOrderDetailPage() {
     const [reviewPromptOpen, setReviewPromptOpen] = useState(false);
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
     const params = useParams<{ orderId: string }>();
     const orderId = params.orderId;
     const orderQuery = useCustomerOrder(orderId);
@@ -273,6 +277,30 @@ export default function ProfileOrderDetailPage() {
         refetchOrder,
     ]);
 
+    // Theo dõi deadline return đang mở để mục lục tự bỏ lối tắt sau khi quyền gửi yêu cầu hết hạn.
+    useEffect(() => {
+        const deadline = orderQuery.data?.returnWindowUntil
+            ? new Date(orderQuery.data.returnWindowUntil).getTime()
+            : null;
+        if (
+            orderQuery.data?.fulfillmentStatus !== 'COMPLETED' ||
+            !deadline ||
+            !Number.isFinite(deadline) ||
+            deadline <= currentTime
+        ) {
+            return;
+        }
+        const timer = window.setInterval(
+            () => setCurrentTime(Date.now()),
+            60_000,
+        );
+        return () => window.clearInterval(timer);
+    }, [
+        currentTime,
+        orderQuery.data?.fulfillmentStatus,
+        orderQuery.data?.returnWindowUntil,
+    ]);
+
     if (orderQuery.isPending) return <OrderDetailSkeleton />;
 
     if (orderQuery.isError || !orderQuery.data) {
@@ -330,11 +358,19 @@ export default function ProfileOrderDetailPage() {
         order.paymentMethod === 'PAY2S' &&
         (order.paymentStatus === 'PAID' ||
             order.paymentStatus === 'REFUND_PENDING');
-    // Chỉ hiện lối tắt xác nhận khi card nghiệp vụ có thể xuất hiện cho đơn vừa được giao.
-    const showDeliveryConfirmation =
+    // Mục lục trỏ tới xác nhận khi đang DELIVERED hoặc tới yêu cầu hoàn trong hạn khi đã COMPLETED.
+    const returnWindowIsOpen = Boolean(
+        order.returnWindowUntil &&
+        new Date(order.returnWindowUntil).getTime() > currentTime,
+    );
+    const customerActionLabel =
         order.fulfillmentStatus === 'DELIVERED' &&
         (!order.deliveryConfirmation?.status ||
-            order.deliveryConfirmation.status === 'PENDING');
+            order.deliveryConfirmation.status === 'PENDING')
+            ? 'Xác nhận nhận hàng'
+            : order.fulfillmentStatus === 'COMPLETED' && returnWindowIsOpen
+              ? 'Trả hàng / hoàn tiền'
+              : null;
     // Chỉ mở mục review sau khi khách xác nhận hoàn tất; đơn còn ở DELIVERED chưa đủ điều kiện.
     const showReview =
         order.fulfillmentStatus === 'COMPLETED' &&
@@ -396,9 +432,20 @@ export default function ProfileOrderDetailPage() {
                 <OrderDetailSectionNav
                     itemCount={order.items.length}
                     paymentLabel={paymentLabel}
-                    showDeliveryConfirmation={showDeliveryConfirmation}
+                    customerActionLabel={customerActionLabel}
+                    customerActionNeedsAttention={
+                        customerActionLabel === 'Xác nhận nhận hàng'
+                    }
                     showReview={showReview}
                     showReturns={showReturns}
+                    actions={
+                        canRetryPay2sPayment ? (
+                            <CustomerPay2sPaymentRetry
+                                orderId={order.id}
+                                layout="inline"
+                            />
+                        ) : undefined
+                    }
                 />
 
                 <header
@@ -618,7 +665,7 @@ export default function ProfileOrderDetailPage() {
                                                 {item.quantity}
                                             </p>
                                         </div>
-                                        <p className="shrink-0 rounded-lg bg-zinc-50 px-2.5 py-1 text-right text-sm font-semibold tabular-nums text-zinc-950">
+                                        <p className="flex w-[104px] shrink-0 items-center justify-center self-stretch rounded-xl border border-zinc-100 bg-gradient-to-br from-zinc-50 to-white px-2.5 py-3 text-center text-sm font-semibold tabular-nums text-zinc-950 shadow-sm shadow-zinc-950/[0.03]">
                                             {formatMoney(item.lineTotal)}
                                         </p>
                                     </div>
@@ -628,9 +675,9 @@ export default function ProfileOrderDetailPage() {
 
                         <section
                             id="order-payment"
-                            className="scroll-mt-20 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
+                            className="scroll-mt-20 flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"
                         >
-                            <div className="flex min-h-[76px] items-center gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
+                            <div className="flex min-h-[76px] shrink-0 items-center gap-3 border-b border-zinc-100 bg-gradient-to-r from-zinc-50 to-white px-4 py-3 sm:px-5">
                                 <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-950 text-white">
                                     <ReceiptText
                                         className="size-4"
@@ -646,7 +693,7 @@ export default function ProfileOrderDetailPage() {
                                     </p>
                                 </div>
                             </div>
-                            <div className="space-y-3 p-4 text-sm sm:p-5">
+                            <div className="flex flex-1 flex-col justify-center gap-3 p-4 text-sm sm:p-5">
                                 <div className="flex justify-between gap-3 text-zinc-500">
                                     <span>Tiền sản phẩm</span>
                                     <span className="shrink-0 tabular-nums">
@@ -680,9 +727,6 @@ export default function ProfileOrderDetailPage() {
                                     </span>
                                 </div>
                             </div>
-                            {canRetryPay2sPayment ? (
-                                <CustomerPay2sPaymentRetry orderId={order.id} />
-                            ) : null}
                         </section>
 
                         <section

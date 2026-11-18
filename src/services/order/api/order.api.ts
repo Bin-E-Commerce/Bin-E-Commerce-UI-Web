@@ -42,11 +42,7 @@ export async function verifyPay2sReturn(
 }
 
 export type DeliveryIssueReason =
-    | 'NOT_RECEIVED'
-    | 'DAMAGED'
-    | 'WRONG_ITEM'
-    | 'MISSING_ITEM'
-    | 'OTHER';
+    'NOT_RECEIVED' | 'DAMAGED' | 'WRONG_ITEM' | 'MISSING_ITEM' | 'OTHER';
 
 export interface DeliveryConfirmationInput {
     decision: 'RECEIVED' | 'ISSUE';
@@ -136,6 +132,16 @@ export async function retryPay2sPayment(
 ): Promise<{ paymentUrl: string }> {
     const response = await authorizedAxios.post<{ paymentUrl: string }>(
         `${ORDERS}/${orderId}/pay2s-payment`,
+    );
+    return response.data;
+}
+
+// Đóng phiên Pay2S và hủy đơn chưa thanh toán; backend xác minh chủ đơn, trạng thái và nhả tồn kho.
+export async function cancelPendingPay2sPayment(
+    orderId: string,
+): Promise<OrderResponse> {
+    const response = await authorizedAxios.post<OrderResponse>(
+        `${ORDERS}/${orderId}/pay2s-payment/cancel`,
     );
     return response.data;
 }

@@ -4,7 +4,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     CalendarDays,
     CircleDollarSign,
@@ -107,6 +107,7 @@ export function OrderReturnPanel({ order }: OrderReturnPanelProps) {
     } | null>(null);
     const [editingRequest, setEditingRequest] =
         useState<OrderReturnResponse | null>(null);
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
 
     const cancelMutation = useMutation({
         mutationFn: cancelOrderReturn,
@@ -179,6 +180,30 @@ export function OrderReturnPanel({ order }: OrderReturnPanelProps) {
                 ),
         ) ?? false;
     const isOrderCompleted = order.fulfillmentStatus === 'COMPLETED';
+    const returnWindowDeadline = order.returnWindowUntil
+        ? new Date(order.returnWindowUntil).getTime()
+        : null;
+    // Cập nhật đồng hồ chỉ khi deadline còn mở để link gửi lại biến mất đúng lúc thời hạn kết thúc.
+    useEffect(() => {
+        if (
+            !returnWindowDeadline ||
+            !Number.isFinite(returnWindowDeadline) ||
+            returnWindowDeadline <= currentTime
+        ) {
+            return;
+        }
+        const timer = window.setInterval(
+            () => setCurrentTime(Date.now()),
+            60_000,
+        );
+        return () => window.clearInterval(timer);
+    }, [currentTime, returnWindowDeadline]);
+    // Return đã hủy có thể gửi lại sau khi COMPLETED nếu deadline chưa qua và không có request cùng shop đang mở.
+    const canOfferCompletedReturn =
+        isOrderCompleted &&
+        Boolean(returnWindowDeadline && returnWindowDeadline > currentTime) &&
+        !activeRequest &&
+        !hasRejectedRequest;
     // Danh sách được sắp theo ngày tạo, nhưng request cũ có thể vừa bị hủy nên chọn theo updatedAt để gắn lối tắt đúng thẻ.
     const latestCancelledRequestId = returnsQuery.data
         ?.filter((item) => item.status === 'CUSTOMER_CANCELLED')
@@ -190,6 +215,7 @@ export function OrderReturnPanel({ order }: OrderReturnPanelProps) {
     // Trước khi khách xác nhận hoàn tất, chỉ mở thao tác nếu không có return khác đang xử lý hoặc bị từ chối.
     const canOfferDeliveryChoices =
         order.fulfillmentStatus === 'DELIVERED' &&
+        Boolean(returnWindowDeadline && returnWindowDeadline > currentTime) &&
         !activeRequest &&
         !hasRejectedRequest;
     // Một số request cũ đã hủy nhưng order còn RETURN_REFUND; chỉ mở đường phục hồi khi issue cũng đã đóng về cùng trạng thái cũ.
@@ -492,7 +518,9 @@ export function OrderReturnPanel({ order }: OrderReturnPanelProps) {
                                                     </p>
                                                     <p className="mt-1 text-xs leading-5 text-amber-900/80">
                                                         {isOrderCompleted
-                                                            ? 'Yêu cầu đã hủy. Vì bạn đã xác nhận hoàn thành đơn, không thể gửi yêu cầu hoàn hàng mới.'
+                                                            ? canOfferCompletedReturn
+                                                                ? 'Yêu cầu đã hủy. Bạn vẫn có thể gửi lại trong thời hạn hoàn hàng.'
+                                                                : 'Yêu cầu đã hủy. Thời hạn hoàn hàng của đơn đã kết thúc hoặc shop đã xử lý yêu cầu trước đó.'
                                                             : canOfferDeliveryChoices
                                                               ? 'Yêu cầu đã hủy. Bạn có thể gửi yêu cầu hoàn mới nếu vẫn có vấn đề, hoặc xác nhận đã nhận hàng.'
                                                               : canRepairCancelledOrder
@@ -501,7 +529,19 @@ export function OrderReturnPanel({ order }: OrderReturnPanelProps) {
                                                     </p>
                                                 </div>
                                             </div>
-                                            {!isOrderCompleted ? (
+                                            {isOrderCompleted ? (
+                                                canOfferCompletedReturn ? (
+                                                    <Button
+                                                        render={
+                                                            <Link href="#report-order-issue" />
+                                                        }
+                                                        className="h-9 rounded-lg bg-zinc-950 px-3 text-xs text-white hover:bg-zinc-800"
+                                                    >
+                                                        Gửi yêu cầu hoàn hàng
+                                                        lại
+                                                    </Button>
+                                                ) : null
+                                            ) : (
                                                 <div className="flex w-full flex-wrap justify-end gap-2 sm:w-auto sm:shrink-0">
                                                     {canOfferDeliveryChoices ? (
                                                         <>
@@ -591,7 +631,7 @@ export function OrderReturnPanel({ order }: OrderReturnPanelProps) {
                                                         </>
                                                     )}
                                                 </div>
-                                            ) : null}
+                                            )}
                                         </div>
                                     </div>
                                 ) : null}

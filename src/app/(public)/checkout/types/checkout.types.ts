@@ -78,6 +78,7 @@ export interface OrderResponse {
     warnings: string[];
     createdAt: string;
     completedAt: string | null;
+    returnWindowUntil?: string | null;
     deliveryConfirmation: DeliveryConfirmationResponse;
 }
 

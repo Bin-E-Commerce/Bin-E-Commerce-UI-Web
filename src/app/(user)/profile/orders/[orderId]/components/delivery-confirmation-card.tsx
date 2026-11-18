@@ -47,19 +47,32 @@ const ISSUE_REASONS = [
     'CHANGE_OF_MIND',
 ] as const;
 
-// Định dạng countdown theo ngày/giờ để khách hiểu rõ mốc auto-complete mà không cần biết timestamp kỹ thuật.
-function formatRemainingTime(deadline: string | null): string | null {
+// Định dạng hạn xác nhận hoặc hạn yêu cầu hoàn thành nhãn ngày/giờ; timestamp sai thì không hiển thị countdown giả.
+function formatRemainingTime(
+    deadline: string | null,
+    currentTime: number,
+): string | null {
     if (!deadline) return null;
-    const remaining = new Date(deadline).getTime() - Date.now();
+    const deadlineTime = new Date(deadline).getTime();
+    if (!Number.isFinite(deadlineTime)) return null;
+    const remaining = deadlineTime - currentTime;
     if (remaining <= 0) return 'sẽ được xử lý ngay';
     const days = Math.floor(remaining / 86_400_000);
     const hours = Math.floor((remaining % 86_400_000) / 3_600_000);
     return days > 0 ? `${days} ngày ${hours} giờ` : `${hours} giờ`;
 }
 
-// Fulfillment DELIVERED là điều kiện backend kiểm tra cho cả hai quyết định; confirmation status có thể cũ sau khi hủy return.
-function shouldRenderConfirmation(order: OrderResponse): boolean {
-    return order.fulfillmentStatus === 'DELIVERED';
+// Cho phép xác nhận nhận hàng khi DELIVERED và chỉ mở yêu cầu hoàn cho COMPLETED trước hạn server đã lưu.
+function shouldRenderConfirmation(
+    order: OrderResponse,
+    currentTime: number,
+): boolean {
+    if (order.fulfillmentStatus === 'DELIVERED') return true;
+    if (order.fulfillmentStatus !== 'COMPLETED' || !order.returnWindowUntil) {
+        return false;
+    }
+    const deadline = new Date(order.returnWindowUntil).getTime();
+    return Number.isFinite(deadline) && deadline > currentTime;
 }
 
 // Chuyển mã vấn đề thành nhãn trực tiếp trong form để Customer không phải đọc enum kỹ thuật.
@@ -102,9 +115,9 @@ function createLocalMediaPreviews(
     ];
 }
 
-// Render xác nhận giao hàng và form hoàn sản phẩm, chuyển kết quả hoàn tất lên trang cha để popup review không bị unmount.
-// Form chỉ tạo return sau khi khách đã nhận đơn; lỗi sản phẩm cần bằng chứng, còn đổi ý được gửi không kèm ảnh/video.
-// Return được tạo trước rồi mới liên kết vào delivery issue để backend giữ một lịch sử xử lý thống nhất cho order.
+// Render xác nhận giao hàng hoặc cửa sổ hoàn sau khi đơn hoàn tất, chuyển trạng thái lên trang cha để review không bị unmount.
+// Đơn DELIVERED cần ghi nhận issue cùng return; đơn COMPLETED chỉ mở return độc lập trong bảy ngày từ mốc giao.
+// Lỗi sản phẩm cần bằng chứng, còn đổi ý không cần file; backend vẫn chốt hạn và quyền sở hữu.
 export function DeliveryConfirmationCard({
     order,
     onOrderCompleted,
@@ -124,8 +137,22 @@ export function DeliveryConfirmationCard({
     const imageInputRef = useRef<HTMLInputElement | null>(null);
     const videoInputRef = useRef<HTMLInputElement | null>(null);
     const mutation = useConfirmOrderDelivery(order.id, onOrderCompleted);
-    const [remainingTime, setRemainingTime] = useState(() =>
-        formatRemainingTime(order.deliveryConfirmation.deadline),
+    const isCompletedOrder = order.fulfillmentStatus === 'COMPLETED';
+    const customerActionDeadline = isCompletedOrder
+        ? (order.returnWindowUntil ?? null)
+        : order.deliveryConfirmation.deadline;
+    const [currentTime, setCurrentTime] = useState(() => Date.now());
+    const returnWindowDeadline = order.returnWindowUntil
+        ? new Date(order.returnWindowUntil).getTime()
+        : null;
+    const canRequestReturn = Boolean(
+        returnWindowDeadline &&
+        Number.isFinite(returnWindowDeadline) &&
+        returnWindowDeadline > currentTime,
+    );
+    const remainingTime = formatRemainingTime(
+        customerActionDeadline,
+        currentTime,
     );
     const selectedShopIds = new Set(
         order.items
@@ -139,6 +166,7 @@ export function DeliveryConfirmationCard({
     const hasEvidence = images.length > 0 || videos.length > 0;
     const canSubmitIssue =
         Boolean(reason) &&
+        canRequestReturn &&
         (!isReturnRequest || selectedItemIds.length > 0) &&
         (!isReturnRequest || Boolean(savedRefundBankAccountId)) &&
         (!evidenceRequired || hasEvidence);
@@ -154,8 +182,9 @@ export function DeliveryConfirmationCard({
             localMedia.forEach((item) => URL.revokeObjectURL(item.url));
     }, [localMedia]);
 
-    // Upload bằng chứng nếu có rồi tạo return trước, sau đó gắn ID return vào issue để hai lịch sử không bị tách rời.
-    // Chỉ lỗi sản phẩm bắt buộc có file; lý do đổi ý vẫn cần item và tài khoản nhưng gửi evidence rỗng hợp lệ.
+    // Upload bằng chứng nếu có rồi tạo return; chỉ đơn DELIVERED cần thêm delivery issue để rời bước chờ xác nhận.
+    // Đơn COMPLETED giữ nguyên fulfillment và được bảo vệ tài chính bằng request đang mở trong return ledger.
+    // Lý do lỗi cần file; đổi ý vẫn phải chọn item và tài khoản hoàn nhưng được gửi evidence rỗng.
     // Nếu bước liên kết issue lỗi sau khi return đã lưu, giữ asset để không làm hỏng bằng chứng đang được request tham chiếu.
     const issueMutation = useMutation({
         mutationFn: async () => {
@@ -198,15 +227,17 @@ export function DeliveryConfirmationCard({
                 returnCreated = true;
                 returnRequestId = returnRequest.id;
 
-                const updatedOrder = await confirmOrderDelivery(order.id, {
-                    decision: 'ISSUE',
-                    reason: toDeliveryIssueReason(reason),
-                    itemIds: selectedItemIds,
-                    returnRequestId,
-                    note: note.trim() || undefined,
-                    evidence: media.evidence,
-                });
-                return updatedOrder;
+                if (order.fulfillmentStatus === 'DELIVERED') {
+                    return confirmOrderDelivery(order.id, {
+                        decision: 'ISSUE',
+                        reason: toDeliveryIssueReason(reason),
+                        itemIds: selectedItemIds,
+                        returnRequestId,
+                        note: note.trim() || undefined,
+                        evidence: media.evidence,
+                    });
+                }
+                return order;
             } catch (error) {
                 // Chỉ cleanup asset khi tạo return thất bại; nếu return đã lưu thì evidence là dữ liệu lịch sử cần giữ lại.
                 if (!returnCreated && uploadedAssets.length > 0) {
@@ -239,17 +270,21 @@ export function DeliveryConfirmationCard({
         onError: (error) => toast.error(getErrorMessage(error)),
     });
 
-    // Cập nhật countdown theo phút bằng subscription timer để customer luôn thấy đúng thời gian auto-complete.
+    // Cùng một thẻ đếm hạn xác nhận khi DELIVERED và đếm hạn trả hàng khi COMPLETED.
     useEffect(() => {
+        if (!shouldRenderConfirmation(order, Date.now())) return;
         const timer = window.setInterval(() => {
-            setRemainingTime(
-                formatRemainingTime(order.deliveryConfirmation.deadline),
-            );
+            const now = Date.now();
+            setCurrentTime(now);
+            // Tắt nhịp sau hạn return; DELIVERED vẫn giữ thao tác xác nhận đến khi auto-confirm xử lý.
+            if (!shouldRenderConfirmation(order, now)) {
+                window.clearInterval(timer);
+            }
         }, 60_000);
         return () => window.clearInterval(timer);
-    }, [order.deliveryConfirmation.deadline]);
+    }, [customerActionDeadline, order]);
 
-    if (!shouldRenderConfirmation(order)) return null;
+    if (!shouldRenderConfirmation(order, currentTime)) return null;
 
     // Gửi xác nhận thành công ngay trong click handler để không tạo side effect lặp lại qua useEffect.
     function handleReceived(): void {
@@ -330,21 +365,28 @@ export function DeliveryConfirmationCard({
                         <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2 className="text-lg font-bold tracking-tight text-zinc-950 sm:text-xl">
-                                    Bạn đã nhận được đơn hàng chưa?
+                                    {isCompletedOrder
+                                        ? 'Bạn muốn trả hàng hoặc hoàn tiền?'
+                                        : 'Bạn đã nhận được đơn hàng chưa?'}
                                 </h2>
                             </div>
                             <p className="mt-1.5 max-w-2xl text-sm leading-6 text-zinc-500">
-                                Xác nhận để cập nhật trạng thái đơn hàng. Bạn có
-                                thể quay lại đánh giá sản phẩm sau.
+                                {isCompletedOrder
+                                    ? 'Đơn đã hoàn tất. Bạn vẫn có thể gửi yêu cầu hoàn trong thời hạn còn lại.'
+                                    : 'Xác nhận để cập nhật trạng thái đơn hàng. Bạn có thể quay lại đánh giá sản phẩm sau.'}
                             </p>
                             {remainingTime ? (
-                                <div className="mt-3 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+                                <div className="mt-3 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                                     <Clock3
-                                        className="size-4 shrink-0 text-zinc-500"
+                                        className="size-4 shrink-0 text-amber-700"
                                         aria-hidden="true"
                                     />
-                                    <span>Thời hạn xác nhận còn</span>
-                                    <span className="font-semibold text-zinc-950">
+                                    <span>
+                                        {isCompletedOrder
+                                            ? 'Thời hạn yêu cầu hoàn còn'
+                                            : 'Thời hạn xác nhận còn'}
+                                    </span>
+                                    <span className="font-semibold text-amber-950">
                                         {remainingTime}
                                     </span>
                                 </div>
@@ -352,27 +394,31 @@ export function DeliveryConfirmationCard({
                         </div>
                     </div>
                     <div className="grid shrink-0 gap-2 sm:grid-cols-2 lg:w-60 lg:grid-cols-1">
-                        <Button
-                            type="button"
-                            id="confirm-order-received"
-                            onClick={handleReceived}
-                            disabled={mutation.isPending}
-                            className="h-11 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
-                        >
-                            {mutation.isPending
-                                ? 'Đang cập nhật...'
-                                : 'Xác nhận đã nhận hàng'}
-                        </Button>
-                        <Button
-                            type="button"
-                            id="report-order-issue"
-                            variant="outline"
-                            onClick={() => setIssueOpen(true)}
-                            disabled={mutation.isPending}
-                            className="h-11 rounded-xl border-zinc-200 px-4 text-sm font-semibold text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950"
-                        >
-                            Yêu cầu hoàn hàng
-                        </Button>
+                        {!isCompletedOrder ? (
+                            <Button
+                                type="button"
+                                id="confirm-order-received"
+                                onClick={handleReceived}
+                                disabled={mutation.isPending}
+                                className="h-11 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
+                            >
+                                {mutation.isPending
+                                    ? 'Đang cập nhật...'
+                                    : 'Xác nhận đã nhận hàng'}
+                            </Button>
+                        ) : null}
+                        {canRequestReturn ? (
+                            <Button
+                                type="button"
+                                id="report-order-issue"
+                                variant="outline"
+                                onClick={() => setIssueOpen(true)}
+                                disabled={mutation.isPending}
+                                className="h-11 rounded-xl border-zinc-200 px-4 text-sm font-semibold text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-950"
+                            >
+                                Yêu cầu hoàn hàng
+                            </Button>
+                        ) : null}
                     </div>
                 </div>
             </section>
