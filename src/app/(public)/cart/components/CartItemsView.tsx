@@ -341,7 +341,7 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                 >
                     {hasSelectableItems ? (
                         <>
-                            Thanh toán sản phẩm đã chọn
+                            Thanh toán
                             <ArrowRight className="size-4" aria-hidden="true" />
                         </>
                     ) : (
