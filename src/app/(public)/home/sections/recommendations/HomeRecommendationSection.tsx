@@ -3,21 +3,101 @@
 'use client';
 
 import Link from 'next/link';
+import { RefreshCw } from 'lucide-react';
 
 import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { HomeProductSection } from '../products/HomeProductSection';
 import { useHomeRecommendations } from './useHomeRecommendations';
 
-// Chỉ hiển thị kết quả Recommendation Service; nếu query lỗi hoặc rỗng thì ẩn
-// section, không gắn nhãn cá nhân hóa cho catalog. CTA mở trang gợi ý đầy đủ.
+// Hiển thị kết quả từ model, đồng thời giữ trạng thái tải/lỗi nhìn thấy được.
 export function HomeRecommendationSection() {
     const recommendationQuery = useHomeRecommendations();
     const { initialized, isAuthenticated, getProtectedHref } =
         useCartAuthRedirect();
     const recommendationResult = recommendationQuery.data;
 
-    // Không thay kết quả thiếu/lỗi bằng catalog; chờ lần tải thành công hoặc ẩn section.
-    if (!recommendationResult?.items.length) return null;
+    // Giữ chỗ trong trang khi model đang tải để tránh nhầm với section bị gỡ khỏi production.
+    if (recommendationQuery.isPending) {
+        return (
+            <section
+                id="recommendations"
+                className="mt-3 border-y border-zinc-200 bg-white"
+            >
+                <div className="mx-auto max-w-7xl">
+                    <div className="border-b border-zinc-200 px-4 py-3 sm:px-6">
+                        <h2 className="text-lg font-bold tracking-tight text-zinc-950">
+                            Gợi ý hôm nay
+                        </h2>
+                        <p className="text-xs text-zinc-500 sm:text-sm">
+                            Sản phẩm được xếp hạng bằng mô hình AI.
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 sm:p-4 lg:grid-cols-4 xl:grid-cols-6">
+                        {Array.from({ length: 6 }, (_, index) => (
+                            <div key={index} className="space-y-3">
+                                <Skeleton className="aspect-square w-full rounded-lg" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
+    // Khi request lỗi hoặc model trả danh sách rỗng, giải thích trạng thái và cho phép retry.
+    if (!recommendationResult?.items.length) {
+        const isError = recommendationQuery.isError;
+
+        return (
+            <section
+                id="recommendations"
+                className="mt-3 border-y border-zinc-200 bg-white"
+            >
+                <div className="mx-auto max-w-7xl">
+                    <div className="border-b border-zinc-200 px-4 py-3 sm:px-6">
+                        <h2 className="text-lg font-bold tracking-tight text-zinc-950">
+                            Gợi ý hôm nay
+                        </h2>
+                        <p className="text-xs text-zinc-500 sm:text-sm">
+                            Sản phẩm được xếp hạng bằng mô hình AI.
+                        </p>
+                    </div>
+                    <div className="flex min-h-44 flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+                        <p className="text-sm text-zinc-600">
+                            {isError
+                                ? 'Dịch vụ gợi ý AI chưa thể tải dữ liệu lúc này.'
+                                : 'Chưa có sản phẩm phù hợp để gợi ý lúc này.'}
+                        </p>
+                        {isError ? (
+                            <Button
+                                type="button"
+                                size="lg"
+                                disabled={recommendationQuery.isFetching}
+                                onClick={() =>
+                                    void recommendationQuery.refetch()
+                                }
+                            >
+                                <RefreshCw
+                                    className={
+                                        recommendationQuery.isFetching
+                                            ? 'animate-spin'
+                                            : undefined
+                                    }
+                                />
+                                {recommendationQuery.isFetching
+                                    ? 'Đang thử lại'
+                                    : 'Thử lại'}
+                            </Button>
+                        ) : null}
+                    </div>
+                </div>
+            </section>
+        );
+    }
 
     const recommendedProducts = recommendationResult.items.map(
         (item) => item.product,
@@ -52,7 +132,7 @@ export function HomeRecommendationSection() {
         <HomeProductSection
             id="recommendations"
             title="Gợi ý hôm nay"
-            description="Khám phá những sản phẩm được chọn theo sở thích của bạn."
+            description="Sản phẩm được xếp hạng bằng mô hình AI."
             products={recommendedProducts}
             mode="grid"
             trackingContextByProductId={trackingContextByProductId}
