@@ -1,5 +1,5 @@
-// Component này hiển thị nhanh các sản phẩm trong giỏ hàng từ active cart.
-// Component chỉ phục vụ xem nhanh; các thao tác cập nhật số lượng và xóa item nằm ngoài Phase 2.
+// Xem nhanh giỏ hàng với trạng thái giá và tồn kho hiện tại từ Cart Service.
+// Dòng hết hàng vẫn hiện để khách xem lại, nhưng không tính vào tổng có thể mua.
 
 'use client';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,9 @@ import Link from 'next/link';
 
 import type { Cart } from '@/app/(public)/cart/types/cart.types';
 import { CartItemActions } from '@/app/(public)/cart/components/CartItemActions';
+import { CartItemAvailability } from '@/app/(public)/cart/components/CartItemAvailability';
+import { isCartItemSelectable } from '@/app/(public)/cart/utils/is-cart-item-selectable';
+import { cn } from '@/lib/utils';
 
 interface CartPreviewProps {
     cart?: Cart;
@@ -26,7 +29,8 @@ function formatCartPrice(value: string): string {
     }).format(Number(value));
 }
 
-// Hiển thị trạng thái loading, lỗi, rỗng hoặc danh sách item rút gọn của cart.
+// Hiển thị trạng thái tải và từng dòng giỏ; giá tổng chỉ cộng các dòng hiện có thể mua.
+// Mỗi lần mở preview, CartIcon tải lại snapshot để các nhãn phản ánh giá và tồn kho mới nhất.
 export function CartPreview({
     cart,
     isLoading,
@@ -37,6 +41,12 @@ export function CartPreview({
     // Hiển thị toàn bộ line item trong vùng cuộn; nếu chỉ cắt 3 item thì sản phẩm còn lại không thể được tìm thấy bằng scroll.
     // Chiều cao tối đa vẫn được giữ ở danh sách nên footer, subtotal và nút xem cart luôn nằm ngoài vùng cuộn và dễ thao tác.
     const previewItems = cart?.items ?? [];
+    const purchasableItems = previewItems.filter(isCartItemSelectable);
+    const unavailableCount = previewItems.length - purchasableItems.length;
+    const purchasableSubtotal = purchasableItems.reduce(
+        (total, item) => total + Number(item.lineTotal),
+        0,
+    );
 
     return (
         <div
@@ -128,7 +138,11 @@ export function CartPreview({
                         {previewItems.map((item) => (
                             <div
                                 key={item.id}
-                                className="flex gap-4 py-4 first:pt-5 last:pb-5"
+                                className={cn(
+                                    'flex gap-4 py-4 first:pt-5 last:pb-5',
+                                    !isCartItemSelectable(item) &&
+                                        'bg-muted/40',
+                                )}
                             >
                                 <Link
                                     href={`/products/${item.productId}`}
@@ -140,7 +154,11 @@ export function CartPreview({
                                         <img
                                             src={item.imageUrl}
                                             alt={item.productName}
-                                            className="h-full w-full rounded-2xl border border-zinc-100 object-cover"
+                                            className={cn(
+                                                'h-full w-full rounded-2xl border border-zinc-100 object-cover',
+                                                !isCartItemSelectable(item) &&
+                                                    'grayscale opacity-75',
+                                            )}
                                         />
                                     ) : (
                                         <span
@@ -169,8 +187,20 @@ export function CartPreview({
                                                     {item.variantName}
                                                 </p>
                                             ) : null}
+                                            <span className="mt-2 block">
+                                                <CartItemAvailability
+                                                    item={item}
+                                                />
+                                            </span>
                                         </Link>
-                                        <span className="shrink-0 text-sm font-bold text-red-600">
+                                        <span
+                                            className={cn(
+                                                'shrink-0 text-sm font-bold',
+                                                isCartItemSelectable(item)
+                                                    ? 'text-destructive'
+                                                    : 'text-muted-foreground',
+                                            )}
+                                        >
                                             {formatCartPrice(item.lineTotal)}
                                         </span>
                                     </div>
@@ -187,12 +217,18 @@ export function CartPreview({
                     </div>
 
                     <div className="border-t border-zinc-100 px-6 py-5">
+                        {unavailableCount > 0 && (
+                            <p className="mb-3 rounded-xl border border-border bg-muted/50 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                                {unavailableCount} mặt hàng chưa thể thanh toán
+                                và vẫn được giữ trong giỏ.
+                            </p>
+                        )}
                         <div className="flex items-center justify-between gap-3">
                             <span className="text-sm text-zinc-500">
-                                Tạm tính
+                                Tạm tính có thể mua
                             </span>
                             <span className="text-base font-bold text-zinc-950">
-                                {formatCartPrice(cart?.subtotal ?? '0')}
+                                {formatCartPrice(String(purchasableSubtotal))}
                             </span>
                         </div>
                         <Link

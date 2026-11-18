@@ -1,4 +1,4 @@
-// Component này hiển thị icon Giỏ hàng, badge số lượng và mini-cart cho user đã đăng nhập.
+// Icon giỏ hàng mở preview và làm mới giá, tồn kho trước khi hiển thị các mặt hàng.
 // Guest vẫn được chuyển tới trang đăng nhập trước khi truy cập các nghiệp vụ cart.
 
 'use client';
@@ -16,7 +16,7 @@ interface CartIconProps {
     count?: number;
 }
 
-// Render icon cart theo auth state và mở preview sản phẩm mà không điều hướng khỏi trang hiện tại.
+// Mở preview cho tài khoản đã đăng nhập và làm mới dữ liệu để không dùng trạng thái tồn kho trong cache cũ.
 export function CartIcon({ count = 0 }: CartIconProps) {
     const { isAuthenticated, getProtectedHref } = useCartAuthRedirect();
     const cartQuery = useCart();
@@ -63,6 +63,8 @@ export function CartIcon({ count = 0 }: CartIconProps) {
     // Toggle preview cho user đã đăng nhập; Guest giữ nguyên luồng chuyển tới login.
     function handleTogglePreview(): void {
         if (isAuthenticated) {
+            // Refetch khi mở lại để giá và số lượng vừa sửa ở shop cập nhật cả trong mini-cart.
+            if (!isOpen && !cartQuery.isFetching) void cartQuery.refetch();
             setIsOpen((current) => !current);
         }
     }
@@ -111,7 +113,7 @@ export function CartIcon({ count = 0 }: CartIconProps) {
             {isOpen && (
                 <CartPreview
                     cart={cartQuery.data}
-                    isLoading={cartQuery.isLoading}
+                    isLoading={cartQuery.isLoading || cartQuery.isFetching}
                     isError={cartQuery.isError}
                     onClose={handleClosePreview}
                     onRetry={() => void cartQuery.refetch()}
