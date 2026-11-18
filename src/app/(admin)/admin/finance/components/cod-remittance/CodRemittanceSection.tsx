@@ -1,4 +1,4 @@
-// Thành phần xử lý COD đã thu; gọi API admin và chỉ bỏ khoản khỏi danh sách sau khi backend ghi nhận thành công.
+// Thành phần xử lý COD shipper đã giao; gửi mã chuyển tiền lên API và cập nhật bảng sau khi backend ghi nhận.
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -15,7 +15,8 @@ import {
     getPendingAdminCodRemittances,
 } from '@/services/admin/api/finance.api';
 
-// Admin ghi mã tham chiếu cho khoản COD đã thực nhận; thao tác thành công sẽ cập nhật ví và sổ tài chính.
+// Admin xác nhận COD đã chuyển về; khoản seller được ghi vào pending còn giải ngân chờ hoàn tất và hết hạn trả hàng.
+// Mã nhập được giữ theo từng đơn, mutation khóa thao tác trùng và làm mới cả danh sách lẫn số liệu tài chính sau khi lưu.
 export function CodRemittanceSection() {
     const queryClient = useQueryClient();
     const [references, setReferences] = useState<Record<string, string>>({});
@@ -70,7 +71,7 @@ export function CodRemittanceSection() {
             <FinanceSectionHeader
                 icon={Truck}
                 title="COD chờ đối soát"
-                description="Đơn đã hoàn tất sẽ được ghi vào tiền chờ của seller. Chỉ xác nhận khi tiền thu hộ đã về tài khoản nền tảng."
+                description="COD vào danh sách khi shipper báo giao thành công. Chỉ xác nhận khi tiền thu hộ đã về; tiền seller vẫn chờ đơn hoàn tất và hết hạn trả hàng."
                 countLabel={
                     remittancesQuery.isError
                         ? 'Không tải được'
@@ -102,7 +103,7 @@ export function CodRemittanceSection() {
             <FinanceTableToolbar
                 searchValue={search}
                 searchLabel="Tìm đơn COD chờ đối soát"
-                searchPlaceholder="Tìm theo mã đơn hoặc mã giao dịch"
+                searchPlaceholder="Tìm theo mã đơn"
                 onSearchChange={(value) => {
                     // Đổi từ khóa phải tải kết quả từ đầu để không nằm ngoài tổng trang mới.
                     setPage(1);
@@ -121,7 +122,7 @@ export function CodRemittanceSection() {
                 <p className="px-5 py-8 text-center text-sm text-zinc-500">
                     {search
                         ? 'Không tìm thấy đơn COD phù hợp.'
-                        : 'Chưa có đơn COD nào đã hoàn tất cần đối soát.'}
+                        : 'Chưa có đơn COD nào giao thành công cần đối soát.'}
                 </p>
             ) : (
                 <CodRemittanceTable

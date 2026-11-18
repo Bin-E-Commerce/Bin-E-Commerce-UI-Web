@@ -104,12 +104,12 @@ export interface AdminWalletActivityResponse {
     withdrawalRequests: Array<{ day: string; count: number }>;
 }
 
-// Contract hiển thị COD khách đã trả và đơn đã hoàn tất, còn chờ admin xác nhận tiền thu hộ.
+// Contract hiển thị COD shipper đã giao thành công, còn chờ admin xác nhận tiền thu hộ đã về.
 export interface AdminFinanceCodRemittance {
     orderId: string;
     orderNumber: string;
     amount: string;
-    completedAt: string;
+    deliveredAt: string;
     createdAt: string;
 }
 

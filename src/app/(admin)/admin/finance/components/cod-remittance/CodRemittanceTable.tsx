@@ -1,4 +1,4 @@
-// Bảng đơn COD chờ đối soát chỉ nhận dữ liệu đã tải và phát sự kiện nhập/xác nhận cho component sở hữu mutation.
+// Bảng COD đã giao chờ đối soát chỉ trình bày mốc shipper giao thành công và phát sự kiện xác nhận lên component cha.
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ export function CodRemittanceTable({
                 <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
                     <tr>
                         <th className="px-5 py-3">Đơn hàng</th>
-                        <th className="px-5 py-3">Hoàn tất</th>
+                        <th className="px-5 py-3">Giao thành công</th>
                         <th className="px-5 py-3 text-right">COD</th>
                         <th className="px-5 py-3">Mã đối soát</th>
                         <th className="px-5 py-3 text-right">Thao tác</th>
@@ -52,7 +52,7 @@ export function CodRemittanceTable({
                                     </p>
                                 </td>
                                 <td className="whitespace-nowrap px-5 py-4 text-zinc-500">
-                                    {new Date(item.completedAt).toLocaleString(
+                                    {new Date(item.deliveredAt).toLocaleString(
                                         'vi-VN',
                                     )}
                                 </td>
