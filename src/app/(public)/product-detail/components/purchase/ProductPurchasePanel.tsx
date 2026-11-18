@@ -26,7 +26,6 @@ import type { ProductDetail } from '@/services/product';
 import type { Cart } from '@/app/(public)/cart/types/cart.types';
 import { useAddCartItem } from '@/app/(public)/cart/hooks/use-add-cart-item';
 import { useCart } from '@/app/(public)/cart/hooks/use-cart';
-import { useUpdateCartItem } from '@/app/(public)/cart/hooks/use-cart-item-actions';
 import { useCartAuthRedirect } from '@/app/(public)/cart/hooks/use-cart-auth-redirect';
 import { useProductPurchase } from '../../hooks/useProductPurchase';
 import { ProductOptionSelector } from './ProductOptionSelector';
@@ -43,7 +42,6 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     // Tách mutation của Mua ngay khỏi CTA thêm vào giỏ để loading của một thao tác không khóa nút còn lại.
     const buyNowAddCartItemMutation = useAddCartItem();
     const cartQuery = useCart();
-    const updateCartItemMutation = useUpdateCartItem();
     const pathname = usePathname();
     const router = useRouter();
     const { isAuthenticated, getProtectedHref } = useCartAuthRedirect();
@@ -60,8 +58,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         Boolean(purchase.selectedVariant) &&
         purchase.availableStock > 0 &&
         (!isAuthenticated || !cartQuery.isLoading);
-    const isBuyNowPending =
-        buyNowAddCartItemMutation.isPending || updateCartItemMutation.isPending;
+    const isBuyNowPending = buyNowAddCartItemMutation.isPending;
 
     // Chỉ gửi product/variant/quantity; Cart Service sẽ kiểm tra lại toàn bộ snapshot và tồn kho trước khi lưu.
     function handleAddToCart(): void {
@@ -74,19 +71,19 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         });
     }
 
-    // Đưa Customer vào cart sau khi server trả item đã thêm/cập nhật để khách chọn rõ mặt hàng trước khi checkout.
-    function goToCartWithSelectedItem(cart: Cart): void {
+    // Mở cart và chọn đúng item sau khi Cart Service trả dòng hàng đã cộng quantity thành công.
+    function goToCartWithSelectedItem(cart: Cart, variantId: string): void {
         const selectedItem = cart.items.find(
-            (item) => item.variantId === purchase.selectedVariant?.id,
+            (item) => item.variantId === variantId,
         );
-        // Không mở bước chọn mua nếu response mutation thiếu dòng hàng đã yêu cầu.
+        // Không điều hướng nếu response thiếu item; khi đó mutation không xác nhận được kết quả cần chọn.
         if (!selectedItem) return;
-        router.push(`/cart?selectItemId=${encodeURIComponent(selectedItem.id)}`);
+        const itemId = encodeURIComponent(selectedItem.id);
+        router.push(`/cart?selectItemId=${itemId}`);
     }
 
-    // Mua ngay lưu item qua Cart Service rồi mở cart để khách chọn rõ mặt hàng trước checkout.
-    // Guest được đưa tới đăng nhập và quay lại đúng sản phẩm; Customer đã có item thì cập nhật quantity đã chọn.
-    // Callback chỉ điều hướng khi mutation thành công nên lỗi tồn kho không mở ra một cart tưởng như đã sẵn sàng.
+    // Mua ngay cộng quantity đã chọn vào dòng hàng hiện có rồi mở cart, không ghi đè quantity hay đi thẳng checkout.
+    // Cart Service khóa cart và cộng số lượng trong transaction nên bấm lặp không làm mất số đã có.
     function handleBuyNow(): void {
         if (!canAddToCart || !purchase.selectedVariant) return;
 
@@ -95,33 +92,16 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             return;
         }
 
-        const existingItem = cartQuery.data?.items.find(
-            (item) => item.variantId === purchase.selectedVariant?.id,
-        );
-        if (existingItem) {
-            // Mua ngay là số lượng cuối cùng người dùng chọn, không cộng lại với dòng hàng đã có trong giỏ.
-            updateCartItemMutation.mutate(
-                {
-                    itemId: existingItem.id,
-                    quantity: purchase.quantity,
-                    showSuccessToast: false,
-                },
-                {
-                    onSuccess: (cart) => goToCartWithSelectedItem(cart),
-                },
-            );
-            return;
-        }
-
+        const variantId = purchase.selectedVariant.id;
+        const quantity = purchase.quantity;
         buyNowAddCartItemMutation.mutate(
             {
                 productId: product.id,
-                variantId: purchase.selectedVariant.id,
-                quantity: purchase.quantity,
-                showSuccessToast: false,
+                variantId,
+                quantity,
             },
             {
-                onSuccess: (cart) => goToCartWithSelectedItem(cart),
+                onSuccess: (cart) => goToCartWithSelectedItem(cart, variantId),
             },
         );
     }
