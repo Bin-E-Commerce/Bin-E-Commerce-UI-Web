@@ -8,6 +8,13 @@ export interface CartItemsViewProps {
     cart: Cart;
 }
 
+// Cùng bộ thao tác số lượng và xóa được dùng ở trang giỏ lẫn giỏ xem trước.
+export interface CartItemActionsProps {
+    item: CartItem;
+    compact?: boolean;
+    mode?: 'all' | 'quantity' | 'remove';
+}
+
 // Nhãn tồn kho chỉ đọc dữ liệu trình bày của một dòng sản phẩm.
 export interface CartItemAvailabilityProps {
     item: CartItem;
