@@ -8,12 +8,18 @@ export interface CartItemsViewProps {
     cart: Cart;
 }
 
+// Nhãn tồn kho chỉ đọc dữ liệu trình bày của một dòng sản phẩm.
+export interface CartItemAvailabilityProps {
+    item: CartItem;
+}
+
 // Trạng thái selection giữ item được tick và các tổng tạm tính chỉ phục vụ giao diện.
 export interface CartSelectionState {
     selectedItemIds: string[];
     selectedItems: CartItem[];
     selectedQuantity: number;
     selectedSubtotal: string;
+    selectableItemCount: number;
     isAllSelected: boolean;
     isPartiallySelected: boolean;
     toggleAll(checked: boolean): void;

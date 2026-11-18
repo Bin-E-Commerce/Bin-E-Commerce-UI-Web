@@ -31,6 +31,14 @@ export interface Cart {
     updatedAt: string;
 }
 
+// Trạng thái availability chỉ mô tả snapshot tồn kho hiện tại, không giữ hàng cho checkout.
+export type CartItemAvailabilityStatus =
+    | 'AVAILABLE'
+    | 'OUT_OF_STOCK'
+    | 'INSUFFICIENT_STOCK'
+    | 'UNAVAILABLE'
+    | 'UNKNOWN';
+
 // Dòng hàng dùng để render cart; lineTotal đã được backend tính từ snapshot unitPrice.
 export interface CartItem {
     id: string;
@@ -45,4 +53,6 @@ export interface CartItem {
     originalPrice: string | null;
     quantity: number;
     lineTotal: string;
+    availabilityStatus?: CartItemAvailabilityStatus;
+    availableQuantity?: number | null;
 }
