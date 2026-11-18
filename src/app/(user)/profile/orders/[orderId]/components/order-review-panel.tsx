@@ -1,6 +1,7 @@
-// File này hiển thị review tùy chọn theo từng sản phẩm sau khi đơn đã giao.
-// Customer bắt buộc chọn sao; tiêu đề, nội dung và ảnh là phần mở rộng, chỉ upload khi submit để tránh asset rác.
-// Component cho phép bỏ qua hoàn toàn; chỉ khi khách bấm gửi mới yêu cầu rating, còn comment là nội dung tùy chọn.
+// File này hiển thị review tùy chọn theo từng sản phẩm sau khi đơn đã hoàn tất.
+// Người mua bắt buộc chọn sao; tiêu đề, nội dung và ảnh là phần mở rộng,
+// chỉ upload khi submit để tránh asset rác.
+// Có thể bỏ qua hoàn toàn; comment là nội dung tùy chọn.
 
 'use client';
 
@@ -55,9 +56,9 @@ function formatReviewSubmittedAt(createdAt: string): string {
           }).format(date);
 }
 
-// Render review độc lập cho từng item để Customer xem lại hoặc chỉnh sửa đúng sản phẩm đã chọn.
-// Khi review đã tồn tại, form khởi tạo từ snapshot server và chỉ mở sau khi Customer bấm chỉnh sửa.
-// Media cũ được quản lý tách khỏi File mới để Customer có thể xóa từng ảnh/video mà không phải upload lại toàn bộ.
+// Render review độc lập cho từng item để người mua xem lại hoặc chỉnh sửa đúng sản phẩm đã chọn.
+// Khi review đã tồn tại, form khởi tạo từ snapshot server và chỉ mở sau khi người mua bấm chỉnh sửa.
+// Media cũ được quản lý tách khỏi File mới để có thể xóa từng ảnh/video mà không phải upload lại toàn bộ.
 function ReviewItemComposer({
     orderId,
     item,
@@ -90,7 +91,8 @@ function ReviewItemComposer({
     const createMutation = useCreateOrderReview(orderId);
     const updateMutation = useUpdateOrderReview(orderId);
     const mutation = existingReview ? updateMutation : createMutation;
-    // Dùng hồ sơ hiện tại để tên không phụ thuộc snapshot cũ; review ẩn danh luôn che cả tên lẫn avatar.
+    // Dùng hồ sơ hiện tại để tên không phụ thuộc snapshot cũ; review ẩn danh luôn
+    // che cả tên lẫn avatar.
     const reviewerName = existingReview?.isAnonymous
         ? 'Người mua ẩn danh'
         : currentUser
@@ -273,11 +275,15 @@ function ReviewItemComposer({
         );
     }
 
-    // Upload ảnh rồi gửi review trong một handler; nếu upload lỗi thì không tạo review thiếu ảnh và vẫn cho customer thử lại.
+    // Upload media trước rồi mới gửi review; chỉ lỗi ở bước upload mới nhận thông báo tải media.
+    // Nếu API review từ chối sau upload, mutation hiện lỗi thật và cleanup chỉ
+    // xóa asset chưa được tham chiếu.
+    // Rating được kiểm tra trước I/O và form luôn mở lại sau khi một trong hai giai đoạn thất bại.
     async function handleSubmit(): Promise<void> {
         if (rating === 0) return;
         setUploading(true);
         let uploadedAssets: ReviewMediaCleanupAsset[] = [];
+        let reviewRequestStarted = false;
         try {
             const {
                 imageUrls,
@@ -295,12 +301,14 @@ function ReviewItemComposer({
                 isAnonymous,
             };
             if (existingReview) {
+                reviewRequestStarted = true;
                 await updateMutation.mutateAsync({
                     reviewId: existingReview.id,
                     ...reviewInput,
                 });
                 setEditing(false);
             } else {
+                reviewRequestStarted = true;
                 await createMutation.mutateAsync({
                     orderItemId: item.orderItemId,
                     ...reviewInput,
@@ -315,10 +323,13 @@ function ReviewItemComposer({
                     .cleanupUploadedReviewAssets(uploadedAssets)
                     .catch(() => undefined);
             }
-            // UI đã có toast ở mutation; lỗi upload cần thông báo riêng để customer biết ảnh chưa được gửi.
-            toast.error(
-                'Không thể tải ảnh hoặc video đánh giá. Vui lòng thử lại.',
-            );
+            // Mutation đã báo lỗi API riêng; thông báo này chỉ dành cho presign,
+            // S3 hoặc tạo URL media thất bại.
+            if (!reviewRequestStarted) {
+                toast.error(
+                    'Không thể tải ảnh hoặc video đánh giá. Vui lòng thử lại.',
+                );
+            }
         } finally {
             setUploading(false);
         }
