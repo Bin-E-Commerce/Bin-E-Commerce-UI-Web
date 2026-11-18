@@ -19,37 +19,72 @@ function toCents(value: string): number {
     return cents;
 }
 
-// Khởi tạo mặc định chọn tất cả; luồng Mua ngay có thể chọn riêng item vừa được Cart Service xác nhận.
-export function useCartSelection(items: CartItem[]): CartSelectionState {
-    const [selectedItemIds, setSelectedItemIds] = useState<string[]>(() =>
-        items.map((item) => item.id),
+// Quản lý lựa chọn mặc định và lựa chọn được truyền từ luồng Mua ngay.
+// Nếu selectItemId chưa có trong snapshot đầu, chờ cart cập nhật rồi mới áp dụng.
+// Theo dõi query mới để trang cart đang mở vẫn chọn đúng sản phẩm lần kế tiếp.
+// Sau khi áp dụng, refresh chỉ bỏ ID đã xóa và giữ thao tác checkbox của khách.
+export function useCartSelection(
+    items: CartItem[],
+    requestedItemId: string | null,
+): CartSelectionState {
+    const initialAvailableIds = new Set(items.map((item) => item.id));
+    const [selectedItemIds, setSelectedItemIds] = useState<string[]>(() => {
+        if (!requestedItemId) return [...initialAvailableIds];
+        return initialAvailableIds.has(requestedItemId)
+            ? [requestedItemId]
+            : [];
+    });
+    const lastRequestedItemId = useRef(requestedItemId);
+    const appliedRequestedItemId = useRef(
+        requestedItemId && initialAvailableIds.has(requestedItemId)
+            ? requestedItemId
+            : null,
     );
-    const initialSelectionApplied = useRef(false);
+    const defaultSelectionInitialized = useRef(!requestedItemId);
 
     useEffect(() => {
         const availableIds = new Set(items.map((item) => item.id));
 
-        // Chỉ đọc selectItemId một lần; các lần đổi quantity/xóa item sau đó giữ lựa chọn còn hợp lệ.
-        if (!initialSelectionApplied.current) {
-            initialSelectionApplied.current = true;
-            const requestedItemId = new URLSearchParams(
-                window.location.search,
-            ).get('selectItemId');
-            if (requestedItemId) {
-                setSelectedItemIds(
-                    availableIds.has(requestedItemId) ? [requestedItemId] : [],
-                );
+        // Query đổi nghĩa là khách yêu cầu dòng khác; reset cờ để thử lại nếu snapshot chưa có item.
+        if (requestedItemId !== lastRequestedItemId.current) {
+            lastRequestedItemId.current = requestedItemId;
+            appliedRequestedItemId.current = null;
+        }
+
+        if (requestedItemId) {
+            // Nếu snapshot chưa có dòng vừa thêm, không chọn nhầm item khác và đợi lần cập nhật tiếp theo.
+            if (!availableIds.has(requestedItemId)) {
+                if (appliedRequestedItemId.current !== requestedItemId)
+                    setSelectedItemIds([]);
                 return;
             }
+
+            // Chọn một lần cho mỗi query ID để refresh không ghi đè checkbox khách vừa đổi.
+            if (appliedRequestedItemId.current !== requestedItemId) {
+                appliedRequestedItemId.current = requestedItemId;
+                setSelectedItemIds([requestedItemId]);
+                return;
+            }
+
+            // Cart có thể xóa dòng hàng từ tab khác; bỏ ID đã mất nhưng không tự chọn dòng còn lại.
+            setSelectedItemIds((current) =>
+                current.filter((itemId) => availableIds.has(itemId)),
+            );
+            return;
+        }
+
+        // Trang mở trực tiếp không có selectItemId thì mặc định chọn tất cả đúng một lần.
+        if (!defaultSelectionInitialized.current) {
+            defaultSelectionInitialized.current = true;
             setSelectedItemIds([...availableIds]);
             return;
         }
 
-        // Khi Cart Service trả snapshot mới, bỏ khỏi selection ID đã bị xóa nhưng không tự chọn lại item khác.
+        // Các snapshot mới chỉ loại ID đã xóa; item mới không tự được chọn ngoài luồng Mua ngay.
         setSelectedItemIds((current) =>
             current.filter((itemId) => availableIds.has(itemId)),
         );
-    }, [items]);
+    }, [items, requestedItemId]);
 
     // Bật/tắt tất cả dòng hàng cùng lúc; selection rỗng vẫn hợp lệ và sẽ khóa nút checkout ở component.
     function toggleAll(checked: boolean): void {

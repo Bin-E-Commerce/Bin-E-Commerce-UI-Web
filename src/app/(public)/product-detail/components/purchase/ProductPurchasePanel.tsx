@@ -71,10 +71,15 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         });
     }
 
-    // Mở cart và chọn đúng item sau khi Cart Service trả dòng hàng đã cộng quantity thành công.
-    function goToCartWithSelectedItem(cart: Cart, variantId: string): void {
+    // Chọn theo cả product và variant để response cart không làm trỏ sang dòng khác nếu dữ liệu ID bất thường.
+    function goToCartWithSelectedItem(
+        cart: Cart,
+        productId: string,
+        variantId: string,
+    ): void {
         const selectedItem = cart.items.find(
-            (item) => item.variantId === variantId,
+            (item) =>
+                item.productId === productId && item.variantId === variantId,
         );
         // Không điều hướng nếu response thiếu item; khi đó mutation không xác nhận được kết quả cần chọn.
         if (!selectedItem) return;
@@ -101,7 +106,8 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                 quantity,
             },
             {
-                onSuccess: (cart) => goToCartWithSelectedItem(cart, variantId),
+                onSuccess: (cart) =>
+                    goToCartWithSelectedItem(cart, product.id, variantId),
             },
         );
     }

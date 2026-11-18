@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 import { ArrowRight, ImageOff, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { MAX_PARTIAL_CHECKOUT_ITEMS } from '../constants/cart-selection.constants';
 import type { CartItemsViewProps } from '../types/cart-selection.types';
@@ -26,10 +26,15 @@ function formatCartPrice(value: string): string {
     }).format(amount);
 }
 
-// Render cart và điều hướng checkout theo selection; toàn cart bỏ danh sách ID, còn selection một phần tuân theo giới hạn API.
+// Render cart và điều hướng checkout; selectItemId reactive để Mua ngay chọn đúng dòng.
+// Toàn cart bỏ danh sách ID, còn selection một phần tuân theo giới hạn API.
 export function CartItemsView({ cart }: CartItemsViewProps) {
     const router = useRouter();
-    const selection = useCartSelection(cart.items);
+    const searchParams = useSearchParams();
+    const selection = useCartSelection(
+        cart.items,
+        searchParams.get('selectItemId'),
+    );
     const exceedsPartialSelectionLimit =
         !selection.isAllSelected &&
         selection.selectedItemIds.length > MAX_PARTIAL_CHECKOUT_ITEMS;

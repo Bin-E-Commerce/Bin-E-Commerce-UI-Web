@@ -14,7 +14,7 @@ import {
     Truck,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { useCart } from '../hooks/use-cart';
 import { useCartAuthRedirect } from '../hooks/use-cart-auth-redirect';
@@ -22,7 +22,9 @@ import { CartItemsView } from './CartItemsView';
 
 // Điều phối trạng thái chuyển hướng, tải dữ liệu, lỗi và giỏ hàng rỗng thành một trải nghiệm liền mạch.
 // Redirect vẫn được giữ ở client để không làm thay đổi contract route hiện tại; khi API thành công,
-// người mua chỉ thấy thông tin hữu ích và lời mời tiếp tục mua sắm.
+// Người mua chỉ thấy thông tin hữu ích và lời mời tiếp tục mua sắm.
+// Danh sách đọc query URL để khôi phục item Mua ngay nên được bọc Suspense,
+// tránh làm hỏng prerender của route cart.
 export function CartPageContent() {
     const router = useRouter();
     const { initialized, isAuthenticated } = useCartAuthRedirect();
@@ -141,7 +143,21 @@ export function CartPageContent() {
                     </header>
 
                     {cart.items.length > 0 ? (
-                        <CartItemsView cart={cart} />
+                        <Suspense
+                            fallback={
+                                <div
+                                    aria-busy="true"
+                                    className="grid gap-5 px-5 py-6 sm:px-6 sm:py-7"
+                                >
+                                    <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
+                                    <div
+                                        className="h-48 animate-pulse rounded-2xl border border-zinc-200 bg-zinc-50"
+                                    />
+                                </div>
+                            }
+                        >
+                            <CartItemsView cart={cart} />
+                        </Suspense>
                     ) : (
                         <div className="px-6 py-9 sm:px-8 sm:py-11">
                             <div className="mx-auto flex max-w-xl flex-col items-center text-center">
