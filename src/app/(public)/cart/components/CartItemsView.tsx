@@ -49,6 +49,9 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
     const allPurchasableItemsSelected =
         hasSelectableItems &&
         selection.selectedItemIds.length === selection.selectableItemCount;
+    // Dùng cùng bộ cột cho tiêu đề và sản phẩm; max-content giữ nguyên tiền dài và không đẩy ký hiệu ₫ xuống dòng.
+    const desktopCartGridColumns =
+        'lg:grid-cols-[20px_72px_minmax(0,1fr)_minmax(104px,max-content)_112px_minmax(112px,max-content)_64px]';
 
     // Gửi toàn cart không kèm ID để tránh giới hạn query; selection một phần gửi ID đã sắp xếp giống quote và tạo order.
     // Dừng sớm nếu selection rỗng hoặc vượt giới hạn 100 ID mà Cart Service xác minh được.
@@ -123,7 +126,12 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                     </span>
                 </div>
 
-                <div className="mt-4 hidden grid-cols-[20px_72px_minmax(0,1fr)_84px_112px_88px_64px] gap-x-3 px-5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid">
+                <div
+                    className={cn(
+                        'mt-4 hidden gap-x-3 px-5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid',
+                        desktopCartGridColumns,
+                    )}
+                >
                     <span aria-hidden="true" />
                     <span className="col-span-2">Sản phẩm</span>
                     <span className="text-right">Đơn giá</span>
@@ -140,7 +148,8 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                             <article
                                 key={item.id}
                                 className={cn(
-                                    'grid grid-cols-[20px_56px_minmax(0,1fr)] gap-x-3 gap-y-2 p-3.5 sm:grid-cols-[20px_72px_minmax(0,1fr)] sm:p-5 lg:grid-cols-[20px_72px_minmax(0,1fr)_84px_112px_88px_64px] lg:items-center',
+                                    'grid grid-cols-[20px_56px_minmax(0,1fr)] gap-x-3 gap-y-2 p-3.5 sm:grid-cols-[20px_72px_minmax(0,1fr)] sm:p-5 lg:items-center',
+                                    desktopCartGridColumns,
                                     !isSelectable && 'bg-muted/55',
                                 )}
                             >
@@ -204,7 +213,7 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                     <span className="text-xs text-muted-foreground lg:hidden">
                                         Đơn giá
                                     </span>
-                                    <p className="text-sm font-medium wrap-anywhere tabular-nums text-muted-foreground">
+                                    <p className="text-sm font-medium whitespace-nowrap tabular-nums text-muted-foreground">
                                         {formatCartPrice(item.unitPrice)}
                                     </p>
                                 </div>
@@ -225,7 +234,7 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                                     </span>
                                     <p
                                         className={cn(
-                                            'text-sm font-semibold wrap-anywhere tabular-nums sm:text-base',
+                                            'text-sm font-semibold whitespace-nowrap tabular-nums sm:text-base',
                                             isSelectable
                                                 ? 'text-destructive'
                                                 : 'text-muted-foreground',
@@ -269,7 +278,7 @@ export function CartItemsView({ cart }: CartItemsViewProps) {
                     <span className="text-muted-foreground">
                         Tạm tính đã chọn
                     </span>
-                    <strong className="text-lg wrap-anywhere tabular-nums text-foreground">
+                    <strong className="shrink-0 text-lg whitespace-nowrap tabular-nums text-foreground">
                         {formatCartPrice(selection.selectedSubtotal)}
                     </strong>
                 </div>
