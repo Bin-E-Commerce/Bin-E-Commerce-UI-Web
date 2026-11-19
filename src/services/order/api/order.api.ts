@@ -150,6 +150,8 @@ export type CustomerOrderStatus = OrderResponse['status'];
 export type CustomerOrderStage = NonNullable<
     OrderResponse['fulfillmentStatus']
 >;
+export type DeliveryConfirmationStatus =
+    OrderResponse['deliveryConfirmation']['status'];
 
 export interface CustomerOrderListItem {
     id: string;
@@ -298,6 +300,7 @@ export type OrderReturnStatus =
     | 'IN_TRANSIT'
     | 'SHIPMENT_FAILED'
     | 'RECEIVED'
+    | 'INSPECTION_PASSED'
     | 'INSPECTION_FAILED'
     | 'REFUND_PENDING'
     | 'REFUND_FAILED'

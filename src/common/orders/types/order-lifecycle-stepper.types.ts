@@ -3,7 +3,10 @@
 import type { ReactNode } from 'react';
 
 import type { RefundBankAccountInput } from '@/services/order/types/cancel-order.types';
-import type { OrderReturnStatus } from '@/services/order';
+import type {
+    DeliveryConfirmationStatus,
+    OrderReturnStatus,
+} from '@/services/order';
 import type { ShipmentStatus } from '@/services/shipping';
 
 export type OrderLifecycleStage =
@@ -30,6 +33,7 @@ export interface OrderLifecycleStepperProps {
     cancelActionSlot?: ReactNode;
     shipmentStatus?: ShipmentStatus | null;
     returnStatus?: OrderReturnStatus | null;
+    deliveryConfirmationStatus?: DeliveryConfirmationStatus | null;
     actionSlot?: ReactNode;
 }
 

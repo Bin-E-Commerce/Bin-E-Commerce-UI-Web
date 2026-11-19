@@ -42,7 +42,8 @@ function formatShippingAddress(address: Record<string, string>): string {
         .join(', ');
 }
 
-// Trình bày chi tiết Seller mà không đổi dữ liệu đơn; đơn hủy giữ giá trị lúc đặt nhưng không hiển thị như doanh thu đã ghi nhận.
+// Trình bày tiến độ giao hàng cùng trạng thái return riêng, không sửa snapshot đơn; chỉ chọn request thuộc order hiện tại.
+// Đơn hủy vẫn giữ giá trị lúc đặt để đối chiếu nhưng không hiển thị như doanh thu đã ghi nhận.
 export function SellerOrderDetailContent({
     orderId,
 }: SellerOrderDetailContentProps) {
@@ -95,11 +96,37 @@ export function SellerOrderDetailContent({
     // Dùng cả order status và fulfillment để nhận diện dữ liệu cũ chỉ cập nhật một trong hai trường.
     const isCancelled =
         order.status === 'CANCELLED' || order.fulfillmentStatus === 'CANCELLED';
+    // RETURN_REFUND chỉ là trạng thái hậu mãi; issue chưa chốt luôn thắng completion marker cũ khi dữ liệu lịch sử lệch.
+    const hasConfirmedDelivery =
+        order.deliveryConfirmationStatus !== 'ISSUE_REPORTED' &&
+        (order.deliveryConfirmationStatus === 'CONFIRMED' ||
+            order.deliveryConfirmationStatus === 'AUTO_CONFIRMED' ||
+            Boolean(order.completedAt));
+    const sellerTimelineStage = isCancelled
+        ? 'CANCELLED'
+        : order.fulfillmentStatus === 'RETURN_REFUND'
+          ? hasConfirmedDelivery
+              ? 'COMPLETED'
+              : 'DELIVERED'
+          : order.fulfillmentStatus;
     // Chỉ coi yêu cầu có orderId trùng khớp là nội dung thuộc card của đơn hiện tại;
     // khi danh sách đang tải hoặc lỗi, ẩn cả lối tắt lẫn card để không tạo điểm đến giả.
     const orderReturns = (returnsQuery.data ?? []).filter(
         (returnRequest) => returnRequest.orderId === order.id,
     );
+    // Hiển thị request đang chạy mới nhất; khi tất cả request đã kết thúc, vẫn giữ kết quả vừa được cập nhật gần nhất.
+    const activeOrderReturns = orderReturns.filter(
+        (returnRequest) =>
+            ![
+                'CUSTOMER_CANCELLED',
+                'REJECTED',
+                'INSPECTION_FAILED',
+                'REFUNDED',
+            ].includes(returnRequest.status),
+    );
+    const latestOrderReturn = [
+        ...(activeOrderReturns.length > 0 ? activeOrderReturns : orderReturns),
+    ].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
     const address = order.shippingAddress;
     const canPrepareShipment =
         !['CANCELLED', 'DELIVERY_FAILED'].includes(
@@ -111,9 +138,10 @@ export function SellerOrderDetailContent({
     // Trạng thái giao thành công là mốc kết thúc thao tác vận chuyển của Seller;
     // CTA tiếp theo đưa Seller đến đúng sản phẩm trong Seller Center để xem các review đã được duyệt.
     const isDeliveryFinished =
-        order.fulfillmentStatus === 'DELIVERED' ||
-        order.fulfillmentStatus === 'COMPLETED' ||
-        shipmentQuery.data?.status === 'DELIVERED';
+        !isCancelled &&
+        (sellerTimelineStage === 'DELIVERED' ||
+            sellerTimelineStage === 'COMPLETED' ||
+            shipmentQuery.data?.status === 'DELIVERED');
     // Chỉ có vận đơn thực tế mới tạo card tracking và mục lục tương ứng; trạng thái đang tải hoặc 404 đều không phải vận chuyển đã khởi tạo.
     const hasShipment = Boolean(shipmentQuery.data);
     // Tóm tắt phương thức và trạng thái để Seller nhận biết thanh toán ngay trên mục lục.
@@ -175,11 +203,15 @@ export function SellerOrderDetailContent({
 
                 <OrderLifecycleStepper
                     mode="seller"
-                    currentStage={order.fulfillmentStatus}
+                    currentStage={sellerTimelineStage}
                     legacyStatus={order.status}
                     cancelledAt={order.cancelledAt}
                     cancelReason={order.cancelReason}
                     shipmentStatus={shipmentQuery.data?.status ?? null}
+                    returnStatus={latestOrderReturn?.status ?? null}
+                    deliveryConfirmationStatus={
+                        order.deliveryConfirmationStatus
+                    }
                     actionSlot={
                         isDeliveryFinished && reviewProductId ? (
                             <Link

@@ -79,6 +79,7 @@ const SELLER_STEPS: LifecycleStep[] = [
     },
 ];
 
+// Tách các mốc shop duyệt, khách gửi hàng, shop xác nhận nhận kiện và hoàn tiền để mỗi transition có vị trí riêng.
 const CUSTOMER_RETURN_STEPS: LifecycleStep[] = [
     {
         key: 'return-requested',
@@ -89,6 +90,11 @@ const CUSTOMER_RETURN_STEPS: LifecycleStep[] = [
         key: 'return-review',
         title: 'Shop xử lý',
         description: 'Shop đang kiểm tra và duyệt yêu cầu',
+    },
+    {
+        key: 'return-awaiting-shipment',
+        title: 'Chờ gửi hàng hoàn',
+        description: 'Shop đã duyệt; vui lòng gửi sản phẩm hoàn về shop',
     },
     {
         key: 'return-shipping',
@@ -102,8 +108,13 @@ const CUSTOMER_RETURN_STEPS: LifecycleStep[] = [
     },
     {
         key: 'return-confirmed',
-        title: 'Xác nhận nhận hàng',
+        title: 'Shop xác nhận nhận hàng',
         description: 'Shop xác nhận đã nhận được kiện hàng hoàn',
+    },
+    {
+        key: 'return-refund',
+        title: 'Hoàn tiền',
+        description: 'Khoản hoàn đang được xử lý cho khách hàng',
     },
 ];
 
@@ -142,37 +153,52 @@ function getShipmentActiveIndex(
     return -1;
 }
 
-// Xác định bước cao nhất của quy trình hoàn hàng để customer không tiếp tục thấy timeline giao hàng cũ.
+// Map đủ trạng thái request vào đúng mốc vận hành thay vì suy ra tiến độ hoàn từ fulfillment của order.
+// Lỗi vận chuyển giữ tại bước gửi hàng để có thể retry; lỗi chuyển tiền giữ riêng ở bước hoàn tiền.
+// Các state legacy INSPECTION_* vẫn ánh xạ được để đơn cũ không rơi về mốc đầu.
+const RETURN_STEP_INDEX: Record<OrderReturnStatus, number> = {
+    REQUESTED: 0,
+    CUSTOMER_CANCELLED: -1,
+    APPROVED: 1,
+    REJECTED: 1,
+    AWAITING_SHIPMENT: 2,
+    IN_TRANSIT: 3,
+    SHIPMENT_FAILED: 3,
+    RECEIVED: 4,
+    INSPECTION_FAILED: 5,
+    INSPECTION_PASSED: 6,
+    REFUND_PENDING: 6,
+    REFUND_FAILED: 6,
+    REFUNDED: 6,
+};
+
+// Trả index theo bảng trạng thái đầy đủ; trạng thái hủy hoặc thiếu không mở một lộ trình hoàn đang chạy.
 function getReturnActiveIndex(
     status: OrderReturnStatus | null | undefined,
 ): number {
-    if (status === 'REQUESTED') return 0;
-    if (status === 'REJECTED') return 1;
-    if (status === 'APPROVED' || status === 'AWAITING_SHIPMENT') return 1;
-    if (status === 'IN_TRANSIT') return 2;
-    if (status === 'RECEIVED') return 3;
-    if (status === 'REFUND_PENDING' || status === 'INSPECTION_FAILED') return 4;
-    if (status === 'SHIPMENT_FAILED') return 2;
-    return -1;
+    return status ? RETURN_STEP_INDEX[status] : -1;
 }
 
-// Đổi status hoàn kỹ thuật thành tiêu đề ngắn để customer biết chính xác việc đang chờ ở đâu.
+// Chuyển mọi status backend thành nhãn trạng thái cụ thể để không có kết quả hợp lệ nào rơi về nhãn đang xử lý chung.
 function getReturnStatusTitle(
     status: OrderReturnStatus | null | undefined,
 ): string {
-    const labels: Partial<Record<OrderReturnStatus, string>> = {
+    const labels: Record<OrderReturnStatus, string> = {
         REQUESTED: 'Shop đang xem xét yêu cầu',
+        CUSTOMER_CANCELLED: 'Yêu cầu đã hủy',
         APPROVED: 'Đã được shop duyệt',
+        REJECTED: 'Yêu cầu bị từ chối',
         AWAITING_SHIPMENT: 'Chờ gửi hàng hoàn',
         IN_TRANSIT: 'Đang hoàn về shop',
-        RECEIVED: 'Shop đã nhận hàng',
-        REFUND_PENDING: 'Đã xác nhận nhận hàng · Chờ hoàn tiền',
-        REJECTED: 'Yêu cầu bị từ chối',
-        CUSTOMER_CANCELLED: 'Yêu cầu đã hủy',
         SHIPMENT_FAILED: 'Vận chuyển hoàn thất bại',
+        RECEIVED: 'Shop đã nhận hàng',
+        INSPECTION_PASSED: 'Đã xác nhận nhận hàng · Chờ hoàn tiền',
         INSPECTION_FAILED: 'Không chấp thuận hoàn · Chờ gửi trả sản phẩm',
+        REFUND_PENDING: 'Đã xác nhận nhận hàng · Chờ hoàn tiền',
+        REFUND_FAILED: 'Chuyển khoản hoàn lỗi · đang được xử lý lại',
+        REFUNDED: 'Đã hoàn tiền',
     };
-    return (status ? labels[status] : undefined) ?? 'Đang xử lý hoàn hàng';
+    return status ? labels[status] : 'Đang xử lý hoàn hàng';
 }
 
 // Định dạng thời gian hủy vì mốc này vẫn cần hiển thị trong trạng thái kết thúc.
@@ -220,6 +246,7 @@ function getProgressMessage(
     mode: OrderLifecycleMode,
     stage: OrderLifecycleStage,
     shipmentStatus: ShipmentStatus | null | undefined,
+    deliveryConfirmationStatus: OrderLifecycleStepperProps['deliveryConfirmationStatus'],
 ): string {
     if (stage === 'COMPLETED') {
         return mode === 'seller'
@@ -230,6 +257,10 @@ function getProgressMessage(
         mode === 'seller' &&
         (stage === 'DELIVERED' || shipmentStatus === 'DELIVERED')
     ) {
+        // Báo sự cố đã chuyển quy trình sang hậu mãi; không hướng Seller chờ đánh giá như đơn giao bình thường.
+        if (deliveryConfirmationStatus === 'ISSUE_REPORTED') {
+            return 'Khách đã báo sự cố giao hàng. Theo dõi xử lý hỗ trợ hoặc đổi trả riêng bên dưới.';
+        }
         return 'Đơn hàng đã giao thành công. Đang chờ khách hàng xác nhận và chia sẻ đánh giá về sản phẩm.';
     }
     if (mode === 'seller')
@@ -239,8 +270,9 @@ function getProgressMessage(
     return 'Shop sẽ cập nhật hành trình và mã vận đơn khi đơn được bàn giao cho đơn vị vận chuyển.';
 }
 
-// Hiển thị tiến trình và snapshot trạng thái; cancelActionSlot chỉ xuất hiện trong card hủy đơn phía Customer.
-// Component không gọi API hay tự phân quyền, tài khoản nhận hoàn được mask trước khi đưa lên giao diện.
+// Hiển thị lộ trình giao hàng và hậu mãi tách biệt: RETURN_REFUND của Seller là trạng thái yêu cầu phụ, không thay lịch sử giao hàng.
+// Customer vẫn có lộ trình trả hàng riêng theo từng transition từ gửi yêu cầu đến hoàn tiền.
+// Component chỉ trình bày dữ liệu và action do trang đã xác thực truyền vào, không gọi API hay tự phân quyền.
 export function OrderLifecycleStepper({
     mode,
     currentStage,
@@ -251,10 +283,15 @@ export function OrderLifecycleStepper({
     cancelActionSlot,
     shipmentStatus,
     returnStatus,
+    deliveryConfirmationStatus,
     actionSlot,
 }: OrderLifecycleStepperProps) {
-    const stage = normalizeStage(currentStage, legacyStatus);
+    const normalizedStage = normalizeStage(currentStage, legacyStatus);
+    const stage = normalizedStage;
     const returnActiveIndex = getReturnActiveIndex(returnStatus);
+    const isSellerReturnFlow = mode === 'seller' && Boolean(returnStatus);
+    const isSellerDeliveryIssueReported =
+        mode === 'seller' && deliveryConfirmationStatus === 'ISSUE_REPORTED';
     const isCustomerReturnFlow =
         mode === 'customer' &&
         Boolean(returnStatus) &&
@@ -280,15 +317,13 @@ export function OrderLifecycleStepper({
     const isFailed = stage === 'DELIVERY_FAILED';
     const isReturn = stage === 'RETURN_REFUND';
     const isCompleted = stage === 'COMPLETED';
+    // Chỉ từ chối yêu cầu hoặc không chấp thuận sau kiểm tra mới kết thúc nhánh hoàn; lỗi vận chuyển có thể được retry.
     const isReturnFailed =
         isCustomerReturnFlow &&
-        ['REJECTED', 'INSPECTION_FAILED', 'SHIPMENT_FAILED'].includes(
-            returnStatus ?? '',
-        );
-    // Bước cuối hoàn tất khi shop xác nhận đã nhận kiện; REFUND_PENDING chỉ còn chờ xử lý tiền hoàn.
+        ['REJECTED', 'INSPECTION_FAILED'].includes(returnStatus ?? '');
+    // Chỉ REFUNDED hoàn tất toàn bộ hành trình; REFUND_PENDING và REFUND_FAILED phải dừng ở bước chuyển tiền.
     const isReturnOutcomeComplete =
-        isCustomerReturnFlow &&
-        ['REFUND_PENDING', 'INSPECTION_FAILED'].includes(returnStatus ?? '');
+        isCustomerReturnFlow && returnStatus === 'REFUNDED';
     // RETURN_REFUND là trạng thái tổng của order, không phải kết thúc timeline khi request hoàn vẫn đang chạy.
     const isTerminal =
         isCancelled ||
@@ -361,8 +396,8 @@ export function OrderLifecycleStepper({
                 <ol
                     className={cn(
                         'grid gap-4 md:gap-0',
-                        steps.length === 6
-                            ? 'md:grid-cols-6'
+                        steps.length === 7
+                            ? 'md:grid-cols-7'
                             : 'md:grid-cols-5',
                     )}
                     aria-label="Các bước xử lý đơn hàng"
@@ -382,7 +417,7 @@ export function OrderLifecycleStepper({
                                 ? index === 0
                                     ? 'complete'
                                     : 'upcoming'
-                                : isCompleted
+                                : isCompleted && !isCustomerReturnFlow
                                   ? 'complete'
                                   : index < activeIndex
                                     ? 'complete'
@@ -403,7 +438,8 @@ export function OrderLifecycleStepper({
                                         className={cn(
                                             'absolute left-1/2 top-4 hidden h-px w-full transition-colors duration-700 ease-out md:block',
                                             (isReturnOutcomeComplete ||
-                                                !isTerminal) &&
+                                                !isTerminal ||
+                                                isReturnFailed) &&
                                                 index < activeIndex
                                                 ? 'bg-black/55'
                                                 : 'bg-slate-200',
@@ -433,14 +469,25 @@ export function OrderLifecycleStepper({
                                             ? 'Shop từ chối yêu cầu'
                                             : step.key === 'return-confirmed' &&
                                                 returnStatus ===
-                                                    'REFUND_PENDING'
-                                              ? 'Đã xác nhận nhận hàng'
-                                              : step.key ===
-                                                      'return-confirmed' &&
-                                                  returnStatus ===
-                                                      'INSPECTION_FAILED'
-                                                ? 'Không chấp thuận hoàn'
-                                                : step.title}
+                                                    'INSPECTION_FAILED'
+                                              ? 'Không chấp thuận hoàn'
+                                              : step.key === 'return-refund' &&
+                                                  [
+                                                      'REFUND_PENDING',
+                                                      'INSPECTION_PASSED',
+                                                  ].includes(returnStatus ?? '')
+                                                ? 'Chờ hoàn tiền'
+                                                : step.key ===
+                                                        'return-refund' &&
+                                                    returnStatus ===
+                                                        'REFUND_FAILED'
+                                                  ? 'Đang xử lý lại tiền hoàn'
+                                                  : step.key ===
+                                                          'return-refund' &&
+                                                      returnStatus ===
+                                                          'REFUNDED'
+                                                    ? 'Đã hoàn tiền'
+                                                    : step.title}
                                     </p>
                                     <p
                                         className={cn(
@@ -455,14 +502,26 @@ export function OrderLifecycleStepper({
                                             ? 'Shop đã từ chối yêu cầu hoàn hàng'
                                             : step.key === 'return-confirmed' &&
                                                 returnStatus ===
-                                                    'REFUND_PENDING'
-                                              ? 'Khoản hoàn đang chờ được xử lý'
-                                              : step.key ===
-                                                      'return-confirmed' &&
-                                                  returnStatus ===
-                                                      'INSPECTION_FAILED'
-                                                ? 'Yêu cầu được xử lý theo quy trình cũ'
-                                                : step.description}
+                                                    'INSPECTION_FAILED'
+                                              ? 'Shop không chấp thuận hoàn; sản phẩm sẽ được gửi trả lại cho bạn'
+                                              : step.key === 'return-refund' &&
+                                                  returnStatus === 'REFUNDED'
+                                                ? 'Khoản hoàn đã được xác nhận chuyển thành công'
+                                                : step.key ===
+                                                        'return-refund' &&
+                                                    [
+                                                        'REFUND_PENDING',
+                                                        'INSPECTION_PASSED',
+                                                    ].includes(
+                                                        returnStatus ?? '',
+                                                    )
+                                                  ? 'Shop đã xác nhận nhận hàng hoàn. Khoản tiền đang chờ xử lý'
+                                                  : step.key ===
+                                                          'return-refund' &&
+                                                      returnStatus ===
+                                                          'REFUND_FAILED'
+                                                    ? 'Lần chuyển khoản hoàn trước gặp lỗi; hệ thống đang xử lý lại'
+                                                    : step.description}
                                     </p>
                                     {state === 'current' ? (
                                         <span className="mt-1.5 inline-flex rounded-full bg-black px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] text-white">
@@ -474,6 +533,23 @@ export function OrderLifecycleStepper({
                         );
                     })}
                 </ol>
+
+                {isSellerReturnFlow ? (
+                    <div className="mt-4 flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+                        <div>
+                            <p className="text-xs font-semibold text-black sm:text-sm">
+                                Đổi trả / hoàn tiền
+                            </p>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                                Trạng thái yêu cầu được theo dõi riêng với lộ
+                                trình giao hàng.
+                            </p>
+                        </div>
+                        <span className="inline-flex w-fit max-w-full shrink-0 whitespace-normal rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+                            {getReturnStatusTitle(returnStatus)}
+                        </span>
+                    </div>
+                ) : null}
 
                 {isTerminal ? (
                     <div
@@ -579,15 +655,19 @@ export function OrderLifecycleStepper({
                         <div className="min-w-0">
                             <p className="text-xs font-semibold text-black sm:text-sm">
                                 {isCustomerReturnFlow
-                                    ? isCompleted
+                                    ? isReturnOutcomeComplete
                                         ? 'Yêu cầu hoàn hàng đã hoàn tất'
                                         : getReturnStatusTitle(returnStatus)
                                     : mode === 'seller'
-                                      ? isCompleted
-                                          ? 'Đơn hàng đã hoàn thành'
-                                          : sellerDeliveryFinished
-                                            ? 'Đang chờ khách hàng đánh giá'
-                                            : 'Việc cần làm tiếp theo'
+                                      ? isSellerReturnFlow
+                                          ? getReturnStatusTitle(returnStatus)
+                                          : isSellerDeliveryIssueReported
+                                            ? 'Khách đã báo sự cố giao hàng'
+                                            : isCompleted
+                                              ? 'Đơn hàng đã hoàn thành'
+                                              : sellerDeliveryFinished
+                                                ? 'Đang chờ khách hàng đánh giá'
+                                                : 'Việc cần làm tiếp theo'
                                       : isAwaitingCustomerConfirmation
                                         ? 'Shipper báo giao thành công'
                                         : isCompleted
@@ -598,16 +678,30 @@ export function OrderLifecycleStepper({
                             </p>
                             <p className="mt-1 text-xs leading-5 text-slate-500">
                                 {isCustomerReturnFlow
-                                    ? returnStatus === 'REFUND_PENDING'
-                                        ? 'Shop đã xác nhận nhận hàng hoàn. Khoản hoàn đang chờ được xử lý.'
-                                        : 'Bạn có thể theo dõi từng bước xử lý yêu cầu hoàn hàng tại đây.'
-                                    : isAwaitingCustomerConfirmation
-                                      ? 'Vui lòng xác nhận đã nhận hàng. Nếu chưa nhận hoặc sản phẩm có vấn đề, bạn có thể gửi yêu cầu hỗ trợ/hoàn hàng bên dưới.'
-                                      : getProgressMessage(
-                                            mode,
-                                            stage,
-                                            shipmentStatus,
-                                        )}
+                                    ? returnStatus === 'REFUNDED'
+                                        ? 'Khoản tiền hoàn đã được xác nhận chuyển thành công.'
+                                        : [
+                                                'REFUND_PENDING',
+                                                'INSPECTION_PASSED',
+                                            ].includes(returnStatus ?? '')
+                                          ? 'Shop đã xác nhận nhận hàng hoàn. Khoản hoàn đang chờ được xử lý.'
+                                          : returnStatus === 'REFUND_FAILED'
+                                            ? 'Lần chuyển khoản hoàn trước gặp lỗi; hệ thống đang xử lý lại.'
+                                            : returnStatus === 'SHIPMENT_FAILED'
+                                              ? 'Vận chuyển hoàn gặp lỗi; shop cần xử lý lại vận đơn.'
+                                              : 'Bạn có thể theo dõi từng bước xử lý yêu cầu hoàn hàng tại đây.'
+                                    : mode === 'seller' && isSellerReturnFlow
+                                      ? 'Lộ trình giao hàng được giữ nguyên; yêu cầu đổi trả / hoàn tiền được theo dõi riêng.'
+                                      : isSellerDeliveryIssueReported
+                                        ? 'Lộ trình giao hàng được giữ ở mốc đã giao; yêu cầu hỗ trợ được theo dõi riêng.'
+                                        : isAwaitingCustomerConfirmation
+                                          ? 'Vui lòng xác nhận đã nhận hàng. Nếu chưa nhận hoặc sản phẩm có vấn đề, bạn có thể gửi yêu cầu hỗ trợ/hoàn hàng bên dưới.'
+                                          : getProgressMessage(
+                                                mode,
+                                                stage,
+                                                shipmentStatus,
+                                                deliveryConfirmationStatus,
+                                            )}
                             </p>
                         </div>
                         {actionSlot ? (

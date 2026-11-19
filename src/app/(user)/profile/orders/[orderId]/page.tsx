@@ -95,29 +95,33 @@ function getCustomerShipmentStatus(
     }, null);
 }
 
-// Xếp hạng tiến độ hoàn hàng để timeline không bị lùi về bước cũ khi order có nhiều request theo từng shop.
+// Xếp hạng mọi trạng thái return theo các mốc từ gửi yêu cầu đến khi tiền đã hoàn thành.
 const RETURN_PROGRESS_RANK: Record<OrderReturnResponse['status'], number> = {
     CUSTOMER_CANCELLED: 0,
     REJECTED: 0,
     REQUESTED: 1,
     APPROVED: 2,
-    AWAITING_SHIPMENT: 2,
-    IN_TRANSIT: 3,
-    SHIPMENT_FAILED: 3,
-    RECEIVED: 4,
-    REFUND_PENDING: 5,
-    REFUND_FAILED: 5,
-    REFUNDED: 6,
-    INSPECTION_FAILED: 5,
+    AWAITING_SHIPMENT: 3,
+    IN_TRANSIT: 4,
+    SHIPMENT_FAILED: 4,
+    RECEIVED: 5,
+    INSPECTION_FAILED: 6,
+    INSPECTION_PASSED: 7,
+    REFUND_PENDING: 7,
+    REFUND_FAILED: 7,
+    REFUNDED: 8,
 };
 
-// Chọn request đang hoạt động có tiến độ cao nhất; nếu cùng bước thì dùng bản cập nhật mới hơn để timeline không bị đứng/lùi.
+// Ưu tiên request đang xử lý hơn lịch sử đã hoàn/từ chối; trong nhóm đó giữ tiến độ cao nhất để tránh lùi bước.
 function getLatestReturnStatus(
     returns: OrderReturnResponse[] | undefined,
-): OrderReturnResponse['status'] | null {
+): Pick<OrderReturnResponse, 'id' | 'status' | 'updatedAt'> | null {
     if (!returns?.length) return null;
     const activeReturns = returns.filter(
-        (item) => !['REJECTED', 'CUSTOMER_CANCELLED'].includes(item.status),
+        (item) =>
+            !['REJECTED', 'CUSTOMER_CANCELLED', 'REFUNDED'].includes(
+                item.status,
+            ),
     );
     const candidates = activeReturns.length > 0 ? activeReturns : returns;
     return candidates.reduce((current, item) => {
@@ -128,14 +132,15 @@ function getLatestReturnStatus(
             return itemRank > currentRank ? item : current;
         }
         return item.updatedAt > current.updatedAt ? item : current;
-    }).status;
+    });
 }
 
-// Chỉ xét vận đơn hoàn; IN_TRANSIT/RETURNING cùng là kiện đang đi về shop, RETURNED là shop đã nhận và FAILED là lỗi.
-// Trạng thái carrier chưa ánh xạ không đẩy timeline tiến; nếu có nhiều vận đơn thì giữ rank cao nhất, đồng hạng lấy bản mới hơn.
+// Chỉ xét vận đơn hoàn của request đang hiển thị; IN_TRANSIT/RETURNING là kiện đi về shop, RETURNED là shop đã nhận và FAILED là lỗi.
+// Trạng thái carrier chưa ánh xạ không ghi đè trạng thái request; nếu có nhiều event thì giữ bước xa nhất, đồng hạng lấy bản mới hơn.
 function getReturnStatusFromShipments(
     shipments: ShipmentResponse[] | undefined,
-): OrderReturnStatus | null {
+    returnRequestId?: string,
+): Pick<OrderReturnResponse, 'status' | 'updatedAt'> | null {
     const returnStatusMap: Partial<Record<ShipmentStatus, OrderReturnStatus>> =
         {
             IN_TRANSIT: 'IN_TRANSIT',
@@ -143,51 +148,61 @@ function getReturnStatusFromShipments(
             RETURNED: 'RECEIVED',
             FAILED: 'SHIPMENT_FAILED',
         };
-    return (
-        (shipments ?? [])
-            .filter((shipment) => shipment.shipmentKind === 'RETURN')
-            .reduce<Pick<OrderReturnResponse, 'status' | 'updatedAt'> | null>(
-                (current, shipment) => {
-                    const status = returnStatusMap[shipment.status];
-                    if (!status) return current;
-                    const candidate: Pick<
-                        OrderReturnResponse,
-                        'status' | 'updatedAt'
-                    > = {
-                        status,
-                        updatedAt: shipment.updatedAt,
-                    };
-                    if (!current) return candidate;
-                    const candidateRank =
-                        RETURN_PROGRESS_RANK[candidate.status];
-                    const currentRank = RETURN_PROGRESS_RANK[current.status];
-                    if (candidateRank !== currentRank) {
-                        return candidateRank > currentRank
-                            ? candidate
-                            : current;
-                    }
-                    return candidate.updatedAt > current.updatedAt
-                        ? candidate
-                        : current;
-                },
-                null,
-            )?.status ?? null
-    );
+    return (shipments ?? [])
+        .filter(
+            (shipment) =>
+                shipment.shipmentKind === 'RETURN' &&
+                (!returnRequestId ||
+                    shipment.returnRequestId === returnRequestId),
+        )
+        .reduce<Pick<OrderReturnResponse, 'status' | 'updatedAt'> | null>(
+            (current, shipment) => {
+                const status = returnStatusMap[shipment.status];
+                if (!status) return current;
+                const candidate: Pick<
+                    OrderReturnResponse,
+                    'status' | 'updatedAt'
+                > = {
+                    status,
+                    updatedAt: shipment.updatedAt,
+                };
+                if (!current) return candidate;
+                const candidateRank = RETURN_PROGRESS_RANK[candidate.status];
+                const currentRank = RETURN_PROGRESS_RANK[current.status];
+                if (candidateRank !== currentRank) {
+                    return candidateRank > currentRank ? candidate : current;
+                }
+                return candidate.updatedAt > current.updatedAt
+                    ? candidate
+                    : current;
+            },
+            null,
+        );
 }
 
-// Đồng bộ request và vận đơn hoàn, tránh timeline hiển thị bước cũ khi hai API cập nhật lệch thời điểm.
+// Đồng bộ request và đúng vận đơn hoàn của nó; khác bước thì giữ mốc xa hơn, cùng bước thì theo timestamp mới hơn.
 function getCustomerReturnStatus(
     returns: OrderReturnResponse[] | undefined,
     shipments: ShipmentResponse[] | undefined,
 ): OrderReturnStatus | null {
     const requestStatus = getLatestReturnStatus(returns);
-    const shipmentStatus = getReturnStatusFromShipments(shipments);
-    if (!requestStatus) return shipmentStatus;
-    if (!shipmentStatus) return requestStatus;
-    return RETURN_PROGRESS_RANK[shipmentStatus] >
-        RETURN_PROGRESS_RANK[requestStatus]
-        ? shipmentStatus
-        : requestStatus;
+    // Shipment chỉ có thể cập nhật request tương ứng; không để vận đơn hoàn cũ của món khác đẩy sai timeline.
+    const shipmentStatus = getReturnStatusFromShipments(
+        shipments,
+        requestStatus?.id,
+    );
+    if (!requestStatus) return shipmentStatus?.status ?? null;
+    if (!shipmentStatus) return requestStatus.status;
+    // Khác rank nghĩa là một nguồn còn cũ; cùng rank mới dùng timestamp để chọn nhãn cập nhật gần nhất.
+    const requestRank = RETURN_PROGRESS_RANK[requestStatus.status];
+    const shipmentRank = RETURN_PROGRESS_RANK[shipmentStatus.status];
+    if (requestRank !== shipmentRank)
+        return shipmentRank > requestRank
+            ? shipmentStatus.status
+            : requestStatus.status;
+    return shipmentStatus.updatedAt > requestStatus.updatedAt
+        ? shipmentStatus.status
+        : requestStatus.status;
 }
 
 // Trang chi tiết đơn cho Customer theo dõi hoàn tiền, xem xác nhận đã chuyển và sửa yêu cầu khi khoản hoàn còn chờ.
@@ -361,7 +376,7 @@ export default function ProfileOrderDetailPage() {
     // Mục lục trỏ tới xác nhận khi đang DELIVERED hoặc tới yêu cầu hoàn trong hạn khi đã COMPLETED.
     const returnWindowIsOpen = Boolean(
         order.returnWindowUntil &&
-        new Date(order.returnWindowUntil).getTime() > currentTime,
+            new Date(order.returnWindowUntil).getTime() > currentTime,
     );
     const customerActionLabel =
         order.fulfillmentStatus === 'DELIVERED' &&

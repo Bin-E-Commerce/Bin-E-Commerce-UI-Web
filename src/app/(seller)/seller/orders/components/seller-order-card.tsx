@@ -20,8 +20,10 @@ interface SellerOrderCardProps {
 // Giữ card mở được chi tiết và giữ snapshot đơn trong lịch sử shop.
 // Đơn đã hủy vẫn hiển thị giá trị lúc đặt để đối chiếu, nhưng không gọi số đó là doanh thu.
 export function SellerOrderCard({ order, legacyImages }: SellerOrderCardProps) {
-    // Ưu tiên fulfillment stage vì đây là trạng thái vận hành mà Seller cần xử lý.
-    const lifecycleStatus = order.fulfillmentStatus ?? order.status;
+    // Lịch sử hoàn có ưu tiên hiển thị ở card; fulfillment gốc vẫn được giữ để đối soát tiền và vận chuyển.
+    const lifecycleStatus = order.hasReturnRequest
+        ? 'RETURN_REFUND'
+        : (order.fulfillmentStatus ?? order.status);
     const isCancelled = lifecycleStatus === 'CANCELLED';
 
     return (

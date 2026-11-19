@@ -2,8 +2,13 @@
 
 import { API_BASE_URL, API_VERSION } from '@/config/api.config';
 import authorizedAxios from '@/utils/authorizedAxios';
-import type { CustomerOrderStage, CustomerOrderStatus } from './order.api';
-import type { OrderReturnResponse, OrderReturnStatus } from './order.api';
+import type {
+    CustomerOrderStage,
+    CustomerOrderStatus,
+    DeliveryConfirmationStatus,
+    OrderReturnResponse,
+    OrderReturnStatus,
+} from './order.api';
 import type { SellerReturnFinancePreview } from '../types/seller-order.types';
 
 const SELLER_ORDERS = `${API_BASE_URL}${API_VERSION}/seller/orders`;
@@ -32,6 +37,7 @@ export interface SellerOrderListItem {
         | 'REFUND_PENDING'
         | 'REFUNDED';
     fulfillmentStatus?: SellerOrderStage;
+    hasReturnRequest: boolean;
     paymentMethod: 'COD' | 'PAY2S';
     isSandbox: boolean;
     shopItemTotal: string;
@@ -51,7 +57,7 @@ export interface SellerOrderListResponse {
     counts: SellerOrderTabCounts;
 }
 
-// Số lượng theo từng bước Seller; returnRefund chỉ gồm yêu cầu Seller còn phải duyệt hoặc kiểm tra.
+// Số lượng theo từng bước Seller; returnRefund gồm mọi order từng có yêu cầu hoàn của shop.
 export interface SellerOrderTabCounts {
     all: number;
     toShip: number;
@@ -79,6 +85,8 @@ export interface SellerOrderResponse {
     orderNumber: string;
     status: SellerOrderStatus;
     fulfillmentStatus?: SellerOrderStage;
+    deliveryConfirmationStatus?: DeliveryConfirmationStatus;
+    completedAt?: string | null;
     paymentStatus?:
         | 'COD_PENDING_COLLECTION'
         | 'PENDING'
