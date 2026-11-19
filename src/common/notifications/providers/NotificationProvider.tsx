@@ -1,3 +1,6 @@
+// File này duy trì socket notification cấp ứng dụng và đồng bộ cache thông báo với REST.
+// Toast chỉ báo sự kiện từ trang khác; trang đang thao tác tự hiển thị phản hồi để tránh thông báo trùng.
+
 'use client';
 
 import { useEffect } from 'react';
@@ -15,7 +18,8 @@ interface NotificationProviderProps {
     children: React.ReactNode;
 }
 
-// Provider duy trì một kết nối realtime cấp ứng dụng, cập nhật React Query và hiển thị toast cho mọi layout/role.
+// Provider duy trì một kết nối realtime cấp ứng dụng và cập nhật cache cho mọi layout/role.
+// Toast realtime bị bỏ khi Seller đang mở chính trang đơn hàng được cập nhật; mutation tại trang đã báo kết quả.
 export function NotificationProvider({ children }: NotificationProviderProps) {
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -52,6 +56,14 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
                 });
 
                 const actionUrl = notification.actionUrl;
+                // Seller đang xem đúng đơn vừa thao tác nên toast thành công tại chỗ đã đủ; notification vẫn ở chuông và cache vẫn được cập nhật.
+                if (
+                    notification.type === 'shipment_status_for_seller' &&
+                    actionUrl === window.location.pathname
+                ) {
+                    return;
+                }
+
                 toast(notification.title, {
                     description: notification.message,
                     duration: 7_000,

@@ -353,6 +353,13 @@ export function OrderLifecycleStepper({
                 : isFailed
                   ? 'Đơn hàng đã kết thúc do không thể giao thành công.'
                   : 'Yêu cầu của bạn đang được xử lý theo quy trình hậu mãi.';
+    // Mỗi luồng có số cột khớp số bước để mốc cuối không rơi xuống hàng mới.
+    const stepGridColumns =
+        steps.length === 7
+            ? 'md:grid-cols-7'
+            : steps.length === 6
+              ? 'md:grid-cols-6'
+              : 'md:grid-cols-5';
 
     return (
         <section
@@ -394,12 +401,7 @@ export function OrderLifecycleStepper({
 
             <div className="p-4 sm:p-5">
                 <ol
-                    className={cn(
-                        'grid gap-4 md:gap-0',
-                        steps.length === 7
-                            ? 'md:grid-cols-7'
-                            : 'md:grid-cols-5',
-                    )}
+                    className={cn('grid gap-4 md:gap-0', stepGridColumns)}
                     aria-label="Các bước xử lý đơn hàng"
                 >
                     {steps.map((step, index) => {
