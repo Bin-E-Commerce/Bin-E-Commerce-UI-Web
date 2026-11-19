@@ -1,4 +1,5 @@
-// Nội dung detail Seller giữ snapshot đơn đã hủy để đối chiếu; sản phẩm, số tiền và người nhận nằm ở các card riêng.
+// Thành phần này dựng chi tiết đơn Seller từ snapshot và các truy vấn vận chuyển/đổi trả.
+// Không tự thay đổi trạng thái đơn hoặc thanh toán; nhãn thanh toán phải phản ánh đúng paymentStatus do API trả về.
 
 'use client';
 
@@ -144,13 +145,20 @@ export function SellerOrderDetailContent({
             shipmentQuery.data?.status === 'DELIVERED');
     // Chỉ có vận đơn thực tế mới tạo card tracking và mục lục tương ứng; trạng thái đang tải hoặc 404 đều không phải vận chuyển đã khởi tạo.
     const hasShipment = Boolean(shipmentQuery.data);
-    // Tóm tắt phương thức và trạng thái để Seller nhận biết thanh toán ngay trên mục lục.
-    const paymentLabel =
-        order.paymentMethod === 'PAY2S'
-            ? order.paymentStatus === 'PAID'
+    // Phân biệt hoàn tiền, đang hoàn, thất bại và chờ xử lý để trạng thái khác PAID không bị hiểu nhầm là chưa thanh toán.
+    const pay2sPaymentStatusLabel =
+        order.paymentStatus === 'REFUNDED'
+            ? 'Đã hoàn tiền'
+            : order.paymentStatus === 'REFUND_PENDING'
+              ? 'Đang hoàn tiền'
+              : order.paymentStatus === 'PAID'
                 ? 'Đã thanh toán'
-                : 'Chờ thanh toán'
-            : 'COD';
+                : order.paymentStatus === 'FAILED'
+                  ? 'Thanh toán thất bại'
+                  : 'Chờ thanh toán';
+    // Mục lục và tiêu đề dùng cùng một nhãn để không hiển thị hai trạng thái thanh toán khác nhau.
+    const paymentLabel =
+        order.paymentMethod === 'PAY2S' ? pay2sPaymentStatusLabel : 'COD';
     const reviewProductId = order.items.find((item) =>
         Boolean(item.productId),
     )?.productId;
@@ -192,11 +200,7 @@ export function SellerOrderDetailContent({
                     <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-600">
                         <ReceiptText className="size-3.5 text-zinc-500" />
                         {order.paymentMethod === 'PAY2S'
-                            ? order.paymentStatus === 'PAID'
-                                ? order.isSandbox
-                                    ? 'Pay2S Sandbox · Đã thanh toán'
-                                    : 'Pay2S · Đã thanh toán'
-                                : 'Pay2S · Chờ thanh toán'
+                            ? `${order.isSandbox ? 'Pay2S Sandbox' : 'Pay2S'} · ${pay2sPaymentStatusLabel}`
                             : 'Thanh toán COD'}
                     </span>
                 </div>
